@@ -4,7 +4,7 @@ import Input from "@/app/components/input";
 import Button from "@/app/components/button";
 import Banner from "@/app/components/banner";
 import {useState} from "react";
-import {signIn, signOut} from "next-auth/react";
+import {signIn} from "next-auth/react";
 
 export function ConnectionModal({}){
 
@@ -35,8 +35,9 @@ export function ConnectionModal({}){
         });
 
         if (result?.error) {
-            // Gérer l'erreur de connexion
-            console.error(result.error);
+            console.error("Error : " , result.error);
+        } else {
+            console.log(result);
         }
 
     };
@@ -65,11 +66,7 @@ export function ConnectionModal({}){
                                 await handleSubmit(e)
                             }}
                     />
-                    <Button label="Connexion avec Github"
-                            onClick={async() => {
-                                await signIn()
-                            }}
-                    />
+                    
                 </div>
             </div>
         </div>

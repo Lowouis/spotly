@@ -1,26 +1,26 @@
-import Image from "next/image";
-import { PrismaClient } from "@prisma/client";
-import Input from "@/app/components/input";
-import Modal from "@/app/components/modal";
-import Banner from "@/app/components/banner";
+'use client';
 import { ConnectionModal } from "@/app/components/modal";
-import prisma  from "@/prismaconf/init";
-import { signIn } from "next-auth/react";
-export default async function Home() {
+import { useSession } from "next-auth/react";
+import Menu from "@/app/components/menu";
 
-    const users = await prisma.user.findMany();
-    const session = signIn();
+
+
+export default function App() {
+
+    const { data: session  } = useSession();
     console.log(session);
     return (
-        <div className="mx-auto sm:p-20 font-[family-name:var(--font-geist-sans)]">
-            <main className="flex flex-col justify-center items-center sm:items-start ">
-                {!session?.user ? (<ConnectionModal />) : (
-                    <div>
-                        Bienvenue sur le site de test
-                    </div>
-                )
-                }
-            </main>
-        </div>
+            <div className="mx-auto font-[family-name:var(--font-geist-sans)]">
+                <main className="flex flex-col justify-center items-center sm:items-start ">
+                    {!session?.user ? (<ConnectionModal />) : (
+                        <div className="">
+                            <Menu
+                                user={session.user}
+                            />
+                        </div>
+                    )}
+
+                </main>
+            </div>
     );
 }

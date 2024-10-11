@@ -17,7 +17,7 @@ export const authConfig = {
     adapter: PrismaAdapter(prisma),
     providers: [
         CredentialsProvider({
-            name : "Sign in with username",
+            name : "credentials",
             credentials : {
                 username: { label : 'login', type : 'text'},
                 password: { label : 'password', type : 'password' }
@@ -29,7 +29,7 @@ export const authConfig = {
                     }
                 }
                 );
-                console.log(user);
+
                 if(!user){
                     throw new Error("User not found");
                 }
@@ -39,36 +39,40 @@ export const authConfig = {
                 if(!isValidPassword){
                     throw new Error("Invalid password");
                 }
-
-                return {id: user.id, name : user.username, email : user.email };
+                console.log(user)
+                return {...user };
             },
-        session: {
-                strategy : "jwt",
-        },
-            callbacks: {
-                session: async ({ session, token }) => {
-                    session.id = token.id;
-                    session.jwt = token.jwt;
-                    session.error = token.error;
-                    return Promise.resolve(session);
-                },
-                jwt: async ({ token, user }) => {
-                    const isSignUp = !!user;
-                    if (isSignUp) {
-                        token.id = user.id;
-                        token.jwt = user.jwt;
-                        token.error = user.error;
-                    }
-                    return Promise.resolve(token);
-                },
-            }
-
         }),
         GithubProvider({
             clientId: ghId,
             clientSecret: ghSecret
         })
     ],
+    session: {
+        strategy: "jwt",
+    },
+    callbacks: {
+        session: async ({ session, token }) => {
+            session.id = token.id;
+            session.jwt = token.jwt;
+            session.error = token.error;
+            session.user.username = token.username;
+            session.user.createdAt = token.createdAt;
+
+            return Promise.resolve(session);
+        },
+        jwt: async ({ token, user }) => {
+            const isSignUp = !!user;
+            if (isSignUp) {
+                token.id = user.id;
+                token.jwt = user.jwt;
+                token.error = user.error;
+                token.username = user.username;
+                token.createdAt = user.createdAt;
+            }
+            return Promise.resolve(token);
+        }
+    },
     options : {
         debug : true
     }
