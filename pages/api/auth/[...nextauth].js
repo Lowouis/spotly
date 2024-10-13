@@ -5,7 +5,6 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
 
-
 const ghId = process.env.AUTH_GITHUB_ID;
 const ghSecret = process.env.AUTH_GITHUB_SECRET;
 
@@ -23,12 +22,15 @@ export const authConfig = {
                 password: { label : 'password', type : 'password' }
             },
             async authorize(credentials){
+
                 const user = await prisma.user.findUnique({
                     where : {
                         username: credentials?.username
                     }
                 }
-                );
+                ).catch((e) => {
+                    console.log(e);
+                });
 
                 if(!user){
                     throw new Error("User not found");
@@ -36,10 +38,12 @@ export const authConfig = {
 
                 const isValidPassword = await bycrypt.compare(credentials.password, user.password);
 
+
+
                 if(!isValidPassword){
                     throw new Error("Invalid password");
                 }
-                console.log(user)
+
                 return {...user };
             },
         }),

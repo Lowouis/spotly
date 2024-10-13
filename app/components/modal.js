@@ -9,7 +9,7 @@ import {signIn} from "next-auth/react";
 export function ConnectionModal({}){
 
 
-
+    const [wrongPassword, setWrongPassword] = useState(false);
     const [creditentials, setCreditentials] = useState([
         {
             "label" : "Nom d'utilisateur",
@@ -28,10 +28,18 @@ export function ConnectionModal({}){
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         const result = await signIn('credentials', {
             redirect: false,
             username: creditentials[0].value,
             password: creditentials[1].value,
+        }).then((response) => {
+            if (response.status === 401) {
+                setWrongPassword(true);
+            }
+            if (response.ok) {
+                setWrongPassword(false);
+            }
         });
 
         if (result?.error) {
@@ -60,7 +68,11 @@ export function ConnectionModal({}){
                     {creditentials.map((input, index) => (
                         <Input key={index} type={input.type} label={input.label} name={input.name} input={input} onChange={(e) => handleChange(e, index)}/>
                     ))}
-
+                    {wrongPassword &&
+                        <div className="my-2">
+                            <p className="text-red-600 font-bold">Identifiant ou mots de passe incorrects</p>
+                        </div>
+                    }
                     <Button label="Connexion"
                             onClick={async(e) => {
                                 await handleSubmit(e)
