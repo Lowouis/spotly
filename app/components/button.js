@@ -19,7 +19,7 @@ export function MenuButton({label, onClick, active}) {
         <li>
             <a
                 onClick={onClick}
-                className={`block rounded-lg px-4 py-3 text-sm font-medium text-gray-500 ${active ? "bg-gray-100" : "hover:bg-gray-100"} hover:text-gray-700 hover:cursor-pointer`}
+                className={`block rounded-lg px-4 py-3 text-sm font-medium text-gray-500 ${active ? "bg-gray-100 text-gray-700" : "hover:bg-gray-100 hover:text-gray-700"}  hover:cursor-pointer`}
             >
                 {label}
             </a>

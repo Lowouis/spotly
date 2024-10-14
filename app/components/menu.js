@@ -27,7 +27,7 @@ export default function Menu({user}){
     }
 
     return (
-        <div className="flex h-screen flex-col justify-between border-e bg-white">
+        <div className="fixed flex h-screen flex-col justify-between border-e bg-white">
             <div className="px-4 py-6">
                 <div className="flex justify-center items-center">
                     <span className="text-gray-700 font-medium mr-2">Chronos</span>
@@ -48,7 +48,7 @@ export default function Menu({user}){
 
             <div className="sticky inset-x-0 bottom-0 border-t border-gray-100">
                 <a href="#" className="flex items-center gap-2 bg-white p-4 hover:bg-gray-50">
-                   <span className="p-3 rounded-full place-content-center  text-xs text-blue-800">
+                   <span className="p-3 rounded-full place-content-center text-xs text-blue-800">
                         {user?.username.charAt(0).toUpperCase()}
                        {user?.username.charAt(1).toUpperCase()}
                     </span>
