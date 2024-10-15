@@ -1,8 +1,6 @@
 'use client'
 
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, EllipsisHorizontalIcon } from '@heroicons/react/20/solid'
-import { useEffect, useRef } from 'react'
+import {  useRef } from 'react'
 
 const days = [
     { date: '2021-12-27' },
@@ -55,17 +53,9 @@ function classNames(...classes) {
 
 export default function DayView() {
     const container = useRef(null)
-    const containerNav = useRef(null)
     const containerOffset = useRef(null)
 
-    useEffect(() => {
-        // Set the container scroll position based on the current time.
-        const currentMinute = new Date().getHours() * 60
-        container.current.scrollTop =
-            ((container.current.scrollHeight - containerNav.current.offsetHeight - containerOffset.current.offsetHeight) *
-                currentMinute) /
-            1440
-    }, [])
+
 
     return (
         <div className="flex h-full flex-col">
@@ -77,7 +67,10 @@ export default function DayView() {
                             className="flex h-13 w-12 items-center justify-center rounded-l-md border-y border-l border-gray-300 pr-1 text-gray-400 hover:text-gray-500 focus:relative md:w-9 md:pr-0 md:hover:bg-gray-200 transition"
                         >
                             <span className="sr-only">Previous day</span>
-                            <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
+                                 stroke="currentColor" className="size-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/>
+                            </svg>
                         </button>
                         <button
                             type="button"
@@ -94,7 +87,11 @@ export default function DayView() {
                             className="flex h-13 w-12 items-center justify-center rounded-r-md border-y border-r border-gray-300 pl-1 text-gray-400 hover:text-gray-500 focus:relative md:w-9 md:pl-0 md:hover:bg-gray-200 transition"
                         >
                             <span className="sr-only">Next day</span>
-                            <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5}
+                                 stroke="currentColor" className="size-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                            </svg>
+
                         </button>
                     </div>
                 </div>

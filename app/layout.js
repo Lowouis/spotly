@@ -1,6 +1,5 @@
-import localFont from "next/font/local";
 import "./globals.css";
-import {SessionProvider} from "next-auth/react";
+import localFont from "next/font/local";
 import SessionProviderWrapper from "@/app/wrappers/SessionProviderWrapper";
 
 

@@ -24,7 +24,7 @@ function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
 }
 
-export default function DatePicker() {
+export default function DatePicker({methods}) {
     const today = startOfToday();
     const [selectedDay, setSelectedDay] = useState(today);
     const [currentMonth, setCurrentMonth] = useState(format(today, 'MMM-yyyy'));
@@ -51,12 +51,15 @@ export default function DatePicker() {
         return `${year}-${month}-${day}`;
     }
 
-
+    function handleDayClick(day) {
+        setSelectedDay(day);
+        methods.setValue('date', formattedDate(day));
+    }
 
     return (
         <div className="pt-2">
             <label className="text-neutral-600 mx-2 ">A partir de : </label>
-            <InputField type="date" hidden={false} name="date" label="date" value={formattedDate(selectedDay)} />
+            <InputField type="date" hidden={true} name="date" label="date" value={formattedDate(selectedDay)} />
             <div className="mx-2">
                 <div className="">
                     <div className="">
@@ -94,10 +97,7 @@ export default function DatePicker() {
                             {days.map((day, dayIdx) => (
                                 <div
                                     key={day.toString()}
-                                    onClick={() => {
-                                        setSelectedDay(day);
-                                        console.log(day);
-                                    }}
+                                    onClick={() => handleDayClick(day)}
                                 >
                                     <button
                                         type="button"

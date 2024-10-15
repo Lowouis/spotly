@@ -2,7 +2,6 @@ import React from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import InputField from './InputField';
 import SelectField from './SelectField';
 import SubmitButton from './SubmitButton';
 import DatePicker from "@/app/components/DatePicker";
@@ -58,7 +57,7 @@ const Form = () => {
                         { label: 'Other', value: 'other' },
                     ]}
                 />
-                <DatePicker />
+                <DatePicker  methods={methods}/>
                 <SubmitButton label="Je reserve" />
             </form>
         </FormProvider>

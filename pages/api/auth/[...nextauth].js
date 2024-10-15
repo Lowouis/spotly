@@ -39,12 +39,11 @@ export const authConfig = {
                 const isValidPassword = await bycrypt.compare(credentials.password, user.password);
 
 
-
                 if(!isValidPassword){
                     throw new Error("Invalid password");
                 }
 
-                return {...user };
+                return user;
             },
         }),
         GithubProvider({
@@ -56,26 +55,15 @@ export const authConfig = {
         strategy: "jwt",
     },
     callbacks: {
-        session: async ({ session, token }) => {
-            session.id = token.id;
-            session.jwt = token.jwt;
-            session.error = token.error;
-            session.user.username = token.username;
-            session.user.createdAt = token.createdAt;
 
-            return Promise.resolve(session);
-        },
         jwt: async ({ token, user }) => {
-            const isSignUp = !!user;
-            if (isSignUp) {
-                token.id = user.id;
-                token.jwt = user.jwt;
-                token.error = user.error;
-                token.username = user.username;
-                token.createdAt = user.createdAt;
-            }
-            return Promise.resolve(token);
-        }
+            return {...token, ...user};
+        },
+        session: async ({ session, token, user }) => {
+            session.user = token;
+            console.log(session);
+            return session;
+        },
     },
     options : {
         debug : true

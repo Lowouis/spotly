@@ -5,9 +5,11 @@ import Button from "@/app/components/button";
 import Banner from "@/app/components/banner";
 import {useState} from "react";
 import {signIn} from "next-auth/react";
+import { useRouter } from 'next/navigation'
 
 export function ConnectionModal({}){
 
+    const router = useRouter();
 
     const [wrongPassword, setWrongPassword] = useState(false);
     const [creditentials, setCreditentials] = useState([
@@ -39,6 +41,8 @@ export function ConnectionModal({}){
             }
             if (response.ok) {
                 setWrongPassword(false);
+
+                router.push('/');
             }
         });
 

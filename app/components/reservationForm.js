@@ -7,7 +7,7 @@ export default function ReservationForm({}) {
 
 
     return (
-        <div class="flex flex-col p-3">
+        <div className="flex flex-col p-3">
             <div className="h-7 p-2 my-5">
 
             </div>
