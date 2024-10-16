@@ -13,7 +13,7 @@ export default function Login() {
         }
     }, [status, router]);
 
-    return (status !== 'authenticated' || status !== 'loading') ?? (
+    return (
         <div className="flex justify-center">
             <ConnectionModal />
         </div>
