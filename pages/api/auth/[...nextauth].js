@@ -14,6 +14,7 @@ if(!ghId || !ghSecret){
 
 export const authConfig = {
     adapter: PrismaAdapter(prisma),
+    secret: process.env.AUTH_SECRET,
     providers: [
         CredentialsProvider({
             name : "credentials",
