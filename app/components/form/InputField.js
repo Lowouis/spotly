@@ -5,17 +5,19 @@ const InputField = ({hidden=false ,name, label, type = 'text', placeholder, valu
     const { register, formState: { errors } } = useFormContext();
 
     return (
-        <div className={`${hidden ? "hidden" : ""}`}>
-            <label htmlFor={name}>{label}</label>
+        <div>
+            <label className={`${hidden ? "hidden" : ""}`} htmlFor={name}>{label}</label>
             <input
                 id={name}
                 type={type}
                 value={value}
                 placeholder={placeholder}
                 {...register(name)}
-                className={errors[name] ? 'input-error' : ''}
+                className={`${hidden ? "hidden" : ""} ${errors[name] ? 'input-error' : ''}`}
             />
-            {errors[name] && <p className="error-message">{errors[name].message}</p>}
+            {errors[name] &&
+                <p className="text-red-500 error-message text-sm mx-2">{errors[name].message}</p>
+            }
         </div>
     );
 };

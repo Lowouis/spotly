@@ -15,9 +15,10 @@ import {
     parseISO,
     startOfToday,
 } from 'date-fns'
-import { Fragment, useState } from 'react'
+import React, { useState } from 'react'
 import InputField from "@/app/components/form/InputField";
 import {fr} from "date-fns/locale";
+import {useFormContext} from "react-hook-form";
 
 
 function classNames(...classes) {
@@ -33,6 +34,7 @@ export default function DatePicker({methods}) {
         start: firstDayCurrentMonth,
         end: endOfMonth(firstDayCurrentMonth),
     });
+    const { formState: { errors } } = useFormContext();
 
     function previousMonth() {
         const firstDayNextMonth = add(firstDayCurrentMonth, { months: -1 })
@@ -53,7 +55,7 @@ export default function DatePicker({methods}) {
 
     function handleDayClick(day) {
         setSelectedDay(day);
-        methods.setValue('date', formattedDate(day));
+        methods.setValue('date', day);
     }
 
     return (
@@ -136,6 +138,7 @@ export default function DatePicker({methods}) {
                     </div>
 
                 </div>
+
             </div>
         </div>
     )

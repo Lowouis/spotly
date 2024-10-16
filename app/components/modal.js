@@ -48,8 +48,6 @@ export function ConnectionModal({}){
 
         if (result?.error) {
             console.error("Error : " , result.error);
-        } else {
-            console.log(result);
         }
 
     };

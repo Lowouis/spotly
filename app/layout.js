@@ -19,16 +19,16 @@ export const metadata = {
   description: "Made for booking ressources ",
 };
 
-export default function RootLayout({ children }) {
-  return (
-      <html lang="en">
-      <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-      <SessionProviderWrapper>{children}</SessionProviderWrapper>
-      </body>
-      </html>
+export default function RootLayout({children}) {
+    return (
+        <html lang="en">
+        <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+        <SessionProviderWrapper>{children}</SessionProviderWrapper>
+        </body>
+        </html>
 
 
-);
+    );
 }
