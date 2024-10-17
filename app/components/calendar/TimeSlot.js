@@ -7,6 +7,7 @@ export default function TimeSlot({time, onClick, active, handleClickSlot, curren
     const timeSlots = ["8:00", "9:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
 
 
+
     return (
         <div className="w-full mx-2 max-w-lg text-neutral-800">
             <h1 className="text-xl my-2">Crénaux disponible</h1>

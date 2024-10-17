@@ -19,6 +19,7 @@ const schemaFirstPart = yup.object().shape({
 //add later here when we get previous form data the day + min hours and max hours
 const schemaSecondPart = yup.object().shape({
     duration: yup.number().required('Vous devez choisir une durée'),
+    type: yup.string().required('Vous devez choisir un type de durée'),
     day: yup.boolean().optional(),
     slot: yup.date().required("Vous devez choisir un crenaux"),
     comment : yup.string().optional(),
@@ -37,6 +38,10 @@ const ReservationFormSecond = ({setStep}) => {
         {value: 4, name: "4h"},
         {value: 5, name: "5h"},
     ];
+    const types = [
+        {value: 1, name: "heure(s)"},
+        {value: 2, name: "jour(s)"},
+    ];
 
     const handleClickSlot = (slot) => {
         setCurrentSlot(slot);
@@ -50,7 +55,6 @@ const ReservationFormSecond = ({setStep}) => {
     const onSubmit = (data) => {
         console.log(data);
     }
-
     if(!methods){
         return <p>Error: Form could not be initialized</p>;
     }
@@ -60,7 +64,11 @@ const ReservationFormSecond = ({setStep}) => {
             <FormProvider {...methods}>
                 <div className="flex flex-row justify-start items-center">
                     <CheckoutField name={"day"} label={"Toute la journée"}/>
-                    <SelectField name={"duration"} label={"Durée"} options={durations}/>
+                    <div className="flex flex-row">
+                        <SelectField name={"duration"} label={"Durée"} options={durations}/>
+                        <SelectField name={"duration"} label={"Type"} options={types} />
+                    </div>
+
                 </div>
                 <div>
                     <TimeSlot handleClickSlot={handleClickSlot} currentSlot={currentSlot} />
