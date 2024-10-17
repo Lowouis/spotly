@@ -41,7 +41,7 @@ export default function App() {
         ) : (
             <div className="mx-auto font-[family-name:var(--font-geist-sans)]">
                 <main className="flex flex-col justify-center items-center sm:items-start ">
-                    <div className="flex flex-row">
+                    <div className="flex flex-row w-2/3">
                         <Menu
                             user={session?.user}
                         />

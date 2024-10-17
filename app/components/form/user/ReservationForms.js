@@ -2,38 +2,94 @@
 import { useForm, FormProvider } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import SelectField from './SelectField';
-import SubmitButton from './SubmitButton';
-import DatePicker from "@/app/components/DatePicker";
-import {useEffect, useState} from "react";
+import SelectField from '../SelectField';
+import SubmitButton from '../SubmitButton';
+import DatePicker from "@/app/components/calendar/DatePicker";
+import {useEffect, useRef, useState} from "react";
+import DayView from "@/app/components/calendar/DayViewCalendar";
+import CheckoutField from "@/app/components/form/CheckoutFIeld";
+import TimeSlot from "@/app/components/calendar/TimeSlot";
 
-const schema = yup.object().shape({
+const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
     category: yup.string().required('Vous devez choisir une ressource'),
     ressource: yup.string(),
     date: yup.date().min(new Date(), "La date doit être supérieur ou égale à celle d'aujourd'hui").required('Vous devez choisir une date'),
 });
+//add later here when we get previous form data the day + min hours and max hours
+const schemaSecondPart = yup.object().shape({
+    duration: yup.number().required('Vous devez choisir une durée'),
+    day: yup.boolean().optional(),
+    slot: yup.date().required("Vous devez choisir un crenaux"),
+    comment : yup.string().optional(),
+
+});
 
 
+const ReservationFormSecond = ({setStep}) => {
+    const [dropdownButton, setDropdownButton] = useState(false);
+    const [currentSlot, setCurrentSlot] = useState(null);
+    const dropdownRef = useRef(null);
+    const durations = [
+        {value: 1, name: "1h"},
+        {value: 2, name: "2h"},
+        {value: 3, name: "3h"},
+        {value: 4, name: "4h"},
+        {value: 5, name: "5h"},
+    ];
 
-const Form = () => {
-    const [domains, setDomains ] = useState();
-    const [categories, setCategories ] = useState();
-    const [resources, setResources ] = useState();
-    const [quantityOfResources, setQuantityOfResources ] = useState(resources ? resources.length : 0);
+    const handleClickSlot = (slot) => {
+        setCurrentSlot(slot);
+    }
 
     const methods = useForm({
-        resolver: yupResolver(schema),
+        resolver: yupResolver(schemaSecondPart),
+        mode: 'onSubmit',
+    });
+
+    const onSubmit = (data) => {
+        console.log(data);
+    }
+
+    if(!methods){
+        return <p>Error: Form could not be initialized</p>;
+    }
+
+    return (
+        <div>
+            <FormProvider {...methods}>
+                <div className="flex flex-row justify-start items-center">
+                    <CheckoutField name={"day"} label={"Toute la journée"}/>
+                    <SelectField name={"duration"} label={"Durée"} options={durations}/>
+                </div>
+                <div>
+                    <TimeSlot handleClickSlot={handleClickSlot} currentSlot={currentSlot} />
+                </div>
+                <SubmitButton label={"Je confirme ma réservation"}/>
+            </FormProvider>
+
+        </div>
+    );
+}
+
+const ReservationFormFirst = ({setStep}) => {
+    const [domains, setDomains] = useState();
+    const [categories, setCategories] = useState();
+    const [resources, setResources] = useState();
+    const [quantityOfResources, setQuantityOfResources] = useState(resources ? resources.length : 0);
+
+    const methods = useForm({
+        resolver: yupResolver(schemaFirstPart),
         mode: 'onSubmit',
     });
 
 
-    const { watch } = methods;
+    const {watch} = methods;
     const watchSite = watch('site');
     const watchCategory = watch('category');
 
     useEffect(() => {
-        const fetchDomains = ()=> {
+        const fetchDomains = () => {
             fetch('http://localhost:3000/api/domains')
                 .then(response => response.text())
                 .then(text => {
@@ -49,7 +105,7 @@ const Form = () => {
                     console.error('Fetch error:', error);
                 });
         }
-        const fetchCategories = ()=> {
+        const fetchCategories = () => {
             fetch('http://localhost:3000/api/categories')
                 .then(response => response.text())
                 .then(text => {
@@ -93,6 +149,7 @@ const Form = () => {
 }, [setDomains, setCategories, setResources, watchSite, watchCategory]);
 
     const onSubmit = (data) => {
+        setStep(2);
         console.log(data);
     };
     if (!methods) {
@@ -126,6 +183,8 @@ const Form = () => {
         </FormProvider>
     );
 };
-export default Form;
+
+
+export {ReservationFormFirst, ReservationFormSecond};
 
 

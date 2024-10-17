@@ -47,6 +47,7 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   accounts      Account[]
   sessions      Session[]
+  entry         entry[]
 }
 
 model VerificationRequest {
@@ -61,14 +62,16 @@ model VerificationRequest {
 }
 
 model category {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  comment     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  resource resource[]
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  comment      String?
+  maxHourLimit Int
+  maxDayLimit  Int
+  slotId       String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  resource     resource[]
 }
 
 model domain {
@@ -98,6 +101,7 @@ model resource {
   domains     domain   @relation(fields: [domainId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  entry       entry[]
 }
 
 model option {
@@ -107,4 +111,16 @@ model option {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   resource   resource @relation("resourceToOption", fields: [resourceId], references: [id])
+}
+
+model entry {
+  id         String   @id @default(cuid())
+  status     String
+  resourceId String
+  userId     String
+  comment    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  resource   resource @relation(fields: [resourceId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }

@@ -1,6 +1,6 @@
 import { Menu, Transition } from '@headlessui/react'
 import { DotsVerticalIcon } from '@heroicons/react/outline'
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/solid'
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import {
     add,
     eachDayOfInterval,
@@ -75,7 +75,7 @@ export default function DatePicker({methods}) {
                                 className="-my-1.5 flex flex-none items-center justify-center p-1.5 text-gray-400 hover:text-gray-500"
                             >
                                 <span className="sr-only">Previous month</span>
-                                <ChevronLeftIcon className="w-5 h-5" aria-hidden="true"/>
+                               <ChevronLeftIcon className="w-5 h-5" aria-hidden="true"/>
                             </button>
                             <button
                                 onClick={nextMonth}
@@ -145,12 +145,3 @@ export default function DatePicker({methods}) {
 }
 
 
-let colStartClasses = [
-    '',
-    'col-start-2',
-    'col-start-3',
-    'col-start-4',
-    'col-start-5',
-    'col-start-6',
-    'col-start-7',
-]

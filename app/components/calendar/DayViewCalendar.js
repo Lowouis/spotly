@@ -91,7 +91,6 @@ export default function DayView() {
                                  stroke="currentColor" className="size-6">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
                             </svg>
-
                         </button>
                     </div>
                 </div>

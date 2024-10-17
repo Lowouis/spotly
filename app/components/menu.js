@@ -2,7 +2,7 @@
 
 
 import {signOut} from "next-auth/react";
-import {MenuButton} from "@/app/components/button";
+import {MenuButton} from "@/app/components/utils/button";
 import {useState} from "react";
 export default function Menu({user}){
 

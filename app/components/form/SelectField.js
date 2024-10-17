@@ -3,7 +3,6 @@ import { useFormContext } from 'react-hook-form';
 
 const SelectField = ({ name, label, options, disabled=false}) => {
     const { register, formState: { errors } } = useFormContext();
-    console.log(name + " -- " + disabled)
     return (
         <div className="text-slate-800 my-2">
             <label className="hidden" htmlFor={name}>{label}</label>
