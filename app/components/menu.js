@@ -4,6 +4,47 @@
 import {signOut} from "next-auth/react";
 import {MenuButton} from "@/app/components/utils/button";
 import {useState} from "react";
+import {Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Avatar, User} from "@nextui-org/react";
+
+
+export function AlternativeMenu({user}) {
+
+
+             return (
+                 <div className="flex items-center gap-4">
+                <Dropdown placement="bottom-start">
+                    <DropdownTrigger>
+                        <div className="flex flex-row">
+                             <span
+                                 className="mr-1 cursor-pointer bg-blue-100 p-3 rounded-full place-content-center text-xs text-black">
+                            {user?.username.charAt(0).toUpperCase()}
+                                 {user?.username.charAt(1).toUpperCase()}
+                        </span>
+                            <span className="cursor-pointer">
+                                <span className="text-xs text-slate-800">
+                                <strong className="block font-medium">{user?.username}</strong>
+                                        <span> {user?.email} </span>
+                                    </span>
+                            </span>
+                        </div>
+
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="User Actions" variant="flat" className="text-black">
+                        <DropdownItem key="settings">
+                            General
+                        </DropdownItem>
+                        <DropdownItem key="team_settings">Réservations</DropdownItem>
+                        <DropdownItem key="system">Historique</DropdownItem>
+                        <DropdownItem key="logout" color="danger" onClick={()=>signOut().then(r => console.log("Successfull logout"))}>
+                            Deconnexion
+                        </DropdownItem>
+                    </DropdownMenu>
+                </Dropdown>
+            </div>
+        );
+}
+
+
 export default function Menu({user}){
 
     //plus s'occuper du hover ou click sur un bouton pour afficher le menu

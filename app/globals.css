@@ -25,3 +25,7 @@ body {
     text-wrap: balance;
   }
 }
+
+.parent-class-black * {
+  @apply text-black;
+}

@@ -1,11 +1,13 @@
 'use client';
 
-import Input from "@/app/components/utils/input";
-import Button from "@/app/components/utils/button";
+//import Input from "@/app/components/utils/input";
+//import Button from "@/app/components/utils/button";
 import Banner from "@/app/components/utils/banner";
 import {useState} from "react";
 import {signIn} from "next-auth/react";
 import { useRouter } from 'next/navigation'
+import { Input } from "@nextui-org/input";
+import { Button } from "@nextui-org/button";
 
 export function ConnectionModal({}){
 
@@ -68,18 +70,23 @@ export function ConnectionModal({}){
                 <div className="p-4">
                     <h1 className="text-2xl font-bold text-blue-800 mb-2">Identification</h1>
                     {creditentials.map((input, index) => (
-                        <Input key={index} type={input.type} label={input.label} name={input.name} input={input} onChange={(e) => handleChange(e, index)}/>
+                        <Input key={index} type={input.type} label={input.label} className="mb-2" name={input.name} onChange={(e)=> handleChange(e, index)} />
+                        //<Input key={index} type={input.type} label={input.label} name={input.name} input={input} onChange={(e) => handleChange(e, index)}/>
                     ))}
                     {wrongPassword &&
                         <div className="my-2">
                             <p className="text-red-600 font-bold">Identifiant ou mots de passe incorrects</p>
                         </div>
                     }
-                    <Button label="Connexion"
-                            onClick={async(e) => {
+
+                    <Button onClick={async(e) => {
                                 await handleSubmit(e)
                             }}
-                    />
+                            color="primary"
+                            className="flex justify-center items-center mx-auto"
+                    >
+                        Connexion
+                    </Button>
                     
                 </div>
             </div>

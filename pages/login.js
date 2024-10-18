@@ -1,4 +1,4 @@
-import { ConnectionModal } from "@/app/components/modal";
+import { ConnectionModal } from "@/app/components/connectionModal";
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';

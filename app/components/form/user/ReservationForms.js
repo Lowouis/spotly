@@ -4,17 +4,21 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from '../SelectField';
 import SubmitButton from '../SubmitButton';
-import DatePicker from "@/app/components/calendar/DatePicker";
 import {useEffect, useRef, useState} from "react";
-import DayView from "@/app/components/calendar/DayViewCalendar";
 import CheckoutField from "@/app/components/form/CheckoutFIeld";
 import TimeSlot from "@/app/components/calendar/TimeSlot";
+import {DateRangePicker} from "@nextui-org/date-picker";
+import {getLocalTimeZone, parseDate, parseZonedDateTime, Time, today} from "@internationalized/date";
+import {TimeInput} from "@nextui-org/react";
+import {ValidationError} from "yup";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
     category: yup.string().required('Vous devez choisir une ressource'),
     ressource: yup.string(),
     date: yup.date().min(new Date(), "La date doit être supérieur ou égale à celle d'aujourd'hui").required('Vous devez choisir une date'),
+    starthour: yup.string().required('Vous devez choisir une heure de début'),
+    endhour: yup.string().required('Vous devez choisir une heure de fin'),
 });
 //add later here when we get previous form data the day + min hours and max hours
 const schemaSecondPart = yup.object().shape({
@@ -80,6 +84,10 @@ const ReservationFormSecond = ({setStep}) => {
     );
 }
 
+function ClockCircleLinearIcon(props) {
+    return null;
+}
+
 const ReservationFormFirst = ({setStep}) => {
     const [domains, setDomains] = useState();
     const [categories, setCategories] = useState();
@@ -130,6 +138,7 @@ const ReservationFormFirst = ({setStep}) => {
                 });
         }
         const fetchResources = ()=> {
+            console.log(watchCategory, watchSite);
             if(watchCategory && watchSite){
                 fetch(`http://localhost:3000/api/resources/?categoryId=${watchCategory}&domainId=${watchSite}`)
                     .then(response => response.text()) // Read the response as text
@@ -157,7 +166,7 @@ const ReservationFormFirst = ({setStep}) => {
 }, [setDomains, setCategories, setResources, watchSite, watchCategory]);
 
     const onSubmit = (data) => {
-        setStep(2);
+        //setStep(2);
         console.log(data);
     };
     if (!methods) {
@@ -185,7 +194,63 @@ const ReservationFormFirst = ({setStep}) => {
                     options={resources}
                     disabled={!resources}
                 />
-                <DatePicker methods={methods}/>
+
+                <DateRangePicker
+                    isRequired
+                    hideTimeZone
+                    className="text-black mb-2 parent-class-black"
+                    minValue={today(getLocalTimeZone())}
+                    defaultValue={{
+                        start: today(getLocalTimeZone()),
+                        end: today(getLocalTimeZone()),
+                    }}
+                    color="primary"
+                    isDisabled={false}
+                    labelPlacement="outside"
+                    label="Choisir une date"
+                />
+                <TimeInput
+                    startContent={(
+                        <ClockCircleLinearIcon className="text-xl text-default-400 pointer-events-none flex-shrink-0" />
+                    )}
+                    required color="primary"
+                    className="text-black mb-2 "
+                    label="Heure de début"
+                    defaultValue={new Time(8, 0)}
+                    minValue={new Time(8)}
+                    maxValue={new Time(19)}
+                    hourCycle="h24"
+                    validate={(value) => {
+                        if(value.minute !== 0){
+                            return new ValidationError("L'heure doit être pleine");
+                        } else {
+                            return true;
+                        }
+                    }}
+                />
+                <TimeInput
+                    name
+                    startContent={(
+                        <ClockCircleLinearIcon className="text-xl text-default-400 pointer-events-none flex-shrink-0" />
+                    )}
+                    required
+                    color="primary"
+                    className="text-black"
+                    label="Heure de fin"
+                    defaultValue={new Time(9, 0)}
+                    minValue={new Time(8)}
+                    maxValue={new Time(19)}
+                    hourCycle="h24"
+                    validate={(value) => {
+                        if(value.minute !== 0){
+                            return new ValidationError("L'heure doit être pleine");
+                        } else {
+                            return true;
+                        }
+                    }}
+                />
+
+                {/*<DatePicker methods={methods}/>*/}
                 <SubmitButton label="Je reserve"/>
             </form>
         </FormProvider>
