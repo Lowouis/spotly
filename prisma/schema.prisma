@@ -62,16 +62,13 @@ model VerificationRequest {
 }
 
 model category {
-  id           String     @id @default(cuid())
-  name         String
-  description  String?
-  comment      String?
-  maxHourLimit Int
-  maxDayLimit  Int
-  slotId       String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  resource     resource[]
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  comment     String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  resource    resource[]
 }
 
 model domain {
@@ -113,12 +110,20 @@ model option {
   resource   resource @relation("resourceToOption", fields: [resourceId], references: [id])
 }
 
+enum Status {
+  BOOKED
+  PENDING
+  AVAILABLE
+}
+
 model entry {
   id         String   @id @default(cuid())
-  status     String
+  status     Status
   resourceId String
   userId     String
   comment    String?
+  startDate  DateTime
+  endDate    DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   resource   resource @relation(fields: [resourceId], references: [id])

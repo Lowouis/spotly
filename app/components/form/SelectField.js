@@ -2,11 +2,10 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import {Select, SelectSection, SelectItem} from "@nextui-org/select";
 
-const SelectField = ({ name, label, options, disabled=false}) => {
+const SelectField = ({ name, label, options, disabled=false, isRequired=true}) => {
     const {setValue, watch, register, formState: { errors } } = useFormContext();
     const value = watch(name);
     const handleChange = (value) => {
-        console.log(value);
         setValue(name, value);
     };
 
@@ -14,7 +13,7 @@ const SelectField = ({ name, label, options, disabled=false}) => {
         <div className="text-slate-800 my-2">
             <Select
                 isDisabled={disabled}
-                isRequired
+                isRequired={isRequired}
                 id={name}
                 name={name}
                 label={label}

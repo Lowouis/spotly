@@ -30,7 +30,7 @@ export default function App() {
         ) : (
             <div className="mx-auto font-[family-name:var(--font-geist-sans)]">
                 <main className="flex flex-col justify-center items-center sm:items-start ">
-                    <div className="flex flex-col m-3">
+                    <div className="flex flex-col m-1 w-3/4 justify-center items-center mx-auto">
                         {/*<Menu
                             user={session?.user}
                         />*/}

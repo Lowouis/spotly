@@ -1,5 +1,5 @@
 
-import { useForm, FormProvider } from 'react-hook-form';
+import {useForm, FormProvider, useFormContext} from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from '../SelectField';
@@ -9,90 +9,33 @@ import CheckoutField from "@/app/components/form/CheckoutFIeld";
 import TimeSlot from "@/app/components/calendar/TimeSlot";
 import {DateRangePicker} from "@nextui-org/date-picker";
 import {getLocalTimeZone, parseDate, parseZonedDateTime, Time, today} from "@internationalized/date";
-import {TimeInput} from "@nextui-org/react";
+import {Card, Chip, Skeleton, TimeInput} from "@nextui-org/react";
 import {ValidationError} from "yup";
+import TimeInputCompatible from "@/app/components/form/timeInputCompatible";
+import {Button} from "@nextui-org/button";
+import DateRangePickerCompatible from "@/app/components/form/DateRangePickerCompatible";
+import UnavailableTable from "@/app/components/tables/UnavailableTable";
+import  {Switch} from "@nextui-org/react";
+import AvailableTable from "@/app/components/tables/AvailableTable";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
     category: yup.string().required('Vous devez choisir une ressource'),
-    ressource: yup.string(),
-    date: yup.date().min(new Date(), "La date doit être supérieur ou égale à celle d'aujourd'hui").required('Vous devez choisir une date'),
-    starthour: yup.string().required('Vous devez choisir une heure de début'),
-    endhour: yup.string().required('Vous devez choisir une heure de fin'),
-});
-//add later here when we get previous form data the day + min hours and max hours
-const schemaSecondPart = yup.object().shape({
-    duration: yup.number().required('Vous devez choisir une durée'),
-    type: yup.string().required('Vous devez choisir un type de durée'),
-    day: yup.boolean().optional(),
-    slot: yup.date().required("Vous devez choisir un crenaux"),
-    comment : yup.string().optional(),
-
+    ressource: yup.string().optional(),
+    date: yup.object().required('Vous devez choisir une date'),
+    allday: yup.object().optional(),
+    starthour: yup.object().required('Vous devez choisir une heure de début'),
+    endhour: yup.object().required('Vous devez choisir une heure de fin'),
 });
 
+const ReservationForm = ({setStep}) => {
 
-const ReservationFormSecond = ({setStep}) => {
-    const [dropdownButton, setDropdownButton] = useState(false);
-    const [currentSlot, setCurrentSlot] = useState(null);
-    const dropdownRef = useRef(null);
-    const durations = [
-        {value: 1, name: "1h"},
-        {value: 2, name: "2h"},
-        {value: 3, name: "3h"},
-        {value: 4, name: "4h"},
-        {value: 5, name: "5h"},
-    ];
-    const types = [
-        {value: 1, name: "heure(s)"},
-        {value: 2, name: "jour(s)"},
-    ];
-
-    const handleClickSlot = (slot) => {
-        setCurrentSlot(slot);
-    }
-
-    const methods = useForm({
-        resolver: yupResolver(schemaSecondPart),
-        mode: 'onSubmit',
-    });
-
-    const onSubmit = (data) => {
-        console.log(data);
-    }
-    if(!methods){
-        return <p>Error: Form could not be initialized</p>;
-    }
-
-    return (
-        <div>
-            <FormProvider {...methods}>
-                <div className="flex flex-row justify-start items-center">
-                    <CheckoutField name={"day"} label={"Toute la journée"}/>
-                    <div className="flex flex-row">
-                        <SelectField name={"duration"} label={"Durée"} options={durations}/>
-                        <SelectField name={"duration"} label={"Type"} options={types} />
-                    </div>
-
-                </div>
-                <div>
-                    <TimeSlot handleClickSlot={handleClickSlot} currentSlot={currentSlot} />
-                </div>
-                <SubmitButton label={"Je confirme ma réservation"}/>
-            </FormProvider>
-
-        </div>
-    );
-}
-
-function ClockCircleLinearIcon(props) {
-    return null;
-}
-
-const ReservationFormFirst = ({setStep}) => {
     const [domains, setDomains] = useState();
     const [categories, setCategories] = useState();
     const [resources, setResources] = useState();
     const [quantityOfResources, setQuantityOfResources] = useState(resources ? resources.length : 0);
+
+
 
     const methods = useForm({
         resolver: yupResolver(schemaFirstPart),
@@ -100,11 +43,25 @@ const ReservationFormFirst = ({setStep}) => {
     });
 
 
-    const {watch} = methods;
+    const {watch, setValue} = methods;
     const watchSite = watch('site');
     const watchCategory = watch('category');
 
+    const [daySwitch, setDaySwitch] = useState(watch('allday') ?? false);
+    const handleDaySwitch = (e) => {
+        if(!daySwitch){
+            setValue('starthour', new Time(8));
+            setValue('endhour', new Time(19));
+        } else {
+            setValue('starthour', null);
+            setValue('endhour', null);
+        }
+        setDaySwitch(!daySwitch);
+
+    }
+
     useEffect(() => {
+
         const fetchDomains = () => {
             fetch('http://localhost:3000/api/domains')
                 .then(response => response.text())
@@ -138,7 +95,6 @@ const ReservationFormFirst = ({setStep}) => {
                 });
         }
         const fetchResources = ()=> {
-            console.log(watchCategory, watchSite);
             if(watchCategory && watchSite){
                 fetch(`http://localhost:3000/api/resources/?categoryId=${watchCategory}&domainId=${watchSite}`)
                     .then(response => response.text()) // Read the response as text
@@ -157,13 +113,12 @@ const ReservationFormFirst = ({setStep}) => {
             } else {
                 setResources(null);
             }
+        }
 
-    }
-
-    fetchDomains();
-    fetchCategories();
-    fetchResources();
-}, [setDomains, setCategories, setResources, watchSite, watchCategory]);
+        fetchDomains();
+        fetchCategories();
+        fetchResources();
+    }, [setDomains, setCategories, setResources, watchSite, watchCategory, watch]);
 
     const onSubmit = (data) => {
         //setStep(2);
@@ -174,10 +129,11 @@ const ReservationFormFirst = ({setStep}) => {
     }
     return (
         <FormProvider {...methods}>
-            <div className="h-7 p-2 my-5">
-                <span className="text-sm text-slate-900"><span className="text-green-700 font-extrabold">{quantityOfResources} </span>ressources disponibles</span>
-            </div>
+
             <form onSubmit={methods.handleSubmit(onSubmit)}>
+                <Chip color="primary" className="h-7 p-2 my-1">
+                    <span className="font-extrabold">{quantityOfResources} </span><span>ressources disponibles</span>
+                </Chip>
                 <SelectField
                     name="site"
                     label="Choisir un site"
@@ -193,71 +149,135 @@ const ReservationFormFirst = ({setStep}) => {
                     label="Toutes les ressources"
                     options={resources}
                     disabled={!resources}
+                    isRequired={false}
+                    className="mb-2"
                 />
+                <DateRangePickerCompatible name={"date"}/>
+                <Switch size="sm" name="allday" id="allday" color="primary" className="mb-2" onClick={(e)=>{handleDaySwitch()}}>Toute la journée</Switch>
+                {!daySwitch && (
+                    <>
+                        <TimeInputCompatible label={"Heure de début"} name="starthour"/>
+                        <TimeInputCompatible label={"Heure de fin"} name="endhour"/>
+                    </>
+                )}
 
-                <DateRangePicker
-                    isRequired
-                    hideTimeZone
-                    className="text-black mb-2 parent-class-black"
-                    minValue={today(getLocalTimeZone())}
-                    defaultValue={{
-                        start: today(getLocalTimeZone()),
-                        end: today(getLocalTimeZone()),
-                    }}
-                    color="primary"
-                    isDisabled={false}
-                    labelPlacement="outside"
-                    label="Choisir une date"
-                />
-                <TimeInput
-                    startContent={(
-                        <ClockCircleLinearIcon className="text-xl text-default-400 pointer-events-none flex-shrink-0" />
-                    )}
-                    required color="primary"
-                    className="text-black mb-2 "
-                    label="Heure de début"
-                    defaultValue={new Time(8, 0)}
-                    minValue={new Time(8)}
-                    maxValue={new Time(19)}
-                    hourCycle="h24"
-                    validate={(value) => {
-                        if(value.minute !== 0){
-                            return new ValidationError("L'heure doit être pleine");
-                        } else {
-                            return true;
-                        }
-                    }}
-                />
-                <TimeInput
-                    name
-                    startContent={(
-                        <ClockCircleLinearIcon className="text-xl text-default-400 pointer-events-none flex-shrink-0" />
-                    )}
-                    required
-                    color="primary"
-                    className="text-black"
-                    label="Heure de fin"
-                    defaultValue={new Time(9, 0)}
-                    minValue={new Time(8)}
-                    maxValue={new Time(19)}
-                    hourCycle="h24"
-                    validate={(value) => {
-                        if(value.minute !== 0){
-                            return new ValidationError("L'heure doit être pleine");
-                        } else {
-                            return true;
-                        }
-                    }}
-                />
-
-                {/*<DatePicker methods={methods}/>*/}
-                <SubmitButton label="Je reserve"/>
+                <SubmitButton label="Consulter les disponibilités"/>
             </form>
         </FormProvider>
     );
 };
 
+const ReservationSideElements = ({data}) => {
+    const [isLoaded, setIsLoaded] = useState(true);
+    const [availableSlots, setAvailableSlots] = useState();
+    const toggleLoad = () => {
+        setIsLoaded(!isLoaded);
+    };
 
-export {ReservationFormFirst, ReservationFormSecond};
+    return (
+
+        <div className="flex flex-col w-full ml-3">
+            <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="sm">
+                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full h-full">
+                    <div className="rounded-lg bg-green-100 p-2 flex justify-center items-center flex-col h-full">
+                        <div className="text-xl">
+                            Ressources disponible
+                        </div>
+                        <Button color="success">Confirmer ma resservation</Button>
+                    </div>
+                </Skeleton>
+            </Card>
+        </div>
+
+    )
+
+
+    /*return (
+        <div className="flex flex-col w-full ml-3">
+            <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="sm">
+                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                    <div className="rounded-lg bg-green-100 p-2 flex justify-center items-center flex-col">
+                        <div className="text-xl">
+                            Ressources disponible
+                        </div>
+                    </div>
+
+                </Skeleton>
+                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                    <div className="rounded-lg p-2 flex justify-center items-center flex-col">
+                        <div className="">
+                            Choisissez le ressource de votre choix
+                        </div>
+                        <AvailableTable />
+                    </div>
+
+                </Skeleton>
+            </Card>
+        </div>
+    )*/
+
+    /*return (
+        <div className="flex flex-col w-full ml-3">
+            <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="sm">
+                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                    <div className="rounded-lg bg-red-100 p-2 flex justify-center items-center flex-col">
+                        <div className="text-xl">
+                            Cette ressource n’est pas disponible avec ces horaires.
+                        </div>
+                        <div className="text-sm">
+                            Essayer de reserver sur une autre période ou de choisir d’autres ressources
+                        </div>
+                    </div>
+
+                </Skeleton>
+                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                    <div className="rounded-lg bg-red-50 p-2 flex justify-center items-center flex-col">
+                        <div className="">
+                            Prochain crénaux disponible de cette ressource avec cette durée à partir du :
+                        </div>
+                        <div className=" font-bold">
+                            28 septembre 2024 à 12h00
+                        </div>
+                    </div>
+
+                </Skeleton>
+                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                    <div className="rounded-lg p-2 flex justify-center items-center flex-col">
+                        <Button color="success" >Voir les prochaines disponibilités</Button>
+                    </div>
+
+                </Skeleton>
+            </Card>
+        </div>
+    );*/
+    /*return (
+        <div className="flex flex-col w-full ml-3">
+            <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="sm">
+                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                    <div className="rounded-lg bg-red-100 p-2 flex justify-center items-center flex-col">
+                        <div className="text-xl">
+                            Aucune ressource disponible avec ces horraires.
+                        </div>
+                        <div className="text-sm">
+                            Essayez de réserver sur une autre période.
+                        </div>
+                    </div>
+
+                </Skeleton>
+                <div className="space-y-2 h-full">
+                    <Skeleton isLoaded={isLoaded} className="rounded-lg">
+                        <div className="w-full p-1">
+                            <UnavailableTable />
+                        </div>
+                    </Skeleton>
+
+                </div>
+            </Card>
+        </div>
+    );*/
+}
+
+
+export {ReservationForm, ReservationSideElements};
 
 

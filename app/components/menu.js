@@ -11,35 +11,37 @@ export function AlternativeMenu({user}) {
 
 
              return (
-                 <div className="flex items-center gap-4">
-                <Dropdown placement="bottom-start">
-                    <DropdownTrigger>
-                        <div className="flex flex-row">
-                             <span
-                                 className="mr-1 cursor-pointer bg-blue-100 p-3 rounded-full place-content-center text-xs text-black">
-                            {user?.username.charAt(0).toUpperCase()}
-                                 {user?.username.charAt(1).toUpperCase()}
-                        </span>
-                            <span className="cursor-pointer">
-                                <span className="text-xs text-slate-800">
-                                <strong className="block font-medium">{user?.username}</strong>
-                                        <span> {user?.email} </span>
+                 <div className="flex flex-row m-1 p-2 justify-between w-3/4">
+                     <div className="text-2xl w-3/4">Chronos</div>
+                        <Dropdown placement="bottom-start" className="w-3/4">
+                            <DropdownTrigger>
+                                <div className="flex flex-row">
+                                     <span
+                                         className="mr-1 cursor-pointer bg-blue-100 p-3 rounded-full place-content-center text-xs text-black">
+                                    {user?.username.charAt(0).toUpperCase()}
+                                         {user?.username.charAt(1).toUpperCase()}
+                                </span>
+                                    <span className="cursor-pointer">
+                                        <span className="text-xs text-slate-800">
+                                        <strong className="block font-medium">{user?.username}</strong>
+                                                <span> {user?.email} </span>
+                                            </span>
                                     </span>
-                            </span>
-                        </div>
+                                </div>
 
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="User Actions" variant="flat" className="text-black">
-                        <DropdownItem key="settings">
-                            General
-                        </DropdownItem>
-                        <DropdownItem key="team_settings">Réservations</DropdownItem>
-                        <DropdownItem key="system">Historique</DropdownItem>
-                        <DropdownItem key="logout" color="danger" onClick={()=>signOut().then(r => console.log("Successfull logout"))}>
-                            Deconnexion
-                        </DropdownItem>
-                    </DropdownMenu>
-                </Dropdown>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="User Actions" variant="flat" className="text-black">
+                                <DropdownItem key="settings">
+                                    General
+                                </DropdownItem>
+                                <DropdownItem key="team_settings">Réservations</DropdownItem>
+                                <DropdownItem key="system">Historique</DropdownItem>
+                                <DropdownItem key="logout" color="danger" onClick={()=>signOut().then(r => console.log("Successfull logout"))}>
+                                    Deconnexion
+                                </DropdownItem>
+                            </DropdownMenu>
+
+                        </Dropdown>
             </div>
         );
 }
