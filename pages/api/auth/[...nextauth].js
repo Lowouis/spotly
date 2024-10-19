@@ -44,6 +44,10 @@ export const authConfig = {
                     throw new Error("Invalid password");
                 }
 
+
+
+                delete user.password;
+
                 return user;
             },
         }),
@@ -60,7 +64,7 @@ export const authConfig = {
         jwt: async ({ token, user }) => {
             return {...token, ...user};
         },
-        session: async ({ session, token, user }) => {
+        session: async ({ session, token }) => {
             session.user = token;
             return session;
         },

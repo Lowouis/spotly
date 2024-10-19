@@ -1,25 +1,23 @@
 
 import Title from "@/app/components/utils/title";
 
-import {
-    ReservationForm,
-    ReservationSideElements
-} from "@/app/components/form/user/ReservationForms";
+import {ReservationForm} from "@/app/components/form/user/ReservationForms";
 import {useState} from "react";
+import {Chip} from "@nextui-org/react";
+import ReservationUserListing from "@/app/components/reservations/Listings";
 
 
-export default function MakeReservation({}) {
+export default function MakeReservation({session}) {
 
     const [step, setStep] = useState(1);
 
     return (
-        <div className="flex flex-col p-3 w-2/3">
-            <div>
-                <Title title="Reservation"/>
-            </div>
-            <div className="flex flex-row">
-                <ReservationForm />
-                <ReservationSideElements  />
+        <div className="flex flex-col p-3 w-full mx-5">
+            <div className="flex flex-col ">
+                <div className="flex flex-row w-full">
+                    <ReservationForm />
+                    <ReservationUserListing user={session?.user} />
+                </div>
             </div>
         </div>
     );

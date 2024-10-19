@@ -2,8 +2,9 @@ import { Time } from "@internationalized/date";
 import { ValidationError } from "yup";
 import { TimeInput } from "@nextui-org/react";
 import { useFormContext } from "react-hook-form";
+import {hidden} from "next/dist/lib/picocolors";
 
-export default function TimeInputCompatible({ name, label}) {
+export default function TimeInputCompatible({ name, label, hidden=false}) {
     const { setValue, watch, formState: { errors } } = useFormContext();
     const value = watch(name);
     const handleChange = (value) => {
@@ -12,6 +13,7 @@ export default function TimeInputCompatible({ name, label}) {
 
     return (
         <TimeInput
+            isDisabled={hidden}
             granularity="hour"
             name={name}
             id={name}

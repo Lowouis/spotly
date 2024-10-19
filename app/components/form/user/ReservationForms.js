@@ -9,7 +9,7 @@ import CheckoutField from "@/app/components/form/CheckoutFIeld";
 import TimeSlot from "@/app/components/calendar/TimeSlot";
 import {DateRangePicker} from "@nextui-org/date-picker";
 import {getLocalTimeZone, parseDate, parseZonedDateTime, Time, today} from "@internationalized/date";
-import {Card, Chip, Skeleton, TimeInput} from "@nextui-org/react";
+import {Card, CardBody, Chip, Skeleton, TimeInput} from "@nextui-org/react";
 import {ValidationError} from "yup";
 import TimeInputCompatible from "@/app/components/form/timeInputCompatible";
 import {Button} from "@nextui-org/button";
@@ -17,6 +17,7 @@ import DateRangePickerCompatible from "@/app/components/form/DateRangePickerComp
 import UnavailableTable from "@/app/components/tables/UnavailableTable";
 import  {Switch} from "@nextui-org/react";
 import AvailableTable from "@/app/components/tables/AvailableTable";
+import Title from "@/app/components/utils/title";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
@@ -59,6 +60,7 @@ const ReservationForm = ({setStep}) => {
         setDaySwitch(!daySwitch);
 
     }
+    const [isLoaded, setIsLoaded] = useState(true);
 
     useEffect(() => {
 
@@ -128,42 +130,65 @@ const ReservationForm = ({setStep}) => {
         return <p>Error: Form could not be initialized</p>;
     }
     return (
-        <FormProvider {...methods}>
+        <div className="w-2/3 flex flex-col">
+            <Title  title="Réserver" />
+            <div className="flex flex-row">
+                <FormProvider {...methods}>
+                    <form onSubmit={methods.handleSubmit(onSubmit)}>
+                        <SelectField
+                            name="site"
+                            label="Choisir un site"
+                            options={domains}
+                        />
+                        <SelectField
+                            name="category"
+                            label="Choisir une catégorie"
+                            options={categories}
+                        />
+                        <SelectField
+                            name="ressource"
+                            label="Toutes les ressources"
+                            options={resources}
+                            disabled={!resources}
+                            isRequired={false}
+                            className="mb-2"
+                        />
+                        <DateRangePickerCompatible name={"date"}/>
+                        <Switch size="sm" name="allday" id="allday" color="primary" className="mb-2" onClick={(e) => {
+                            handleDaySwitch()
+                        }}>Toute la journée</Switch>
+                        <TimeInputCompatible hidden={daySwitch} label={"Heure de début"} name="starthour"/>
+                        <TimeInputCompatible hidden={daySwitch} label={"Heure de fin"} name="endhour"/>
 
-            <form onSubmit={methods.handleSubmit(onSubmit)}>
-                <Chip color="primary" className="h-7 p-2 my-1">
-                    <span className="font-extrabold">{quantityOfResources} </span><span>ressources disponibles</span>
-                </Chip>
-                <SelectField
-                    name="site"
-                    label="Choisir un site"
-                    options={domains}
-                />
-                <SelectField
-                    name="category"
-                    label="Choisir une catégorie"
-                    options={categories}
-                />
-                <SelectField
-                    name="ressource"
-                    label="Toutes les ressources"
-                    options={resources}
-                    disabled={!resources}
-                    isRequired={false}
-                    className="mb-2"
-                />
-                <DateRangePickerCompatible name={"date"}/>
-                <Switch size="sm" name="allday" id="allday" color="primary" className="mb-2" onClick={(e)=>{handleDaySwitch()}}>Toute la journée</Switch>
-                {!daySwitch && (
-                    <>
-                        <TimeInputCompatible label={"Heure de début"} name="starthour"/>
-                        <TimeInputCompatible label={"Heure de fin"} name="endhour"/>
-                    </>
-                )}
 
-                <SubmitButton label="Consulter les disponibilités"/>
-            </form>
-        </FormProvider>
+                        <SubmitButton label="Consulter les disponibilités"/>
+                    </form>
+                </FormProvider>
+                <div className="flex flex-col justify-center items-center mx-auto w-full ml-3">
+                    <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="sm">
+                        <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                            <div className="rounded-lg bg-green-100 p-2 flex justify-center items-center flex-col">
+                                <div className="text-xl">
+                                    Ressources disponible
+                                </div>
+                            </div>
+
+                        </Skeleton>
+                        <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                            <div className="rounded-lg p-2 flex justify-center items-center flex-col w-full">
+                                <div className="">
+                                    Choisissez le ressource de votre choix
+                                </div>
+                                <AvailableTable />
+                            </div>
+
+                        </Skeleton>
+                    </Card>
+                </div>
+            </div>
+
+        </div>
+
     );
 };
 
@@ -175,21 +200,28 @@ const ReservationSideElements = ({data}) => {
     };
 
     return (
+        <div className="flex flex-col w-full ml-3">
+
+        </div>
+
+    );
+
+    /*return (
 
         <div className="flex flex-col w-full ml-3">
             <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="sm">
                 <Skeleton isLoaded={isLoaded} className="rounded-lg w-full h-full">
-                    <div className="rounded-lg bg-green-100 p-2 flex justify-center items-center flex-col h-full">
+                    <div className="rounded-lg text-green-700 p-2 flex justify-center items-center flex-col h-full">
                         <div className="text-xl">
                             Ressources disponible
                         </div>
-                        <Button color="success">Confirmer ma resservation</Button>
+                        <Button color="success">Confirmer ma reservation</Button>
                     </div>
                 </Skeleton>
             </Card>
         </div>
 
-    )
+    );*/
 
 
     /*return (

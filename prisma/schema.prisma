@@ -111,9 +111,9 @@ model option {
 }
 
 enum Status {
-  BOOKED
-  PENDING
-  AVAILABLE
+  ARRIVE
+  RETARD
+  TERMINE
 }
 
 model entry {

@@ -5,44 +5,46 @@ import {signOut} from "next-auth/react";
 import {MenuButton} from "@/app/components/utils/button";
 import {useState} from "react";
 import {Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Avatar, User} from "@nextui-org/react";
+import {Button} from "@nextui-org/button";
+import {CalendarDateRangeIcon} from "@heroicons/react/24/solid";
 
 
 export function AlternativeMenu({user}) {
 
-
              return (
-                 <div className="flex flex-row m-1 p-2 justify-between w-3/4">
-                     <div className="text-2xl w-3/4">Chronos</div>
-                        <Dropdown placement="bottom-start" className="w-3/4">
-                            <DropdownTrigger>
-                                <div className="flex flex-row">
-                                     <span
-                                         className="mr-1 cursor-pointer bg-blue-100 p-3 rounded-full place-content-center text-xs text-black">
-                                    {user?.username.charAt(0).toUpperCase()}
-                                         {user?.username.charAt(1).toUpperCase()}
+                 <div className="flex w-full m-5">
+                     <div className="text-2xl w-2/3">
+                         <Button size="sm" color="default"><CalendarDateRangeIcon width="24" height="24" color="black"/><span className="text-xl">Chronos</span></Button>
+                     </div>
+                    <Dropdown placement="bottom-end" className="w-1/3">
+                        <DropdownTrigger>
+                            <div className="flex flex-row">
+                                 <span
+                                     className="mr-1 cursor-pointer bg-blue-100 p-3 rounded-full place-content-center text-xs text-black">
+                                {user?.username.charAt(0).toUpperCase()}
+                                     {user?.username.charAt(1).toUpperCase()}
+                            </span>
+                                <span className="cursor-pointer">
+                                    <span className="text-xs text-slate-800">
+                                    <strong className="block font-medium">{user?.username}</strong>
+                                            <span> {user?.email} </span>
+                                        </span>
                                 </span>
-                                    <span className="cursor-pointer">
-                                        <span className="text-xs text-slate-800">
-                                        <strong className="block font-medium">{user?.username}</strong>
-                                                <span> {user?.email} </span>
-                                            </span>
-                                    </span>
-                                </div>
+                            </div>
 
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label="User Actions" variant="flat" className="text-black">
-                                <DropdownItem key="settings">
-                                    General
-                                </DropdownItem>
-                                <DropdownItem key="team_settings">Réservations</DropdownItem>
-                                <DropdownItem key="system">Historique</DropdownItem>
-                                <DropdownItem key="logout" color="danger" onClick={()=>signOut().then(r => console.log("Successfull logout"))}>
-                                    Deconnexion
-                                </DropdownItem>
-                            </DropdownMenu>
-
-                        </Dropdown>
-            </div>
+                        </DropdownTrigger>
+                        <DropdownMenu aria-label="User Actions" variant="flat" className="text-black">
+                            <DropdownItem key="settings">
+                                General
+                            </DropdownItem>
+                            <DropdownItem key="team_settings">Réservations</DropdownItem>
+                            <DropdownItem key="system">Historique</DropdownItem>
+                            <DropdownItem key="logout" color="danger" onClick={()=>signOut().then(r => console.log("Successfull logout"))}>
+                                Deconnexion
+                            </DropdownItem>
+                        </DropdownMenu>
+                    </Dropdown>
+                </div>
         );
 }
 
