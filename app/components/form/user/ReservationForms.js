@@ -29,19 +29,41 @@ const schemaFirstPart = yup.object().shape({
     endhour: yup.object().required('Vous devez choisir une heure de fin'),
 });
 
+export function anyResourceAvailable(entries){
+
+
+    return (
+        <div>
+            <Skeleton isLoaded={true} className="rounded-lg w-full">
+                <div className="rounded-lg bg-green-100 p-2 flex justify-center items-center flex-col">
+                    <div className="text-xl">
+                        Ressources disponible
+                    </div>
+                </div>
+            </Skeleton>
+            <Skeleton isLoaded={true} className="rounded-lg w-full">
+                <div className="rounded-lg p-2 flex justify-center items-center flex-col w-full">
+                    <AvailableTable entries={entries}/>
+                </div>
+            </Skeleton>
+        </div>
+    )
+}
+
 const ReservationForm = ({setStep}) => {
 
     const [domains, setDomains] = useState();
     const [categories, setCategories] = useState();
     const [resources, setResources] = useState();
-    const [quantityOfResources, setQuantityOfResources] = useState(resources ? resources.length : 0);
-
-
-
+    const [availableResources, setAvailableResources] = useState();
+    const [matchingEntries, setMatchingEntries] = useState();
+    const [data, setData] = useState(null);
+    const [isSubmitted, setIsSubmitted] = useState(false);
     const methods = useForm({
         resolver: yupResolver(schemaFirstPart),
         mode: 'onSubmit',
     });
+    const [isLoaded, setIsLoaded] = useState(true);
 
 
     const {watch, setValue} = methods;
@@ -49,6 +71,7 @@ const ReservationForm = ({setStep}) => {
     const watchCategory = watch('category');
 
     const [daySwitch, setDaySwitch] = useState(watch('allday') ?? false);
+
     const handleDaySwitch = (e) => {
         if(!daySwitch){
             setValue('starthour', new Time(8));
@@ -58,11 +81,49 @@ const ReservationForm = ({setStep}) => {
             setValue('endhour', null);
         }
         setDaySwitch(!daySwitch);
-
     }
-    const [isLoaded, setIsLoaded] = useState(true);
-
+    const filterResourcesByEntriesMatching = (entries) => {
+        // make a copy of the resources
+        console.log(entries);
+        const cpAvailableResources = [...resources];
+        const filteredResources = cpAvailableResources.filter(resource =>
+            !entries?.some(entry => entry.resourceId === resource.id)
+        );
+        console.log(filteredResources);
+        setAvailableResources(filteredResources);
+    }
     useEffect(() => {
+
+        const fetchMatchingEntries = () => {
+            if(isSubmitted && data){
+                const startDate = new Date();
+                startDate.setFullYear(data.date.start.year);
+                startDate.setMonth(data.date.start.month-1);
+                startDate.setDate(data.date.start.day);
+                startDate.setTime(data.starthour.hour);
+                const endDate = new Date();
+                endDate.setFullYear(data.date.end.year);
+                endDate.setMonth(data.date.end.month-1);
+                endDate.setDate(data.date.end.day);
+                startDate.setTime(data.endhour.hour);
+                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`)
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            setMatchingEntries(data);
+                        } catch (error) {
+                            console.error('Failed to parse JSON:', error);
+                            console.error('Response text:', text);
+                        }
+                    })
+                    .catch(error => {
+                            console.error('Fetch error:', error);
+                        }
+                    );
+            }
+
+        }
 
         const fetchDomains = () => {
             fetch('http://localhost:3000/api/domains')
@@ -120,11 +181,15 @@ const ReservationForm = ({setStep}) => {
         fetchDomains();
         fetchCategories();
         fetchResources();
-    }, [setDomains, setCategories, setResources, watchSite, watchCategory, watch]);
+        fetchMatchingEntries();
+    }, [setDomains, setCategories, setResources, watchSite, watchCategory, watch, data, isSubmitted, availableResources, setMatchingEntries]);
+
+    
 
     const onSubmit = (data) => {
-        //setStep(2);
-        console.log(data);
+        setData(data);
+        setIsSubmitted(true);
+        filterResourcesByEntriesMatching(matchingEntries);
     };
     if (!methods) {
         return <p>Error: Form could not be initialized</p>;
@@ -172,16 +237,15 @@ const ReservationForm = ({setStep}) => {
                                     Ressources disponible
                                 </div>
                             </div>
-
                         </Skeleton>
                         <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
                             <div className="rounded-lg p-2 flex justify-center items-center flex-col w-full">
                                 <div className="">
                                     Choisissez le ressource de votre choix
                                 </div>
-                                <AvailableTable />
+                                {(isSubmitted && availableResources) ?? (<AvailableTable resources={availableResources}/>)}
+                                {(!isSubmitted && !availableResources) ?? (<AvailableTable resources={availableResources}/>)}
                             </div>
-
                         </Skeleton>
                     </Card>
                 </div>
@@ -191,6 +255,10 @@ const ReservationForm = ({setStep}) => {
 
     );
 };
+
+
+
+
 
 const ReservationSideElements = ({data}) => {
     const [isLoaded, setIsLoaded] = useState(true);

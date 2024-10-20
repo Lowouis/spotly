@@ -8,7 +8,6 @@ import Title from "@/app/components/utils/title";
 export default function ReservationUserListing({user}) {
 
     const [entries, setEntries] = useState(null);
-
     useEffect(() => {
         const fetchEntries = ()=> {
             if(user){
@@ -17,7 +16,6 @@ export default function ReservationUserListing({user}) {
                     .then(text => {
                         try {
                             const data = JSON.parse(text)
-                            console.log(data);
                             //.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                             setEntries(data);
                         } catch (error) {
@@ -36,10 +34,6 @@ export default function ReservationUserListing({user}) {
         fetchEntries();
     }, [user, setEntries]);
 
-
-
-
-    console.log(entries);
 
     return(
         <div className="mx-2 my-1 ">

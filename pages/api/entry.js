@@ -1,17 +1,34 @@
 'use server';
 import prisma from "@/prismaconf/init";
 
+
 export default async function handler(req, res) {
     try {
-        const { userId, otherParams } = req.query;
-
+        const { userId, startDate, endDate, siteId, categoryId, otherParams } = req.query;
         const entries = await prisma.entry.findMany({
             where: {
-                userId: userId
+                userId: userId && userId,
+                ...(siteId && categoryId && {
+                    resource : {
+                        domains : {
+                            id: siteId
+                        },
+                        categoryId: categoryId
+                    }
+
+                }),
+                ...(startDate && endDate && {
+                    startDate: {
+                        gte: new Date(startDate)
+                    },
+                    endDate: {
+                        lte: new Date(endDate)
+                    }
+                })
             },
             include: { resource: { include: { domains : true } } }
         });
-        console.log(entries);
+
         res.status(200).json(entries);
     } catch (error) {
         console.error("Failed to parse JSON:", error);

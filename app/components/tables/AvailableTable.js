@@ -2,11 +2,11 @@ import {ScrollShadow, Table, TableBody, TableCell, TableColumn, TableHeader, Tab
 import {Button} from "@nextui-org/button";
 
 
-export default function AvailableTable({}){
+export default function AvailableTable({resources}) {
 
 
     return (
-        <ScrollShadow hideScrollBar >
+        <ScrollShadow hideScrollBar width={100}>
             <Table
                 aria-label="Unavailable Table"
                 className="overflow-y-scroll no-scrollbar w-full h-full"
@@ -19,23 +19,17 @@ export default function AvailableTable({}){
             >
                 <TableHeader>
                     <TableColumn>Ressource</TableColumn>
-                    <TableColumn>Prochaine réservation</TableColumn>
                     <TableColumn>Action</TableColumn>
                 </TableHeader>
-                <TableBody >
-                    <TableRow key="1">
-                        <TableCell>LAPTOP11</TableCell>
-                        <TableCell>
-                            <span className="flex flex-col justify-center items-start">
-                                <span>27/08/2024</span>
-                                <span className="font-bold">12h00</span>
-                            </span>
-                        </TableCell>
-                        <TableCell>
-                            <Button className="w-full" size="small" color="success">Choisir</Button>
-                        </TableCell>
-                    </TableRow>
-
+                <TableBody>
+                    {resources?.map((resource) => (
+                        <TableRow key={resource.id}>
+                            <TableCell>{resource.name}</TableCell>
+                            <TableCell>
+                                <Button className="w-full" size="small" color="success">Choisir</Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
                 </TableBody>
             </Table>
         </ScrollShadow>

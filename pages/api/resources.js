@@ -10,6 +10,7 @@ export default async function handler(req, res) {
                 domainId : domainId,
             }
         });
+        console.log(resources);
         return res.status(200).json(resources);
 
 }

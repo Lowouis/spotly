@@ -86,6 +86,14 @@ model domain {
   resource      resource[]
 }
 
+enum status {
+  BOOKED
+  AVAILABLE
+  DELAYED
+  LOCKED
+  WAITING
+}
+
 model resource {
   id          String   @id @default(cuid())
   name        String
@@ -94,6 +102,7 @@ model resource {
   domainId    String
   options     option[] @relation("resourceToOption")
   categoryId  String
+  status      status   @default(AVAILABLE)
   category    category @relation(fields: [categoryId], references: [id])
   domains     domain   @relation(fields: [domainId], references: [id])
   createdAt   DateTime @default(now())
@@ -110,15 +119,8 @@ model option {
   resource   resource @relation("resourceToOption", fields: [resourceId], references: [id])
 }
 
-enum Status {
-  ARRIVE
-  RETARD
-  TERMINE
-}
-
 model entry {
   id         String   @id @default(cuid())
-  status     Status
   resourceId String
   userId     String
   comment    String?
