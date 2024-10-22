@@ -1,5 +1,15 @@
 import {useEffect, useState} from "react";
-import {Chip, ScrollShadow, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow} from "@nextui-org/react";
+import {
+    Chip,
+    ScrollShadow,
+    Table,
+    TableBody,
+    TableCell,
+    TableColumn,
+    TableHeader,
+    TableRow,
+    Tooltip
+} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {EyeIcon, TrashIcon} from "@heroicons/react/24/outline";
 import Title from "@/app/components/utils/title";
@@ -34,9 +44,21 @@ export default function ReservationUserListing({user}) {
         fetchEntries();
     }, [user, setEntries]);
 
+    const formatDate = (date) => {
+        return new Date(date).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        }) +" "+new Date(date).toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        }).replace(':', 'h')
+
+    }
 
     return(
-        <div className="mx-2 my-1 ">
+        <div className="mx-2 my-1 w-1/3 ">
             <Title  title="Mes réservations" />
 
             {entries && entries.length > 0 ? (
@@ -44,9 +66,7 @@ export default function ReservationUserListing({user}) {
                     <Table hideHeader aria-label="Entries listings" shadow="none">
                         <TableHeader>
                             <TableColumn>ressource</TableColumn>
-                            <TableColumn>site</TableColumn>
                             <TableColumn>date de début</TableColumn>
-                            <TableColumn>status</TableColumn>
                             <TableColumn>action</TableColumn>
                         </TableHeader>
                         <TableBody>
@@ -54,20 +74,26 @@ export default function ReservationUserListing({user}) {
                                 (
                                     <TableRow key={index}>
                                         <TableCell>{entry.resource.name}</TableCell>
-                                        <TableCell>{entry.resource.domains.name}</TableCell>
-                                        <TableCell>{new Date(entry.startDate).toLocaleDateString('fr-FR', {
-                                            day: '2-digit',
-                                            month: 'short',
-                                            year: 'numeric'
-                                        }) } à {
-                                            new Date(entry.startDate).toLocaleTimeString('fr-FR', {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            hour12: false
-                                        }).replace(':', 'h')}</TableCell>
-                                        <TableCell>
-                                            <Chip color="primary">{entry.status}</Chip>
-                                        </TableCell>
+                                        <TableCell >
+                                            <Tooltip content={formatDate(entry.endDate)} color="danger">
+                                                <Button color="primary">
+                                                { new Date(entry.startDate).toLocaleDateString('fr-FR', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric'
+                                                }) }
+                                                <Chip color="default">
+                                                    {
+                                                    new Date(entry.startDate).toLocaleTimeString('fr-FR', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: false
+                                                }).replace(':', 'h')}
+                                                </Chip>
+                                                </Button>
+                                            </Tooltip>
+
+                                            </TableCell>
                                         <TableCell>
                                             <div className="flex flex-row">
                                                 <Button size="sm" color="primary" className="mr-1" onClick={()=>console.log("Consulter fiche XX")}>

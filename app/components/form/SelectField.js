@@ -10,14 +10,15 @@ const SelectField = ({ name, label, options, disabled=false, isRequired=true}) =
     };
 
     return (
-        <div className="text-slate-800 my-2">
+        <div className="text-slate-800 my-2 w-full">
             <Select
+                size="lg"
                 isDisabled={disabled}
                 isRequired={isRequired}
                 id={name}
                 name={name}
                 label={label}
-                className="max-w-xs"
+                fullWidth={true}
             >
                 <SelectSection label={label}>
                     {options && options.map((option, index) => (

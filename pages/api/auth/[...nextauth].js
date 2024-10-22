@@ -39,6 +39,9 @@ export const authConfig = {
 
                 const isValidPassword = await bycrypt.compare(credentials.password, user.password);
 
+                const t = bycrypt.hash("password", 10).then((hash) => {
+                    console.log(hash);
+                });
 
                 if(!isValidPassword){
                     throw new Error("Invalid password");

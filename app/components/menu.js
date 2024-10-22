@@ -4,7 +4,7 @@
 import {signOut} from "next-auth/react";
 import {MenuButton} from "@/app/components/utils/button";
 import {useState} from "react";
-import {Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Avatar, User} from "@nextui-org/react";
+import {Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Avatar, User, Divider} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {CalendarDateRangeIcon} from "@heroicons/react/24/solid";
 
@@ -12,9 +12,19 @@ import {CalendarDateRangeIcon} from "@heroicons/react/24/solid";
 export function AlternativeMenu({user}) {
 
              return (
+                 <div className="w-full">
                  <div className="flex w-full m-5">
                      <div className="text-2xl w-2/3">
-                         <Button size="sm" color="default"><CalendarDateRangeIcon width="24" height="24" color="black"/><span className="text-xl">Chronos</span></Button>
+                         <div className="flex flex-row space-x-2">
+                             <CalendarDateRangeIcon width="24" height="24" color="black"/><span className="text-xl">Chronos</span>
+                             <span className="text-xs border-1 border-black rounded-lg m-auto p-1">
+                                 {new Date().toLocaleDateString('fr-FR', {
+                                 day: '2-digit',
+                                 month: 'long',
+                                 year: 'numeric'
+                             })}
+                             </span>
+                         </div>
                      </div>
                     <Dropdown placement="bottom-end" className="w-1/3">
                         <DropdownTrigger>
@@ -44,6 +54,8 @@ export function AlternativeMenu({user}) {
                             </DropdownItem>
                         </DropdownMenu>
                     </Dropdown>
+                 </div>
+                     <Divider className="my-4" />
                 </div>
         );
 }

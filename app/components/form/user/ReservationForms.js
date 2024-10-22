@@ -9,7 +9,7 @@ import CheckoutField from "@/app/components/form/CheckoutFIeld";
 import TimeSlot from "@/app/components/calendar/TimeSlot";
 import {DateRangePicker} from "@nextui-org/date-picker";
 import {getLocalTimeZone, parseDate, parseZonedDateTime, Time, today} from "@internationalized/date";
-import {Card, CardBody, Chip, Skeleton, TimeInput} from "@nextui-org/react";
+import {Card, CardBody, Chip, Divider, Skeleton, TimeInput} from "@nextui-org/react";
 import {ValidationError} from "yup";
 import TimeInputCompatible from "@/app/components/form/timeInputCompatible";
 import {Button} from "@nextui-org/button";
@@ -18,6 +18,7 @@ import UnavailableTable from "@/app/components/tables/UnavailableTable";
 import  {Switch} from "@nextui-org/react";
 import AvailableTable from "@/app/components/tables/AvailableTable";
 import Title from "@/app/components/utils/title";
+import ReservationFormConfirmation from "@/app/components/form/ReservationFormConfirmation";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
@@ -43,7 +44,7 @@ export function anyResourceAvailable(entries){
             </Skeleton>
             <Skeleton isLoaded={true} className="rounded-lg w-full">
                 <div className="rounded-lg p-2 flex justify-center items-center flex-col w-full">
-                    <AvailableTable entries={entries}/>
+                    <AvailableTable entries={entries} />
                 </div>
             </Skeleton>
         </div>
@@ -51,7 +52,6 @@ export function anyResourceAvailable(entries){
 }
 
 const ReservationForm = ({setStep}) => {
-
     const [domains, setDomains] = useState();
     const [categories, setCategories] = useState();
     const [resources, setResources] = useState();
@@ -63,6 +63,7 @@ const ReservationForm = ({setStep}) => {
         resolver: yupResolver(schemaFirstPart),
         mode: 'onSubmit',
     });
+    const [summary, setSummary] = useState(false);
     const [isLoaded, setIsLoaded] = useState(true);
 
 
@@ -82,20 +83,25 @@ const ReservationForm = ({setStep}) => {
         }
         setDaySwitch(!daySwitch);
     }
-    const filterResourcesByEntriesMatching = (entries) => {
-        // make a copy of the resources
-        console.log(entries);
-        const cpAvailableResources = [...resources];
-        const filteredResources = cpAvailableResources.filter(resource =>
-            !entries?.some(entry => entry.resourceId === resource.id)
-        );
-        console.log(filteredResources);
-        setAvailableResources(filteredResources);
-    }
+
+
+    useEffect(() => {
+        if(isSubmitted && matchingEntries){
+            const cpAvailableResources = [...resources];
+            const filteredResources = cpAvailableResources.filter(resource =>
+                !matchingEntries?.some(entry => entry.resourceId === resource.id)
+            );
+            setAvailableResources(filteredResources);
+            setIsSubmitted(false);
+        }
+    }, [isSubmitted, matchingEntries, resources, setAvailableResources, setIsSubmitted]);
+
+
     useEffect(() => {
 
         const fetchMatchingEntries = () => {
             if(isSubmitted && data){
+
                 const startDate = new Date();
                 startDate.setFullYear(data.date.start.year);
                 startDate.setMonth(data.date.start.month-1);
@@ -189,21 +195,21 @@ const ReservationForm = ({setStep}) => {
     const onSubmit = (data) => {
         setData(data);
         setIsSubmitted(true);
-        filterResourcesByEntriesMatching(matchingEntries);
     };
     if (!methods) {
         return <p>Error: Form could not be initialized</p>;
     }
     return (
-        <div className="w-2/3 flex flex-col">
-            <Title  title="Réserver" />
-            <div className="flex flex-row">
+        <div className="w-2/3 flex flex-col ">
+            <Title title="Réserver" />
+            <div className="flex lg:flex-row md:flex-col">
                 <FormProvider {...methods}>
                     <form onSubmit={methods.handleSubmit(onSubmit)}>
                         <SelectField
                             name="site"
                             label="Choisir un site"
                             options={domains}
+
                         />
                         <SelectField
                             name="category"
@@ -229,35 +235,38 @@ const ReservationForm = ({setStep}) => {
                         <SubmitButton label="Consulter les disponibilités"/>
                     </form>
                 </FormProvider>
-                <div className="flex flex-col justify-center items-center mx-auto w-full ml-3">
-                    <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="sm">
-                        <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
-                            <div className="rounded-lg bg-green-100 p-2 flex justify-center items-center flex-col">
-                                <div className="text-xl">
-                                    Ressources disponible
-                                </div>
-                            </div>
-                        </Skeleton>
-                        <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
-                            <div className="rounded-lg p-2 flex justify-center items-center flex-col w-full">
-                                <div className="">
-                                    Choisissez le ressource de votre choix
-                                </div>
-                                {(isSubmitted && availableResources) ?? (<AvailableTable resources={availableResources}/>)}
-                                {(!isSubmitted && !availableResources) ?? (<AvailableTable resources={availableResources}/>)}
-                            </div>
-                        </Skeleton>
-                    </Card>
-                </div>
+
+
+                {summary ? (<ReservationFormConfirmation />) : (
+                    <div className="flex flex-col justify-start items-center mx-auto w-full md:mt-2 lg:ml-2">
+                        <div className="flex flex-row mx-auto h-full w-full">
+                            <Divider className="mx-4" orientation="vertical"/>
+                            <Card className="h-full w-full space-y-5 p-2" radius="lg" shadow="none">
+                                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                                    <div
+                                        className={`rounded-lg ${availableResources && "bg-green-100"} p-2 flex justify-center items-center flex-col`}>
+                                        <div className="text-sm">
+                                            {availableResources && (<>Choisissez la ressource de votre choix</>)}
+                                        </div>
+                                    </div>
+                                </Skeleton>
+                                <Skeleton isLoaded={isLoaded} className="rounded-lg w-full">
+                                    <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
+                                        {availableResources && (<AvailableTable resources={availableResources} methods={methods} setSummary={setSummary}/>)}
+                                        {/*{(!isSubmitted && !availableResources) ?? (<AvailableTable resources={availableResources}/>)}*/}
+                                    </div>
+                                </Skeleton>
+                            </Card>
+                        </div>
+                    </div>
+                )}
+
             </div>
 
         </div>
 
     );
 };
-
-
-
 
 
 const ReservationSideElements = ({data}) => {
@@ -376,6 +385,8 @@ const ReservationSideElements = ({data}) => {
         </div>
     );*/
 }
+
+
 
 
 export {ReservationForm, ReservationSideElements};
