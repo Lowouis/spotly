@@ -1,8 +1,8 @@
 'use client';
-import { useSession } from "next-auth/react";
-import Menu, {AlternativeMenu} from "@/app/components/menu";
-import MakeReservation  from "@/app/reservation";
-import { useRouter } from 'next/navigation'
+import {useSession} from "next-auth/react";
+import {AlternativeMenu} from "@/app/components/menu";
+import MakeReservation from "@/app/reservation";
+import {useRouter} from 'next/navigation'
 import {useEffect, useState} from "react";
 import {CircularProgress} from "@nextui-org/progress";
 
@@ -20,10 +20,10 @@ export default function App() {
 
 
         return loading ? (
-            <div className="fixed left-0 top-0 z-50 block h-full w-full bg-white opacity-75">
-                <span className="r-4 relative top-1/2 mx-auto my-0 block h-0 w-0 text-green-500 opacity-75">
+            <div className="fixed left-0 top-0 z-50 block h-full w-full bg-white ">
+                <span className="r-4 relative top-1/2 mx-auto my-0 block h-0 w-0">
                     <div role="status">
-                        <CircularProgress size="lg" aria-label="Chargement..."/>
+                            <CircularProgress color='primary' size="lg" label="Chargement..."  aria-label="Chargement..." />
                     </div>
                 </span>
             </div>

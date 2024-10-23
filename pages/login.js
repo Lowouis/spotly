@@ -1,7 +1,7 @@
-import { ConnectionModal } from "@/app/components/connectionModal";
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { useEffect } from 'react';
+import {ConnectionModal} from "@/app/components/connectionModal";
+import {useRouter} from 'next/navigation';
+import {useSession} from 'next-auth/react';
+import {useEffect} from 'react';
 
 export default function Login() {
     const router = useRouter();
@@ -19,3 +19,4 @@ export default function Login() {
         </div>
     );
 }
+

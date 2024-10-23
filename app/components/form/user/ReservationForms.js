@@ -1,21 +1,13 @@
-
-import {useForm, FormProvider, useFormContext} from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {FormProvider, useForm} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from '../SelectField';
 import SubmitButton from '../SubmitButton';
-import {useEffect, useRef, useState} from "react";
-import CheckoutField from "@/app/components/form/CheckoutFIeld";
-import TimeSlot from "@/app/components/calendar/TimeSlot";
-import {DateRangePicker} from "@nextui-org/date-picker";
-import {getLocalTimeZone, parseDate, parseZonedDateTime, Time, today} from "@internationalized/date";
-import {Card, CardBody, Chip, Divider, Skeleton, TimeInput} from "@nextui-org/react";
-import {ValidationError} from "yup";
+import {useEffect, useState} from "react";
+import {Time} from "@internationalized/date";
+import {Card, Divider, Skeleton, Switch} from "@nextui-org/react";
 import TimeInputCompatible from "@/app/components/form/timeInputCompatible";
-import {Button} from "@nextui-org/button";
 import DateRangePickerCompatible from "@/app/components/form/DateRangePickerCompatible";
-import UnavailableTable from "@/app/components/tables/UnavailableTable";
-import  {Switch} from "@nextui-org/react";
 import AvailableTable from "@/app/components/tables/AvailableTable";
 import Title from "@/app/components/utils/title";
 import ReservationFormConfirmation from "@/app/components/form/ReservationFormConfirmation";
@@ -27,7 +19,7 @@ const schemaFirstPart = yup.object().shape({
     date: yup.object().required('Vous devez choisir une date'),
     allday: yup.object().optional(),
     starthour: yup.object().required('Vous devez choisir une heure de début'),
-    endhour: yup.object().required('Vous devez choisir une heure de fin'),
+    endhour: yup.object().required('Vous devez choisir une heure de fin')
 });
 
 export function anyResourceAvailable(entries){
@@ -200,42 +192,41 @@ const ReservationForm = ({setStep}) => {
         return <p>Error: Form could not be initialized</p>;
     }
     return (
-        <div className="w-2/3 flex flex-col ">
-            <Title title="Réserver" />
-            <div className="flex lg:flex-row md:flex-col">
-                <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)}>
-                        <SelectField
-                            name="site"
-                            label="Choisir un site"
-                            options={domains}
+        <div className="lg:w-2/3 flex flex-col md:w-full ">
+                <Title title="Réserver" />
+                <div className="flex lg:flex-row md:flex-col md:justify-center">
+                    <FormProvider {...methods}>
+                        <form onSubmit={methods.handleSubmit(onSubmit)}>
+                            <SelectField
+                                name="site"
+                                label="Choisir un site"
+                                options={domains}
 
-                        />
-                        <SelectField
-                            name="category"
-                            label="Choisir une catégorie"
-                            options={categories}
-                        />
-                        <SelectField
-                            name="ressource"
-                            label="Toutes les ressources"
-                            options={resources}
-                            disabled={!resources}
-                            isRequired={false}
-                            className="mb-2"
-                        />
-                        <DateRangePickerCompatible name={"date"}/>
-                        <Switch size="sm" name="allday" id="allday" color="primary" className="mb-2" onClick={(e) => {
-                            handleDaySwitch()
-                        }}>Toute la journée</Switch>
-                        <TimeInputCompatible hidden={daySwitch} label={"Heure de début"} name="starthour"/>
-                        <TimeInputCompatible hidden={daySwitch} label={"Heure de fin"} name="endhour"/>
+                            />
+                            <SelectField
+                                name="category"
+                                label="Choisir une catégorie"
+                                options={categories}
+                            />
+                            <SelectField
+                                name="ressource"
+                                label="Toutes les ressources"
+                                options={resources}
+                                disabled={!resources}
+                                isRequired={false}
+                                className="mb-2"
+                            />
+                            <DateRangePickerCompatible name={"date"}/>
+                            <Switch size="sm" name="allday" id="allday" color="primary" className="mb-2" onClick={(e) => {
+                                handleDaySwitch()
+                            }}>Toute la journée</Switch>
+                            <TimeInputCompatible hidden={daySwitch} label={"Heure de début"} name="starthour"/>
+                            <TimeInputCompatible hidden={daySwitch} label={"Heure de fin"} name="endhour"/>
 
 
-                        <SubmitButton label="Consulter les disponibilités"/>
-                    </form>
-                </FormProvider>
-
+                            <SubmitButton label="Consulter les disponibilités"/>
+                        </form>
+                    </FormProvider>
 
                 {summary ? (<ReservationFormConfirmation />) : (
                     <div className="flex flex-col justify-start items-center mx-auto w-full md:mt-2 lg:ml-2">
