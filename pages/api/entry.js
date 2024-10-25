@@ -4,7 +4,7 @@ import prisma from "@/prismaconf/init";
 
 export default async function handler(req, res) {
     try {
-        const { userId, startDate, endDate, siteId, categoryId, otherParams } = req.query;
+        const { userId, startDate, endDate, siteId, categoryId, resourceId, otherParams } = req.query;
         const entries = await prisma.entry.findMany({
             where: {
                 userId: userId && userId,
@@ -13,7 +13,10 @@ export default async function handler(req, res) {
                         domains : {
                             id: siteId
                         },
-                        categoryId: categoryId
+                        categoryId: categoryId,
+                        ...(resourceId && {
+                            id: resourceId
+                        })
                     }
 
                 }),
@@ -24,7 +27,8 @@ export default async function handler(req, res) {
                     endDate: {
                         lte: new Date(endDate)
                     }
-                })
+                }),
+
             },
             include: { resource: { include: { domains : true } } }
         });

@@ -2,9 +2,9 @@
 import {useSession} from "next-auth/react";
 
 import {useRouter} from 'next/navigation'
-import {useEffect, useState} from "react";
-import {CircularProgress} from "@nextui-org/progress";
+import React, {useEffect, useState} from "react";
 import {ReservationSearch} from "@/app/components/form/ReservationSearch";
+import {Button} from "@nextui-org/button";
 
 export default function App() {
     const router = useRouter()
@@ -18,12 +18,40 @@ export default function App() {
         }
     }, [router, status]);
 
-
         return loading ? (
             <div className="fixed left-0 top-0 z-50 block h-full w-full bg-white ">
                 <span className="r-4 relative top-1/2 mx-auto my-0 block h-0 w-0">
-                    <div role="status">
-                            <CircularProgress color='primary' size="lg" label="Chargement..."  aria-label="Chargement..." />
+                    <div role="status" >
+                            <Button
+                                isIconOnly
+                                size="lg"
+                                radius="full"
+                                color="none"
+                                type="submit"
+                                shadow="lg"
+                                isLoading={true}
+                                spinner={
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+                                        <radialGradient id="a12" cx=".66" fx=".66" cy=".3125" fy=".3125"
+                                                        gradientTransform="scale(1.5)">
+                                            <stop offset="0" stop-color="#000000"></stop>
+                                            <stop offset=".3" stop-color="#000000" stop-opacity=".9"></stop>
+                                            <stop offset=".6" stop-color="#000000" stop-opacity=".6"></stop>
+                                            <stop offset=".8" stop-color="#000000" stop-opacity=".3"></stop>
+                                            <stop offset="1" stop-color="#000000" stop-opacity="0"></stop>
+                                        </radialGradient>
+                                        <circle transform-origin="center" fill="none" stroke="url(#a12)"
+                                                stroke-width="30" stroke-linecap="round" stroke-dasharray="200 1000"
+                                                stroke-dashoffset="0" cx="100" cy="100" r="70">
+                                            <animateTransform type="rotate" attributeName="transform" calcMode="spline"
+                                                              dur="2" values="360;0" keyTimes="0;1" keySplines="0 0 1 1"
+                                                              repeatCount="indefinite"></animateTransform>
+                                        </circle>
+                                        <circle transform-origin="center" fill="none" opacity=".2" stroke="#000000"
+                                                stroke-width="30" stroke-linecap="round" cx="100" cy="100"
+                                                r="70"></circle>
+                                    </svg>
+                                }/>
                     </div>
                 </span>
             </div>
@@ -32,13 +60,13 @@ export default function App() {
                 <main className="flex flex-col justify-center items-center sm:items-start">
                     <div className="flex flex-col w-full justify-center items-center mx-auto">
                         <div className="flex flex-col w-full">
-                                    {/*<AlternativeMenu user={session?.user}/>*/}
-                                    <ReservationSearch session={session}/>
+                            {/*<AlternativeMenu user={session?.user}/>*/}
+                            <ReservationSearch session={session}/>
                         </div>
                     </div>
                 </main>
             </div>
-);
+        );
 
 
 }

@@ -2,22 +2,21 @@ import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure}
 import {Button} from "@nextui-org/button";
 import {EyeIcon} from "@heroicons/react/24/solid";
 
-
+export const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    }) + " " + new Date(date).toLocaleTimeString('fr-FR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).replace(':', 'h')
+}
 export default function ModalCheckingBooking({entry}){
 
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        }) + " " + new Date(date).toLocaleTimeString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }).replace(':', 'h')
 
-    }
     return (
         <>
         <Button

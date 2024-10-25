@@ -2,19 +2,17 @@ import {FormProvider, useForm} from 'react-hook-form';
 import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from './SelectField';
-import SubmitButton from './SubmitButton';
 import React, {useEffect, useState} from "react";
 import {Time} from "@internationalized/date";
-import {Card, Divider, Skeleton, Switch} from "@nextui-org/react";
+import {Skeleton, Switch} from "@nextui-org/react";
 import TimeInputCompatible from "@/app/components/form/timeInputCompatible";
 import DateRangePickerCompatible from "@/app/components/form/DateRangePickerCompatible";
 import AvailableTable from "@/app/components/tables/AvailableTable";
-import Title from "@/app/components/utils/title";
-import ReservationFormConfirmation from "@/app/components/form/ReservationFormConfirmation";
 import {AlternativeMenu} from "@/app/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import ReservationUserListing from "@/app/components/reservations/Listings";
+
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
     category: yup.string().required('Vous devez choisir une ressource'),
@@ -22,10 +20,10 @@ const schemaFirstPart = yup.object().shape({
     date: yup.object().required('Vous devez choisir une date'),
     allday: yup.object().optional(),
     starthour: yup.object().shape({
-        hour: yup.number().min(8, 'L\'heure de début doit être au minimum 8h').max(19, 'L\'heure de début doit être au maximum 19h')
+        hour: yup.number().min(8, 'L\'heure de début doit être au minimum 8h').max(19, 'L\'heure de début doit être au maximum 19h').required()
     }).required('Vous devez choisir une heure de début'),
     endhour: yup.object().shape({
-        hour: yup.number().min(8, 'L\'heure de fin doit être au minimum 8h').max(19, 'L\'heure de fin doit être au maximum 19h')
+        hour: yup.number().min(8, 'L\'heure de fin doit être au minimum 8h').max(19, 'L\'heure de fin doit être au maximum 19h').required()
     }).required('Vous devez choisir une heure de fin')
 }).test('is-valid-time-range', 'L\'heure de début doit être inférieure à l\'heure de fin', function (value) {
     const { date, starthour, endhour } = value;
@@ -108,10 +106,11 @@ const ReservationSearch = ({session}) => {
     useEffect(() => {
         if(isSubmitted && matchingEntries){
             const cpAvailableResources = [...resources];
+            console.log(matchingEntries);
             const filteredResources = cpAvailableResources.filter(resource =>
                 !matchingEntries?.some(entry => entry.resourceId === resource.id)
             );
-            setAvailableResources(filteredResources);
+            setAvailableResources(filteredResources || null);
             setIsSubmitted(false);
         }
     }, [isSubmitted, matchingEntries, resources, setAvailableResources, setIsSubmitted]);
@@ -132,11 +131,13 @@ const ReservationSearch = ({session}) => {
                 endDate.setMonth(data.date.end.month-1);
                 endDate.setDate(data.date.end.day);
                 startDate.setTime(data.endhour.hour);
-                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`)
+                console.log(data.ressource)
+                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource && '&resourceId='+data.ressource}`)
                     .then(response => response.text())
                     .then(text => {
                         try {
                             const data = JSON.parse(text);
+                            console.log(data);
                             setMatchingEntries(data);
                         } catch (error) {
                             console.error('Failed to parse JSON:', error);
@@ -225,7 +226,7 @@ const ReservationSearch = ({session}) => {
         <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode}/>
         <div className="flex flex-col md:w-full">
             <div className="flex flex-col justify-center items-center">
-                    {(!summary & searchMode) &&  (
+                    {(searchMode) &&  (
                         <FormProvider {...methods}>
                         <form onSubmit={methods.handleSubmit(onSubmit)} className={`${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200`}>
                             <div className="flex flex-row">
@@ -348,13 +349,12 @@ const ReservationSearch = ({session}) => {
                             )}
                     </FormProvider>
                         )}
-                    {/*{summary && (<ReservationFormConfirmation setSummary={setSummary} />)}*/}
-                {!summary & searchMode &&  (
+                {searchMode &&  (
                     <div className="flex 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                         <div className="h-full w-full space-y-5 p-2 rounded-lg">
                             <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                 {availableResources && (
-                                    <AvailableTable resources={availableResources} methods={methods} setSummary={setSummary}/>
+                                    <AvailableTable resources={availableResources} methods={methods} setSummary={setSummary} data={data}/>
                                 )}
                                 {(!isSubmitted && !availableResources) ?? (<AvailableTable resources={availableResources}/>)}
                             </div>
