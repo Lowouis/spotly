@@ -7,7 +7,7 @@ import {Button} from "@nextui-org/button";
 import {ExclamationTriangleIcon} from "@heroicons/react/24/outline";
 
 
-export default function ReservationFormConfirmation({}) {
+export default function ReservationFormConfirmation({setSummary}) {
 
     const [comment, setComment] = useState(false);
     const  handleCommentSwitch = () => {
@@ -15,8 +15,16 @@ export default function ReservationFormConfirmation({}) {
         //add comment form
         setComment(!comment);
     }
+
+    const handleReturn = () => {
+        console.log("Return");
+        setSummary(false);
+    }
+    const handleConfirmation = () => {
+        console.log("Confirmation");
+    }
     return (
-        <div className="flex flex-col space-y-6">
+        <div className="flex flex-col space-y-6 my-4">
             <Title title="Récapitulatif de votre réservation #3244" />
             <div>
                 <span className={`text-xl font-bold text-slate-500`}>
@@ -53,7 +61,7 @@ export default function ReservationFormConfirmation({}) {
                     isDisabled={!comment}
                     id="description"
                     isHidden={!comment}
-                    label="Description"
+
                     labelPlacement="outside"
                     placeholder="Ecrire un commentaire"
                 />
@@ -85,8 +93,8 @@ export default function ReservationFormConfirmation({}) {
                 </span>
                 </div>
                 <div className="flex flex-row space-x-2">
-                    <Button color="secondary">Retour</Button>
-                    <Button color="primary">Confirmer la réservation</Button>
+                    <Button size="lg" color="secondary" onClick={handleReturn}>Retour</Button>
+                    <Button size="lg" color="primary" onClick={handleConfirmation}>Confirmer la réservation</Button>
                 </div>
             </div>
         </div>

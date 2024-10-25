@@ -14,19 +14,20 @@ export default function DateRangePickerCompatible({name, label, disabled=false})
     return (
         <I18nProvider locale="fr-FR">
             <DateRangePicker
+                size="lg"
                 id={name}
+                aria-label={label}
+                variant="bordered"
                 name={name}
                 isRequired
                 hideTimeZone
-                className="text-black mb-2 parent-class-black"
+                className="my-2 w-full"
                 minValue={today(getLocalTimeZone())}
                 color="primary"
-                isDisabled={false}
-                labelPlacement="outside"
-                label="Choisir une date"
+                isDisabled={disabled}
                 onChange={handleChange}
                 zone={getLocalTimeZone()}
-            />
+                radius="lg"/>
         </I18nProvider>
     )
 }

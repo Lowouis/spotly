@@ -1,10 +1,10 @@
 'use client';
 import {useSession} from "next-auth/react";
-import {AlternativeMenu} from "@/app/components/menu";
-import MakeReservation from "@/app/reservation";
+
 import {useRouter} from 'next/navigation'
 import {useEffect, useState} from "react";
 import {CircularProgress} from "@nextui-org/progress";
+import {ReservationSearch} from "@/app/components/form/ReservationSearch";
 
 export default function App() {
     const router = useRouter()
@@ -29,14 +29,16 @@ export default function App() {
             </div>
         ) : (
             <div className="mx-auto font-[family-name:var(--font-geist-sans)]">
-                <main className="flex flex-col justify-center items-center sm:items-start m-3">
-                    <div className="flex flex-col m-1 w-full justify-center items-center mx-auto">
-                        <AlternativeMenu user={session?.user}/>
-                        <MakeReservation session={session}/>
+                <main className="flex flex-col justify-center items-center sm:items-start">
+                    <div className="flex flex-col w-full justify-center items-center mx-auto">
+                        <div className="flex flex-col w-full">
+                                    {/*<AlternativeMenu user={session?.user}/>*/}
+                                    <ReservationSearch session={session}/>
+                        </div>
                     </div>
                 </main>
             </div>
-        );
+);
 
 
 }

@@ -1,14 +1,27 @@
 import {useEffect, useState} from "react";
 import Title from "@/app/components/utils/title";
-import {Accordion, AccordionItem} from "@nextui-org/react";
+import {
+    Accordion,
+    AccordionItem,
+    Modal, ModalBody,
+    ModalContent, ModalFooter,
+    ModalHeader,
+    ScrollShadow,
+    Skeleton,
+    Tooltip
+} from "@nextui-org/react";
+import {ExclamationTriangleIcon, InformationCircleIcon} from "@heroicons/react/24/outline";
+import {Button} from "@nextui-org/button";
+import {EyeIcon, KeyIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
+import ModalCheckingBooking from "@/app/components/ModalCheckingBooking";
 
 
 export default function ReservationUserListing({user}) {
 
-    const [entries, setEntries] = useState(null);
+    const [entries, setEntries] = useState();
     useEffect(() => {
-        const fetchEntries = ()=> {
-            if(user){
+        const fetchEntries = () => {
+            if (user) {
                 fetch(`http://localhost:3000/api/entry/?userId=${user.id}`)
                     .then(response => response.text())
                     .then(text => {
@@ -32,46 +45,31 @@ export default function ReservationUserListing({user}) {
         fetchEntries();
     }, [user, setEntries]);
 
-    const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        }) +" "+new Date(date).toLocaleTimeString('fr-FR', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        }).replace(':', 'h')
 
+
+    const isEntryDelayed = (endDate) => {
+        return Date.now() > new Date(endDate).getTime()
     }
-
-    return(
-        <div className="mx-2 my-1 lg:w-1/3 lg:flex lg:flex-col md:w-full lg:items-start lg:justify-start">
-            <Title  title="Mes réservations" />
-            {entries && entries.length > 0 ? (
-                <Accordion>
-                    {entries.map(entry=> (
-                        <AccordionItem
-                            startContent="A"
-                            variant="bordered" key={entry.id} aria-label="Accordion 1" title={entry.resource.name}>
-                            <div className="flex-row flex w-full">
-                                <div className="flex w-1/5 flex-col">
-                                    <div className="">
-                                        <span className="font-bold mr-1">Début</span>
-                                    </div>
-                                    <div className="flex w-1/2">
-                                        <span className="font-bold mr-1">Fin</span>
+    return (
+        <div className="mx-2 my-1 lg:w-1/3 lg:flex lg:flex-col md:w-full lg:items-start lg:justify-start ">
+            {entries && entries?.length > 0 ? (
+                <div className="w-full flex justify-between items-center">
+                    <div className="w-full flex flex-col">
+                        {entries?.map((entry) => (
+                            <div key={entry.id}
+                                 className="w-full flex justify-between items-center py-3 bg-neutral-50 hover:bg-neutral-100 p-1 rounded-lg mb-2">
+                                <div className="flex flex-row space-x-6 mx-3 items-center">
+                                    <div className="text-xl font-bold">
+                                        {entry.resource.name}
                                     </div>
                                 </div>
-                                <div className="flex flex-col w-3/5">
-                                    <div className="flex flex-row">{formatDate(entry.startDate)}</div>
-                                    <div className="flex flex-row">{formatDate(entry.endDate)}</div>
+                                <div>
+                                    <ModalCheckingBooking entry={entry}/>
                                 </div>
                             </div>
-
-                        </AccordionItem>
-                    ))}
-                </Accordion>
+                        ))}
+                    </div>
+                </div>
             ) : (
                 <div>
                     <h1 className="text-2xl text-center">Aucune réservation</h1>
@@ -79,57 +77,7 @@ export default function ReservationUserListing({user}) {
             )}
         </div>
     )
-
-
 }
-/*
 
-<ScrollShadow hideScrollBar >
-    <Table hideHeader aria-label="Entries listings" shadow="none">
-        <TableHeader>
-            <TableColumn>ressource</TableColumn>
-            <TableColumn>date de début</TableColumn>
-            <TableColumn>action</TableColumn>
-        </TableHeader>
-        <TableBody>
-            {entries.map((entry, index)=>
-                (
-                    <TableRow key={index}>
-                        <TableCell>{entry.resource.name}</TableCell>
-                        <TableCell >
-                            <Tooltip content={formatDate(entry.endDate)} color="danger">
-                                <Button color="primary">
-                                    { new Date(entry.startDate).toLocaleDateString('fr-FR', {
-                                        day: '2-digit',
-                                        month: 'short',
-                                        year: 'numeric'
-                                    }) }
-                                    <Chip color="default">
-                                        {
-                                            new Date(entry.startDate).toLocaleTimeString('fr-FR', {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                hour12: false
-                                            }).replace(':', 'h')}
-                                    </Chip>
-                                </Button>
-                            </Tooltip>
 
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex flex-row">
-                                <Button size="sm" color="primary" className="mr-1" onClick={()=>console.log("Consulter fiche XX")}>
-                                    <EyeIcon className="h-5 w-5"/>
-                                </Button>
-                                <Button size="sm" color="danger" onClick={()=>console.log("Supprimer résa XX")}>
-                                    <TrashIcon className="h-5 w-5"/>
-                                </Button>
-                            </div>
 
-                        </TableCell>
-                    </TableRow>
-                )
-            )}
-        </TableBody>
-    </Table>
-</ScrollShadow>*/

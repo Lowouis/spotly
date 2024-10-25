@@ -1,11 +1,11 @@
 import React from 'react';
 import {Button} from "@nextui-org/button";
 
-const SubmitButton = ({ label }) => {
+const SubmitButton = ({ label, color='primary' }) => {
     return (
         <Button
-            color={"primary"}
-            className="w-full"
+            color={color}
+            className="block m-auto p-0"
             type="submit"
         >
             {label}
