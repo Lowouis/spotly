@@ -7,17 +7,18 @@ export default async function handler(req, res) {
         const { userId, startDate, endDate, siteId, categoryId, resourceId, otherParams } = req.query;
         const entries = await prisma.entry.findMany({
             where: {
-                userId: userId && userId,
+                ...(userId && {userId : userId}),
+                ...(resourceId && {
+                    resourceId: resourceId
+                }),
                 ...(siteId && categoryId && {
                     resource : {
                         domains : {
                             id: siteId
                         },
                         categoryId: categoryId,
-                        ...(resourceId && {
-                            id: resourceId
-                        })
-                    }
+                    },
+
 
                 }),
                 ...(startDate && endDate && {

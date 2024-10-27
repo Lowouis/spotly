@@ -16,7 +16,7 @@ import ReservationUserListing from "@/app/components/reservations/Listings";
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
     category: yup.string().required('Vous devez choisir une ressource'),
-    ressource: yup.string().optional(),
+    ressource: yup.string().optional().default(null).nullable(),
     date: yup.object().required('Vous devez choisir une date'),
     allday: yup.object().optional(),
     starthour: yup.object().shape({
@@ -102,18 +102,17 @@ const ReservationSearch = ({session}) => {
     const handleSearchMode = (tab) => {
         setSearchMode(tab==='search');
     }
-
     useEffect(() => {
         if(isSubmitted && matchingEntries){
+
             const cpAvailableResources = [...resources];
-            console.log(matchingEntries);
             const filteredResources = cpAvailableResources.filter(resource =>
-                !matchingEntries?.some(entry => entry.resourceId === resource.id)
-            );
+                !matchingEntries?.some(entry => data.ressource === null ? (resource.id === parseInt(data.ressource) && entry.resourceId === resource.id) : entry.resourceId !== resource.id));
+            console.log("AFTER FILTER : ",filteredResources);
             setAvailableResources(filteredResources || null);
             setIsSubmitted(false);
         }
-    }, [isSubmitted, matchingEntries, resources, setAvailableResources, setIsSubmitted]);
+    }, [data, isSubmitted, matchingEntries, resources, setAvailableResources, setIsSubmitted]);
 
 
     useEffect(() => {
@@ -131,13 +130,12 @@ const ReservationSearch = ({session}) => {
                 endDate.setMonth(data.date.end.month-1);
                 endDate.setDate(data.date.end.day);
                 startDate.setTime(data.endhour.hour);
-                console.log(data.ressource)
-                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource && '&resourceId='+data.ressource}`)
+                //
+                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.ressource !== undefined ? '&resourceId='+data.ressource : ''}`)
                     .then(response => response.text())
                     .then(text => {
                         try {
                             const data = JSON.parse(text);
-                            console.log(data);
                             setMatchingEntries(data);
                         } catch (error) {
                             console.error('Failed to parse JSON:', error);
@@ -220,7 +218,6 @@ const ReservationSearch = ({session}) => {
     if (!methods) {
         return <p>Error: Form could not be initialized</p>;
     }
-    console.log(searchMode)
     return (
         <div className="py-4 bg-gradient-to-b from-neutral-50 ">
         <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode}/>
@@ -245,6 +242,7 @@ const ReservationSearch = ({session}) => {
                                             options={categories}
                                             className=""
                                         />
+                                        {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESSOURCES   */}
                                         <SelectField
                                             name="ressource"
                                             label="Ressources"

@@ -15,8 +15,8 @@ const geistMono = localFont({
 });
 
 export const metadata = {
-  title: "Chronos",
-  description: "Made for booking ressources ",
+    title: "Chronos",
+    description: "Made for booking ressources ",
 };
 
 export default function RootLayout({children}) {
