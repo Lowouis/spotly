@@ -15,7 +15,7 @@ export default async function handler(req, res) {
                     }),
                     ...(siteId && categoryId && {
                         resource : {
-                            ... (resourceId ? {
+                            ... (resourceId!=null ? {
                                 id: resourceId
                             } : {
                                 domains : {
@@ -27,20 +27,24 @@ export default async function handler(req, res) {
 
 
                     }),
-                    ...(startDate  && {
-                        startDate: {
-                            gte: startDate
-                        },
-                    }),
-                    ...( endDate && {
-                        endDate: {
-                            lte: endDate
-                        }
-                    }),
+
+                        ...(startDate  && {
+                            startDate: {
+                                lte: endDate
+                            },
+                        }),
+                        ...( endDate && {
+                            endDate: {
+                                gte: startDate
+                            }
+                        }),
+
+
 
                 },
                 include: { resource: { include: { domains : true } } }
             });
+            console.log(entries);
             res.status(200).json(entries);
         } else if (req.method === "POST") {
 
@@ -79,7 +83,7 @@ export default async function handler(req, res) {
 
 
     } catch (error) {
-        console.error("Failed to parse JSON:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+        console.error("Failed to parse JSON:");
+        res.status(500).json({error: "Failed to parse JSON"});
     }
 }

@@ -12,7 +12,7 @@ export default function AvailableTable({resources, methods, data, setData, sessi
     return (
         <div className="w-full flex justify-between items-center">
             <div className="w-full flex flex-col">
-                {resources?.map((resource) => (
+                {resources.length > 0 ? resources?.map((resource) => (
                     <div key={resource.id}  className="w-full flex justify-between items-center py-3 bg-neutral-50 hover:bg-neutral-100 p-1 rounded-lg mb-2">
                         <div className="flex flex-row space-x-6 mx-3 items-center">
                             <div className="text-xl font-normal">
@@ -61,7 +61,13 @@ export default function AvailableTable({resources, methods, data, setData, sessi
                             </Button>
                         </div>
                     </div>
-                ))}
+
+                )) : (
+                    <div className="w-full flex justify-center items-center">
+                        {/* A AJOUTER PLUS TARD ICI LES RESSOURCES NON DISPONIBLE AVEC LE NOM DE L'UTILISATEUR*/}
+                        <div className="text-2xl font-semibold text-neutral-600">Aucune ressource disponible</div>
+                    </div>
+                )}
             </div>
             <ModalValidBooking data={data} onOpen={onOpen} isOpen={isOpen}  onOpenChange={onOpenChange} session={session}/>
         </div>

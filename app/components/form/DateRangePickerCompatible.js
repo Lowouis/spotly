@@ -12,10 +12,12 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
     };
 
 
+
     return (
         <I18nProvider locale="fr-FR">
             {!alternative ? (
                 <DateRangePicker
+                visibleMonths={2}
                 size="lg"
                 id={name}
                 aria-label={label}
@@ -30,7 +32,7 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
                 onChange={handleChange}
                 zone={getLocalTimeZone()}
                 radius="lg"
-            />) : (
+                />) : (
                 <DateRangePicker
                     onChange={handleChange}
                     zone={getLocalTimeZone()}
@@ -49,6 +51,7 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
                     isRequired={true}
                     isDisabled={false}
                     variant="bordered"
+
                 />
             )}
 

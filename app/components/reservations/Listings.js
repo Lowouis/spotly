@@ -16,34 +16,8 @@ import {EyeIcon, KeyIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid
 import ModalCheckingBooking from "@/app/components/ModalCheckingBooking";
 
 
-export default function ReservationUserListing({user}) {
+export default function ReservationUserListing({entries}) {
 
-    const [entries, setEntries] = useState();
-    useEffect(() => {
-        const fetchEntries = () => {
-            if (user) {
-                fetch(`http://localhost:3000/api/entry/?userId=${user.id}`)
-                    .then(response => response.text())
-                    .then(text => {
-                        try {
-                            const data = JSON.parse(text)
-                            //.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                            setEntries(data);
-                        } catch (error) {
-                            console.error('Failed to parse JSON:', error);
-                            console.error('Response text:', text);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                    });
-            } else {
-                setEntries(null);
-            }
-        }
-
-        fetchEntries();
-    }, [user, setEntries]);
 
 
 

@@ -41,6 +41,7 @@ const ReservationSearch = ({session}) => {
     });
     const [summary, setSummary] = useState(false);
     const [isLoaded, setIsLoaded] = useState(true);
+    const [userEntries, setUserEntries] = useState();
 
 
     const {watch, setValue} = methods;
@@ -63,6 +64,30 @@ const ReservationSearch = ({session}) => {
     const handleSearchMode = (tab) => {
         setSearchMode(tab==='search');
     }
+    useEffect(() => {
+        const fetchEntries = () => {
+            if (session?.user) {
+                fetch(`http://localhost:3000/api/entry/?userId=${session.user.id}`)
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            const data = JSON.parse(text)
+                            setUserEntries(data);
+                        } catch (error) {
+                            console.error('Failed to parse JSON:', error);
+                            console.error('Response text:', text);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                    });
+            } else {
+                setUserEntries(null);
+            }
+        }
+
+        fetchEntries();
+    }, [session, setUserEntries]);
     useEffect(() => {
         if(isSubmitted && matchingEntries){
 
@@ -90,11 +115,12 @@ const ReservationSearch = ({session}) => {
                 const endDate = constructDate(data.date.end);
                 console.log(startDate)
 
-                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.ressource !== undefined ? '&resourceId='+data.ressource : ''}`)
+                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.ressource !== null ? '&resourceId='+data.ressource : ''}`)
                     .then(response => response.text())
                     .then(text => {
                         try {
                             const data = JSON.parse(text);
+                            console.log(data);
                             setMatchingEntries(data);
                         } catch (error) {
                             console.error('Failed to parse JSON:', error);
@@ -197,7 +223,7 @@ const ReservationSearch = ({session}) => {
     //controlError()
     return (
         <div className="py-4 bg-gradient-to-b from-neutral-50 ">
-        <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode}/>
+        <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode} userEntriesQuantity={userEntries?.length}/>
         <div className="flex flex-col md:w-full">
             <div className="flex flex-col justify-center items-center">
                     {(searchMode) &&  (
@@ -304,11 +330,11 @@ const ReservationSearch = ({session}) => {
                             </div>
                         </form>
 
-                            {!isSubmitted && !availableResources && (
-                                <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
-                                    Pour commencer faite une recherche
-                                </div>
-                            )}
+                        {!isSubmitted && !availableResources && (
+                            <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
+                                Pour commencer faite une recherche
+                            </div>
+                        )}
                     </FormProvider>
                         )}
                 {searchMode &&  (
@@ -317,13 +343,13 @@ const ReservationSearch = ({session}) => {
                             <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                 {availableResources && (
                                     <AvailableTable setData={setData} resources={availableResources} methods={methods} setSummary={setSummary} data={data} session={session}/>
-                                )}
-                                {(!isSubmitted && !availableResources) ?? (<AvailableTable resources={availableResources}/>)}
+                                )
+                                }
                             </div>
                         </div>
                     </div>
                 )}
-                {!searchMode && (<ReservationUserListing user={session?.user}/>)}
+                {!searchMode && (<ReservationUserListing entries={userEntries}/>)}
 
             </div>
         </div>
