@@ -5,16 +5,44 @@ import {
     DropdownTrigger, getKeyValue,
     Table, TableBody, TableCell,
     TableColumn,
-    TableHeader, TableRow
+    TableHeader, TableRow, useDisclosure
 } from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import React from "react";
 import {EllipsisVerticalIcon} from "@heroicons/react/24/outline";
-import {ArrowsRightLeftIcon, PlusCircleIcon} from "@heroicons/react/24/solid";
+import {ArrowsRightLeftIcon, EyeIcon, PencilIcon, PlusCircleIcon, TrashIcon} from "@heroicons/react/24/solid";
+import * as yup from "yup";
+import AddItem from "@/app/components/admin/communs/AddItem";
+import {useForm} from "react-hook-form";
+import {yupResolver} from "@hookform/resolvers/yup";
+import ItemRow from "@/app/components/admin/communs/ActionMenu";
+import ActionMenu from "@/app/components/admin/communs/ActionMenu";
+
+const domainSchema = yup.object().shape({
+    name: yup.string().required(),
+    code: yup.string().optional(),
+    address: yup.string(),
+    street_number: yup.string(),
+    country: yup.string(),
+    city: yup.string(),
+    zip: yup.string(),
+    phone: yup.string(),
+});
+
+const categorySchema = yup.object().shape({
+    name: yup.string().required(),
+    description: yup.string().optional(),
+    comment: yup.string(),
+    });
+
 
 
 export default function ItemsOnTable({items, name}) {
-    console.log(items)
+    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+    const methods = useForm({
+        resolver: yupResolver(categorySchema),
+        mode: 'onSubmit',
+    });
     return (
         <div className="mx-5">
             <div className="flex flex-row">
@@ -37,9 +65,11 @@ export default function ItemsOnTable({items, name}) {
                             disallowEmptySelection
                             selectionMode="multiple"
                         >
-                            {items && Object.keys(items[0]).map((item, index) => (
-                                <DropdownItem key={index}>{item}</DropdownItem>
-                            ))}
+                            {items && Object.keys(items[0]).map((item, index) => {
+                                if(typeof item !== 'object') {
+                                   <DropdownItem key={index}>{item}</DropdownItem>
+                                }
+                            })}
                         </DropdownMenu>
                     </Dropdown>
                     <Dropdown>
@@ -60,11 +90,12 @@ export default function ItemsOnTable({items, name}) {
                             selectionMode="multiple"
                         >
                             {items && Object.keys(items[0]).map((item, index) => (
-                                <DropdownItem key={index}>{item}</DropdownItem>
+                                typeof item !== "object" && <DropdownItem key={index}>{item}</DropdownItem>
                             ))}
                         </DropdownMenu>
                     </Dropdown>
-                    <Button size="md" color="primary" endContent={<PlusCircleIcon height={24} width={24}/>}>Ajouter</Button>
+                    <Button size="md" color="primary" onPress={onOpen} endContent={<PlusCircleIcon height={24} width={24}/>}>Ajouter</Button>
+                    <AddItem isOpen={isOpen} onOpenChange={onOpenChange} schema={domainSchema} methods={methods}/>
                 </div>
             </div>
             {
@@ -79,7 +110,7 @@ export default function ItemsOnTable({items, name}) {
                         <TableHeader>
                             {Object.keys(items[0]).map((item, index) => (
                                 <TableColumn key={index} align="left">
-                                    {item}
+                                    {typeof item !== "object" && item}
                                 </TableColumn>
                             ))}
                             <TableColumn key="actions" align="right">
@@ -88,8 +119,8 @@ export default function ItemsOnTable({items, name}) {
 
                         </TableHeader>
                         <TableBody>
-                            {items.map((item) => (
-                                <TableRow key={item.key}>
+                            {items.map((item, index) => (
+                                <TableRow key={index}>
                                     {Object.keys(item).map((key) => (
                                         <TableCell key={key}>
                                             {item[key]}
@@ -98,15 +129,11 @@ export default function ItemsOnTable({items, name}) {
                                     <TableCell key={`actions-${item.key}`}>
                                         <Dropdown>
                                             <DropdownTrigger>
-                                                <Button isIconOnly size="sm" variant="light">
+                                                <Button isIconOnly size="sm" variant="light" >
                                                     <EllipsisVerticalIcon width={24} height={24}/>
                                                 </Button>
                                             </DropdownTrigger>
-                                            <DropdownMenu>
-                                                <DropdownItem>View</DropdownItem>
-                                                <DropdownItem>Edit</DropdownItem>
-                                                <DropdownItem color="danger">Delete</DropdownItem>
-                                            </DropdownMenu>
+                                            <ActionMenu values={item} />
                                         </Dropdown>
                                     </TableCell>
                                 </TableRow>

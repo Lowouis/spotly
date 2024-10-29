@@ -1,18 +1,48 @@
+'use client';
 import {Button} from "@nextui-org/button";
 import {Checkbox, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch, Textarea} from "@nextui-org/react";
 import {formatDate} from "@/app/components/ModalCheckingBooking";
 import {ExclamationTriangleIcon} from "@heroicons/react/24/outline";
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import { constructDate } from "@/app/utils/global";
 
-
-export default function ModalValidBooking({data, isOpen, onOpenChange}) {
+export default function ModalValidBooking({data, isOpen, onOpenChange, session}) {
     const [comment, setComment] = useState(false);
+    const [push, setPush] = useState(false);
     const  handleCommentSwitch = () => {
-        console.log("Switched");
         //add comment form
         setComment(!comment);
     }
-    console.log(data)
+
+
+    useEffect(() => {
+        if(push){
+            const startDate = constructDate(data.date.start, data.starthour);
+            const endDate = constructDate(data.date.end, data.endhour);
+            fetch('http://localhost:3000/api/entry', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    startDate   : startDate,
+                    endDate     : endDate,
+                    category    : data.category,
+                    site        : data.site,
+                    resourceId  : data.resourceId,
+                    userId      : session.user.id,
+                }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    setPush(false)
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                })
+        }
+
+    }, [data, setPush, push]);
     return (<>
         <Modal
             shadow="md"
@@ -82,7 +112,7 @@ export default function ModalValidBooking({data, isOpen, onOpenChange}) {
                             <Button color="danger" variant="flat" size="lg" onPress={onClose}>
                             Annuler
                             </Button>
-                            <Button color="primary" onPress={onClose} size="lg">
+                            <Button onPressEnd={()=>setPush(true)} color="primary" onPress={onClose} size="lg">
                                 Réserver
                             </Button>
                         </ModalFooter>

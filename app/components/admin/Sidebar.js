@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import {AdjustmentsHorizontalIcon, Cog6ToothIcon} from "@heroicons/react/24/solid";
 import {Button} from "@nextui-org/button";

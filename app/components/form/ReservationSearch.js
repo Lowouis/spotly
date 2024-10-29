@@ -3,7 +3,7 @@ import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
-import {Time} from "@internationalized/date";
+import {parseZonedDateTime, Time} from "@internationalized/date";
 import {Skeleton, Switch} from "@nextui-org/react";
 import TimeInputCompatible from "@/app/components/form/timeInputCompatible";
 import DateRangePickerCompatible from "@/app/components/form/DateRangePickerCompatible";
@@ -12,60 +12,21 @@ import {AlternativeMenu} from "@/app/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import ReservationUserListing from "@/app/components/reservations/Listings";
+import { constructDate } from "../../utils/global";
+import {DateRangePicker} from "@nextui-org/date-picker";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
     category: yup.string().required('Vous devez choisir une ressource'),
     ressource: yup.string().optional().default(null).nullable(),
     date: yup.object().required('Vous devez choisir une date'),
-    allday: yup.object().optional(),
-    starthour: yup.object().shape({
-        hour: yup.number().min(8, 'L\'heure de début doit être au minimum 8h').max(19, 'L\'heure de début doit être au maximum 19h').required()
-    }).required('Vous devez choisir une heure de début'),
-    endhour: yup.object().shape({
-        hour: yup.number().min(8, 'L\'heure de fin doit être au minimum 8h').max(19, 'L\'heure de fin doit être au maximum 19h').required()
-    }).required('Vous devez choisir une heure de fin')
-}).test('is-valid-time-range', 'L\'heure de début doit être inférieure à l\'heure de fin', function (value) {
-    const { date, starthour, endhour } = value;
-    if (date && date.start && date.end && starthour && endhour) {
-        const isSameDay = date.start.year === date.end.year &&
-            date.start.month === date.end.month &&
-            date.start.day === date.end.day;
-        if (isSameDay) {
-            return starthour.hour < endhour.hour;
-        }
-    }
-    return true;
-});
+    });
 
-export function anyResourceAvailable(entries){
-
-
-    return (
-        <div>
-            <Skeleton isLoaded={true} className="rounded-lg w-full">
-                <div className="rounded-lg bg-green-100 p-2 flex justify-center items-center flex-col">
-                    <div className="text-xl">
-                        Ressources disponible
-                    </div>
-                </div>
-            </Skeleton>
-            <Skeleton isLoaded={true} className="rounded-lg w-full">
-                <div className="rounded-lg p-2 flex justify-center items-center flex-col w-full">
-                    <AvailableTable entries={entries} />
-                </div>
-            </Skeleton>
-        </div>
-    )
-}
 
 const ReservationSearch = ({session}) => {
 
     // switch search or reservation mode
     const [searchMode, setSearchMode] = useState(true);
-
-
-
     const [domains, setDomains] = useState();
     const [categories, setCategories] = useState();
     const [resources, setResources] = useState();
@@ -106,10 +67,15 @@ const ReservationSearch = ({session}) => {
         if(isSubmitted && matchingEntries){
 
             const cpAvailableResources = [...resources];
-            const filteredResources = cpAvailableResources.filter(resource =>
-                !matchingEntries?.some(entry => data.ressource === null ? (resource.id === parseInt(data.ressource) && entry.resourceId === resource.id) : entry.resourceId !== resource.id));
-            console.log("AFTER FILTER : ",filteredResources);
-            setAvailableResources(filteredResources || null);
+            const filteredResourcesByMatches = cpAvailableResources.filter(resource =>
+                !matchingEntries?.some(entry =>  entry.resourceId === resource.id));
+
+            const filteredResourcesByResources = data?.ressource !== null
+                    ? filteredResourcesByMatches?.filter(resource => data.ressource === resource.id)
+                    : filteredResourcesByMatches;
+
+
+            setAvailableResources(filteredResourcesByResources || null);
             setIsSubmitted(false);
         }
     }, [data, isSubmitted, matchingEntries, resources, setAvailableResources, setIsSubmitted]);
@@ -120,17 +86,10 @@ const ReservationSearch = ({session}) => {
         const fetchMatchingEntries = () => {
             if(isSubmitted && data){
 
-                const startDate = new Date();
-                startDate.setFullYear(data.date.start.year);
-                startDate.setMonth(data.date.start.month-1);
-                startDate.setDate(data.date.start.day);
-                startDate.setTime(data.starthour.hour);
-                const endDate = new Date();
-                endDate.setFullYear(data.date.end.year);
-                endDate.setMonth(data.date.end.month-1);
-                endDate.setDate(data.date.end.day);
-                startDate.setTime(data.endhour.hour);
-                //
+                const startDate = constructDate(data.date.start);
+                const endDate = constructDate(data.date.end);
+                console.log(startDate)
+
                 fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.ressource !== undefined ? '&resourceId='+data.ressource : ''}`)
                     .then(response => response.text())
                     .then(text => {
@@ -210,7 +169,10 @@ const ReservationSearch = ({session}) => {
     }, [setDomains, setCategories, setResources, watchSite, watchCategory, watch, data, isSubmitted, availableResources, setMatchingEntries]);
 
     
-
+    const handleOnReset = ()=>{
+        setValue('resource', null);
+        setData({...data, resource: null});
+    }
     const onSubmit = (data) => {
         setData(data);
         setIsSubmitted(true);
@@ -218,6 +180,21 @@ const ReservationSearch = ({session}) => {
     if (!methods) {
         return <p>Error: Form could not be initialized</p>;
     }
+
+    const controlError = ()=>{
+        console.log("------------------------------------");
+        console.log("YUP SIDE")
+        console.log("site", watch('site'));
+        console.log("category",watch('category'));
+        console.log("ressource",watch('ressource'));
+        console.log("date",watch('date'));
+        console.log("start hour",watch('starthour'));
+        console.log("end hour",(watch('endhour')));
+        console.log("STATES SIDE");
+        console.log(data);
+        console.log("------------------------------------");
+    }
+    //controlError()
     return (
         <div className="py-4 bg-gradient-to-b from-neutral-50 ">
         <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode}/>
@@ -241,6 +218,7 @@ const ReservationSearch = ({session}) => {
                                             label="Catégorie"
                                             options={categories}
                                             className=""
+
                                         />
                                         {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESSOURCES   */}
                                         <SelectField
@@ -249,28 +227,13 @@ const ReservationSearch = ({session}) => {
                                             options={resources}
                                             disabled={!resources}
                                             isRequired={false}
-                                            className=""
+                                            onReset={handleOnReset}
                                         />
-                                        <DateRangePickerCompatible name={"date"}/>
-                                    </div>
-                                    <div className="flex flex-row space-x-2 w-full">
-                                        <div className="flex flex-col justify-center items-center">
-                                            <span className="text-xs">Journée</span>
-                                            <Switch size="sm" variant="bordered" name="allday" id="allday" color="primary" className="mb-2"
-                                                    onClick={(e) => {
-                                                        handleDaySwitch()
-                                                    }}></Switch>
+                                        <DateRangePickerCompatible name={"date"} alternative={true}/>
 
-                                        </div>
-
-                                        <TimeInputCompatible hidden={daySwitch}
-                                                             name="starthour"/>
-                                        <TimeInputCompatible hidden={daySwitch}
-                                                             name="endhour"
-                                                             clockColor="red"/>
 
                                         <div className="flex flex-col justify-center items-center">
-                                            <span className="text-xs">Récursif</span>
+                                            <span className="text-xs">Récurrent</span>
                                             <Switch
                                                 size="sm"
                                                 name="allday"
@@ -284,7 +247,8 @@ const ReservationSearch = ({session}) => {
 
                                             </Switch>
                                         </div>
-
+                                    </div>
+                                    <div className={`flex flex-row space-x-2 w-full ${!isRecurrent && "hidden"}`}>
                                         <SelectField
                                             name="recursive_unit"
                                             label="Fréquence"
@@ -352,7 +316,7 @@ const ReservationSearch = ({session}) => {
                         <div className="h-full w-full space-y-5 p-2 rounded-lg">
                             <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                 {availableResources && (
-                                    <AvailableTable resources={availableResources} methods={methods} setSummary={setSummary} data={data}/>
+                                    <AvailableTable setData={setData} resources={availableResources} methods={methods} setSummary={setSummary} data={data} session={session}/>
                                 )}
                                 {(!isSubmitted && !availableResources) ?? (<AvailableTable resources={availableResources}/>)}
                             </div>

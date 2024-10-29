@@ -2,6 +2,7 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 
 const InputField = ({hidden=false ,name, label, type = 'text', placeholder, value}) => {
+
     const { register, formState: { errors } } = useFormContext();
 
     return (

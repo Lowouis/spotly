@@ -5,14 +5,9 @@ import ModalValidBooking from "@/app/components/ModalValidBooking";
 import React from "react";
 
 
-export default function AvailableTable({resources, methods, setSummary, data}) {
+export default function AvailableTable({resources, methods, data, setData, session}) {
     const {watch, setValue} = methods;
-    const defaultContent =
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
-    const setSelectedResource = (resource) => {
-        setValue('resource', resource);
-        setSummary(true);
-    }
+
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     return (
         <div className="w-full flex justify-between items-center">
@@ -59,7 +54,7 @@ export default function AvailableTable({resources, methods, setSummary, data}) {
                                 variant="ghost"
                                 onClick={()=> {
                                     onOpen();
-                                    setSelectedResource(resource);
+                                    setData({...data, resourceId: resource.id});
                                 }}
                             >
                                 <span className="text-xl">Réserver</span>
@@ -68,6 +63,6 @@ export default function AvailableTable({resources, methods, setSummary, data}) {
                     </div>
                 ))}
             </div>
-            <ModalValidBooking data={data} onOpen={onOpen} isOpen={isOpen}  onOpenChange={onOpenChange} />
+            <ModalValidBooking data={data} onOpen={onOpen} isOpen={isOpen}  onOpenChange={onOpenChange} session={session}/>
         </div>
     )}

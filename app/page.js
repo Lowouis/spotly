@@ -47,7 +47,7 @@ export default function App() {
                                                               dur="2" values="360;0" keyTimes="0;1" keySplines="0 0 1 1"
                                                               repeatCount="indefinite"></animateTransform>
                                         </circle>
-                                        <circle transform-origin="center" fill="none" opacity=".2" stroke="#000000"
+                                        <circle transformOrigin="center" fill="none" opacity=".2" stroke="#000000"
                                                 strokeWidth="30" strokeLinecap="round" cx="100" cy="100"
                                                 r="70"></circle>
                                     </svg>

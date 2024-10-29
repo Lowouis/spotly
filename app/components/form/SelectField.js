@@ -2,7 +2,7 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import {Select, SelectSection, SelectItem} from "@nextui-org/select";
 
-const SelectField = ({ name, label, options, disabled=false, isRequired=true}) => {
+const SelectField = ({ name, label, options, disabled=false, isRequired=true, onReset}) => {
     const {setValue, watch, register, formState: { errors } } = useFormContext();
     const value = watch(name);
     const handleChange = (value) => {
@@ -19,6 +19,7 @@ const SelectField = ({ name, label, options, disabled=false, isRequired=true}) =
                 name={name}
                 label={label}
                 variant="bordered"
+                onReset={onReset}
             >
                 <SelectSection label={label}>
                     {options && options.map((option, index) => (
