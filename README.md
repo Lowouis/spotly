@@ -1,6 +1,6 @@
-#### Spotly
+## Spotly
 
-#### French Version
+## French Version
 
 Spotly est une application open source de gestion et de réservation de ressources 
 pour les entreprises. Elle permet aux employés de réserver et d'organiser efficacement 
