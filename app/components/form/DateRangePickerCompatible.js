@@ -3,6 +3,7 @@ import {DateRangePicker} from "@nextui-org/date-picker";
 import {useFormContext} from "react-hook-form";
 import {I18nProvider} from 'react-aria';
 import React from "react";
+import {useDisclosure} from "@nextui-org/react";
 
 export default function DateRangePickerCompatible({name, label, disabled=false, alternative=false}) {
     const {setValue, watch, register, formState: { errors } } = useFormContext();
@@ -12,11 +13,11 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
     };
 
 
-
     return (
         <I18nProvider locale="fr-FR">
             {!alternative ? (
                 <DateRangePicker
+
                 visibleMonths={2}
                 size="lg"
                 id={name}

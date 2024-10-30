@@ -1,24 +1,52 @@
 'use client';
 import {Button} from "@nextui-org/button";
-import {Checkbox, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch, Textarea} from "@nextui-org/react";
+import {
+    Checkbox, Divider,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    Skeleton, Spinner,
+    Switch,
+    Textarea, useDisclosure
+} from "@nextui-org/react";
 import {formatDate} from "@/app/components/ModalCheckingBooking";
-import {ExclamationTriangleIcon} from "@heroicons/react/24/outline";
-import {useEffect, useState} from "react";
+import {ArrowDownCircleIcon, ExclamationTriangleIcon} from "@heroicons/react/24/outline";
+import {ArrowRightCircleIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
+import React, {useEffect, useState} from "react";
 import { constructDate } from "@/app/utils/global";
 
-export default function ModalValidBooking({data, isOpen, onOpenChange, session}) {
-    const [comment, setComment] = useState(false);
-    const [push, setPush] = useState(false);
-    const  handleCommentSwitch = () => {
-        //add comment form
-        setComment(!comment);
+export default function ModalValidBooking({data, setData, isOpen, onOpenChange, session, setPush, push}) {
+
+    const [sumbitted, setSubmitted] = useState(false);
+    const [formData, setFormData] = useState({
+        description: "",
+        cgu: false,
+    });
+    const handleInputChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: type === "checkbox" ? checked : value
+        }));
+    };
+    const handleSubmission = (onClose) => {
+        if(formData.cgu){
+            console.log(formData);
+            setPush(true);
+            setSubmitted(true)
+        }
+
     }
 
 
     useEffect(() => {
-        if(push){
-            const startDate = constructDate(data.date.start, data.starthour);
-            const endDate = constructDate(data.date.end, data.endhour);
+
+
+        if(push && sumbitted){
+            const startDate = constructDate(data.date.start);
+            const endDate = constructDate(data.date.end);
             fetch('http://localhost:3000/api/entry', {
                 method: 'POST',
                 headers: {
@@ -29,21 +57,23 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session})
                     endDate     : endDate,
                     category    : data.category,
                     site        : data.site,
-                    resourceId  : data.resourceId,
+                    resourceId  : data.resource.id,
                     userId      : session.user.id,
+                    comment     : formData.description,
                 }),
             })
                 .then(response => response.json())
-                .then(data => {
-                    setPush(false)
-                })
                 .catch((error) => {
                     console.error('Error:', error);
                 })
         }
 
-    }, [data, setPush, push]);
-    return (<>
+
+
+    }, [data, setPush, push, session, setData, formData.description, sumbitted]);
+
+    return (
+        <>
         <Modal
             shadow="md"
             isDismissable={false}
@@ -51,75 +81,134 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session})
             onOpenChange={onOpenChange}
             placement="center"
             backdrop="blur"
-
         >
             <ModalContent>
                 {(onClose) => (
                     <>
-                        <ModalHeader className="flex flex-col gap-1">Réservation</ModalHeader>
-                        <ModalBody>
+                        {!sumbitted  ? (
+                            <form onSubmit={(e)=> {
+                            e.preventDefault();
+                            handleSubmission();
+                            }}>
+                            <Skeleton isLoaded={data.resource}>
+                                <ModalHeader className="flex flex-col gap-1">{data && data.resource ? data.resource.name : (
+                                    <Spinner color="default"/>)}
+                                </ModalHeader>
+                            </Skeleton>
+                            <Skeleton isLoaded={data.resource}>
+                                <ModalBody>
+                                    <div className="flex flex-col space-y-2 text-lg">
+                                        <div className="flex flex-row w-full mb-2">
+                                            <div className="flex justify-start items-center w-2/5">
+                                                {formatDate(data.date.start)}
+                                            </div>
+                                            <div className="w-1/5 relative">
+                                                <div
+                                                    className="animate-ping absolute inset-0 inset-x-6  h-full w-8 inline-flex rounded-full bg-sky-400 opacity-75"></div>
+                                                <ArrowRightCircleIcon className="absolute inset-0 m-auto" width="32"
+                                                                      height="32" color="blue"/>
+                                            </div>
+                                            <div className="flex justify-end items-center w-2/5">
+                                                {formatDate(data.date.end)}
+                                            </div>
+                                        </div>
+                                        <Divider orientation="horizontal" className="bg-neutral-950 opacity-25"/>
+                                        <div className="my-2">
+                                            <Textarea
+                                                name={"description"}
+                                                id="description"
+                                                labelPlacement="outside"
+                                                placeholder="Écrire un commentaire"
+                                                size='lg'
+                                                onChange={handleInputChange}
 
-                            <div className="flex flex-col space-y-2 text-lg">
-                                <div>
-                                    Début : {formatDate(data.date.start)}
-                                </div>
-                                <div>
-                                    Fin : {formatDate(data.date.end)}
-                                </div>
-                                <Switch
-                                    size="md"
-                                    name="comment"
-                                    id="comment"
-                                    color="primary"
-                                    className="mb-2"
-                                    onClick={handleCommentSwitch} // Pas besoin de passer `e` dans onClick
-                                >
-                                    Ajouter un commentaire
-                                </Switch>
-                                <Textarea
-                                    isDisabled={!comment}
-                                    id="description"
-                                    isHidden={!comment}
-                                    labelPlacement="outside"
-                                    placeholder="Écrire un commentaire"
-                                />
-                                <Switch
-                                    size="md"
-                                    name="key"
-                                    id="key"
-                                    color="primary"
-                                    className="mb-2"
-                                >
-                                    Clé empruntée
-                                </Switch>
-                                <div className="flex flex-row items-center space-x-2">
-                                    <ExclamationTriangleIcon width="24" height="24" color="red"/>
-                                </div>
-                                <div>
-                                    <span className="flex flex-col space-y-2 text-slate-700 mt-6">
-                                        <span className="font-bold text-lg">Conditions d'utilisation</span>
-                                        <span className="text-slate-500 text-sm">
-                                            La ressource doit être restituée dans le délai indiqué. Pour confirmer le retour, un code à 6 chiffres vous sera envoyé par mail pour confirmer le retour de la ressource.
+
+                                            />
+                                        </div>
+
+                                        {/* OPTIONS BY RESOURCES */}
+                                        <div className="flex flex-col justify-between my-6">
+                                            {data?.resource?.moderate && (
+                                                <div className="flex flex-row items-center space-x-4 my-2">
+                                                    <Button size="sm" radius="full" color="danger" isIconOnly
+                                                            variant="solid" disabled={true}>
+                                                        <ShieldExclamationIcon className="w-6 h-6" color="white"/>
+                                                    </Button>
+                                                    <span className="text-sm">Votre réservation doit-être confirmé par un administrateur</span>
+                                                </div>
+                                            )}
+                                            {/* OPTIONS BY RESOURCES ==> ADD MORE OPTIONS HERE LATER */}
+
+                                        </div>
+
+                                        <Divider orientation="horizontal" className="bg-neutral-950 opacity-25"/>
+                                        <div>
+                                        <span className="flex flex-col space-y-2 text-slate-700 mt-2">
+                                            <span className="font-bold text-lg">Conditions d'utilisation</span>
+                                            <span className="text-slate-500 text-sm">
+                                                La ressource doit être restituée dans le délai indiqué. Pour confirmer le retour, un code à 6 chiffres vous sera envoyé par mail pour confirmer le retour de la ressource.
+                                            </span>
+                                            <Checkbox id="cgu"
+                                                      name="cgu"
+                                                      required
+                                                      onChange={(e)=>handleInputChange(e)}
+                                                      radius="md"
+                                                      value={formData.cgu}
+                                            >
+                                                J'accepte les conditions
+                                            </Checkbox>
+
                                         </span>
-                                        <Checkbox id="cgu" name="cgu" required defaultSelected radius="md">J'accepte les conditions</Checkbox>
+                                        </div>
 
-                                    </span>
+                                    </div>
+                                </ModalBody>
+                                </Skeleton>
+                                    <ModalFooter>
+                                        <Skeleton isLoaded={data.resource}>
+                                            <div className="flex flex-row space-x-2">
+                                                <Button color="danger" variant="flat" size="lg" onPress={onClose}>
+                                                    Annuler
+                                                </Button>
+                                                <Button color="primary" type="submit" size="lg" >
+                                                    Réserver
+                                                </Button>
+                                            </div>
+
+                                        </Skeleton>
+
+                                    </ModalFooter>
+                                </form>
+                        ) : (
+                            <ModalBody>
+                                <div className="flex flex-col gap-2 items-center justify-center p-2">
+                                    <ModalHeader>
+                                        <h1 className="text-neutral-800">Votre réservation a été confirmée. </h1>
+                                    </ModalHeader>
+                                    <div className="w-full relative mb-4">
+                                        <div
+                                            className="animate-ping absolute inset-0 inset-x-6  h-full w-8 inline-flex rounded-full bg-sky-400 opacity-75"></div>
+                                        <ArrowDownCircleIcon className="absolute inset-0 m-auto" width="32"
+                                                              height="32" color="green"/>
+                                    </div>
+
+                                    <h1 className="text-neutral-800">Mail de confirmation envoyer à : </h1>
+                                    <h2 className="font-thin text-neutral-700">admin@admin.fr</h2>
+                                    <Button color="primary" onPress={() => {
+                                        setSubmitted(false);
+                                        onClose();
+
+                                    }}>
+                                        D'accord
+                                    </Button>
                                 </div>
+                            </ModalBody>
 
-                            </div>
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button color="danger" variant="flat" size="lg" onPress={onClose}>
-                            Annuler
-                            </Button>
-                            <Button onPressEnd={()=>setPush(true)} color="primary" onPress={onClose} size="lg">
-                                Réserver
-                            </Button>
-                        </ModalFooter>
+                        )}
                     </>
                 )}
-
             </ModalContent>
         </Modal>
-    </>)
+        </>
+    )
 }

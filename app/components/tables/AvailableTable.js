@@ -2,40 +2,41 @@ import {Tooltip, useDisclosure} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {KeyIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
 import ModalValidBooking from "@/app/components/ModalValidBooking";
-import React from "react";
+import React, {useState} from "react";
 
 
 export default function AvailableTable({resources, methods, data, setData, session}) {
     const {watch, setValue} = methods;
-
+    const [push, setPush] = useState(false);
+    const {isOpenMailConfirmation, onOpenMailConfirmation, onOpenChangeMailConfirmation} = useDisclosure();
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     return (
         <div className="w-full flex justify-between items-center">
             <div className="w-full flex flex-col">
                 {resources.length > 0 ? resources?.map((resource) => (
                     <div key={resource.id}  className="w-full flex justify-between items-center py-3 bg-neutral-50 hover:bg-neutral-100 p-1 rounded-lg mb-2">
-                        <div className="flex flex-row space-x-6 mx-3 items-center">
-                            <div className="text-xl font-normal">
+                        <div className="flex flex-row w-full mx-3 items-center">
+                            <div className="text-xl font-normal w-1/3">
                                 {resource.name}
                             </div>
-                            <div className="flex flex-row space-x-2">
-                                <div className="">
-                                    <Tooltip  delay={25} closeDelay={100} key={resource.id}
+                            <div className="flex flex-row items-center justify-start w-1/3 space-x-4">
+                                {/*<div className="">
+                                    <Tooltip delay={25} closeDelay={100} key={resource.id}
                                              content="Vous aurez besoin d'une clef"
-                                             className="capitalize"
-                                              color="default"
-                                              showArrow={true}
+                                             className=""
+                                             color="default"
+                                             showArrow={true}
 
                                     >
                                         <Button radius="full" size="lg" color="success" isIconOnly variant="flat">
                                             <KeyIcon className="w-6 h-6" color="grey"/>
                                         </Button>
                                     </Tooltip>
-                                </div>
-                                <div className="">
+                                </div>*/}
+                                {resource.moderate && (<div className="">
                                     <Tooltip delay={25} radius="full" closeDelay={100} key={resource.id}
                                              content="Un administrateur doit valider la réservation"
-                                             className="capitalize"
+                                             className=""
                                              color="default"
                                              showArrow={true}
                                     >
@@ -43,22 +44,23 @@ export default function AvailableTable({resources, methods, data, setData, sessi
                                             <ShieldExclamationIcon className="w-6 h-6" color="grey"/>
                                         </Button>
                                     </Tooltip>
-                                </div>
+                                </div>)}
+
                             </div>
-                        </div>
-                        <div>
-                            <Button
-                                className=""
-                                size="lg"
-                                color="default"
-                                variant="ghost"
-                                onClick={()=> {
-                                    onOpen();
-                                    setData({...data, resourceId: resource.id});
-                                }}
-                            >
-                                <span className="text-xl">Réserver</span>
-                            </Button>
+                            <div className="flex justify-end items-center w-1/3">
+                                <Button
+                                    className=""
+                                    size="lg"
+                                    color="primary"
+                                    variant="flat"
+                                    onClick={() => {
+                                        onOpen();
+                                        setData({...data, resource: resource});
+                                    }}
+                                >
+                                    <span className="text-xl">Réserver</span>
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
@@ -69,6 +71,6 @@ export default function AvailableTable({resources, methods, data, setData, sessi
                     </div>
                 )}
             </div>
-            <ModalValidBooking data={data} onOpen={onOpen} isOpen={isOpen}  onOpenChange={onOpenChange} session={session}/>
+            <ModalValidBooking data={data} setData={setData} onOpen={onOpen} isOpen={isOpen}  onOpenChange={onOpenChange} session={session} setPush={setPush} push={push}/>
         </div>
     )}

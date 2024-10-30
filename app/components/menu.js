@@ -29,7 +29,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity}) {
                  <div className="flex w-full p-2">
                      <div className="text-2xl w-1/3">
                          <div className="flex flex-row space-x-2 items-center justify-start">
-                             <CalendarDateRangeIcon width="48" height="48" color="black"/><span className="text-4xl font-bold">Chronos</span>
+                             <CalendarDateRangeIcon width="48" height="48" color="black"/><span className="text-4xl font-bold">Spotly</span>
                          </div>
                      </div>
                      <div className="flex flex-col w-1/3 justify-center items-center">

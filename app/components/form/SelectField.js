@@ -2,11 +2,16 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import {Select, SelectSection, SelectItem} from "@nextui-org/select";
 
-const SelectField = ({ name, label, options, disabled=false, isRequired=true, onReset}) => {
+const SelectField = ({ name, label, options, disabled=false, isRequired=true, object=false, onReset=()=>{}}) => {
     const {setValue, watch, register, formState: { errors } } = useFormContext();
     const value = watch(name);
     const handleChange = (value) => {
-        setValue(name, value);
+        if(object){
+            value.id !== watch(name)?.id ? setValue(name, value) : onReset();
+        } else {
+            value !== watch(name) ? setValue(name, value) : onReset();
+        }
+
     };
 
     return (
@@ -19,11 +24,11 @@ const SelectField = ({ name, label, options, disabled=false, isRequired=true, on
                 name={name}
                 label={label}
                 variant="bordered"
-                onReset={onReset}
+
             >
-                <SelectSection label={label}>
+                <SelectSection label={label} >
                     {options && options.map((option, index) => (
-                        <SelectItem color="primary" className="text-black" key={index} value={option.id} onClick={()=>handleChange(option.id)}>
+                        <SelectItem color="primary" className="text-black" key={index} value={object ? option : option.id} onClick={()=>handleChange(object ? option : option.id)}>
                             {option.name}
                         </SelectItem>
                     ))}
