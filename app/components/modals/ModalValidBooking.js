@@ -11,7 +11,7 @@ import {
     Switch,
     Textarea, useDisclosure
 } from "@nextui-org/react";
-import {formatDate} from "@/app/components/ModalCheckingBooking";
+import {formatDate} from "@/app/components/modals/ModalCheckingBooking";
 import {ArrowDownCircleIcon, ExclamationTriangleIcon} from "@heroicons/react/24/outline";
 import {ArrowRightCircleIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
 import React, {useEffect, useState} from "react";
@@ -171,7 +171,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                                     Annuler
                                                 </Button>
                                                 <Button color="primary" type="submit" size="lg" >
-                                                    Réserver
+                                                    {!data.resource.moderate ? "Réserver" : "Demander"}
                                                 </Button>
                                             </div>
 

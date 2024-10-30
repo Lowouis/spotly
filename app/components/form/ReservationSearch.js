@@ -75,114 +75,92 @@ const ReservationSearch = ({session}) => {
 
         fetchEntries();
     }, [session, setUserEntries]);
-
     useEffect(() => {
-
-        const fetchMatchingEntries = () => {
-            if(isSubmitted && data){
-                const startDate = constructDate(data.date.start);
-                const endDate = constructDate(data.date.end);
-                console.log(data)
-
-                fetch(`http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? '&resourceId='+data.resource.id : ''}`)
-                    .then(response => response.text())
-                    .then(text => {
-                        try {
-                            const fetchedEntries = JSON.parse(text);
-                            setMatchingEntries(fetchedEntries);
-
-
-                        } catch (error) {
-                            console.error('Failed to parse JSON:', error);
-                            console.error('Response text:', text);
-                        }
-                    })
-                    .catch(error => {
-                            console.error('Fetch error:', error);
-                        }
-                    );
+        const fetchDomains = async () => {
+            try {
+                const response = await fetch("http://localhost:3000/api/domains");
+                const fetchedDomains = await response.json();
+                setDomains(fetchedDomains);
+            } catch (error) {
+                console.error("Fetch error:", error);
             }
+        };
 
-        }
-
-
-        const fetchDomains = () => {
-            fetch('http://localhost:3000/api/domains')
-                .then(response => response.text())
-                .then(text => {
-                    try {
-                        const fetchedDomains = JSON.parse(text);
-                        setDomains(fetchedDomains);
-                    } catch (error) {
-                        console.error('Failed to parse JSON:', error);
-                        console.error('Response text:', text);
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
-        }
-        const fetchCategories = () => {
-            fetch('http://localhost:3000/api/categories')
-                .then(response => response.text())
-                .then(text => {
-                    try {
-                        const fetchedCategories = JSON.parse(text);
-                        setCategories(fetchedCategories);
-                    } catch (error) {
-                        console.error('Failed to parse JSON:', error);
-                        console.error('Response text:', text);
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
-        }
-        const fetchResources = ()=> {
-            if(watchCategory && watchSite){
-                fetch(`http://localhost:3000/api/resources/?categoryId=${watchCategory}&domainId=${watchSite}`)
-                    .then(response => response.text()) // Read the response as text
-                    .then(text => {
-                        try {
-                            const fetchedResources = JSON.parse(text); // Try to parse the text as JSON
-                            setResources(fetchedResources);
-                        } catch (error) {
-                            console.error('Failed to parse JSON:', error);
-                            console.error('Response text:', text); // Log the response text for debugging
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                    });
-            } else {
-                setResources(null);
+        const fetchCategories = async () => {
+            try {
+                const response = await fetch("http://localhost:3000/api/categories");
+                const fetchedCategories = await response.json();
+                setCategories(fetchedCategories);
+            } catch (error) {
+                console.error("Fetch error:", error);
             }
-        }
-        const matchingResourcesAndEntries = ()=>{
-            if(isSubmitted && matchingEntries){
-                console.log("MATCHING ENTRIES");
-                console.log(matchingEntries);
-                const cpAvailableResources = [...resources];
-                const filteredResourcesByMatches = cpAvailableResources.filter(resource =>
-                    !matchingEntries?.some(entry =>  entry.resourceId === resource.id));
-
-                const filteredResourcesByResources = data?.resource !== null
-                    ? filteredResourcesByMatches?.filter(resource => data.resource.id === resource.id)
-                    : filteredResourcesByMatches;
-
-
-                setAvailableResources(filteredResourcesByResources || null);
-                setIsSubmitted(false);
-            }
-        }
+        };
 
         fetchDomains();
         fetchCategories();
-        fetchResources();
-        fetchMatchingEntries();
-        matchingResourcesAndEntries();
-    }, [setDomains, setCategories, setResources, watchSite, watchCategory, watch, data, isSubmitted, availableResources, setMatchingEntries, matchingEntries, resources]);
+    }, []);
 
+    useEffect(() => {
+        const fetchResources = async () => {
+            if (watchCategory && watchSite) {
+                try {
+                    const response = await fetch(
+                        `http://localhost:3000/api/resources/?categoryId=${watchCategory}&domainId=${watchSite}`
+                    );
+                    const fetchedResources = await response.json();
+                    setResources(fetchedResources);
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                }
+            } else {
+                setResources(null);
+            }
+        };
+
+        fetchResources();
+    }, [watchCategory, watchSite]);
+
+    useEffect(() => {
+        const fetchMatchingEntries = async () => {
+            if (isSubmitted && data) {
+                const startDate = constructDate(data.date.start);
+                const endDate = constructDate(data.date.end);
+
+                try {
+                    const response = await fetch(
+                        `http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
+                    );
+                    const fetchedEntries = await response.json();
+                    console.log("Fetched entries:", fetchedEntries);
+                    setMatchingEntries(fetchedEntries);
+                } catch (error) {
+                    console.error("Fetch error:", error);
+                }
+            }
+        };
+
+        fetchMatchingEntries().then(r => console.log("Matching entries fetched"));
+    }, [isSubmitted, data]); // Only run when isSubmitted or data changes
+
+    useEffect(() => {
+        if (isSubmitted && matchingEntries) {
+            const cpAvailableResources = [...resources];
+            const filteredResourcesByMatches = cpAvailableResources.filter(
+                (resource) =>
+                    !matchingEntries?.some((entry) => entry.resourceId === resource.id)
+            );
+
+            const filteredResourcesByResources =
+                data?.resource !== null
+                    ? filteredResourcesByMatches?.filter(
+                        (resource) => data.resource.id === resource.id
+                    )
+                    : filteredResourcesByMatches;
+
+            setAvailableResources(filteredResourcesByResources || null);
+            setIsSubmitted(false);
+        }
+    }, [isSubmitted, matchingEntries, resources, data]);
 
     const handleResourceOnReset = ()=>{
         setValue('resource', null);
@@ -234,9 +212,8 @@ const ReservationSearch = ({session}) => {
                                             label="Catégorie"
                                             options={categories}
                                             className=""
-
                                         />
-                                        {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESSOURCES   */}
+                                        {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESOURCES   */}
                                         <SelectField
                                             object={true}
                                             name="resource"
@@ -333,7 +310,7 @@ const ReservationSearch = ({session}) => {
                         <div className="h-full w-full space-y-5 p-2 rounded-lg">
                             <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                 {availableResources && (
-                                    <AvailableTable  setData={setData} resources={availableResources} methods={methods} data={data} session={session}/>
+                                    <AvailableTable setData={setData} resources={availableResources} methods={methods} data={data} session={session}/>
                                 )
                                 }
                             </div>

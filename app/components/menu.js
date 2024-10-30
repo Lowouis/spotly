@@ -55,9 +55,11 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity}) {
                                  key="bookings"
                                  title={
                                      <div className="flex items-center space-x-2" onClick={handleSearchMode}>
-                                         <Badge size="lg" content={userEntriesQuantity && userEntriesQuantity} color="secondary">
-                                         <BookmarkIcon width="24" height="24" color=""/>
+                                         {userEntriesQuantity && <Badge size="lg" content={userEntriesQuantity} color="secondary">
+                                             <BookmarkIcon width="24" height="24" color=""/>
                                          </Badge>
+                                         }
+
                                                  <span>Réservations</span>
 
                                      </div>

@@ -1,3 +1,5 @@
+## En cours de développement
+
 ## Spotly
 
 ## French Version
@@ -67,10 +69,10 @@ Ce projet est sous licence MIT. Pour plus d'informations, consultez le fichier `
 ## Auteur
 
 Ce projet a été développé par Louis GURITA et est maintenu par lui même. 
-Pour toute question ou suggestion, n'hésitez pas à nous contacter.
+Pour toute question ou suggestion, n'hésitez pas à me contacter.
 
 
-#### English Version
+## English Version
 
 Spotly is an open-source resource management and booking application designed for businesses. 
 It enables employees to reserve and efficiently organize the use of shared resources, such as 
@@ -135,7 +137,7 @@ This project is licensed under the MIT License. For more information, see the `L
 ## Author
 
 This project was developed by Louis GURITA and is maintained by him.
-For any questions or suggestions, feel free to contact us.
+For any questions or suggestions, feel free to contact me.
 ```
 
 

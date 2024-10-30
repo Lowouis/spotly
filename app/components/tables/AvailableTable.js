@@ -1,7 +1,7 @@
 import {Tooltip, useDisclosure} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {KeyIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
-import ModalValidBooking from "@/app/components/ModalValidBooking";
+import ModalValidBooking from "@/app/components/modals/ModalValidBooking";
 import React, {useState} from "react";
 
 
@@ -58,7 +58,7 @@ export default function AvailableTable({resources, methods, data, setData, sessi
                                         setData({...data, resource: resource});
                                     }}
                                 >
-                                    <span className="text-xl">Réserver</span>
+                                    <span className="text-xl">{!resource.moderate ? "Réserver" : "Demander"}</span>
                                 </Button>
                             </div>
                         </div>

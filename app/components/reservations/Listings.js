@@ -13,7 +13,7 @@ import {
 import {ExclamationTriangleIcon, InformationCircleIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import {EyeIcon, KeyIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
-import ModalCheckingBooking from "@/app/components/ModalCheckingBooking";
+import ModalCheckingBooking from "@/app/components/modals/ModalCheckingBooking";
 
 
 export default function ReservationUserListing({entries}) {
