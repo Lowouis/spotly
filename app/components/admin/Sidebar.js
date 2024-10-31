@@ -1,101 +1,124 @@
 'use client';
-import { useState } from 'react';
-import {AdjustmentsHorizontalIcon, Cog6ToothIcon} from "@heroicons/react/24/solid";
-import {Button} from "@nextui-org/button";
-import {Link} from "@nextui-org/react";
-import Site from "@/app/components/admin/site";
+
+import { EnvelopeIcon, Squares2X2Icon, TableCellsIcon, UserCircleIcon, ServerIcon} from "@heroicons/react/24/solid";
+import {Accordion, AccordionItem} from "@nextui-org/react";
+
 
 export default function Sidebar() {
-    const items=  [
+    const sideItems=  [
         {
             "title": "Administration",
+            "icon": "Squares2X2Icon",
+
             "items": [
                 {
                     "title": "Tableau de bord",
-                    "icon": "AdjustmentsHorizontalIcon",
                     "href": "/admin"
                 },
             ]
         },
         {
-            "title": "Gestion des données",
+            "title": "Données",
+            "icon": "TableCells",
+
             "items": [
                 {
-                    "title": "Site",
-                    "icon": "AdjustmentsHorizontalIcon",
+                    "title": "Sites",
                     "href": "/admin/site"
                 },
                 {
-                    "title": "Catégorie",
-                    "icon": "AdjustmentsHorizontalIcon",
+                    "title": "Catégories",
                     "href": "/admin/category"
                 },
                 {
                     "title": "Ressources",
-                    "icon": "AdjustmentsHorizontalIcon",
                     "href": "/admin/resource"
                 }
             ]
         },
         {
-            "title": "Gestion des utilisateurs",
+            "title": "Utilisateurs",
+            "icon": "UserCircleIcon",
+
             "items": [
                 {
                     "title": "Utilisateurs",
-                    "icon": "AdjustmentsHorizontalIcon",
                     "href": "/admin/users"
                 },
                 {
                     "title": "Réservations",
-                    "icon": "AdjustmentsHorizontalIcon",
                     "href": "/admin/reservations"
                 }
             ]
         },
         {
-            "title": "Configuration mail",
+            "title": "Mail",
+            "icon": "EnvelopeIcon",
             "items": [
                 {
                     "title": "SMTP",
-                    "icon": "AdjustmentsHorizontalIcon",
                     "href": "/admin/smtp"
                 },
                 {
-                    "title": "Mails",
-                    "icon": "AdjustmentsHorizontalIcon",
+                    "title": "Templates",
                     "href": "/admin/mails"
                 }
             ]
         },
         {
-            "title": "Configuration LDAP",
+            "title": "LDAP",
+            "icon": "ServerIcon",
             "items": [
                 {
-                    "title": "LDAP",
-                    "icon": "AdjustmentsHorizontalIcon",
+                    "title": "Configuration",
                     "href": "/admin/ldap"
                 }
             ]
         }
     ];
 
+    const IconMapping = {
+        Squares2X2Icon: Squares2X2Icon,
+        TableCells : TableCellsIcon,
+        UserCircleIcon: UserCircleIcon,
+        EnvelopeIcon: EnvelopeIcon,
+        ServerIcon: ServerIcon
 
+
+    };
 
     return (
-        <div className="flex justify-start flex-col h-full">
-            <div className="w-64 h-screen shadow-md p-4">
-                {items.map((item, index) => (
-                    <div key={index} className="text-neutral-600">
-                        <h2 className="text-lg font-semibold mb-2 text-neutral-900">{item.title}</h2>
-                        {item.items.map((subItem, subIndex) => (
-                            <Button size="lg" startContent={<Cog6ToothIcon width={24}  height={24} />} key={subIndex} variant="light" style={{justifyContent: "flex-start"}} fullWidth={true} >
-                                {subItem.title}
-                            </Button>
-                        ))}
-                    </div>
-                ))}
+        <div className="flex justify-start flex-col h-full border-r-1 border-neutral-400">
+            <div>
+                <div className="flex justify-center items-center h-16 text-neutral-700">
+                    <span className="text-2xl font-bold">Admin</span>
+                </div>
             </div>
-        </div>
+            <div className="w-64 h-screen p-4">
 
-    );
+                    {(sideItems || []).map((item, index) => {
+                        const IconComponent = IconMapping[item.icon] || Squares2X2Icon;
+                        return (
+                            <div key={`admin-accordion-${index}`} className="flex flex-col mb-3">
+                                <Accordion selectionMode="multiple" variant="light"  defaultExpandedKeys={["admin-accordion-item-0"]} >
+                                    <AccordionItem key={`admin-accordion-item-${index}`} aria-label={item.title}
+                                                   title={item.title} startContent={<IconComponent className="h-6 w-6 mr-2"/>}>
+                                        <div className="flex flex-col space-y-3 py-2 px-1 ml-9">
+                                            {(item.items).map((subItem, subIndex) =>(
+                                                        <div key={`admin-link-${subIndex}`}
+                                                             className="flex flex-row justify-start items-center w-full ml-2 cursor-pointer hover:text-neutral-400 transition">
+                                                            <span>{subItem.title}</span>
+
+                                                        </div>
+                                            ))}
+                                        </div>
+                                    </AccordionItem>
+                                </Accordion>
+                            </div>
+                        )
+                    })}
+                        </div>
+                        </div>
+
+                        );
 }

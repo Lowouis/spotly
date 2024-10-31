@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata = {
-    title: "Chronos",
+    title: "Spotly",
     description: "Made for booking ressources ",
 };
 
