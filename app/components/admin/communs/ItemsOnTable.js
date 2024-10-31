@@ -35,6 +35,9 @@ const categorySchema = yup.object().shape({
     comment: yup.string(),
     });
 
+const cleanedFields = (fields) => {
+    return fields.filter(field => field !== 'id' && field !== 'createdAt' && field !== 'updatedAt');
+}
 
 
 export default function ItemsOnTable({items, name}) {
@@ -95,7 +98,7 @@ export default function ItemsOnTable({items, name}) {
                         </DropdownMenu>
                     </Dropdown>
                     <Button size="md" color="primary" onPress={onOpen} endContent={<PlusCircleIcon height={24} width={24}/>}>Ajouter</Button>
-                    <AddItem isOpen={isOpen} onOpenChange={onOpenChange} schema={domainSchema} methods={methods}/>
+                    {items && <AddItem isOpen={isOpen} onOpenChange={onOpenChange} schema={domainSchema} methods={methods} fields={items?.length > 0 && cleanedFields(Object.keys(items[0]))}/>}
                 </div>
             </div>
             {

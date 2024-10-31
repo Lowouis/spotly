@@ -7,6 +7,7 @@ export default async function handler(req, res) {
         res.status(200).json(domains);
     } else if (req.method === "POST"){
         const {name, code, address, street_number, country, city, zip, phone} = req.body;
+        console.log(req.body);
         const domain = await prisma.domain.create({
             data: {
                 name,

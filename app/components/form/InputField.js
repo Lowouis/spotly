@@ -3,8 +3,11 @@ import { useFormContext } from 'react-hook-form';
 
 const InputField = ({hidden=false ,name, label, type = 'text', placeholder, value}) => {
 
-    const { register, formState: { errors } } = useFormContext();
+    const { register, formState: { errors }, setValue } = useFormContext();
 
+    const handleChange= (value)=>{
+        setValue(name, value)
+    }
     return (
         <div>
             <label className={`${hidden ? "hidden" : ""}`} htmlFor={name}>{label}</label>

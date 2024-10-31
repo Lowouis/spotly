@@ -7,8 +7,48 @@ import {
     Button,
 } from "@nextui-org/react";
 import SiteForm from "@/app/components/admin/form/site";
+import {useEffect, useState} from "react";
 
-export default function ActionOnItem({isOpen, onOpenChange, action='créer', values}) {
+
+
+export default function ActionOnItem({isOpen, onOpenChange, action='créer', values=null, fields}) {
+    const [push, setPush] = useState(false);
+    const [newItemData, setNewItemData] = useState();
+
+    const handleFormSubmit = (data) => {
+        console.log(data);
+        setNewItemData(data);
+        setPush(true);
+    }
+
+    useEffect(() => {
+        function createNewItem() {
+            if (push && newItemData) {
+                fetch(`http://localhost:3000/api/domains`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(newItemData),
+                })
+                    .then(response => response.text())
+                    .then(text => {
+                        try {
+                            const data = JSON.parse(text);
+                            setPush(false);
+                        } catch (error) {
+                            console.error('Failed to parse JSON:', error);
+                            console.error('Response text:', text);
+                        }
+                    })
+                    .catch(error => {
+                            console.error('Fetch error:', error);
+                        }
+                    );
+            }
+        }
+        createNewItem();
+    }, [push, newItemData, setNewItemData, setPush]);
 
     return (
         <>
@@ -17,17 +57,7 @@ export default function ActionOnItem({isOpen, onOpenChange, action='créer', val
                     {(onClose) => (
                         <>
                             <ModalHeader className="flex flex-col gap-1">{action[0].toUpperCase()+action.slice(1)}</ModalHeader>
-                            <ModalBody>
-                              <SiteForm  values={values}/>
-                            </ModalBody>
-                            <ModalFooter>
-                                <Button color="danger" variant="light" onPress={onClose}>
-                                    Annuler
-                                </Button>
-                                <Button color="primary" onPress={onClose}>
-                                    {action==="créer" ? "Créer" : "Modifier" }
-                                </Button>
-                            </ModalFooter>
+                            <SiteForm defaultValues={values} onSubmit={handleFormSubmit} onClose={onClose} action={action} fields={fields}/>
                         </>
                     )}
                 </ModalContent>
