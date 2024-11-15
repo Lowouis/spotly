@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import {Card, CardBody, CardFooter, CardHeader, Divider} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";

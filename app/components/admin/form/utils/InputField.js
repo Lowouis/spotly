@@ -11,7 +11,6 @@ export default function InputField({register, required, type, label, errors}){
             <label>{label}</label>
             <Input
                 variant="flat"
-                labelPlacement="outside"
                 id={register.name}
                 type={type}
                 register={register}

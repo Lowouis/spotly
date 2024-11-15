@@ -38,11 +38,13 @@ model Session {
 model User {
   id            String    @id @default(cuid())
   name          String?
+  surname       String?
   username      String?   @unique
   password      String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  external      Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
   accounts      Account[]

@@ -21,9 +21,10 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
 
     const [sumbitted, setSubmitted] = useState(false);
     const [formData, setFormData] = useState({
-        description: "",
+        comment: "",
         cgu: false,
     });
+    const [error, setError] = useState(false);
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prevState => ({
@@ -33,7 +34,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
     };
     const handleSubmission = (onClose) => {
         if(formData.cgu){
-            console.log(formData);
+            console.log(formData)
             setPush(true);
             setSubmitted(true)
         }
@@ -42,8 +43,6 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
 
 
     useEffect(() => {
-
-
         if(push && sumbitted){
             const startDate = constructDate(data.date.start);
             const endDate = constructDate(data.date.end);
@@ -59,18 +58,19 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                     site        : data.site,
                     resourceId  : data.resource.id,
                     userId      : session.user.id,
-                    comment     : formData.description,
+                    comment     : formData.comment,
                 }),
             })
                 .then(response => response.json())
                 .catch((error) => {
                     console.error('Error:', error);
+                    setError(true);
                 })
         }
 
 
 
-    }, [data, setPush, push, session, setData, formData.description, sumbitted]);
+    }, [data, setPush, push, session, setData, sumbitted, setError, formData]);
 
     return (
         <>
@@ -115,8 +115,8 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                         <Divider orientation="horizontal" className="bg-neutral-950 opacity-25"/>
                                         <div className="my-2">
                                             <Textarea
-                                                name={"description"}
-                                                id="description"
+                                                name="comment"
+                                                id="comment"
                                                 labelPlacement="outside"
                                                 placeholder="Écrire un commentaire"
                                                 size='lg'
@@ -179,7 +179,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
 
                                     </ModalFooter>
                                 </form>
-                        ) : (
+                        ) : (setError ? (
                             <ModalBody>
                                 <div className="flex flex-col gap-2 items-center justify-center p-2">
                                     <ModalHeader>
@@ -189,11 +189,9 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                         <div
                                             className="animate-ping absolute inset-0 inset-x-6  h-full w-8 inline-flex rounded-full bg-sky-400 opacity-75"></div>
                                         <ArrowDownCircleIcon className="absolute inset-0 m-auto" width="32"
-                                                              height="32" color="green"/>
+                                                              height="32" color="danger"/>
                                     </div>
 
-                                    <h1 className="text-neutral-800">Mail de confirmation envoyer à : </h1>
-                                    <h2 className="font-thin text-neutral-700">admin@admin.fr</h2>
                                     <Button color="primary" onPress={() => {
                                         setSubmitted(false);
                                         onClose();
@@ -204,7 +202,26 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                 </div>
                             </ModalBody>
 
-                        )}
+                        ) : (
+                            <ModalBody>
+                                <div className="flex flex-col gap-3 items-center justify-center p-4">
+                                    <ModalHeader>
+                                        Erreur
+                                    </ModalHeader>
+                                    <div className="flex flex-row justify-center items-center space-x-2">
+                                        <p>Une erreur est survenu lors de la réservation</p>
+                                        <ExclamationTriangleIcon width="32" height="32" color="red" />
+                                    </div>
+                                    <Button color="default" variant="light" onPress={() => {
+                                        setSubmitted(false);
+                                        onClose();
+                                    }} >
+                                        Fermer
+                                    </Button>
+                                </div>
+                            </ModalBody>
+
+                        ))}
                     </>
                 )}
             </ModalContent>

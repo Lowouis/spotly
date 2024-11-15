@@ -109,6 +109,7 @@ const ReservationSearch = ({session}) => {
                     );
                     const fetchedResources = await response.json();
                     setResources(fetchedResources);
+                    console.log("Fetched ressouces", fetchedResources)
                 } catch (error) {
                     console.error("Fetch error:", error);
                 }
@@ -144,6 +145,9 @@ const ReservationSearch = ({session}) => {
 
     useEffect(() => {
         if (isSubmitted && matchingEntries) {
+            console.log("----------------------------------");
+            console.log(matchingEntries, availableResources);
+            console.log("----------------------------------");
             const cpAvailableResources = [...resources];
             const filteredResourcesByMatches = cpAvailableResources.filter(
                 (resource) =>

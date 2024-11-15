@@ -43,7 +43,6 @@ export function ConnectionModal({}){
             }
             if (response.ok) {
                 setWrongPassword(false);
-
                 router.push('/');
             }
         });

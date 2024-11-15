@@ -91,6 +91,7 @@ export default function ItemsOnTable({items, name}) {
                             closeOnSelect={false}
                             disallowEmptySelection
                             selectionMode="multiple"
+                            selectedKeys={items && Object.keys(items[0])}
                         >
                             {items && Object.keys(items[0]).map((item, index) => (
                                 typeof item !== "object" && <DropdownItem key={index}>{item}</DropdownItem>

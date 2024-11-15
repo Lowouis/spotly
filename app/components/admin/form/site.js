@@ -29,7 +29,7 @@ export default function SiteForm({onSubmit, defaultValues, onClose, action}){
 
         return (
             <>
-                <form onSubmit={handleSubmit(data=>{alert(JSON.stringify(data))})}>
+                <form onSubmit={handleSubmit(onSubmit)}>
                     <ModalBody>
                         <div className="flex flex-col space-y-3">
                             {DomainsFields.map((field, index) => (
