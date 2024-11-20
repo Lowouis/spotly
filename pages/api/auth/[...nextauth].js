@@ -51,7 +51,7 @@ export const authConfig = {
                     });
 
                     console.log("Founded user from ldap : ", ldapUser)
-                    //Creer/mettre a jour user dans prisma
+                    //Creer mettre a jour user dans prisma
                     try {
                            if(!user){
                                const newUser = await prisma.user.create({

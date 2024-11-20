@@ -6,11 +6,14 @@ export default async function handler(req, res) {
 
         const resources = await prisma.resource.findMany({
             where: {
-                categoryId : categoryId,
-                domainId : domainId,
-            }
+                ...(categoryId && {categoryId : categoryId}),
+                ...(domainId && {domainId : domainId}),
+            },
+            include: { domains : true, category : true }
         });
+        const sanitizedResources = resources.map(({ domainId, categoryId, ...rest }) => rest);
 
-        return res.status(200).json(resources);
+
+        return res.status(200).json(sanitizedResources);
 
 }

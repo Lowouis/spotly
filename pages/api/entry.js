@@ -45,9 +45,9 @@ export default async function handler(req, res) {
 
 
                 },
-                include: { resource: { include: { domains : true } } }
+               include: { user: true ,resource: { include: { domains : true } } }
             });
-            console.log(entries);
+
             res.status(200).json(entries);
         } else if (req.method === "POST") {
 

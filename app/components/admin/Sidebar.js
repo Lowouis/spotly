@@ -1,54 +1,87 @@
 'use client';
 
-import {EnvelopeIcon, ServerIcon, Squares2X2Icon, TableCellsIcon, UserCircleIcon} from "@heroicons/react/24/solid";
-import {Accordion, AccordionItem} from "@nextui-org/react";
-import Link from "next/link";
+import {
+    ArrowLeftStartOnRectangleIcon,
+    EnvelopeIcon,
+    ServerIcon,
+    Squares2X2Icon,
+    TableCellsIcon,
+    UserCircleIcon,
+    GlobeEuropeAfricaIcon, HomeIcon, BookmarkIcon
+} from "@heroicons/react/24/solid";
+import {Badge, Divider, ScrollShadow, Skeleton} from "@nextui-org/react";
+import {useAdminContext} from "@/app/context/Admin";
+import {RectangleStackIcon} from "@heroicons/react/16/solid";
+import {
+    ChartPieIcon,
+    ClipboardDocumentListIcon,
+    RectangleGroupIcon,
+    UsersIcon,
+    WrenchIcon
+} from "@heroicons/react/24/solid/index";
+import { useSession } from "next-auth/react";
+import UserInitialsIcon from "@/app/components/utils/UserInitialsIcon";
 
 
 export default function Sidebar() {
+    const {data : session} = useSession();
+    const {activeSection, setActiveSection} = useAdminContext()
     const sideItems = [
         {
             "title": "Administration",
             "icon": "Squares2X2Icon",
-
             "items": [
                 {
                     "title": "Tableau de bord",
-                    "href": "/admin"
+                    "href": "/admin",
+                    "id" : "dashboard",
+                    "icon": "RectangleGroup",
                 },
             ]
         },
         {
             "title": "Données",
-            "icon": "TableCells",
-
+            "icon": "GlobeEuropeAfrica",
             "items": [
                 {
+                    "id" : "domains",
                     "title": "Sites",
-                    "href": "/admin/site"
+                    "href": "/admin/site",
+                    "icon": "GlobeEuropeAfrica",
                 },
                 {
+                    "id" : "categories",
                     "title": "Catégories",
-                    "href": "/admin/category"
+                    "href": "/admin/category",
+                    "icon": "RectangleStack",
+
                 },
                 {
+                    "id" : "resources",
                     "title": "Ressources",
-                    "href": "/admin/resource"
+                    "href": "/admin/resource",
+                    "icon": "ClipboardDocumentList",
+
                 }
             ]
         },
         {
             "title": "Utilisateurs",
             "icon": "UserCircleIcon",
-
             "items": [
                 {
+                    "id" : "users",
                     "title": "Utilisateurs",
-                    "href": "/admin/users"
+                    "href": "/admin/users",
+                    "icon": "Users",
+
                 },
                 {
+                    "id" : "entries",
                     "title": "Réservations",
-                    "href": "/admin/reservations"
+                    "href": "/admin/reservations",
+                    "icon": "Bookmark",
+
                 }
             ]
         },
@@ -57,12 +90,18 @@ export default function Sidebar() {
             "icon": "EnvelopeIcon",
             "items": [
                 {
+                    "id" : "smtp",
                     "title": "SMTP",
-                    "href": "/admin/smtp"
+                    "href": "/admin/smtp",
+                    "icon": "GlobeEuropeAfrica",
+
                 },
                 {
+                    "id" : "templates",
                     "title": "Templates",
-                    "href": "/admin/mails"
+                    "href": "/admin/mails",
+                    "icon": "GlobeEuropeAfrica",
+
                 }
             ]
         },
@@ -71,60 +110,106 @@ export default function Sidebar() {
             "icon": "ServerIcon",
             "items": [
                 {
+                    "id" : "ldap",
                     "title": "Configuration",
-                    "href": "/admin/ldap"
+                    "href": "/admin/ldap",
+                    "icon": "Wrench",
+
                 }
             ]
         }
     ];
 
+
+
+    return (
+        <div className="bg-black text-white h-screen w-72 px-4 pt-4 mr-2 pb-2 flex flex-col">
+            {/* Profile */}
+            <Skeleton className="rounded-lg bg-black" isLoaded={!!session}>
+                <div className="flex items-center gap-4 mb-8">
+                    <UserInitialsIcon user={session?.user} />
+                    <div>
+                        <h3 className="font-bold text-lg">{session?.user.name} {session?.user.surname} </h3>
+                        <p className="text-gray-400 text-sm">Rôle</p>
+                    </div>
+                </div>
+            </Skeleton>
+
+            {/* Overview Section */}
+            <ScrollShadow hideScrollBar >
+                <div>
+                {sideItems.map((group, index)=> (
+                    <div className="space-y-4 mb-2" key={index}>
+                        <h4 className="text-gray-500 uppercase text-xs tracking-wider">{group.title}</h4>
+                        <div className="space-y-2">
+                            {group.items.map((item, index)=>(
+                                <SidebarItem  key={ index } label={ item.title } icon={ item.icon } id={ item.id } setActiveSection={ setActiveSection } active={ activeSection === item.id }/>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+                </div>
+            </ScrollShadow>
+
+
+            {/* Bouton Se Déconnecter */}
+            <div className="mt-2">
+                <Divider className="bg-neutral-500" orientation="horizontal"/>
+                <div
+                    className={`flex mt-3 text-neutral-300 items-center justify-between p-3 border-2 border-transparent transition rounded-lg hover:bg-red-700 hover:border-2 hover:border-red-500 bg-red-800 cursor-pointer`}>
+                    <div className="flex items-center gap-3">
+                        <ArrowLeftStartOnRectangleIcon className="h-6 w-6 mr-2"/>
+                        <span>Deconexion</span>
+                    </div>
+                </div>
+                <div
+                    className={`flex mt-3 text-neutral-300 items-center justify-between p-3 border-2 border-transparent transition rounded-lg hover:bg-blue-700 hover:border-2 hover:border-blue-500 bg-blue-800 cursor-pointer`}>
+                    <div className="flex items-center gap-3">
+                        <HomeIcon className="h-6 w-6 mr-2"/>
+                        <span>Retour</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function SidebarItem({label, icon, badge, id}) {
+    const {activeSection, setActiveSection} = useAdminContext();
     const IconMapping = {
         Squares2X2Icon: Squares2X2Icon,
         TableCells: TableCellsIcon,
         UserCircleIcon: UserCircleIcon,
         EnvelopeIcon: EnvelopeIcon,
-        ServerIcon: ServerIcon
-
+        ServerIcon: ServerIcon,
+        GlobeEuropeAfrica: GlobeEuropeAfricaIcon,
+        RectangleStack: RectangleStackIcon,
+        ChartPie : ChartPieIcon,
+        ClipboardDocumentList : ClipboardDocumentListIcon,
+        Users: UsersIcon,
+        Bookmark : BookmarkIcon,
+        Wrench : WrenchIcon,
+        RectangleGroup: RectangleGroupIcon
 
     };
-
+    const Icon = IconMapping[icon];
     return (
-        <div className="">
-
-            <div className="flex justify-start flex-col h-full border-r-1 border-neutral-400 ">
-                <div>
-                    <div className="flex justify-center items-center h-16 text-neutral-700">
-                        <span className="text-2xl font-bold">Admin</span>
-                    </div>
-                </div>
-                <div className="w-64 h-screen p-4">
-
-                    {(sideItems || []).map((item, index) => {
-                        const IconComponent = IconMapping[item.icon] || Squares2X2Icon;
-                        return (
-                            <div key={`admin-accordion-${index}`} className="flex flex-col mb-3">
-                                <Accordion selectionMode="multiple" variant="light"
-                                           defaultExpandedKeys={["admin-accordion-item-0"]}>
-                                    <AccordionItem key={`admin-accordion-item-${index}`} aria-label={item.title}
-                                                   title={item.title}
-                                                   startContent={<IconComponent className="h-6 w-6 mr-2"/>}>
-                                        <div className="flex flex-col space-y-3 py-2 px-1 ml-9" href={item.href}>
-                                            {(item.items).map((subItem, subIndex) => (
-                                                <Link key={`admin-link-${subIndex}`}
-                                                     className="flex flex-row justify-start items-center w-full ml-2 cursor-pointer hover:text-neutral-500 transition" href={subItem.href}>
-                                                    <span>{subItem.title}</span>
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    </AccordionItem>
-                                </Accordion>
-                            </div>
-                        )
-                    })}
-                </div>
+        <div onClick={e => setActiveSection(id)}
+             className={`flex items-center justify-between p-3 transition rounded-lg hover:bg-gray-900 ${activeSection === id ? "bg-gray-900 text-neutral-100" : "text-neutral-300"} cursor-pointer`}>
+            <div className="flex items-center gap-3">
+                <Icon className="h-6 w-6 mr-2" />
+                <span>{label}</span>
             </div>
+            {badge && (
+                <Badge
+                    size="lg"
+                    color={"default"}
+                    className="bg-gray-700 text-white"
+                    content={badge}
+                 />
 
+
+            )}
         </div>
-
     );
 }

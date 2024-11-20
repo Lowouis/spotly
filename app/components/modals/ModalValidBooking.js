@@ -37,8 +37,9 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
             console.log(formData)
             setPush(true);
             setSubmitted(true)
-        }
+            //send mail to concerned peoples
 
+        }
     }
 
 

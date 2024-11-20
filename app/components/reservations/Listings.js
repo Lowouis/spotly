@@ -25,7 +25,7 @@ export default function ReservationUserListing({entries}) {
         return Date.now() > new Date(endDate).getTime()
     }
     return (
-        <div className="mx-2 my-1 lg:w-1/3 lg:flex lg:flex-col md:w-full lg:items-start lg:justify-start ">
+        <div className="mx-2 my-1 lg:w-1/3 lg:flex lg:flex-col md:w-full lg:items-center lg:justify-center ">
             {entries && entries?.length > 0 ? (
                 <div className="w-full flex justify-between items-center">
                     <div className="w-full flex flex-col">
@@ -45,7 +45,7 @@ export default function ReservationUserListing({entries}) {
                     </div>
                 </div>
             ) : (
-                <div>
+                <div className="flex justify-center items-center">
                     <h1 className="text-2xl text-center">Aucune réservation</h1>
                 </div>
             )}
