@@ -1,29 +1,6 @@
-import {useEffect, useState} from "react";
-import Title from "@/app/components/utils/title";
-import {
-    Accordion,
-    AccordionItem,
-    Modal, ModalBody,
-    ModalContent, ModalFooter,
-    ModalHeader,
-    ScrollShadow,
-    Skeleton,
-    Tooltip
-} from "@nextui-org/react";
-import {ExclamationTriangleIcon, InformationCircleIcon} from "@heroicons/react/24/outline";
-import {Button} from "@nextui-org/button";
-import {EyeIcon, KeyIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
 import ModalCheckingBooking from "@/app/components/modals/ModalCheckingBooking";
 
-
-export default function ReservationUserListing({entries}) {
-
-
-
-
-    const isEntryDelayed = (endDate) => {
-        return Date.now() > new Date(endDate).getTime()
-    }
+export default function ReservationUserListing({entries, handleRefresh}) {
     return (
         <div className="mx-2 my-1 lg:w-1/3 lg:flex lg:flex-col md:w-full lg:items-center lg:justify-center ">
             {entries && entries?.length > 0 ? (
@@ -38,7 +15,7 @@ export default function ReservationUserListing({entries}) {
                                     </div>
                                 </div>
                                 <div>
-                                    <ModalCheckingBooking entry={entry}/>
+                                    <ModalCheckingBooking entry={entry} handleRefresh={handleRefresh}/>
                                 </div>
                             </div>
                         ))}

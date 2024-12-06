@@ -2,12 +2,12 @@
 import prisma from "@/prismaconf/init";
 
 export default async function handler(req, res) {
-    const {categoryId, domainId, otherParams } = req.query;
-
+    const {categoryId, domainId } = req.query;
+            console.log(typeof categoryId, typeof domainId)
         const resources = await prisma.resource.findMany({
             where: {
-                ...(categoryId && {categoryId : categoryId}),
-                ...(domainId && {domainId : domainId}),
+                ...(categoryId && {categoryId : parseInt(categoryId)}),
+                ...(domainId && {domainId : parseInt(domainId)}),
             },
             include: { domains : true, category : true }
         });

@@ -3,51 +3,39 @@ import {
     ModalContent, ModalFooter,
     ModalHeader,
 } from "@nextui-org/react";
-import SiteForm from "@/app/components/admin/form/site";
-import {useEffect, useState} from "react";
 import {Button} from "@nextui-org/button";
+import {useMutation} from "@tanstack/react-query";
+import ItemForm from "@/app/components/admin/form/ItemForm";
 
-
-
-export default function ActionOnItem({isOpen, onOpenChange, action='create', values=null, fields}) {
-    const [push, setPush] = useState(false);
-    const [newItemData, setNewItemData] = useState();
-
-    const handleFormSubmit = (data) => {
-        console.log(data);
-        setNewItemData(data);
-        setPush(true);
-    }
-
-    useEffect(() => {
-        function createNewItem() {
-            if (push && newItemData) {
-                fetch(`http://localhost:3000/api/domains`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(newItemData),
-                })
-                    .then(response => response.text())
-                    .then(text => {
-                        try {
-                            const data = JSON.parse(text);
-                            setPush(false);
-                        } catch (error) {
-                            console.error('Failed to parse JSON:', error);
-                            console.error('Response text:', text);
-                        }
-                    })
-                    .catch(error => {
-                            console.error('Fetch error:', error);
-                        }
-                    );
-            }
+const postItem = async ({data, model}) => {
+    console.log("MUTATE", JSON.stringify(data))
+    const response = await fetch(`http://localhost:3000/api/${model}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to create item');
         }
-        createNewItem();
-    }, [push, newItemData, setNewItemData, setPush]);
 
+        return response.json();
+};
+
+
+export default function ActionOnItem({isOpen, onOpenChange, action='create', values=null, formFields, model, setRefresh}) {
+    const mutation = useMutation({
+        mutationFn : postItem,
+        onSuccess: () => {
+            setRefresh(true);
+        }
+
+    });
+    const handleFormSubmit = (data) => {
+        console.log("KEYDATA", data);
+        mutation.mutate({data, model});
+    };
 
     switch(action){
         case "create" : return (
@@ -55,8 +43,8 @@ export default function ActionOnItem({isOpen, onOpenChange, action='create', val
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1">{action[0].toUpperCase()+action.slice(1)}</ModalHeader>
-                            <SiteForm defaultValues={values} onSubmit={handleFormSubmit} onClose={onClose} action={action} fields={fields}/>
+                            <ModalHeader className="flex flex-col gap-1">Créer</ModalHeader>
+                            <ItemForm defaultValues={values} onSubmit={handleFormSubmit} onClose={onClose} action={action} fields={formFields}/>
                         </>
                     )}
                 </ModalContent>
@@ -67,8 +55,7 @@ export default function ActionOnItem({isOpen, onOpenChange, action='create', val
     }
 }
 
-
-export const DeleteConfirmModal = (isOpen, OnChange)=>{
+export const DeleteConfirmModal = (isOpen, OnChange) => {
     return (
         <Modal isOpen={isOpen} onOpenChange={OnChange}>
             <ModalContent>

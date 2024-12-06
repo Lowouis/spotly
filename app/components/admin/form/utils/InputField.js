@@ -1,30 +1,26 @@
 import React from "react";
 import {Input} from "@nextui-org/input";
+import {useFormContext} from "react-hook-form";
 
 
 
-export default function InputField({register, required, type, label, errors}){
-
+export default function InputField({ required, type, label, name }) {
+    const { register, formState: { errors } } = useFormContext(); // Connexion au formulaire global
 
     return (
-        <div>
-            <label>{label}</label>
+        <div className="form-group">
+            <label htmlFor={name}>{label}</label>
             <Input
-                variant="flat"
-                id={register.name}
+                id={name}
                 type={type}
-                register={register}
-                required={required}
-                onBlur={register.onBlur}
-                value={register.value}
-                onChange={register.onChange}
-                ref={register.ref}
-                name={register.name}
-                className={`${errors[register.name] ? 'input-error' : ''}`}
+                {...register(name, { required })}
+                className={`form-input ${errors[name] ? 'input-error' : ''}`}
             />
-            {errors[register.name] &&
-                <p className="text-red-500 error-message text-sm mx-2">{errors[register.name].message}</p>
-            }
+            {errors[name] && (
+                <p className="text-red-500 error-message text-sm mx-2">
+                    {errors[name]?.message || 'Ce champ est requis'}
+                </p>
+            )}
         </div>
     );
 }

@@ -5,26 +5,26 @@ import prisma from "@/prismaconf/init";
 export default async function handler(req, res) {
     try {
         if(req.method === "GET"){
-            const { userId, startDate, endDate, siteId, categoryId, resourceId, otherParams } = req.query;
-
+            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, otherParams } = req.query;
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"
                 },
                 where: {
-                    ...(userId && {userId : userId}),
+                    ...(moderate && {moderate : moderate}),
+                    ...(userId && {userId : parseInt(userId)}),
                     ...(resourceId && {
-                        resourceId: resourceId
+                        resourceId: parseInt(resourceId)
                     }),
                     ...(siteId && categoryId && {
                         resource : {
                             ... (resourceId!=null ? {
-                                id: resourceId
+                                id: parseInt(resourceId)
                             } : {
                                 domains : {
-                                    id: siteId
+                                    id: parseInt(siteId)
                                 },
-                                categoryId: categoryId,
+                                categoryId: parseInt(categoryId),
                             })
                         },
 
@@ -81,6 +81,32 @@ export default async function handler(req, res) {
                 }
             });
             res.status(201).json(entry);
+        } else if(req.method === "PUT") {
+            const { id } = req.query;
+            const { moderate } = req.body;
+            console.log("Updating entry with id:", id); // Log the id
+
+            const entry = await prisma.entry.update({
+                where: {
+                    id: parseInt(id)
+                },
+                data: {
+                    moderate: moderate
+                }
+            });
+
+            res.status(200).json(entry);
+        } else if(req.method === "DELETE"){
+            const { id } = req.query;
+            console.log("Deleting entry with id:", id); // Log the id
+
+            const entry = await prisma.entry.delete({
+                where: {
+                    id: parseInt(id)
+                }
+            });
+
+            res.status(200).json(entry);
         }
 
 

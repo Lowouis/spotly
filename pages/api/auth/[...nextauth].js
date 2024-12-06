@@ -64,10 +64,11 @@ export const authConfig = {
                                        password :  null,
                                    }
                                });
-                               console.log("Nouvel utilisateur créé :", newUser);
+                               console.log("NEW USER CREATED:", newUser);
                                return newUser;
                            } else {
                                console.log("Utilisateur trouvé (a mettre à jour) : ", ldapUser);
+                               console.log("LDAP USER FOUND + UPDATED", ldapUser, user);
                                return await prisma.user.update({
                                    where : {
                                      id : user.id
@@ -100,7 +101,7 @@ export const authConfig = {
 
 
                 delete user.password;
-
+                console.log("NEXTAUTH RETURN SIDE", user);
                 return user;
             },
         }),
@@ -115,9 +116,11 @@ export const authConfig = {
     callbacks: {
 
         jwt: async ({ token, user }) => {
+            console.log("JWT SIDE", token, user);
             return {...token, ...user};
         },
         session: async ({ session, token }) => {
+            console.log("SESSION SIDE", session);
             session.user = token;
             return session;
         },

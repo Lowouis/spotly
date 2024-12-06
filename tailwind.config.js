@@ -15,6 +15,15 @@ module.exports = {
                 foreground: "var(--foreground)",
             },
         },
+        keyframes: {
+            scrollBar: {
+                '0%': { height: '0%' },
+                '100%': { height: '100%' },
+            },
+        },
+        animation: {
+            scrollBar: 'scrollBar 2s ease-in-out infinite',
+        },
     },
     darkMode: "class",
     plugins: [nextui({

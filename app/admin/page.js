@@ -10,20 +10,32 @@ import Resources from "@/app/admin/sections/Resources";
 import Users from "@/app/admin/sections/Users";
 import Entries from "@/app/admin/sections/Entries";
 import LDAP from "@/app/admin/sections/LDAP";
-
+import {ScrollShadow} from "@nextui-org/react";
+import {useEffect, useState} from "react";
 
 export default function Admin(){
+    const [isClient, setIsClient] = useState(false);
 
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+        return null; // or a loading spinner
+    }
     return (
         <AdminProvider>
             <div className={`flex flex-col ${GeistSans.variable} ${GeistMono.variable} antialiased h-full w-full`}>
-                <div className="flex flex-row">
+                <div className="flex flex-row h-screen">
                     <Sidebar  />
-                    <div className="flex justify-start items-center w-full flex-col">
+                    <div className="flex-1 flex flex-col overflow-y-auto">
                         <div className="flex justify-center items-center h-16 text-neutral-700">
                             <span className="text-2xl font-bold">Admin</span>
                         </div>
-                        <Content />
+                        <ScrollShadow className="h-screen" hideScrollBar size={25}>
+                            <Content />
+                        </ScrollShadow>
+
                     </div>
                 </div>
             </div>

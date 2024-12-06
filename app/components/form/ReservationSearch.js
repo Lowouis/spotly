@@ -3,35 +3,32 @@ import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
-import {parseZonedDateTime, Time} from "@internationalized/date";
-import {Skeleton, Switch} from "@nextui-org/react";
-import TimeInputCompatible from "@/app/components/form/timeInputCompatible";
+import { Switch} from "@nextui-org/react";
 import DateRangePickerCompatible from "@/app/components/form/DateRangePickerCompatible";
-import AvailableTable from "@/app/components/tables/AvailableTable";
 import {AlternativeMenu} from "@/app/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import ReservationUserListing from "@/app/components/reservations/Listings";
 import { constructDate } from "../../utils/global";
-import {DateRangePicker} from "@nextui-org/date-picker";
+import {useQuery} from "@tanstack/react-query";
+import {useSession} from "next-auth/react";
+import MatchingEntriesTable from "@/app/components/tables/MatchingEntriesTable";
+
 
 const schemaFirstPart = yup.object().shape({
     site: yup.string().required('Vous devez choisir un site'),
     category: yup.string().required('Vous devez choisir une ressource'),
     resource: yup.object().optional().default(null).nullable(),
     date: yup.object().required('Vous devez choisir une date'),
-    });
+});
 
 
-const ReservationSearch = ({session}) => {
 
-    // switch search or reservation mode
+const ReservationSearch = () => {
+    const { data: session  } = useSession();
     const [searchMode, setSearchMode] = useState(true);
-    const [domains, setDomains] = useState();
-    const [categories, setCategories] = useState();
-    const [resources, setResources] = useState();
+    const [refresh, setRefresh] = useState(false);
     const [availableResources, setAvailableResources] = useState();
-    const [matchingEntries, setMatchingEntries] = useState();
     const [data, setData] = useState(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isRecurrent, setIsRecurrent] = useState(false);
@@ -39,7 +36,6 @@ const ReservationSearch = ({session}) => {
         resolver: yupResolver(schemaFirstPart),
         mode: 'onSubmit',
     });
-    const [userEntries, setUserEntries] = useState();
 
 
     const {watch, setValue} = methods;
@@ -51,103 +47,68 @@ const ReservationSearch = ({session}) => {
     const handleSearchMode = (tab) => {
         setSearchMode(tab==='search');
     }
-    useEffect(() => {
-        const fetchEntries = () => {
-            if (session?.user) {
-                fetch(`http://localhost:3000/api/entry/?userId=${session.user.id}`)
-                    .then(response => response.text())
-                    .then(text => {
-                        try {
-                            const data = JSON.parse(text)
-                            setUserEntries(data);
-                        } catch (error) {
-                            console.error('Failed to parse JSON:', error);
-                            console.error('Response text:', text);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                    });
-            } else {
-                setUserEntries(null);
+    const handleRefresh = ()=>{
+        setRefresh(true);
+    }
+    const { data: userEntries, error, isLoading, refetch } = useQuery({
+        queryKey: ['userEntries', session?.user?.id],
+        queryFn: async ({ queryKey }) => {
+            const userId = queryKey[1];
+            const response = await fetch(`http://localhost:3000/api/entry/?userId=${userId}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
+            return response.json();
+        }});
+
+
+    const { data: fetchedDomAndCat } = useQuery({
+        queryKey: ['dom_cat'],
+        queryFn: async () => {
+            const cat = await fetch('http://localhost:3000/api/categories');
+            const dom = await fetch("http://localhost:3000/api/domains");
+
+            if (!cat.ok) {
+                throw new Error('Network response for categories was not ok');
+            }
+            if (!dom.ok) {
+                throw new Error('Network response for domains was not ok');
+            }
+            return {categories: await cat.json(), domains: await dom.json()};
+        },
+    });
+
+    const { data: resources } = useQuery({
+        queryKey: ['resource', watchCategory, watchSite],
+        queryFn: async ({ queryKey }) => {
+            const [_, category, site] = queryKey;
+            if (category && site) {
+                const response = await fetch(`http://localhost:3000/api/resources/?categoryId=${category}&domainId=${site}`);
+                return await response.json();
+            }
+            return [];
         }
+    });
 
-        fetchEntries();
-    }, [session, setUserEntries]);
-    useEffect(() => {
-        const fetchDomains = async () => {
-            try {
-                const response = await fetch("http://localhost:3000/api/domains");
-                const fetchedDomains = await response.json();
-                setDomains(fetchedDomains);
-            } catch (error) {
-                console.error("Fetch error:", error);
-            }
-        };
-
-        const fetchCategories = async () => {
-            try {
-                const response = await fetch("http://localhost:3000/api/categories");
-                const fetchedCategories = await response.json();
-                setCategories(fetchedCategories);
-            } catch (error) {
-                console.error("Fetch error:", error);
-            }
-        };
-
-        fetchDomains();
-        fetchCategories();
-    }, []);
-
-    useEffect(() => {
-        const fetchResources = async () => {
-            if (watchCategory && watchSite) {
-                try {
-                    const response = await fetch(
-                        `http://localhost:3000/api/resources/?categoryId=${watchCategory}&domainId=${watchSite}`
-                    );
-                    const fetchedResources = await response.json();
-                    setResources(fetchedResources);
-                    console.log("Fetched ressouces", fetchedResources)
-                } catch (error) {
-                    console.error("Fetch error:", error);
-                }
-            } else {
-                setResources(null);
-            }
-        };
-
-        fetchResources();
-    }, [watchCategory, watchSite]);
-
-    useEffect(() => {
-        const fetchMatchingEntries = async () => {
+    const { data: matchingEntries,  } = useQuery({
+        queryKey: ['entries', isSubmitted && data],
+        queryFn: async ({ queryKey }) => {
+            const [_, isSubmitted, data] = queryKey;
             if (isSubmitted && data) {
                 const startDate = constructDate(data.date.start);
                 const endDate = constructDate(data.date.end);
-
-                try {
-                    const response = await fetch(
-                        `http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
-                    );
-                    const fetchedEntries = await response.json();
-                    console.log("Fetched entries:", fetchedEntries);
-                    setMatchingEntries(fetchedEntries);
-                } catch (error) {
-                    console.error("Fetch error:", error);
-                }
+                const response = await fetch(
+                    `http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
+                );
+                return await response.json();
             }
-        };
+            return [];
+        }
+    });
 
-        fetchMatchingEntries().then(r => console.log("Matching entries fetched"));
-    }, [isSubmitted, data]); // Only run when isSubmitted or data changes
 
     useEffect(() => {
         if (isSubmitted && matchingEntries) {
-            console.log("----------------------------------");
-            console.log(matchingEntries, availableResources);
-            console.log("----------------------------------");
             const cpAvailableResources = [...resources];
             const filteredResourcesByMatches = cpAvailableResources.filter(
                 (resource) =>
@@ -164,12 +125,18 @@ const ReservationSearch = ({session}) => {
             setAvailableResources(filteredResourcesByResources || null);
             setIsSubmitted(false);
         }
-    }, [isSubmitted, matchingEntries, resources, data]);
+    }, [availableResources, isSubmitted, matchingEntries, resources, data]);
 
+    ///THIS USE EFFECT WILL BE THE ONLY ONE AT THE END
+    useEffect(() => {
+        if(refresh){
+            refetch().then(r => console.log("TICKET USERS TO UPDATE"));
+            setRefresh(false);
+        }
+    }, [setRefresh, refresh, refetch]);
     const handleResourceOnReset = ()=>{
         setValue('resource', null);
         setData({...data, resource: null});
-        console.log("RESET");
     }
     const onSubmit = (data) => {
         setData(data);
@@ -179,89 +146,75 @@ const ReservationSearch = ({session}) => {
         return <p>Error: Form could not be initialized</p>;
     }
 
-    const controlError = ()=>{
-        console.log("------------------------------------");
-        console.log("YUP SIDE")
-        console.log("site", watch('site'));
-        console.log("category",watch('category'));
-        console.log("resource",watch('resource'));
-        console.log("date",watch('date'));
-        console.log("start hour",watch('starthour'));
-        console.log("end hour",(watch('endhour')));
-        console.log("STATES SIDE");
-        console.log(data);
-        console.log("------------------------------------");
-    }
-
     return (
         <div className="py-4 bg-gradient-to-b from-neutral-50 ">
-        <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode} userEntriesQuantity={userEntries?.length}/>
-        <div className="flex flex-col md:w-full">
-            <div className="flex flex-col justify-center items-center">
+            <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode} userEntriesQuantity={userEntries?.length}/>
+            <div className="flex flex-col md:w-full">
+                <div className="flex flex-col justify-center items-center">
                     {(searchMode) &&  (
                         <FormProvider {...methods}>
-                        <form onSubmit={methods.handleSubmit(onSubmit)} className={`${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200`}>
-                            <div className="flex flex-row">
-                                <div className="flex flex-col order-1 w-11/12">
-                                    <div className="flex flex-row space-x-2 w-full">
-                                        <SelectField
-                                            name="site"
-                                            label="Site"
-                                            options={domains}
-                                            className=""
+                            <form onSubmit={methods.handleSubmit(onSubmit)} className={`${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200`}>
+                                <div className="flex flex-row">
+                                    <div className="flex flex-col order-1 w-11/12">
+                                        <div className="flex flex-row space-x-2 w-full">
+                                            <SelectField
+                                                name="site"
+                                                label="Site"
+                                                options={fetchedDomAndCat?.domains}
+                                                className=""
 
-                                        />
-                                        <SelectField
-                                            name="category"
-                                            label="Catégorie"
-                                            options={categories}
-                                            className=""
-                                        />
-                                        {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESOURCES   */}
-                                        <SelectField
-                                            object={true}
-                                            name="resource"
-                                            label="Resources"
-                                            options={resources}
-                                            disabled={!resources}
-                                            isRequired={false}
-                                            onReset={handleResourceOnReset}
-                                        />
-                                        <DateRangePickerCompatible name={"date"} alternative={true}/>
+                                            />
+                                            <SelectField
+                                                name="category"
+                                                label="Catégorie"
+                                                options={fetchedDomAndCat?.categories}
+                                                className=""
+                                            />
+                                            {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESOURCES   */}
+                                            <SelectField
+                                                object={true}
+                                                name="resource"
+                                                label="Resources"
+                                                options={resources}
+                                                disabled={!resources}
+                                                isRequired={false}
+                                                onReset={handleResourceOnReset}
+                                            />
+                                            <DateRangePickerCompatible name={"date"} alternative={true}/>
 
 
-                                        <div className="flex flex-col justify-center items-center">
-                                            <span className="text-xs">Récurrent</span>
-                                            <Switch
-                                                size="sm"
-                                                name="allday"
-                                                id="allday"
-                                                color="primary"
+                                            <div className="flex flex-col justify-center items-center">
+                                                <span className="text-xs">Récurrent</span>
+                                                <Switch
+                                                    size="sm"
+                                                    name="allday"
+                                                    id="allday"
+                                                    color="primary"
+                                                    className="mb-2"
+                                                    onClick={(e) => {
+                                                        setIsRecurrent(!isRecurrent)
+                                                    }}
+                                                >
+
+                                                </Switch>
+                                            </div>
+                                        </div>
+                                        <div className={`flex flex-row space-x-2 w-full ${!isRecurrent && "hidden"}`}>
+                                            <SelectField
+                                                name="recursive_unit"
+                                                label="Fréquence"
+                                                options={[{id: '1', name: 'Quotidien'}, {id: '2', name: 'Hébdomadaire '}, {
+                                                    id: '3',
+                                                    name: 'Mensuel'
+                                                }]}
+                                                disabled={!isRecurrent}
+                                                isRequired={false}
                                                 className="mb-2"
-                                                onClick={(e) => {
-                                                    setIsRecurrent(!isRecurrent)
-                                                }}
-                                            >
-
-                                            </Switch>
+                                            />
+                                            <DateRangePickerCompatible name={"recursive_range"} disabled={!isRecurrent}/>
                                         </div>
                                     </div>
-                                    <div className={`flex flex-row space-x-2 w-full ${!isRecurrent && "hidden"}`}>
-                                        <SelectField
-                                            name="recursive_unit"
-                                            label="Fréquence"
-                                            options={[{id: '1', name: 'Quotidien'}, {id: '2', name: 'Hébdomadaire '}, {
-                                                id: '3',
-                                                name: 'Mensuel'
-                                            }]}
-                                            disabled={!isRecurrent}
-                                            isRequired={false}
-                                            className="mb-2"
-                                        />
-                                        <DateRangePickerCompatible name={"recursive_range"} disabled={!isRecurrent}/>
-                                    </div>
-                                </div>
-                                <div className="w-auto order-2 flex justify-center items-center">
+                                    <div className="w-auto order-2 flex justify-center items-center">
                                         <Button
                                             isIconOnly
                                             size="lg"
@@ -298,33 +251,32 @@ const ReservationSearch = ({session}) => {
                                                 <MagnifyingGlassIcon width="32" height="32" className="rounded-full" color="white"/>
                                             </span>
                                         </Button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            {!isSubmitted && !availableResources && (
+                                <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
+                                    Pour commencer faite une recherche
+                                </div>
+                            )}
+                        </FormProvider>
+                    )}
+                    {searchMode &&  (
+                        <div className="flex 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
+                            <div className="h-full w-full space-y-5 p-2 rounded-lg">
+                                <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
+                                    {availableResources && (
+                                        <MatchingEntriesTable setData={setData} resources={availableResources} methods={methods} data={data} session={session} handleRefresh={handleRefresh} />
+                                    )
+                                    }
                                 </div>
                             </div>
-                        </form>
-
-                        {!isSubmitted && !availableResources && (
-                            <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
-                                Pour commencer faite une recherche
-                            </div>
-                        )}
-                    </FormProvider>
-                        )}
-                {searchMode &&  (
-                    <div className="flex 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
-                        <div className="h-full w-full space-y-5 p-2 rounded-lg">
-                            <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
-                                {availableResources && (
-                                    <AvailableTable setData={setData} resources={availableResources} methods={methods} data={data} session={session}/>
-                                )
-                                }
-                            </div>
                         </div>
-                    </div>
-                )}
-                {!searchMode && (<ReservationUserListing entries={userEntries}/>)}
-
+                    )}
+                    {!searchMode && (<ReservationUserListing entries={userEntries} handleRefresh={handleRefresh} />)}
+                </div>
             </div>
-        </div>
         </div>
     );
 };

@@ -7,7 +7,7 @@ import {Button} from "@nextui-org/button";
 
 export default function App() {
     const router = useRouter()
-    const { data: session, status  } = useSession();
+    const { status  } = useSession();
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         if (status !== 'authenticated' && status !== 'loading') {
@@ -59,8 +59,7 @@ export default function App() {
                 <main className="flex flex-col justify-center items-center sm:items-start">
                     <div className="flex flex-col w-full justify-center items-center mx-auto">
                         <div className="flex flex-col w-full">
-                            {/*<AlternativeMenu user={session?.user}/>*/}
-                            <ReservationSearch session={session}/>
+                            <ReservationSearch />
                         </div>
                     </div>
                 </main>

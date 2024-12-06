@@ -24,7 +24,7 @@ const Entries = ({})=>{
 
     return (
         <div className="flex flex-col gap-3 w-full mx-2">
-            <ItemsOnTable isLoading={isLoading} items={items} name={"Réservations"} />
+            <ItemsOnTable create_hidden={true} isLoading={isLoading} items={items} name={"Réservations"} />
         </div>
     );
 }

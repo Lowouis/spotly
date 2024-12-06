@@ -9,7 +9,7 @@ import {
     UserCircleIcon,
     GlobeEuropeAfricaIcon, HomeIcon, BookmarkIcon
 } from "@heroicons/react/24/solid";
-import {Badge, Divider, ScrollShadow, Skeleton} from "@nextui-org/react";
+import {Badge, Divider, Link, ScrollShadow, Skeleton} from "@nextui-org/react";
 import {useAdminContext} from "@/app/context/Admin";
 import {RectangleStackIcon} from "@heroicons/react/16/solid";
 import {
@@ -21,11 +21,11 @@ import {
 } from "@heroicons/react/24/solid/index";
 import { useSession } from "next-auth/react";
 import UserInitialsIcon from "@/app/components/utils/UserInitialsIcon";
-
+import {redirect} from "next/navigation";
 
 export default function Sidebar() {
     const {data : session} = useSession();
-    const {activeSection, setActiveSection} = useAdminContext()
+    const {activeSection, setActiveSection} = useAdminContext();
     const sideItems = [
         {
             "title": "Administration",
@@ -61,7 +61,6 @@ export default function Sidebar() {
                     "title": "Ressources",
                     "href": "/admin/resource",
                     "icon": "ClipboardDocumentList",
-
                 }
             ]
         },
@@ -163,8 +162,9 @@ export default function Sidebar() {
                     </div>
                 </div>
                 <div
+                    onClick={e => redirect("/")}
                     className={`flex mt-3 text-neutral-300 items-center justify-between p-3 border-2 border-transparent transition rounded-lg hover:bg-blue-700 hover:border-2 hover:border-blue-500 bg-blue-800 cursor-pointer`}>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3" >
                         <HomeIcon className="h-6 w-6 mr-2"/>
                         <span>Retour</span>
                     </div>

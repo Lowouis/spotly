@@ -2,28 +2,21 @@
 
 
 import {signOut} from "next-auth/react";
-import {MenuButton} from "@/app/components/utils/button";
-import {useState} from "react";
 import {
     Dropdown,
     DropdownTrigger,
     DropdownMenu,
     DropdownItem,
-    Avatar,
-    User,
-    Divider,
-    DropdownSection, Tabs, Badge
+    Link,
+    DropdownSection, Tabs, Badge,
 } from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {BookmarkIcon, CalendarDateRangeIcon} from "@heroicons/react/24/solid";
 import {Tab} from "@nextui-org/react";
-import { MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
+import { MagnifyingGlassCircleIcon, WrenchIcon} from "@heroicons/react/24/outline";
 
 
 export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity}) {
-
-
-
     return (
                  <div className="w-full">
                      <div className="flex w-full p-2">
@@ -32,44 +25,49 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity}) {
                                  <CalendarDateRangeIcon width="48" height="48" color="black"/><span className="text-4xl font-bold">Spotly</span>
                              </div>
                          </div>
-                         <div className="flex flex-col w-1/3 justify-center items-center">
-                         <Tabs size="lg" aria-label="Options" color="primary" variant="bordered">
+                         <div className="flex flex-col w-1/3 space-y-2 justify-center items-center">
+                             {user.role !== 'USER' &&
+                                     <Button isIconOnly={false} type="button" size="lg" color="secondary" variant="flat" shadow="lg"
+                                             radius="full" isLoading={false} href="/admin" as={Link}>
+                                         <WrenchIcon className="h-8 w-8"/>
+                                         Administration
+                                     </Button>
+                             }
 
-                                 <Tab
-                                     key="search"
-                                     onPress={() => {
-                                         console.log("Search clicked")
-                                     }}
-                                     title={
-                                         <div className="flex items-center space-x-2" onClick={()=>handleSearchMode('search')}>
+                             <Tabs size="lg" aria-label="Options" color="primary" variant="bordered">
+                                     <Tab
+                                         key="search"
+                                         onPress={() => {
+                                             console.log("Search clicked")
+                                         }}
+                                         title={
+                                             <div className="flex items-center space-x-2" onClick={()=>handleSearchMode('search')}>
 
-                                             <MagnifyingGlassCircleIcon width="24" height="24" color="black"/>
+                                                 <MagnifyingGlassCircleIcon width="24" height="24" color="black"/>
 
-                                             <span>Chercher</span>
-                                         </div>
-                                     }
-                                 />
+                                                 <span>Chercher</span>
+                                             </div>
+                                         }
+                                     />
+                                     <Tab
+                                         key="bookings"
+                                         title={
+                                             <div className="flex items-center space-x-2" onClick={handleSearchMode}>
+                                                 {userEntriesQuantity >= 0 && <Badge size="lg" content={userEntriesQuantity} color="secondary">
+                                                     <BookmarkIcon width="24" height="24" color=""/>
+                                                 </Badge>
+                                                 }
+                                                         <span>Réservations</span>
+                                             </div>
+                                         }
+                                         onPress={handleSearchMode}
+                                     />
+                             </Tabs>
 
-                                 <Tab
-
-                                     key="bookings"
-                                     title={
-                                         <div className="flex items-center space-x-2" onClick={handleSearchMode}>
-                                             {userEntriesQuantity >= 0 && <Badge size="lg" content={userEntriesQuantity} color="secondary">
-                                                 <BookmarkIcon width="24" height="24" color=""/>
-                                             </Badge>
-                                             }
-
-                                                     <span>Réservations</span>
-
-                                         </div>
-                                     }
-                                     onPress={handleSearchMode}
-
-                                 />
-
-                         </Tabs>
                          </div>
+
+
+
                          <div className="w-1/3 justify-end items-end">
                              <div className="flex justify-end">
                                  <Dropdown

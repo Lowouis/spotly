@@ -9,8 +9,8 @@ datasource db {
 }
 
 model Account {
-  id                 String    @id @default(cuid())
-  userId             String
+  id                 Int       @id @default(autoincrement())
+  userId             Int
   providerType       String
   providerId         String
   providerAccountId  String
@@ -25,8 +25,8 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  userId       String
+  id           Int      @id @default(autoincrement())
+  userId       Int
   expires      DateTime
   sessionToken String   @unique
   accessToken  String   @unique
@@ -36,7 +36,7 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            Int       @id @default(autoincrement())
   name          String?
   surname       String?
   username      String?   @unique
@@ -50,10 +50,17 @@ model User {
   accounts      Account[]
   sessions      Session[]
   entry         entry[]
+  role          role      @default(USER)
+}
+
+enum role {
+  USER
+  ADMIN
+  SUPERADMIN
 }
 
 model VerificationRequest {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   identifier String
   token      String   @unique
   expires    DateTime
@@ -64,7 +71,7 @@ model VerificationRequest {
 }
 
 model category {
-  id          String     @id @default(cuid())
+  id          Int        @id @default(autoincrement())
   name        String
   description String?
   comment     String?
@@ -74,11 +81,11 @@ model category {
 }
 
 model domain {
-  id            String     @id @default(cuid())
+  id            Int        @id @default(autoincrement())
   name          String
-  code          Int
+  code          String
   address       String
-  street_number Int
+  street_number String
   country       String
   city          String
   zip           String
@@ -97,15 +104,15 @@ enum status {
 }
 
 model resource {
-  id          String   @id @default(cuid())
+  id          Int      @id @default(autoincrement())
   name        String
   description String?
   moderate    Boolean
-  domainId    String
+  domainId    Int
   options     option[] @relation("resourceToOption")
-  categoryId  String
+  categoryId  Int
   status      status   @default(AVAILABLE)
-  category    category @relation(fields: [categoryId], references: [id])
+  category    category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   domains     domain   @relation(fields: [domainId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -113,23 +120,34 @@ model resource {
 }
 
 model option {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   tag        String
-  resourceId String
+  resourceId Int
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   resource   resource @relation("resourceToOption", fields: [resourceId], references: [id])
 }
 
 model entry {
-  id         String   @id @default(cuid())
-  resourceId String
-  userId     String
-  comment    String?
-  startDate  DateTime
-  endDate    DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  resource   resource @relation(fields: [resourceId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  id                        Int         @id @default(autoincrement())
+  resourceId                Int
+  userId                    Int
+  comment                   String?
+  moderate                  EntryStatus @default(ACCEPTED)
+  lastUpdatedModerateStatus DateTime?   @default(now())
+  adminNote                 String?
+  startDate                 DateTime
+  endDate                   DateTime
+  createdAt                 DateTime    @default(now())
+  returnedConfirmationCode  String?     @unique
+  updatedAt                 DateTime    @updatedAt
+  resource                  resource    @relation(fields: [resourceId], references: [id])
+  user                      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum EntryStatus {
+  WAITING
+  ACCEPTED
+  REJECTED
+  ENDED
 }

@@ -1,32 +1,35 @@
-import {PencilIcon, TrashIcon} from "@heroicons/react/24/solid";
-import React, {useState} from "react";
-import {
+import React from "react";
+import { Button, ButtonGroup } from "@nextui-org/react";
+import { CheckIcon, XMarkIcon} from "@heroicons/react/24/solid";
+import ModalCheckingBooking from "@/app/components/modals/ModalCheckingBooking";
 
-    DropdownItem,
-    DropdownMenu,
-    useDisclosure
-} from "@nextui-org/react";
-import ActionOnItem from "@/app/components/admin/communs/ActionOnItem";
-
-
-
-export default function ActionMenu({values}) {
-    const {isOpen, OnOpen, OnChange} = useDisclosure();
-    const [action, setAction] = useState("");
-
+export default function ActionMenuModerate({actions, entry}) {
+    console.log(typeof actions);
     return (
-        <>
-            <DropdownMenu>
-                <DropdownItem onPress={setAction("change") && OnOpen} startContent={<PencilIcon height={24} width={24} />} color="primary" variant="bordered">
-                    Modifier
-                </DropdownItem>
-                <DropdownItem onPress={setAction("delete") && OnOpen} startContent={<TrashIcon height={24} width={24} />} variant="flat" color="danger">
-                        Supprimer
-                </DropdownItem>
+        <ButtonGroup variant="flat" color="primary" size="lg" >
+            {actions.includes('view') && <ModalCheckingBooking entry={entry} adminMode={true} />}
+            {actions.includes('confirm') &&
+            <Button
+                isIconOnly={true}
+                className="block"
+                size="lg"
+                color="default"
+                variant="ghost"
+                radius="sm"
+                >
+                <span className="flex justify-center items-center"><CheckIcon width="32" height="32" color={"green"}  /></span>
+            </Button>}
+            {actions.includes('reject') &&
+                <Button
+                    isIconOnly={true}
+                    className="block"
+                    size="lg"
+                    color="default"
+                    variant="ghost"
+                >
+                    <span className="flex justify-center items-center"><XMarkIcon width="32" height="32" color={"red"} /></span>
+                </Button>}
 
-            </DropdownMenu>
-            <ActionOnItem values={values} action={action} isOpen={isOpen} onOpenChange={OnChange} />
-        </>
-
-    )
+        </ButtonGroup>
+    );
 }

@@ -8,8 +8,7 @@ import {
     ModalFooter,
     ModalHeader,
     Skeleton, Spinner,
-    Switch,
-    Textarea, useDisclosure
+    Textarea
 } from "@nextui-org/react";
 import {formatDate} from "@/app/components/modals/ModalCheckingBooking";
 import {ArrowDownCircleIcon, ExclamationTriangleIcon} from "@heroicons/react/24/outline";
@@ -17,7 +16,7 @@ import {ArrowRightCircleIcon, ShieldExclamationIcon} from "@heroicons/react/24/s
 import React, {useEffect, useState} from "react";
 import { constructDate } from "@/app/utils/global";
 
-export default function ModalValidBooking({data, setData, isOpen, onOpenChange, session, setPush, push}) {
+export default function ModalValidBooking({data, setData, isOpen, onOpenChange, session, setPush, push, handleRefresh}) {
 
     const [sumbitted, setSubmitted] = useState(false);
     const [formData, setFormData] = useState({
@@ -62,7 +61,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                     comment     : formData.comment,
                 }),
             })
-                .then(response => response.json())
+                .then(r => handleRefresh())
                 .catch((error) => {
                     console.error('Error:', error);
                     setError(true);
@@ -122,8 +121,6 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                                 placeholder="Écrire un commentaire"
                                                 size='lg'
                                                 onChange={handleInputChange}
-
-
                                             />
                                         </div>
 
@@ -145,7 +142,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                         <Divider orientation="horizontal" className="bg-neutral-950 opacity-25"/>
                                         <div>
                                         <span className="flex flex-col space-y-2 text-slate-700 mt-2">
-                                            <span className="font-bold text-lg">Conditions d'utilisation</span>
+                                            <span className="font-bold text-lg">Conditions d`&apos;utilisation</span>
                                             <span className="text-slate-500 text-sm">
                                                 La ressource doit être restituée dans le délai indiqué. Pour confirmer le retour, un code à 6 chiffres vous sera envoyé par mail pour confirmer le retour de la ressource.
                                             </span>
@@ -156,7 +153,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                                       radius="md"
                                                       value={formData.cgu}
                                             >
-                                                J'accepte les conditions
+                                                J&apos;accepte les conditions
                                             </Checkbox>
 
                                         </span>
@@ -198,7 +195,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                         onClose();
 
                                     }}>
-                                        D'accord
+                                        D`&apos;accord
                                     </Button>
                                 </div>
                             </ModalBody>

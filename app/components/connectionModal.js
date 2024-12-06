@@ -1,7 +1,5 @@
 'use client';
 
-//import Input from "@/app/components/utils/input";
-//import Button from "@/app/components/utils/button";
 import Banner from "@/app/components/utils/banner";
 import {useState} from "react";
 import {signIn} from "next-auth/react";

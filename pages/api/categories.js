@@ -2,6 +2,49 @@
 import prisma from "@/prismaconf/init";
 
 export default async function handler(req, res) {
-    const categories = await prisma.category.findMany();
-    res.status(200).json(categories);
+
+
+    if(req.method === "GET"){
+        const categories = await prisma.category.findMany();
+        res.status(200).json(categories);
+    } else if (req.method === "POST"){
+        const {name, description, comment } = req.body;
+        const category = await prisma.category.create({
+            data: {
+                name,
+                description,
+                comment,
+            }
+        });
+        res.status(200).json(category);
+    } else if (req.method === "DELETE") {
+        const { ids } = req.body;
+        console.log(ids)
+
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ message: "Invalid or missing 'ids' in request body" });
+        }
+
+        try {
+            const deletedCategories = await prisma.category.deleteMany({
+                where: {
+                    id: {
+                        in: ids,
+                    },
+                },
+            });
+
+            if (deletedCategories.count === 0) {
+                return res.status(404).json({ message: "No categories found to delete" });
+            }
+
+            res.status(200).json({ message: "Categories deleted successfully", count: deletedCategories.count });
+        } catch (error) {
+            console.error("Error deleting categories:", error);
+            res.status(500).json({ message: "Failed to delete categories" });
+        }
+    } else {
+        res.setHeader("Allow", ["GET", "POST", "DELETE"]);
+        res.status(405).json({ message: `Method ${req.method} not allowed` });
+    }
 }

@@ -3,56 +3,96 @@
 
 import {useQuery} from "@tanstack/react-query";
 import Block from "@/app/components/admin/Block";
-import {ChartPieIcon, ClipboardDocumentListIcon, UsersIcon, BookmarkIcon, CubeIcon} from "@heroicons/react/24/outline/index";
-import {ExclamationTriangleIcon, FireIcon} from "@heroicons/react/24/outline";
+import {ExclamationTriangleIcon, FireIcon, ChartPieIcon, ClipboardDocumentListIcon, UsersIcon, BookmarkIcon, CubeIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid/index";
 import ItemsOnTable from "@/app/components/admin/communs/ItemsOnTable";
+import {useEffect, useState} from "react";
 
 const Dashboard = ({})=>{
-    const { data: stats, isLoading, isError, error } = useQuery({
+    const [refresh, setRefresh] = useState(false);
+    const { data: DD, isLoading, isError, error, refetch } = useQuery({
+        queryKey: ['dashboard'],
         queryFn: async () => {
-            const response = await fetch('http://localhost:3000/api/dashboard');
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            const statsResponse = await fetch('http://localhost:3000/api/dashboard');
+            const waitingEntriesResponse = await fetch('http://localhost:3000/api/entry?moderate=WAITING');
+
+            if (!statsResponse.ok) {
+                throw new Error('Failed to fetch stats');
             }
-            return response.json();
+
+            if (!waitingEntriesResponse.ok) {
+                throw new Error('Failed to fetch waiting entries');
+            }
+
+            const stats = await statsResponse.json();
+            const waitingEntries = await waitingEntriesResponse.json();
+            console.log(waitingEntries);
+            waitingEntries.forEach(entry => {
+                delete entry.resourceId;
+                delete entry.userId;
+                delete entry.createdAt;
+                delete entry.updatedAt;
+            });
+            return { stats, waitingEntries };
         },
     });
-    console.log(stats);
+    useEffect(() => {
+        if (refresh) {
+            refetch().then(r => setRefresh(false))
+        }
+    }, [refresh, refetch, setRefresh]);
     if (isError) {
         return <div>Error: {error.message}</div>;
     }
+    const columnsGreatNames = [
+        "ID",
+        "Note de l'administrateur",
+        "Status",
+        "Mis à jour le",
+        "Commentaire",
+        "Début",
+        "Fin",
+        "Code",
+        "Utilisateur",
+        "Ressource",
+    ]
+
+
     return (
         <div className="w-full">
             <div className="font-semibold text-3xl">
                 Tableau de bord
             </div>
-            <div className="flex flex-row space-x-2 w-full py-3 ">
-                <Block isLoaded={!isLoading} quantity={stats?.usersTotal} label="utilisateurs"
+            <div className="flex flex-row space-x-2 w-full my-3 ">
+                <Block isLoaded={!isLoading} quantity={DD?.stats?.usersTotal} label="utilisateurs"
                        logo={<UsersIcon color={"#0369a1"} width={48} height={48}/>}/>
-                <Block isLoaded={!isLoading} quantity={stats?.entriesTotal} label="réservations"
+                <Block isLoaded={!isLoading} quantity={DD?.stats?.entriesTotal} label="réservations"
                        logo={<BookmarkIcon color={"#0369a1"} width={48} height={48}/>}/>
-                <Block isLoaded={!isLoading} quantity={stats?.availableResourcesTotal} label="ressources disponible"
+                <Block isLoaded={!isLoading} quantity={DD?.stats?.availableResourcesTotal} label="disponibles"
                        logo={<CubeIcon color={"#0369a1"} width={48} height={48}/>}/>
-                <Block isLoaded={!isLoading} quantity={stats?.bookedResourcesTotal} label="ressources occupé"
+                <Block isLoaded={!isLoading} quantity={DD?.stats?.bookedResourcesTotal} label="utilisées"
                        logo={<FireIcon color={"#ea580c"} width={48} height={48}/>}/>
-                <Block isLoaded={!isLoading} quantity={stats?.delayedResourcesTotal} label="retards"
+                <Block isLoaded={!isLoading} quantity={DD?.stats?.delayedResourcesTotal} label="retards"
                        logo={<ExclamationTriangleIcon color={"#ef4444"} width={48} height={48}/>}/>
-                <Block isLoaded={!isLoading} quantity={stats?.ratio} label="% de disponibilité"
+                <Block isLoaded={!isLoading} quantity={DD?.stats?.ratio} label="disponibilité"
                        logo={<ChartPieIcon color={"#0369a1"} width={48} height={48}/>}/>
-            </div>
-            <div>
-                <div className="font-semibold text-2xl">
-                    Retards
-                </div>
-                <div>
-                    <ItemsOnTable items={stats?.test} isLoading={isLoading} name={"Retards"} />
-                </div>
+                <Block isLoaded={!isLoading} quantity={DD?.stats?.delayedResourcesTotal} label="en attentes"
+                       logo={<ShieldExclamationIcon color={"#ef4444"} width={48} height={48}/>}/>
             </div>
             <div>
                 <div>
-                    <ItemsOnTable items={stats?.test} isLoading={isLoading} name={"Réservations à modérer"}/>
+                    <ItemsOnTable items={DD?.waitingEntries}
+                                  isLoading={isLoading}
+                                  selectionMode={false}
+                                  name={"Réservations en attente"}
+                                  create_hidden={true}
+                                  setRefresh={setRefresh}
+                                  columnsGreatNames={columnsGreatNames}
+                                  actions={["view", "confirm", "reject"]}
+                    />
                 </div>
             </div>
+
+
         </div>
     )
 }
