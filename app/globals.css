@@ -16,10 +16,24 @@
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background-size: cover;
+  background: url("/bg.jpg") no-repeat center;
+  height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
+  position: relative;
 }
 
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: inherit;
+  opacity: 0.1;
+  z-index: -1;
+}
 
 @layer utilities {
   .text-balance {

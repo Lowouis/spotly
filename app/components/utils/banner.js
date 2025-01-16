@@ -1,14 +1,15 @@
 'use client';
 
 
-export default function Banner({label}){
+import {Image} from "@nextui-org/react";
+
+export default function Banner(){
 
     
     return (
         <div className="mx-auto">
-            <div className="flex flex-col justify-center">
-                <h1 className=" text-blue-800 text-4xl font-bold py-2 px-4 rounded">Fondation de la Miséricorde</h1>
-                <h2 className=" text-blue-900 text-3xl font-bold py-2 px-4 rounded">Chronos</h2>
+            <div className="flex flex-col justify-center items-center">
+                <Image src={"/banner.png"} radius="none" height={200} alt="Banner"/>
             </div>
         </div>
     );

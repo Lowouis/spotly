@@ -48,7 +48,8 @@ export default function App() {
                                         </circle>
                                         <circle transformOrigin="center" fill="none" opacity=".2" stroke="#000000"
                                                 strokeWidth="30" strokeLinecap="round" cx="100" cy="100"
-                                                r="70"></circle>
+                                                r="70">
+                                        </circle>
                                     </svg>
                                 }/>
                     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
-import {NextUIProvider} from "@nextui-org/react";
+import { NextUIProvider } from "@nextui-org/react";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
 export default function SessionProviderWrapper({ children }) {

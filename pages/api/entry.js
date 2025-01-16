@@ -5,7 +5,7 @@ import prisma from "@/prismaconf/init";
 export default async function handler(req, res) {
     try {
         if(req.method === "GET"){
-            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, otherParams } = req.query;
+            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode, otherParams } = req.query;
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"
@@ -16,6 +16,7 @@ export default async function handler(req, res) {
                     ...(resourceId && {
                         resourceId: parseInt(resourceId)
                     }),
+                    ...(returnedConfirmationCode && {returnedConfirmationCode : returnedConfirmationCode}),
                     ...(siteId && categoryId && {
                         resource : {
                             ... (resourceId!=null ? {
@@ -30,7 +31,6 @@ export default async function handler(req, res) {
 
 
                     }),
-
                         ...(startDate  && {
                             startDate: {
                                 lte: endDate
@@ -41,11 +41,17 @@ export default async function handler(req, res) {
                                 gte: startDate
                             }
                         }),
-
-
-
                 },
-               include: { user: true ,resource: { include: { domains : true } } }
+               include: {
+                    user : true,
+                    resource : {
+                        include : {
+                           domains : {include: {owner : true}},
+                           category : {include: {owner : true}},
+                           owner : true
+                        }
+                    }
+               }
             });
 
             res.status(200).json(entries);
@@ -56,9 +62,11 @@ export default async function handler(req, res) {
                     endDate,
                     category,
                     site,
-                    description,
                     resourceId,
-                    key } = req.body;
+                    key,
+                    moderate,
+                    comment
+            } = req.body;
 
 
 
@@ -76,43 +84,18 @@ export default async function handler(req, res) {
                             id : resourceId
                         }
                     },
-                    description: description,
-                    key: key
-                }
-            });
-            res.status(201).json(entry);
-        } else if(req.method === "PUT") {
-            const { id } = req.query;
-            const { moderate } = req.body;
-            console.log("Updating entry with id:", id); // Log the id
-
-            const entry = await prisma.entry.update({
-                where: {
-                    id: parseInt(id)
-                },
-                data: {
+                    comment: comment,
+                    key: key,
                     moderate: moderate
                 }
             });
-
-            res.status(200).json(entry);
-        } else if(req.method === "DELETE"){
-            const { id } = req.query;
-            console.log("Deleting entry with id:", id); // Log the id
-
-            const entry = await prisma.entry.delete({
-                where: {
-                    id: parseInt(id)
-                }
-            });
-
-            res.status(200).json(entry);
+            res.status(201).json(entry);
         }
-
 
 
     } catch (error) {
         console.error("Failed to parse JSON:");
         res.status(500).json({error: "Failed to parse JSON"});
     }
+
 }

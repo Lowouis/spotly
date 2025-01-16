@@ -1,11 +1,10 @@
-import { Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@nextui-org/react";
+import {Divider, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {EyeIcon} from "@heroicons/react/24/solid";
 import Stepper from "@/app/components/utils/Stepper";
-import {useState} from "react";
-import {Input} from "@nextui-org/input";
+import React, {useState} from "react";
 import {useMutation} from "@tanstack/react-query";
-
+import {InputOtp} from "@nextui-org/react";
 export const formatDate = (date) => {
     return new Date(date).toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -17,74 +16,212 @@ export const formatDate = (date) => {
         hour12: false
     }).replace(':', 'h')
 }
-export default function ModalCheckingBooking({entry, adminMode=false, handleRefresh}) {
-
+export default function ModalCheckingBooking({entry, adminMode=false, handleRefresh, setUserAlert}) {
+    const [otp, setOtp] = useState("");
+    const [error, setError] = useState(null);
+    const [alertContent, setAlertContent ] = useState({title: "", description: "", status: ""});
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const [activeReturnStep, setActiveReturnStep] = useState(false);
-    const handleReturnStep = ()=>{
-        setActiveReturnStep(!activeReturnStep)
+    const [modalStepper, setModalStepper] = useState("main");
+    const handlePickUp = ()=>{
+        setError(null);
+        setOtp("");
+        if(whichPickable() !== "FLUENT" || whichPickable() === "TRUST"){
+            setModalStepper("pickup")
+        } else {
+            handlePickUpUpdate({entry});
+        }
     }
-    const { mutate } = useMutation({
-        mutationFn: async ({ entry }) => {
-            const response = await fetch(`http://localhost:3000/api/entry/${entry.id}`, {
-                method: 'DELETE',
+    const handleReturnDigit = ()=>{
+        setError(null);
+        setOtp("");
+
+        if(entryAction() !== "fluent"){
+            setModalStepper("return")
+        } else {
+            handleReturnUpdate({entry});
+        }
+    }
+    const whichPickable = () => {
+        if(entry.resource.pickable !== null) {
+            return entry.resource.pickable;
+        } else if(entry.resource.category.pickable !== null) {
+            return entry.resource.category.pickable;
+        } else if (entry.resource.domains.pickable !== null) {
+            return entry.resource.domains.pickable;
+        }
+        return "FLUENT";
+    }
+
+    const entryAction = ()=> {
+        console.log("aaa - ", whichPickable(entry))
+        if(whichPickable(entry) === "TRUST" ||whichPickable(entry) === "FLUENT"){
+            return "fluent";
+        } else {
+            return "digit"
+        }
+    }
+
+
+
+    //ADMIN SIDE
+    //CONFIRM ANY ENTRIES ASKED FOR
+    //SWITCH ENTRY STATUS TO ACCEPTED
+
+    //USER SIDE
+    //RETURN A RESOURCE ACCORDING TO USER ENTRY
+    //UPDATE RETURNED ATTRIBUTES BOOLEAN TO ENTRIES WITH PUT METHOD
+
+    const { mutate: updateEntry } = useMutation({
+        mutationFn: async ({method, entry, updateData}) => {
+            const response = await fetch(`/api/entry/${entry.id}`, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                ...(updateData && {body : JSON.stringify(updateData)}),
             });
+
             if (!response.ok) {
-                throw new Error('Failed to delete entry');
+                throw new Error('Échec de la mise à jour');
             }
+
             return response.json();
         },
         onSuccess: () => {
             handleRefresh();
-            console.debug("Entry deleted");
+            setUserAlert(alertContent);
         },
         onError: (error) => {
-            console.error(error);
-            console.debug("Entry NOT deleted");
-        },
+            setUserAlert({title: "Erreur", description: "Il y a eu un problème lors de la récupération de la ressource.", status: "danger"});
+        }
     });
 
-    const handleDeleteEntry = () => {
-        mutate({ entry });
-    };
+    const handlePickUpUpdate = () => {
+        setAlertContent({title: "Pick-up", description: "La récupèration de la ressource à bien été prise en compte.", status: "success"});
+        updateEntry({
+            entry,
+            updateData: { moderate: "USED" },
+            method : "PUT"
+        });
+        setModalStepper("main")
+        setOtp("");
+        handleRefresh();
+    }
 
+    const handleReturnUpdate = () => {
+        setAlertContent({title: "Restitution", description: "La ressource à bien été retournée.", status: "success"});
+        updateEntry({
+            entry,
+            updateData: { returned: true, moderate: "ENDED" },
+            method : "PUT"
+        });
+        setModalStepper("main");
+
+        handleRefresh();
+    }
+
+
+    const handleDeleteEntry = () => {
+        setAlertContent({title: "Suppression", description: "Votre réservation à bien été supprimer avec succès.", status: "success"});
+        updateEntry({
+            entry,
+            method : "DELETE"
+        });
+        setModalStepper("main")
+        handleRefresh();
+    }
+
+    const handleUpdateEntity = () => {
+        if(otp === entry.returnedConfirmationCode){
+            modalStepper === "return" ? handleReturnUpdate({ entry }) : handlePickUpUpdate({ entry });
+        } else {
+            setError("Le code ne correspond pas, veuillez réessayer");
+        }
+    };
+    const handleOwnerReturn = (entry) => {
+            if (entry.resource.owner !== null){
+                return entry.resource.owner.name + " " + entry.resource.owner.surname;
+            } else if(entry.resource.category.owner !== null) {
+                return entry.resource.category.owner.name + entry.resource.category.owner.surname;
+            } else if(entry.resource.domains.owner !== null) {
+                return entry.resource.domains.owner.name + entry.resource.domains.owner.surname;
+            } else {
+                return null;
+            }
+    }
     return (
         <>
         <Button
             isIconOnly={true}
-            className="block"
+            className=""
             size="lg"
             color="default"
-            variant="ghost"
-            onClick={onOpen}
+            variant="flat"
+            onPress={onOpen}
         >
-            <span className="flex justify-center items-center"><EyeIcon width="32" height="32" color='blue' /></span>
+            <span className="flex justify-center items-center"><EyeIcon width="24" height="24"/></span>
         </Button>
         <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" size="2xl">
             <ModalContent>
                 {(onClose) => (
                     <>
-                        {/*ajust for mobile later*/}
                         <ModalHeader className="flex flex-col gap-1">{entry?.resource?.name}</ModalHeader>
-                        {activeReturnStep ? (
+                        { modalStepper === "delete" && (
                             <ModalBody>
-                                <div className="flex flex-col space-y-2">
-                                    <div>
-                                        <label>Entrer le code de confirmation</label>
-                                    </div>
-                                    <div className="flex flex-row justify-center items-center space-x-2">
-                                        <Input name="return_code" size="lg" key={entry?.id} placeholder="XXX-XXX"/>
-                                        <Button size="lg" color="primary"
-                                                onPress={e=>console.log("submit code to return")}>Valider</Button>
-
+                                <div className="flex flex-col justify-center items-center">
+                                    <h1 className="text-lg">Êtes-vous sûr de vouloir annuler cette réservation ?</h1>
+                                    <div className="flex flex-row m-1 space-x-4 justify-center items-center">
+                                        <Button size={"lg"} color="default"
+                                                onPress={() => setModalStepper("main")}>Non</Button>
+                                        <Button size={"lg"} color="danger" onPress={()=>{handleDeleteEntry();onClose();}}>Oui</Button>
                                     </div>
                                 </div>
-
                             </ModalBody>
-                        ) : (
+                        )}
+                        { modalStepper === "return" && (
+                            <ModalBody>
+                                <div className="flex flex-col justify-center items-center">
+                                    {error !== null && (
+                                        <div>
+                                            <span className="text-red-500">{error}</span>
+                                        </div>
+                                    )}
+                                    <InputOtp
+                                        onValueChange={setOtp}
+                                        value={otp}
+                                        variant="flat"
+                                        size="lg"
+                                        length={6}
+                                        name="confirmation_code"
+                                    />
+                                    <label className="text-slate-600">Nous vous avons envoyé un code à <span className="font-semibold">{entry?.user.email}</span></label>
+                                </div>
+                                <Button size={"lg"} color="primary" onPress={handleUpdateEntity}>Confirmer</Button>
+                            </ModalBody>
+                        )}
+                        { modalStepper === "pickup" && (
+                            <ModalBody>
+                                <div className="flex flex-col justify-center items-center">
+                                    {error !== null && (
+                                        <div>
+                                            <span className="text-red-500">{error}</span>
+                                        </div>
+                                    )}
+                                    <InputOtp
+                                        onValueChange={setOtp}
+                                        value={otp}
+                                        variant="flat"
+                                        size="lg"
+                                        length={6}
+                                        name="confirmation_code"
+                                    />
+                                    <label className="text-slate-600">Nous vous avons envoyé un code à <span className="font-semibold">{entry?.user.email}</span></label>
+                                </div>
+                                <Button size={"lg"} color="primary" onPress={handleUpdateEntity}>Confirmer</Button>
+                            </ModalBody>
+                        )}
+
+                        { modalStepper === "main" && (
                             <ModalBody>
                                 <div className="flex flex-col justify-center items-start">
                                     <Stepper
@@ -95,13 +232,10 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                                 <h1 className={"text-blue-900 text-lg"}>Création de la réservation</h1>
                                                 <span>Confirmation par mail à <span
                                                     className="font-semibold">{entry?.user.email}</span></span>
-                                                {/*issues bc we delete this attribute to simulate an PDO*/}
                                                 <span>{formatDate(entry?.createdAt)}</span>
                                             </div>
-
                                         }
                                     />
-
                                     <Stepper
                                         step={2}
                                         content={
@@ -109,11 +243,19 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                                 <h1 className={"text-blue-900 text-lg"}>
                                                     Confirmation
                                                 </h1>
-                                                <span>{entry.moderate === "ACCEPTED" ? "Accepté le "+formatDate(entry.lastUpdatedModerateStatus) : "En attente"}</span>
+                                                <span>
+                                                    { entry.moderate !== "WAITING" && entry.moderate !== "REJECTED" ? "Accepté le " + formatDate(entry.lastUpdatedModerateStatus) : "" }
 
+                                                </span>
+                                                <span>
+                                                    {entry.moderate === "WAITING" && "En attente de confirmation"}
+                                                    {entry.moderate === "REJECTED" && "Refuser"}
+                                                    {handleOwnerReturn(entry) && ` par ${handleOwnerReturn(entry)}`}
+                                                </span>
                                             </div>
                                         }
-                                        done={entry.moderate === "ACCEPTED"}
+                                        done={entry.moderate !== "WAITING" && entry.moderate !== "REJECTED"}
+                                        failed={entry.moderate === "REFUSED"}
                                         adminMode={adminMode}
                                         entry={entry}
                                     />
@@ -122,49 +264,89 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                         content={
                                             <div className="w-full">
                                                 <h1 className={"text-blue-900 text-lg"}>
-                                                    Réservation
+                                                    <span>{entry.moderate === "USED" ? "En cours d'utilisation" : "Réservation"}</span>
                                                 </h1>
-                                                <span>{formatDate(entry?.startDate)}</span>
+                                                <span>à partir du {formatDate(entry.startDate)}</span>
+                                                {
+                                                    entry.moderate === "ACCEPTED" && entry.startDate <= new Date().toISOString() &&  entry?.endDate > new Date().toISOString() && (
+                                                        <Button
+                                                            className="text-default-500 font-medium underline underline-offset-4 ml-2"
+                                                            size="lg" variant="light" onPress={handlePickUp}
+                                                        >
+                                                            Prendre
+                                                        </Button>
+                                                    )
+                                                }
                                             </div>
                                         }
-                                        done={new Date(entry?.endDate) <= Date.now() && entry.moderate === "ACCEPTED"}
+                                        done={entry?.startDate <= new Date().toISOString() && entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
+                                        failed={entry?.endDate <= new Date().toISOString() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING")}
                                         adminMode={adminMode}
 
                                     />
                                     <Stepper
                                         step={4}
                                         content={
-                                            <div className="w-full">
-                                                <h1 className={"text-blue-900 text-lg"}>
-                                                    Restitution
-                                                </h1>
-                                                <span>{formatDate(entry?.endDate)}</span>
+                                            <div className="flex flex-row">
+                                                <div className="w-full flex flex-col">
+                                                    <h1 className={"text-blue-900 text-lg"}>
+                                                        {entry.returned ? "Restitué" : "Restitution"}
+                                                    </h1>
+                                                    <span>le {entry.returned ? formatDate(entry?.updatedAt) : formatDate(entry?.endDate)}</span>
+                                                </div>
+                                                <div className="ml-10 flex justify-center items-center">
+                                                    {entry.moderate === "USED" && entry.startDate <= new Date().toISOString() && <Button
+                                                        className="text-default-500 font-medium underline underline-offset-4  ml-2"
+                                                        size="lg"
+                                                        variant="light"
+                                                        onPress={handleReturnDigit}
+                                                    >
+                                                        Retourner
+                                                    </Button>}
+                                                </div>
                                             </div>
+
                                         }
                                         adminMode={adminMode}
-                                        done={new Date(entry?.endDate) < Date.now() && entry.moderate === "ACCEPTED"}
+                                        done={entry.moderate === "ENDED" || entry.moderate === "REJECTED"}
+                                        failed={entry?.returned === false && entry.endDate <= new Date().toISOString() && entry.moderate === "USED"}
                                         last={true}
-                                        handleReturnStep={handleReturnStep}
-
                                     />
+                                </div>
+                                <div>
+                                    {entry.comment && (
+                                        <div className="flex flex-col w-full">
+                                            <h1 className="text-lg">{!adminMode ? "Votre note : " : "De " + entry.user.surname + " " + entry.user.name +" : "}</h1>
+                                            <span className="text-slate-600">{entry.comment}</span>
+                                        </div>
+                                    )}
+                                        {entry.adminNote && (
+                                        <div className="flex flex-col w-full justify-end items-end">
+                                            <h1 className="text-lg">Manager</h1>
+                                            <span className="text-slate-600">{entry.adminNote}</span>
+                                        </div>
+                                    )}
 
                                 </div>
                             </ModalBody>
                         )}
                         <ModalFooter>
-                        {!activeReturnStep ? (
-                            <Button size={"lg"} color="primary" onPress={onClose}>
-                                Modifier
-                            </Button>
-                        ) : (
-                            <Button size={"lg"} color="primary" onPress={handleReturnStep}>Retour</Button>
+                        { modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
+                                <Button
+                                    size={"lg"}
+                                    color="danger"
+                                    variant="solid"
+                                    onPress={e=>{setModalStepper("delete")}}
+                                >
+                                    Annuler
+                                </Button>
                         )}
-                            <Button size={"lg"} color="danger" variant="solid" onPress={e=>{onClose(); handleDeleteEntry()}}>
-                                Annuler
-                            </Button>
-                            <Button size={"lg"} color="danger" variant="light" onPress={e=>{onClose(); setActiveReturnStep(false)}}>
-                                Fermer
-                            </Button>
+                        {modalStepper !== "main" && (<Button size={"lg"} color="primary" onPress={()=>setModalStepper("main")}>Retour</Button>)}
+                        {entry.moderate !== "ENDED" || entry.moderate === "ACCEPTED" && <Button size={"lg"} color="success" onPress={onClose}>Modifier</Button>}
+
+                        <Button size={"lg"} color="danger" variant="light" onPress={e=>{onClose(); setModalStepper("main")}}>
+                            Fermer
+                        </Button>
                         </ModalFooter>
                     </>
                 )}

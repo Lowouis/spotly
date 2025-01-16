@@ -26,7 +26,7 @@ const schemaFirstPart = yup.object().shape({
 
 const ReservationSearch = () => {
     const { data: session  } = useSession();
-    const [searchMode, setSearchMode] = useState(true);
+    const [searchMode, setSearchMode] = useState("search");
     const [refresh, setRefresh] = useState(false);
     const [availableResources, setAvailableResources] = useState();
     const [data, setData] = useState(null);
@@ -44,8 +44,8 @@ const ReservationSearch = () => {
 
 
 
-    const handleSearchMode = (tab) => {
-        setSearchMode(tab==='search');
+    const handleSearchMode = (current) => {
+        setSearchMode(current);
     }
     const handleRefresh = ()=>{
         setRefresh(true);
@@ -147,13 +147,13 @@ const ReservationSearch = () => {
     }
 
     return (
-        <div className="py-4 bg-gradient-to-b from-neutral-50 ">
+        <div className="py-4">
             <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode} userEntriesQuantity={userEntries?.length}/>
             <div className="flex flex-col md:w-full">
                 <div className="flex flex-col justify-center items-center">
-                    {(searchMode) &&  (
+                    {searchMode === "search" &&  (
                         <FormProvider {...methods}>
-                            <form onSubmit={methods.handleSubmit(onSubmit)} className={`${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200`}>
+                            <form onSubmit={methods.handleSubmit(onSubmit)} className={`bg-slate-50  ${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200`}>
                                 <div className="flex flex-row">
                                     <div className="flex flex-col order-1 w-11/12">
                                         <div className="flex flex-row space-x-2 w-full">
@@ -162,7 +162,6 @@ const ReservationSearch = () => {
                                                 label="Site"
                                                 options={fetchedDomAndCat?.domains}
                                                 className=""
-
                                             />
                                             <SelectField
                                                 name="category"
@@ -262,19 +261,28 @@ const ReservationSearch = () => {
                             )}
                         </FormProvider>
                     )}
-                    {searchMode &&  (
+                    {searchMode === "search" &&  (
                         <div className="flex 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                     {availableResources && (
-                                        <MatchingEntriesTable setData={setData} resources={availableResources} methods={methods} data={data} session={session} handleRefresh={handleRefresh} />
+                                        <MatchingEntriesTable
+                                            setData={setData}
+                                            resources={availableResources}
+                                            methods={methods}
+                                            data={data}
+                                            session={session}
+                                            handleResetFetchedResources={()=>{setAvailableResources(null)}}
+                                            handleRefresh={handleRefresh}
+                                        />
+
                                     )
                                     }
                                 </div>
                             </div>
                         </div>
                     )}
-                    {!searchMode && (<ReservationUserListing entries={userEntries} handleRefresh={handleRefresh} />)}
+                    {searchMode === "bookings" && (<ReservationUserListing entries={userEntries} handleRefresh={handleRefresh} />)}
                 </div>
             </div>
         </div>

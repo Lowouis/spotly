@@ -28,7 +28,19 @@ const Domains = ({})=>{
             return response.json();
         },
     });
-
+    const columnsGreatNames = [
+        "ID",
+        "Ville",
+        "a del",
+        "Adresse",
+        "Code",
+        "Pays",
+        "Ville",
+        "Code postal",
+        "Téléphone",
+        "N°",
+        "Début",
+    ]
     useEffect(() => {
         if(refresh){
             refetch().then(r=>setRefresh(false))
@@ -37,10 +49,10 @@ const Domains = ({})=>{
     if (isError) {
         return <div>Error: {error.message}</div>;
     }
-
+    console.log(items);
     return (
         <div className="flex flex-col gap-3 w-full mx-2">
-            <ItemsOnTable setRefresh={setRefresh} model="domains" formFields={DomainFields} isLoading={isLoading} items={items} name={"Sites"}   />
+            <ItemsOnTable setRefresh={setRefresh} model="domains" formFields={DomainFields} isLoading={isLoading} items={items} name={"Sites"} columnsGreatNames={columnsGreatNames}   />
         </div>
     );
 }

@@ -11,19 +11,21 @@ import {
     Textarea
 } from "@nextui-org/react";
 import {formatDate} from "@/app/components/modals/ModalCheckingBooking";
-import {ArrowDownCircleIcon, ExclamationTriangleIcon} from "@heroicons/react/24/outline";
 import {ArrowRightCircleIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
-import React, {useEffect, useState} from "react";
+import React, { useState} from "react";
 import { constructDate } from "@/app/utils/global";
-
-export default function ModalValidBooking({data, setData, isOpen, onOpenChange, session, setPush, push, handleRefresh}) {
+import {useMutation} from "@tanstack/react-query";
+export default function ModalValidBooking({data, isOpen, onOpenChange, session, setPush, handleRefresh, setToast, handleResetFetchedResources}) {
 
     const [sumbitted, setSubmitted] = useState(false);
     const [formData, setFormData] = useState({
         comment: "",
         cgu: false,
     });
-    const [error, setError] = useState(false);
+
+
+
+
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prevState => ({
@@ -31,51 +33,67 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
             [name]: type === "checkbox" ? checked : value
         }));
     };
-    const handleSubmission = (onClose) => {
-        if(formData.cgu){
-            console.log(formData)
-            setPush(true);
-            setSubmitted(true)
-            //send mail to concerned peoples
-
-        }
-    }
-
-
-    useEffect(() => {
-        if(push && sumbitted){
-            const startDate = constructDate(data.date.start);
-            const endDate = constructDate(data.date.end);
-            fetch('http://localhost:3000/api/entry', {
+    const mutation = useMutation({
+        mutationFn: async (newEntry) => {
+            const response = await fetch('http://localhost:3000/api/entry', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    startDate   : startDate,
-                    endDate     : endDate,
-                    category    : data.category,
-                    site        : data.site,
-                    resourceId  : data.resource.id,
-                    userId      : session.user.id,
-                    comment     : formData.comment,
-                }),
-            })
-                .then(r => handleRefresh())
-                .catch((error) => {
-                    console.error('Error:', error);
-                    setError(true);
-                })
+                body: JSON.stringify(newEntry),
+            });
+            if (!response.ok) {
+                throw new Error('Failed to create entry');
+            }
+            return response.json();
+        },
+        onSuccess: () => {
+            handleRefresh();
+            handleResetFetchedResources();
+            setToast({title: "Nouvelle réservation", description: `La réservation est bien enregistrer, un mail de confirmation à été envoyé à ${session.user.email}`, type: "success"});
+        },
+        onError: (error) => {
+            console.error(error);
+            setToast({title: "Erreur", description: "La réservation n'a pas pu être effectuée", type: "danger"});
+        },
+    });
+
+    const handleSubmission = (onClose) => {
+        if (formData.cgu) {
+            const startDate = constructDate(data.date.start);
+            const endDate = constructDate(data.date.end);
+            mutation.mutate({
+                startDate: startDate,
+                endDate: endDate,
+                category: data.category,
+                site: data.site,
+                resourceId: data.resource.id,
+                userId: session.user.id,
+                comment: formData.comment,
+                moderate: data.resource.moderate ? "WAITING" : whoIsPickable(data) ? "USED" : "ACCEPTED",
+            });
+            setSubmitted(true);
+            setPush(true);
+            onClose();
         }
+    };
 
-
-
-    }, [data, setPush, push, session, setData, sumbitted, setError, formData]);
+    const whoIsPickable = (entry) => {
+        if(entry.resource.pickable !== null){
+            return entry.resource.pickable === "TRUST";
+        } else if(entry.resource.category.pickable !== null){
+            return entry.resource.category.pickable === "TRUST";
+        } else if(entry.resource.domains.pickable !== null){
+            return entry.resource.domains.pickable === "TRUST";
+        } else {
+            return "TRUST";
+        }
+    }
 
     return (
         <>
         <Modal
-            shadow="md"
+            shadow="lg"
             isDismissable={false}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
@@ -85,10 +103,10 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
             <ModalContent>
                 {(onClose) => (
                     <>
-                        {!sumbitted  ? (
+                        {!sumbitted  && (
                             <form onSubmit={(e)=> {
                             e.preventDefault();
-                            handleSubmission();
+                            handleSubmission(onClose);
                             }}>
                             <Skeleton isLoaded={data.resource}>
                                 <ModalHeader className="flex flex-col gap-1">{data && data.resource ? data.resource.name : (
@@ -98,13 +116,13 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                             <Skeleton isLoaded={data.resource}>
                                 <ModalBody>
                                     <div className="flex flex-col space-y-2 text-lg">
-                                        <div className="flex flex-row w-full mb-2">
-                                            <div className="flex justify-start items-center w-2/5">
+                                        <div className="flex flex-row w-full mb-2 text-sm uppercase font-semibold">
+                                            <div className="flex justify-start items-center w-2/5 ">
                                                 {formatDate(data.date.start)}
                                             </div>
                                             <div className="w-1/5 relative">
                                                 <div
-                                                    className="animate-ping absolute inset-0 inset-x-6  h-full w-8 inline-flex rounded-full bg-sky-400 opacity-75"></div>
+                                                    className="animate-ping absolute inset-1 inset-x-7 -inset-y-0.5  h-6 w-6 inline-flex rounded-full bg-sky-400 opacity-75"></div>
                                                 <ArrowRightCircleIcon className="absolute inset-0 m-auto" width="32"
                                                                       height="32" color="blue"/>
                                             </div>
@@ -120,6 +138,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
                                                 labelPlacement="outside"
                                                 placeholder="Écrire un commentaire"
                                                 size='lg'
+                                                variant="bordered"
                                                 onChange={handleInputChange}
                                             />
                                         </div>
@@ -139,12 +158,14 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
 
                                         </div>
 
-                                        <Divider orientation="horizontal" className="bg-neutral-950 opacity-25"/>
+                                        <Divider orientation="horizontal" className="bg-neutral-800 opacity-25"/>
                                         <div>
                                         <span className="flex flex-col space-y-2 text-slate-700 mt-2">
-                                            <span className="font-bold text-lg">Conditions d`&apos;utilisation</span>
+                                            <span className="font-bold text-lg">Conditions d&apos;utilisation</span>
                                             <span className="text-slate-500 text-sm">
-                                                La ressource doit être restituée dans le délai indiqué. Pour confirmer le retour, un code à 6 chiffres vous sera envoyé par mail pour confirmer le retour de la ressource.
+                                                La ressource doit être restituée dans le délai indiqué. Pour confirmer
+                                                l'utilisation de la ressource et son retour, vous devrez saisir un code
+                                                à 6 chiffres qui vous sera envoyé par mail pour confirmer le pickup et le retour de la ressource.
                                             </span>
                                             <Checkbox id="cgu"
                                                       name="cgu"
@@ -177,49 +198,7 @@ export default function ModalValidBooking({data, setData, isOpen, onOpenChange, 
 
                                     </ModalFooter>
                                 </form>
-                        ) : (setError ? (
-                            <ModalBody>
-                                <div className="flex flex-col gap-2 items-center justify-center p-2">
-                                    <ModalHeader>
-                                        <h1 className="text-neutral-800">Votre réservation a été confirmée. </h1>
-                                    </ModalHeader>
-                                    <div className="w-full relative mb-4">
-                                        <div
-                                            className="animate-ping absolute inset-0 inset-x-6  h-full w-8 inline-flex rounded-full bg-sky-400 opacity-75"></div>
-                                        <ArrowDownCircleIcon className="absolute inset-0 m-auto" width="32"
-                                                              height="32" color="danger"/>
-                                    </div>
-
-                                    <Button color="primary" onPress={() => {
-                                        setSubmitted(false);
-                                        onClose();
-
-                                    }}>
-                                        D`&apos;accord
-                                    </Button>
-                                </div>
-                            </ModalBody>
-
-                        ) : (
-                            <ModalBody>
-                                <div className="flex flex-col gap-3 items-center justify-center p-4">
-                                    <ModalHeader>
-                                        Erreur
-                                    </ModalHeader>
-                                    <div className="flex flex-row justify-center items-center space-x-2">
-                                        <p>Une erreur est survenu lors de la réservation</p>
-                                        <ExclamationTriangleIcon width="32" height="32" color="red" />
-                                    </div>
-                                    <Button color="default" variant="light" onPress={() => {
-                                        setSubmitted(false);
-                                        onClose();
-                                    }} >
-                                        Fermer
-                                    </Button>
-                                </div>
-                            </ModalBody>
-
-                        ))}
+                        )}
                     </>
                 )}
             </ModalContent>

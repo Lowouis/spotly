@@ -1,4 +1,4 @@
-import {Tooltip, useDisclosure} from "@nextui-org/react";
+import {Alert, Tooltip, useDisclosure} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import { ShieldExclamationIcon} from "@heroicons/react/24/solid";
 import ModalValidBooking from "@/app/components/modals/ModalValidBooking";
@@ -6,11 +6,18 @@ import React, {useState} from "react";
 import BlinkingDotText from "@/app/components/utils/BlinkingDotText";
 
 
-export default function MatchingEntriesTable({resources, methods, data, setData, session, handleRefresh}) {
+export default function MatchingEntriesTable({resources, data, setData, session, handleRefresh, handleResetFetchedResources}) {
     const [push, setPush] = useState(false);
+    const [toast, setToast ] = useState({title: "", description: "", type: ""});
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     return (
-        <div className="w-full flex justify-between items-center">
+        <div className="w-full flex justify-between items-center flex-col">
+            {/* USER TOAST */}
+            {toast.title !== "" && (
+                <div className="flex items-center justify-center w-full mb-5">
+                    <Alert description={toast.description} title={toast.title} color={toast.type} variant="solid" radius="md"  isClosable={true}/>
+                </div>
+            )}
             <div className="w-full flex flex-col">
                 {resources.length > 0 ? resources?.map((resource) => (
                     <div key={resource.id}  className="w-full flex justify-between items-center py-3 bg-neutral-50 hover:bg-neutral-100 p-1 rounded-lg mb-2">
@@ -39,7 +46,7 @@ export default function MatchingEntriesTable({resources, methods, data, setData,
                                     size="lg"
                                     color="primary"
                                     variant="flat"
-                                    onClick={() => {
+                                    onPress={() => {
                                         onOpen();
                                         setData({...data, resource: resource});
                                     }}
@@ -57,6 +64,18 @@ export default function MatchingEntriesTable({resources, methods, data, setData,
                     </div>
                 )}
             </div>
-            <ModalValidBooking handleRefresh={handleRefresh} data={data} setData={setData} onOpen={onOpen} isOpen={isOpen}  onOpenChange={onOpenChange} session={session} setPush={setPush} push={push}/>
+
+            {/* MODAL */}
+            <ModalValidBooking
+                handleRefresh={handleRefresh}
+                data={data}
+                onOpen={onOpen}
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                session={session}
+                setPush={setPush}
+                setToast={setToast}
+                handleResetFetchedResources={handleResetFetchedResources}
+            />
         </div>
     )}

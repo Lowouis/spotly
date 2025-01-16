@@ -16,7 +16,6 @@ import * as yup from "yup";
 import AddItem from "@/app/components/admin/communs/ActionOnItem";
 import {useForm} from "react-hook-form";
 import {yupResolver} from "@hookform/resolvers/yup";
-import ReactJson from "react-json-view";
 import {
     AdjustmentsHorizontalIcon,
     ArrowPathIcon,
@@ -173,7 +172,6 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                                     typeof item !== "object" && <DropdownItem key={index}>{item}</DropdownItem>
                                 ))}
                             </DropdownMenu>
-
                         </Dropdown>
                     </Skeleton>
                     <Button
@@ -252,14 +250,20 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                                                                              session?.user.role === "SUPERADMIN" &&
                                                                              (<div className="px-1 py-2">
                                                                                  <div className="text-tiny">
-                                                                                     <ReactJson src={item[key]}
-                                                                                                theme="apathy:inverted"/>
+                                                                                     {item[key]?.name}
                                                                                  </div>
                                                                              </div>)
                                                                          }
                                                                 >
                                                                     {item[key]?.name}
-                                                                </Tooltip> : <span>vide</span>
+                                                                </Tooltip> :
+                                                                    <Button
+                                                                        className="text-default-500 font-medium underline underline-offset-4"
+                                                                        size="sm"
+                                                                        variant="light"
+                                                                    >
+                                                                        Ajouter
+                                                                    </Button>
                                                             );
                                                         case "number":
                                                             return <Chip color="default" size="md">{item[key]}</Chip>;
@@ -302,7 +306,7 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                                             </TableCell>
                                         ))}
                                         <TableCell key={`actions-${item.key}`}>
-                                            <ActionMenuModerate actions={actions} entry={item} />
+                                            {actions && <ActionMenuModerate actions={actions} entry={item}/>}
                                         </TableCell>
                                     </TableRow>
                                 ))}

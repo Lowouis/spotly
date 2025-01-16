@@ -51,6 +51,7 @@ const Dashboard = ({})=>{
         "Commentaire",
         "Début",
         "Fin",
+        "jsp",
         "Code",
         "Utilisateur",
         "Ressource",
