@@ -13,17 +13,18 @@ import {
 import {formatDate} from "@/app/components/modals/ModalCheckingBooking";
 import {ArrowRightCircleIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
 import React, { useState} from "react";
-import { constructDate } from "@/app/utils/global";
+import {constructDate, whoIsOwner, whoIsPickable} from "@/app/utils/global";
 import {useMutation} from "@tanstack/react-query";
-export default function ModalValidBooking({data, isOpen, onOpenChange, session, setPush, handleRefresh, setToast, handleResetFetchedResources}) {
+import {useEmail} from "@/app/context/EmailContext";
+import {getEmailTemplate} from "@/app/utils/mails/templates";
+export default function ModalValidBooking({EntryData, isOpen, onOpenChange, session, setPush, handleRefresh, setToast, handleResetFetchedResources}) {
 
     const [sumbitted, setSubmitted] = useState(false);
     const [formData, setFormData] = useState({
         comment: "",
         cgu: false,
     });
-
-
+    const { mutate: sendEmail, emailError } = useEmail();
 
 
     const handleInputChange = (e) => {
@@ -47,30 +48,103 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
             }
             return response.json();
         },
-        onSuccess: () => {
+        onSuccess: (data, variables, context) => {
             handleRefresh();
             handleResetFetchedResources();
-            setToast({title: "Nouvelle réservation", description: `La réservation est bien enregistrer, un mail de confirmation à été envoyé à ${session.user.email}`, type: "success"});
+
+
+            if(data.moderate === "WAITING") {
+                const owner = whoIsOwner(data);
+                sendEmail({
+                    "to": session.user.email,
+                    "subject": "Demande de réservation Spotly - " + EntryData.resource.name,
+                    "text": getEmailTemplate("reservationRequestUser",
+                        {
+                            name: session.user.surname,
+                            resource: EntryData.resource.name,
+                            domain: EntryData.resource.domains.name,
+                            startDate: new Date(data.startDate).toLocaleString("FR-fr", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "numeric"
+                            }),
+                            endDate: new Date(data.endDate).toLocaleString("FR-fr", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "numeric"
+                            }),
+                            owner: owner.name + " " + owner.surname,
+                        })
+                });
+                sendEmail({
+                    "to": owner.email,
+                    "subject": "Nouvelle demande de réservation Spotly - " + EntryData.resource.name,
+                    "text": getEmailTemplate("reservationRequestOwner",
+                        {
+                            user: data.user.surname,
+                            resource: EntryData.resource.name,
+                            owner : owner.name + " " + owner.surname,
+                            domain: EntryData.resource.domains.name,
+                            startDate: new Date(data.startDate).toLocaleString("FR-fr", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "numeric"
+                            }),
+                            endDate: new Date(data.endDate).toLocaleString("FR-fr", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "numeric"
+                            }),
+                        })
+                });
+            } else {
+                    sendEmail({
+                        "to" : session.user.email,
+                        "subject" : "Nouvelle réservation Spotly - " + EntryData.resource.name,
+                        "text" : getEmailTemplate("reservationConfirmation",
+                            {
+                                name: session.user.surname,
+                                resource: EntryData.resource.name,
+                                domain: EntryData.resource.domains.name,
+                                startDate : new Date(data.startDate).toLocaleString("FR-fr", {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"}),
+                                endDate : new Date(data.endDate).toLocaleString("FR-fr", {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"}),
+                                key : data.returnedConfirmationCode,
+                            })
+                    });
+            }
+            setToast({title: "Nouvelle réservation", description: `Votre ${data.moderate === "WAITING" ? "demande" : "réservation"} est bien enregistrer, un mail de confirmation à été envoyé à ${session.user.email}`, type: "success"});
         },
         onError: (error) => {
             console.error(error);
-            setToast({title: "Erreur", description: "La réservation n'a pas pu être effectuée", type: "danger"});
+            setToast({title: "Erreur", description: "La réservation n'a pas pu être effectuée. Si le problème pérsite merci de contacter un administrateur.", type: "danger"});
         },
     });
 
     const handleSubmission = (onClose) => {
         if (formData.cgu) {
-            const startDate = constructDate(data.date.start);
-            const endDate = constructDate(data.date.end);
+            const startDate = constructDate(EntryData.date.start);
+            const endDate = constructDate(EntryData.date.end);
             mutation.mutate({
                 startDate: startDate,
                 endDate: endDate,
-                category: data.category,
-                site: data.site,
-                resourceId: data.resource.id,
+                category: EntryData.category,
+                site: EntryData.site,
+                resourceId: EntryData.resource.id,
                 userId: session.user.id,
                 comment: formData.comment,
-                moderate: data.resource.moderate ? "WAITING" : whoIsPickable(data) ? "USED" : "ACCEPTED",
+                moderate: EntryData.resource.moderate ? "WAITING" : whoIsPickable(EntryData) ? "USED" : "ACCEPTED",
             });
             setSubmitted(true);
             setPush(true);
@@ -78,17 +152,7 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
         }
     };
 
-    const whoIsPickable = (entry) => {
-        if(entry.resource.pickable !== null){
-            return entry.resource.pickable === "TRUST";
-        } else if(entry.resource.category.pickable !== null){
-            return entry.resource.category.pickable === "TRUST";
-        } else if(entry.resource.domains.pickable !== null){
-            return entry.resource.domains.pickable === "TRUST";
-        } else {
-            return "TRUST";
-        }
-    }
+
 
     return (
         <>
@@ -99,6 +163,27 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
             onOpenChange={onOpenChange}
             placement="center"
             backdrop="blur"
+            size="lg"
+            motionProps={{
+                variants: {
+                    enter: {
+                        y: 0,
+                        opacity: 1,
+                        transition: {
+                            duration: 0.15,
+                            ease: "easeOut",
+                        },
+                    },
+                    exit: {
+                        y: -20,
+                        opacity: 0,
+                        transition: {
+                            duration: 0.15,
+                            ease: "easeIn",
+                        },
+                    },
+                },
+            }}
         >
             <ModalContent>
                 {(onClose) => (
@@ -108,17 +193,17 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
                             e.preventDefault();
                             handleSubmission(onClose);
                             }}>
-                            <Skeleton isLoaded={data.resource}>
-                                <ModalHeader className="flex flex-col gap-1">{data && data.resource ? data.resource.name : (
+                            <Skeleton isLoaded={EntryData.resource}>
+                                <ModalHeader className="flex flex-col gap-1">{EntryData && EntryData.resource ? EntryData.resource.name : (
                                     <Spinner color="default"/>)}
                                 </ModalHeader>
                             </Skeleton>
-                            <Skeleton isLoaded={data.resource}>
+                            <Skeleton isLoaded={EntryData.resource}>
                                 <ModalBody>
                                     <div className="flex flex-col space-y-2 text-lg">
                                         <div className="flex flex-row w-full mb-2 text-sm uppercase font-semibold">
                                             <div className="flex justify-start items-center w-2/5 ">
-                                                {formatDate(data.date.start)}
+                                                {formatDate(EntryData.date.start)}
                                             </div>
                                             <div className="w-1/5 relative">
                                                 <div
@@ -127,7 +212,7 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
                                                                       height="32" color="blue"/>
                                             </div>
                                             <div className="flex justify-end items-center w-2/5">
-                                                {formatDate(data.date.end)}
+                                                {formatDate(EntryData.date.end)}
                                             </div>
                                         </div>
                                         <Divider orientation="horizontal" className="bg-neutral-950 opacity-25"/>
@@ -145,7 +230,7 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
 
                                         {/* OPTIONS BY RESOURCES */}
                                         <div className="flex flex-col justify-between my-6">
-                                            {data?.resource?.moderate && (
+                                            {EntryData?.resource?.moderate && (
                                                 <div className="flex flex-row items-center space-x-4 my-2">
                                                     <Button size="sm" radius="full" color="danger" isIconOnly
                                                             variant="solid" disabled={true}>
@@ -164,7 +249,7 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
                                             <span className="font-bold text-lg">Conditions d&apos;utilisation</span>
                                             <span className="text-slate-500 text-sm">
                                                 La ressource doit être restituée dans le délai indiqué. Pour confirmer
-                                                l'utilisation de la ressource et son retour, vous devrez saisir un code
+                                                l&apos;utilisation de la ressource et son retour, vous devrez saisir un code
                                                 à 6 chiffres qui vous sera envoyé par mail pour confirmer le pickup et le retour de la ressource.
                                             </span>
                                             <Checkbox id="cgu"
@@ -173,6 +258,7 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
                                                       onChange={(e)=>handleInputChange(e)}
                                                       radius="md"
                                                       value={formData.cgu}
+                                                      disableAnimation
                                             >
                                                 J&apos;accepte les conditions
                                             </Checkbox>
@@ -184,13 +270,13 @@ export default function ModalValidBooking({data, isOpen, onOpenChange, session, 
                                 </ModalBody>
                                 </Skeleton>
                                     <ModalFooter>
-                                        <Skeleton isLoaded={data.resource}>
+                                        <Skeleton isLoaded={EntryData.resource}>
                                             <div className="flex flex-row space-x-2">
-                                                <Button color="danger" variant="flat" size="lg" onPress={onClose}>
+                                                <Button color="danger" variant="light" disableAnimation size="lg" onPress={onClose}>
                                                     Annuler
                                                 </Button>
-                                                <Button color="primary" type="submit" size="lg" >
-                                                    {!data.resource.moderate ? "Réserver" : "Demander"}
+                                                <Button color="primary" variant="light" type="submit" disableAnimation size="lg" >
+                                                    {!EntryData.resource.moderate ? "Réserver" : "Demander"}
                                                 </Button>
                                             </div>
 

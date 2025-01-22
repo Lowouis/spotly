@@ -1,10 +1,12 @@
-import {Divider, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@nextui-org/react";
+import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
-import {EyeIcon} from "@heroicons/react/24/solid";
 import Stepper from "@/app/components/utils/Stepper";
 import React, {useState} from "react";
 import {useMutation} from "@tanstack/react-query";
 import {InputOtp} from "@nextui-org/react";
+import {ArrowRightIcon, ChevronRightIcon, HandRaisedIcon} from "@heroicons/react/24/outline";
+import {getEmailTemplate} from "@/app/utils/mails/templates";
+import {useEmail} from "@/app/context/EmailContext";
 export const formatDate = (date) => {
     return new Date(date).toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -25,12 +27,14 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
     const handlePickUp = ()=>{
         setError(null);
         setOtp("");
-        if(whichPickable() !== "FLUENT" || whichPickable() === "TRUST"){
+        if(whichPickable() !== "TRUST"){
             setModalStepper("pickup")
         } else {
             handlePickUpUpdate({entry});
         }
     }
+    const { mutate: sendEmail, emailError } = useEmail();
+
     const handleReturnDigit = ()=>{
         setError(null);
         setOtp("");
@@ -127,6 +131,30 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
             entry,
             method : "DELETE"
         });
+        sendEmail({
+            "to": entry.user.email,
+            "subject": "Confirmation de l'annulation de votre réservation Spotly - " + entry.resource.name,
+            "text": getEmailTemplate("reservationCancelled", {
+                    user: entry.user.name + " " + entry.user.surname,
+                    resource: entry.resource.name,
+                    startDate: new Date(entry.startDate).toLocaleString("FR-fr", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "numeric"
+                    }),
+                    endDate: new Date(entry.endDate).toLocaleString("FR-fr", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "numeric"
+                    }),
+                })
+        });
         setModalStepper("main")
         handleRefresh();
     }
@@ -159,9 +187,40 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
             variant="flat"
             onPress={onOpen}
         >
-            <span className="flex justify-center items-center"><EyeIcon width="24" height="24"/></span>
+            <span className="flex justify-center items-center">
+                <ChevronRightIcon
+                    className="transform transition-transform group-hover:translate-x-1 font-bold text-black"
+                    width="24"
+                    height="24"
+                />
+            </span>
         </Button>
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" size="2xl">
+        <Modal
+            isOpen={isOpen}
+            onOpenChange={onOpenChange}
+            backdrop="blur"
+            size="2xl"
+            motionProps={{
+                variants: {
+                    enter: {
+                        y: 0,
+                        opacity: 1,
+                        transition: {
+                            duration: 0.15,
+                            ease: "easeOut",
+                        },
+                    },
+                    exit: {
+                        y: -20,
+                        opacity: 0,
+                        transition: {
+                            duration: 0.15,
+                            ease: "easeIn",
+                        },
+                    },
+                },
+            }}
+        >
             <ModalContent>
                 {(onClose) => (
                     <>
@@ -170,10 +229,11 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                             <ModalBody>
                                 <div className="flex flex-col justify-center items-center">
                                     <h1 className="text-lg">Êtes-vous sûr de vouloir annuler cette réservation ?</h1>
-                                    <div className="flex flex-row m-1 space-x-4 justify-center items-center">
+                                    <div className="flex flex-row m-1 space-x-4 justify-center w-full items-center">
                                         <Button size={"lg"} color="default"
+                                                variant="flat"
                                                 onPress={() => setModalStepper("main")}>Non</Button>
-                                        <Button size={"lg"} color="danger" onPress={()=>{handleDeleteEntry();onClose();}}>Oui</Button>
+                                        <Button size={"lg"} variant="flat" color="danger" onPress={()=>{handleDeleteEntry();onClose();}}>Oui</Button>
                                     </div>
                                 </div>
                             </ModalBody>
@@ -196,7 +256,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                     />
                                     <label className="text-slate-600">Nous vous avons envoyé un code à <span className="font-semibold">{entry?.user.email}</span></label>
                                 </div>
-                                <Button size={"lg"} color="primary" onPress={handleUpdateEntity}>Confirmer</Button>
+                                <Button size={"lg"} color="primary" variant="flat" onPress={handleUpdateEntity}>Confirmer</Button>
                             </ModalBody>
                         )}
                         { modalStepper === "pickup" && (
@@ -217,7 +277,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                     />
                                     <label className="text-slate-600">Nous vous avons envoyé un code à <span className="font-semibold">{entry?.user.email}</span></label>
                                 </div>
-                                <Button size={"lg"} color="primary" onPress={handleUpdateEntity}>Confirmer</Button>
+                                <Button size={"lg"} color="primary" variant="flat" onPress={handleUpdateEntity}>Confirmer</Button>
                             </ModalBody>
                         )}
 
@@ -268,12 +328,13 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                                 </h1>
                                                 <span>à partir du {formatDate(entry.startDate)}</span>
                                                 {
-                                                    entry.moderate === "ACCEPTED" && entry.startDate <= new Date().toISOString() &&  entry?.endDate > new Date().toISOString() && (
+                                                    whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && entry.startDate <= new Date().toISOString() &&  entry?.endDate > new Date().toISOString() && (
                                                         <Button
-                                                            className="text-default-500 font-medium underline underline-offset-4 ml-2"
-                                                            size="lg" variant="light" onPress={handlePickUp}
+                                                            className="text-blue-500 font-bold ml-6"
+                                                            size="lg" variant="flat" onPress={handlePickUp}
                                                         >
                                                             Prendre
+                                                            <HandRaisedIcon width={24} height={24} className="font-bold transform transition-transform group-hover:translate-x-2"/>
                                                         </Button>
                                                     )
                                                 }
@@ -294,22 +355,29 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                                     </h1>
                                                     <span>le {entry.returned ? formatDate(entry?.updatedAt) : formatDate(entry?.endDate)}</span>
                                                 </div>
-                                                <div className="ml-10 flex justify-center items-center">
-                                                    {entry.moderate === "USED" && entry.startDate <= new Date().toISOString() && <Button
-                                                        className="text-default-500 font-medium underline underline-offset-4  ml-2"
-                                                        size="lg"
-                                                        variant="light"
-                                                        onPress={handleReturnDigit}
-                                                    >
-                                                        Retourner
-                                                    </Button>}
+                                                <div className="ml-10 flex justify-center items-center ">
+                                                    {entry.moderate === "USED" &&
+                                                        <Button
+                                                            className="font-bold text-orange-700  underline-offset-4 ml-2"
+                                                            size="lg"
+                                                            variant="light"
+                                                            onPress={handleReturnDigit}
+                                                        >
+                                                            Retourner
+                                                            <ArrowRightIcon
+                                                                width={24}
+                                                                height={24}
+                                                                className="font-bold transform transition-transform group-hover:translate-x-2"
+                                                            />
+                                                        </Button>
+                                                    }
                                                 </div>
                                             </div>
 
                                         }
                                         adminMode={adminMode}
                                         done={entry.moderate === "ENDED" || entry.moderate === "REJECTED"}
-                                        failed={entry?.returned === false && entry.endDate <= new Date().toISOString() && entry.moderate === "USED"}
+                                        failed={entry?.returned === false && entry.endDate <= new Date().toISOString() && entry.moderate === "USED" }
                                         last={true}
                                     />
                                 </div>
@@ -335,13 +403,13 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                 <Button
                                     size={"lg"}
                                     color="danger"
-                                    variant="solid"
+                                    variant="flat"
                                     onPress={e=>{setModalStepper("delete")}}
                                 >
                                     Annuler
                                 </Button>
                         )}
-                        {modalStepper !== "main" && (<Button size={"lg"} color="primary" onPress={()=>setModalStepper("main")}>Retour</Button>)}
+                        {modalStepper !== "main" && (<Button size={"lg"} color="primary" variant="flat" onPress={()=>setModalStepper("main")}>Retour</Button>)}
                         {entry.moderate !== "ENDED" || entry.moderate === "ACCEPTED" && <Button size={"lg"} color="success" onPress={onClose}>Modifier</Button>}
 
                         <Button size={"lg"} color="danger" variant="light" onPress={e=>{onClose(); setModalStepper("main")}}>

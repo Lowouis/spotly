@@ -12,16 +12,14 @@ const handleStatus = (entry) => {
         return "waiting";
     } else if (entry.moderate === "ACCEPTED" && entry.startDate > new Date().toISOString()){
         return "upcoming";
-    } else if(entry.moderate === "USED" && entry.startDate < new Date().toISOString() && entry.endDate > new Date().toISOString()){
-        return "ongoing";
     } else if (entry.moderate==="ENDED" && entry.returned){
         return "ended";
     } else if (entry.endDate < new Date().toISOString() && !entry.returned && entry.moderate === "USED"){
         return "delayed";
+    } else if(entry.moderate === "USED" ){
+        return "ongoing";
     } else if (entry.endDate <= new Date().toISOString() && entry.moderate=== "ACCEPTED"){
         return "expired";
-    } else if (entry.moderate === "USED") {
-        return "used";
     } else {
         return "begin";
     }
@@ -137,8 +135,8 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                                                 {entry.resource.name}
                                             </div>
                                             <div
-                                                className={`text-sm flex flex-row space-x-3 justify-center items-center`}>
-                                                <div className="flex justify-center items-center relative w-3"> 
+                                                className={`text-sm flex flex-row space-x-3 justify-start items-center`}>
+                                                <div className="flex justify-center items-center relative w-3">
                                                     {/* Fond statique */}
                                                     <div className={`w-3 h-3 absolute
                                                         ${handleStatus(entry) === "waiting" && "bg-amber-600"}
@@ -146,7 +144,7 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                                                         ${handleStatus(entry) === "delayed" && "bg-red-600"}
                                                         ${handleStatus(entry) === "upcoming" && "bg-blue-600"}
                                                         ${handleStatus(entry) === "begin" && "bg-green-600"}
-                                                        ${handleStatus(entry) === "used" && "bg-violet-800"}
+                                                        ${handleStatus(entry) === "ongoing" && "bg-violet-800"}
                                                         ${handleStatus(entry) === "expired" && "bg-red-800"}
                                                         rounded-full`}>
                                                         </div>
@@ -154,7 +152,7 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                                                         {(handleStatus(entry) === "delayed" || handleStatus(entry) === "used") && (
                                                         <div className={`w-3 h-3 absolute
                                                         ${handleStatus(entry) === "delayed" && "bg-red-600"}
-                                                        ${handleStatus(entry) === "used" && "bg-violet-800"}
+                                                        ${handleStatus(entry) === "ongoing" && "bg-violet-800"}
                                                         rounded-full animate-ping opacity-75`}></div>
                                                         )}
                                                 </div>
@@ -177,7 +175,7 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                                                     {handleStatus(entry) === "delayed" && "En retard de " + `${Math.floor((new Date() - new Date(entry.endDate)) / (1000 * 60 * 60))}h${Math.floor(((new Date() - new Date(entry.endDate)) % (1000 * 60 * 60)) / (1000 * 60))}min`}
                                                     {handleStatus(entry) === "expired" && "Expiré"}
                                                     {handleStatus(entry) === "begin" && "Disponible"}
-                                                    {handleStatus(entry) === "used" && "En cours d'utilisation"}
+                                                    {handleStatus(entry) === "ongoing" && "En cours d'utilisation"}
                                                 </div>
                                             </div>
                                         </div>

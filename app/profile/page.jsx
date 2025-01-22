@@ -99,7 +99,7 @@ export default function Page() {
                         <Tab key="about" title="A propos" className="">
                             <div className="space-y-5 w-1/3">
                                 <h1 className="text-2xl text-slate-800 font-semibold mb-5">Spotly</h1>
-                                <p>Spotly est une application open source de gestion et de réservation de ressources pour les entreprises. Elle permet aux employés de réserver et d'organiser efficacement l'utilisation de ressources partagées telles que les salles, les équipements, les véhicules, etc. Grâce à une interface intuitive et des fonctionnalités avancées de gestion des créneaux, Spotly simplifie la planification et optimise l’utilisation des ressources.</p>
+                                <p>Spotly est une application open source de gestion et de réservation de ressources pour les entreprises. Elle permet aux employés de réserver et d&apos;organiser efficacement l&apos;utilisation de ressources partagées telles que les salles, les équipements, les véhicules, etc. Grâce à une interface intuitive et des fonctionnalités avancées de gestion des créneaux, Spotly simplifie la planification et optimise l’utilisation des ressources.</p>
                                 <p>Logiciel libre disponible sur github</p>
                                 <div className="flex flex-col">
                                     <span className="font-thin ">Pour toutes questions ou support, merci de me contacter à <span

@@ -62,7 +62,7 @@ export default function Stepper({step, done=false, last=false, content, handleRe
             <div className="flex justify-center items-start ml-3">
                 {content}
             </div>
-            {step===2 && adminMode && !done && <Button className="ml-10" onPress={confirm} color="success" size="lg">Autoriser</Button>}
+            {step===2 && adminMode && !done && <Button variant="flat" className="ml-10" onPress={confirm} color="primary" size="lg">Autoriser</Button>}
         </div>
 
             )

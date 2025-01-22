@@ -87,8 +87,19 @@ export default async function handler(req, res) {
                     comment: comment,
                     key: key,
                     moderate: moderate
+                },
+                include : {
+                    user : true,
+                    resource : {
+                        include: {
+                            domains: {include: {owner: true}},
+                            category: {include: {owner: true}},
+                            owner: true
+                        }
+                    }
                 }
             });
+            console.log(entry);
             res.status(201).json(entry);
         }
 

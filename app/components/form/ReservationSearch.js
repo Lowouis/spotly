@@ -3,7 +3,7 @@ import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
-import { Switch} from "@nextui-org/react";
+import {Alert, Switch} from "@nextui-org/react";
 import DateRangePickerCompatible from "@/app/components/form/DateRangePickerCompatible";
 import {AlternativeMenu} from "@/app/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
@@ -13,6 +13,8 @@ import { constructDate } from "../../utils/global";
 import {useQuery} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
 import MatchingEntriesTable from "@/app/components/tables/MatchingEntriesTable";
+import {getEmailTemplate} from "@/app/utils/mails/templates";
+import {useEmail} from "@/app/context/EmailContext";
 
 
 const schemaFirstPart = yup.object().shape({
@@ -36,7 +38,9 @@ const ReservationSearch = () => {
         resolver: yupResolver(schemaFirstPart),
         mode: 'onSubmit',
     });
+    const [toast, setToast ] = useState({title: "", description: "", type: ""});
 
+    const { mutate: sendEmail, emailError } = useEmail();
 
     const {watch, setValue} = methods;
     const watchSite = watch('site');
@@ -149,6 +153,22 @@ const ReservationSearch = () => {
     return (
         <div className="py-4">
             <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode} userEntriesQuantity={userEntries?.length}/>
+            {/*<Button
+                onPress={()=> {
+                    sendEmail({
+                        "to": session.user.email,
+                        "subject": "Nouvelle réservation Spotly",
+                        "text": getEmailTemplate("reservationConfirmation", {
+                            name: "Louis",
+                            resource: {name:"CLIO05", domains : {name : "Caen"}},
+                            startDate: "05/02/2025 à 12h00",
+                            endDate: "05/02/2025 à 16h00",
+                            key : "123456"
+                        })
+                    })
+                }
+            }
+                    color="primary" variant="flat" className="mb-4">MAIL TEST</Button>*/}
             <div className="flex flex-col md:w-full">
                 <div className="flex flex-col justify-center items-center">
                     {searchMode === "search" &&  (
@@ -253,6 +273,14 @@ const ReservationSearch = () => {
                                     </div>
                                 </div>
                             </form>
+                            <div className="w-2/3 my-2">
+                                {/* USER TOAST */}
+                                {toast.title !== "" && (
+                                    <div className="flex items-center justify-center w-full mb-5">
+                                        <Alert description={toast.description} title={toast.title} color={toast.type} variant="faded" radius="md"  isClosable={true} onClose={()=>{setToast({title: "",description: "", type: ""})}}/>
+                                    </div>
+                                )}
+                            </div>
 
                             {!isSubmitted && !availableResources && (
                                 <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
@@ -265,6 +293,7 @@ const ReservationSearch = () => {
                         <div className="flex 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
+
                                     {availableResources && (
                                         <MatchingEntriesTable
                                             setData={setData}
@@ -274,8 +303,8 @@ const ReservationSearch = () => {
                                             session={session}
                                             handleResetFetchedResources={()=>{setAvailableResources(null)}}
                                             handleRefresh={handleRefresh}
+                                            setToast={setToast}
                                         />
-
                                     )
                                     }
                                 </div>

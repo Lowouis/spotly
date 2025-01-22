@@ -20,7 +20,7 @@ export default function Login() {
     return (
         <QueryClientProvider client={queryClient}>
             <div className="flex justify-center">
-                <ConnectionModal/>
+                <ConnectionModal />
             </div>
         </QueryClientProvider>
     );

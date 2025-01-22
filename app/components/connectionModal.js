@@ -16,16 +16,34 @@ import {
     ModalContent, ModalFooter,
     ModalHeader, Skeleton,
     Tab,
-    Tabs,
+    Tabs, Tooltip,
     useDisclosure
 } from "@nextui-org/react";
 import Link from "next/link";
 import {ArrowRightCircleIcon} from "@heroicons/react/24/solid";
-import {useQuery} from "@tanstack/react-query";
+import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ClockIcon} from "@heroicons/react/24/outline";
 
-export function ConnectionModal({}) {
+export async function updateEntry({setUserAlert, id, moderate, returned=false}) {
+    const response = await fetch(`http://localhost:3000/api/entry/${id}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            moderate: moderate,
+            ...(returned && {returned: returned})
+        }),
+    });
+    if (!response.ok) {
+        setUserAlert({"type" : "danger", "message" : "Erreur lors de la mise à jour de la réservation."});
+        throw new Error('Failed to update entry');
+    }
+    return response.json();
+}
 
+export function ConnectionModal({}) {
+    const queryClient = useQueryClient();
     const router = useRouter();
     const [selected, setSelected] = useState("login");
     const [wrongPassword, setWrongPassword] = useState(false);
@@ -69,6 +87,11 @@ export function ConnectionModal({}) {
         }
     };
 
+    const mutation = useMutation({
+        mutationFn : updateEntry,
+    });
+
+
     const {data: entry, isLoading, isError, error, refetch} = useQuery({
         queryKey: ['lucky_entry'],
         queryFn: async () => {
@@ -87,17 +110,16 @@ export function ConnectionModal({}) {
 
     const handleSubmitLuckyEntry = async () => {
         if(ifl.otp.length === 6){
-            try {
-                await refetch();  // Attend la fin de la requête
-                if (entry.resource.pickable === "HIGH_AUTH" || entry.resource.category.pickable === "HIGH_AUTH" || entry.resource.domains.pickable === "HIGH_AUTH" && entry.user.username === ifl.username) {
-                    setAuthorized(true);
-                } else {
-                    setAuthorized(false);
+            refetch().then(r=>{
+                if(r.data.resource.pickable === "HIGH_AUTH" || r.data.resource.category.pickable === "HIGH_AUTH" || r.data.resource.domains.pickable === "HIGH_AUTH"){
+                    return r.data.user.username === ifl.username;
                 }
-            } catch (error) {
-                console.error("Erreur lors de la récupération de l'entry:", error);
-            }
+
+            });
+            return true; // Attend la fin de la requête
         }
+
+        return false;
 
 
     }
@@ -112,13 +134,16 @@ export function ConnectionModal({}) {
 
     const handleIFLActions = async () => {
         if(entry.moderate === "ACCEPTED"){
+            mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "USED"});
             console.log("Récupération de l'objet");
-            setUserAlert({"type" : "primary", "message" : "La prise de la ressource a bien été enregistrée"});
+            setUserAlert({"type" : "primary", "message" : "La prise de la ressource a bien été enregistrée. A la prochaine connexion sur cette inteface vous pourrez retourner votre ressource."
+            });
         } else if (entry.moderate === "USED"){
             console.log("Retour de l'objet");
+            mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "ENDED", returned:true});
             setUserAlert({"type" : "success", "message" : "La ressource à bien été retourner."});
-
         }
+        await refetch();
     }
 
     return (
@@ -169,31 +194,27 @@ export function ConnectionModal({}) {
                                 </form>
                             </Tab>
                             <Tab key="sign-up" title="J'ai réservé">
-                                <form className="flex flex-col space-y-4 h-[600px] justify-start">
-
-                                    <div>
-                                        <p className="text-default-700 text-small mb-2">Nom d&#39;utilisateur</p>
-                                        <Input name="lucky_username"
-                                               isRequired
-                                               size="lg"
-                                               placeholder="Entrer votre nom d'utilisateur"
-                                               type="text"
-                                               onChange={(e) => setIfl({...ifl, "username": e.target.value})}
-                                        />
-                                    </div>
+                                <form className="flex flex-col space-y-4 justify-between">
                                     <div>
                                         <p className="text-default-700 text-small mb-2">Code de réservation</p>
                                         <div className="flex justify-center">
                                             <InputOtp
+                                                isRequired
                                                 name="lucky_otp"
                                                 size="lg"
                                                 length={6}
+                                                value={ifl.otp}
                                                 onChange={(e) => setIfl({...ifl, "otp": e.target.value})}
                                             />
                                         </div>
+                                        <div className="font-thin text-sm text-neutral-500 mt-2 ">
+                                            <div className="flex justify-center items-center space-x-4">
+                                                Je n&apos;ai pas de réservation <Tooltip content="Pour réserver une ressource rendez-vous dans la section 'Se connecter'.">
+                                                <Button onPress={()=>{setSelected("login")}} isIconOnly size="sm" variant="flat" color="warning" className="ml-2"><span className="font-bold">?</span></Button>
+                                                </Tooltip>
+                                            </div>
+                                        </div>
                                     </div>
-
-
                                     <div className="flex gap-2 items-end">
                                         <Button
                                             size="lg"
@@ -201,7 +222,8 @@ export function ConnectionModal({}) {
                                             color="primary"
                                             onPress={() => {
                                                 handleSubmitLuckyEntry().then(r => {
-                                                    onOpen();
+                                                    console.log(r)
+                                                    if(r){onOpen();}
                                                 });
                                             }}
                                         >
@@ -219,21 +241,19 @@ export function ConnectionModal({}) {
                     </h2>
                 </Link>
             </div>
-            <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="xl">
+            {entry !== null && <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="xl">
                 <ModalContent>
                     {(onClose) => (
                         <>
                             <ModalHeader className="flex flex-col gap-1">
-                                <Skeleton isLoaded={!isLoading}>
                                     {entry?.resource.name}
-                                </Skeleton>
                             </ModalHeader>
                             <ModalBody>
-                                    { entry.moderate === "ACCEPTED" || entry.moderate === "USED" && entry.startDate <= new Date().toISOString() ?
-                                        <div>
-                                            {userAlert.message !== "" &&
-                                                <div className="mb-6">
-                                                    <Alert
+                                {entry.moderate === "ACCEPTED" || entry.moderate === "USED"  && entry.startDate <= new Date().toISOString() ?
+                                    <div>
+                                        {userAlert.message !== "" &&
+                                            <div className="mb-6">
+                                                <Alert
                                                     title="Information"
                                                     fullWidth
                                                     color={userAlert.type}
@@ -241,78 +261,78 @@ export function ConnectionModal({}) {
                                                     onPress={handleIFLActions}
                                                     description={userAlert.message}
                                                     isClosable
-                                                    />
-                                                </div>
-
-                                                }
-                                            <div className="flex flex-row w-full text-sm uppercase font-semibold mb-5">
-                                                <div className="flex justify-start items-center w-2/5 ">
-                                                    { new Date(entry?.startDate).toLocaleString("fr-FR", {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit'
-                                                    })}
-                                                </div>
-                                                <div className="w-1/5 relative">
-                                                    <div
-                                                    className="animate-ping absolute inset-1 inset-x-10 -inset-y-0.5  h-6 w-6 inline-flex rounded-full bg-sky-400 opacity-75"></div>
-                                                    <ArrowRightCircleIcon className="absolute inset-0 m-auto" width="32"
-                                                    height="32" color="blue"/>
-                                                </div>
-                                                <div className="flex justify-end items-center w-2/5">
-                                                    {new Date(entry?.endDate).toLocaleString("fr-FR", {
+                                                />
+                                            </div>
+                                        }
+                                        <div className="flex flex-row w-full text-sm uppercase font-semibold mb-5">
+                                            <div className="flex justify-start items-center w-2/5 ">
+                                                {new Date(entry?.startDate).toLocaleString("fr-FR", {
                                                     year: 'numeric',
                                                     month: 'long',
                                                     day: 'numeric',
                                                     hour: '2-digit',
                                                     minute: '2-digit'
-                                                    })}
-                                                </div>
+                                                })}
                                             </div>
-                                            {userAlert.message === "" &&
-                                                <Button
+                                            <div className="w-1/5 relative">
+                                                <div
+                                                    className="animate-ping absolute inset-1 inset-x-10 -inset-y-0.5  h-6 w-6 inline-flex rounded-full bg-sky-400 opacity-75"></div>
+                                                <ArrowRightCircleIcon className="absolute inset-0 m-auto" width="32"
+                                                                      height="32" color="blue"/>
+                                            </div>
+                                            <div className="flex justify-end items-center w-2/5">
+                                                {new Date(entry?.endDate).toLocaleString("fr-FR", {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </div>
+                                        </div>
+                                        {userAlert.message === "" &&
+                                            <Button
                                                 fullWidth
                                                 color={entry?.moderate === "ACCEPTED" ? "primary" : "danger"}
                                                 variant="flat"
                                                 onPress={handleIFLActions}
-                                                >
-                                                    {entry?.moderate === "ACCEPTED" && "Récupérer"}
-                                                    {entry?.moderate === "USED" && "Retourner"}
-                                                </Button>
-                                            }
+                                            >
+                                                {entry?.moderate === "ACCEPTED" && "Récupérer"}
+                                                {entry?.moderate === "USED" && "Retourner"}
+                                            </Button>
+                                        }
 
 
-
-                                            { new Date(entry.endDate) < new Date() &&
-                                                <div className="flex flex-col justify-start items-center mt-3">
-                                                    <span className="font-semibold text-red-500">En retard</span>
-                                                     <div className="flex flex-row space-x-1 text-red-400 font-semibold">
+                                        {new Date(entry.endDate) < new Date() &&
+                                            <div className="flex flex-col justify-start items-center mt-3">
+                                                <span className="font-semibold text-red-500">En retard</span>
+                                                <div className="flex flex-row space-x-1 text-red-400 font-semibold">
                                                         <span>
                                                             {new Date(new Date(entry.endDate) - new Date()).toLocaleString("FR-fr", {
                                                                 hour: '2-digit',
                                                                 minute: '2-digit'
                                                             })}
                                                         </span>
-                                                        <ClockIcon className="h-5 w-5 inline-block mr-2  "/>
-                                                    </div>
+                                                    <ClockIcon className="h-5 w-5 inline-block mr-2  "/>
                                                 </div>
-                                            }
-                                        </div> :
-                                        <div className="text-center">
-                                            Votre réservation n'est pas accessible par cette interface
-                                            {entry?.moderate === "REJECTED" && " car elle a été refusée."}
-                                            {entry?.moderate === "ENDED" && " car elle est terminée."}
-                                            {entry?.moderate === "WAITING" && " car elle est en attente de validation d'un administrateur."}
-                                        </div>
-                                    }
+                                            </div>
+                                        }
+                                    </div> :
+                                    <div className="text-center">
+                                        Votre réservation n&apos;est pas accessible par cette interface
+                                        {entry?.moderate === "REJECTED" && " car elle a été refusée."}
+                                        {entry?.moderate === "ENDED" && " car elle est terminée."}
+                                        {entry?.moderate === "WAITING" && " car elle est en attente de validation d'un administrateur."}
+                                    </div>
+                                }
                             </ModalBody>
 
                             <ModalFooter>
                                 <Button color="danger" variant="light"
-                                        onPress={()=>{
+                                        onPress={() => {
                                             setIfl({"username": "", "otp": ""});
+                                            setUserAlert({"type": "", "message": ""});
+                                            queryClient.removeQueries(['lucky_entry']);
                                             onClose();
                                         }}
                                 >
@@ -322,7 +342,7 @@ export function ConnectionModal({}) {
                         </>
                     )}
                 </ModalContent>
-            </Modal>
+            </Modal>}
         </div>
     );
 }
