@@ -1,4 +1,4 @@
-import {Alert, Tooltip, useDisclosure} from "@nextui-org/react";
+import { Tooltip, useDisclosure} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import { ShieldExclamationIcon} from "@heroicons/react/24/solid";
 import ModalValidBooking from "@/app/components/modals/ModalValidBooking";
@@ -7,7 +7,6 @@ import BlinkingDotText from "@/app/components/utils/BlinkingDotText";
 
 
 export default function MatchingEntriesTable({resources, data, setData, setToast, session, handleRefresh, handleResetFetchedResources}) {
-    const [push, setPush] = useState(false);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     return (
         <div className="w-full flex justify-between items-center flex-col">
@@ -31,7 +30,8 @@ export default function MatchingEntriesTable({resources, data, setData, setToast
                                             <ShieldExclamationIcon className="w-6 h-6" color="grey"/>
                                         </Button>
                                     </Tooltip>
-                                </div>)}
+                                </div>)
+                                }
 
                             </div>
                             <div className="flex justify-end items-center w-1/3">
@@ -56,22 +56,23 @@ export default function MatchingEntriesTable({resources, data, setData, setToast
                 )) : (
                     <div className="w-full flex justify-center items-center">
                         {/* A AJOUTER PLUS TARD ICI LES RESSOURCES NON DISPONIBLE AVEC LE NOM DE L'UTILISATEUR*/}
-                        <div className="text-2xl font-semibold text-neutral-600">Aucune ressource disponible</div>
+                            <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
+                                Malheureusement, aucune ressource n&apos;est disponible avec ces critères
+                            </div>
+                        </div>
+                        )}
                     </div>
-                )}
-            </div>
 
-            {/* MODAL */}
-            <ModalValidBooking
-                handleRefresh={handleRefresh}
-                EntryData={data}
-                onOpen={onOpen}
-                isOpen={isOpen}
-                onOpenChange={onOpenChange}
-                session={session}
-                setPush={setPush}
-                setToast={setToast}
-                handleResetFetchedResources={handleResetFetchedResources}
+                {/* MODAL */}
+                <ModalValidBooking
+                    handleRefresh={handleRefresh}
+                    EntryData={data}
+                    onOpen={onOpen}
+                    isOpen={isOpen}
+                    onOpenChange={onOpenChange}
+                    session={session}
+                    setToast={setToast}
+                    handleResetFetchedResources={handleResetFetchedResources}
             />
         </div>
     )}

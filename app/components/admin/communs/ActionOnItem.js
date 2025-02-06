@@ -8,8 +8,7 @@ import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/app/components/admin/form/ItemForm";
 
 const postItem = async ({data, model}) => {
-    console.log("MUTATE", JSON.stringify(data))
-    const response = await fetch(`http://localhost:3000/api/${model}`, {
+    const response = await fetch(`${process.env.API_ENDPOINT}/api/${model}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -33,7 +32,6 @@ export default function ActionOnItem({isOpen, onOpenChange, action='create', val
 
     });
     const handleFormSubmit = (data) => {
-        console.log("KEYDATA", data);
         mutation.mutate({data, model});
     };
 

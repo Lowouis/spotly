@@ -83,16 +83,16 @@ model category {
   resource    resource[]
   ownerId     Int?        @unique
   owner       User?       @relation("userToCategory", fields: [ownerId], references: [id])
-  pickable    PickStatus? @default(TRUST)
+  pickable    PickStatus? @default(HIGH_TRUST)
 }
 
 enum PickStatus {
-  FLUENT // zero pickup action
-  TRUST // click pickup action
-  LOW_AUTH // act on entry with unique username
-  HIGH_AUTH // act on entry with unique username and digit code
-  DIGIT // act on entry with unique digit code sent by email
-
+  FLUENT
+  HIGH_TRUST
+  LOW_TRUST
+  DIGIT
+  LOW_AUTH
+  HIGH_AUTH
 }
 
 model domain {
@@ -109,17 +109,16 @@ model domain {
   updatedAt     DateTime   @updatedAt
   ownerId       Int?       @unique
   owner         User?      @relation("userToDomain", fields: [ownerId], references: [id])
-  pickable      PickStatus @default(TRUST)
+  pickable      PickStatus @default(HIGH_TRUST)
   resource      resource[]
 }
 
 enum status {
   ACCEPTED
   AVAILABLE
-  DELAYED
   USED
-  LOCKED
   REJECTED
+  LOCKED
   ENDED
   WAITING
 }
@@ -140,7 +139,7 @@ model resource {
   entry       entry[]
   ownerId     Int?        @unique
   owner       User?       @relation("userToResource", fields: [ownerId], references: [id])
-  pickable    PickStatus? @default(TRUST)
+  pickable    PickStatus? @default(HIGH_TRUST)
 }
 
 model option {
@@ -168,4 +167,12 @@ model entry {
   updatedAt                 DateTime  @updatedAt
   resource                  resource  @relation(fields: [resourceId], references: [id])
   user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model authorizedLocation {
+  id        Int      @id @default(autoincrement())
+  libelle   String
+  ip        String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

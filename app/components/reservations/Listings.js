@@ -5,7 +5,6 @@ import {useState} from "react";
 
 
 const handleStatus = (entry) => {
-    console.log(entry.moderate)
     if (entry.moderate === "REFUSED") {
         return "rejected";
     }else if(entry.moderate === "WAITING"){
@@ -27,13 +26,12 @@ const handleStatus = (entry) => {
 
 
 export default function ReservationUserListing({entries, handleRefresh}) {
-
-
     const [userAlert, setUserAlert] = useState({
         title: "",
         description: "",
         status : ""
     });
+
     const sortEntriesByStatus = (entries) => {
         const entriesByStatus = {
             waiting: [],
@@ -43,7 +41,6 @@ export default function ReservationUserListing({entries, handleRefresh}) {
             ended: [],
         }
         entries.forEach((entry) => {
-            console.log("STATUS " , handleStatus(entry), "ENTRY ", entry);
             if (handleStatus(entry) === "waiting") {
                 entriesByStatus.waiting.push(entry);
             } else if (handleStatus(entry) === "upcoming") {
@@ -62,7 +59,7 @@ export default function ReservationUserListing({entries, handleRefresh}) {
     }
 
     const handleSectionChange = ()=>{
-        console.log("cc");
+
     }
 
     return (

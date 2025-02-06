@@ -3,7 +3,7 @@
 
 import {useQuery} from "@tanstack/react-query";
 import Block from "@/app/components/admin/Block";
-import {ExclamationTriangleIcon, FireIcon, ChartPieIcon, ClipboardDocumentListIcon, UsersIcon, BookmarkIcon, CubeIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid/index";
+import {ExclamationTriangleIcon, FireIcon, ChartPieIcon, UsersIcon, BookmarkIcon, CubeIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid/index";
 import ItemsOnTable from "@/app/components/admin/communs/ItemsOnTable";
 import {useEffect, useState} from "react";
 
@@ -12,8 +12,8 @@ const Dashboard = ({})=>{
     const { data: DD, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['dashboard'],
         queryFn: async () => {
-            const statsResponse = await fetch('http://localhost:3000/api/dashboard');
-            const waitingEntriesResponse = await fetch('http://localhost:3000/api/entry?moderate=WAITING');
+            const statsResponse = await fetch(`${process.env.API_ENDPOINT}/api/dashboard`);
+            const waitingEntriesResponse = await fetch(`${process.env.API_ENDPOINT}/api/entry?moderate=WAITING`);
 
             if (!statsResponse.ok) {
                 throw new Error('Failed to fetch stats');
@@ -25,7 +25,6 @@ const Dashboard = ({})=>{
 
             const stats = await statsResponse.json();
             const waitingEntries = await waitingEntriesResponse.json();
-            console.log(waitingEntries);
             waitingEntries.forEach(entry => {
                 delete entry.resourceId;
                 delete entry.userId;
@@ -37,7 +36,7 @@ const Dashboard = ({})=>{
     });
     useEffect(() => {
         if (refresh) {
-            refetch().then(r => setRefresh(false))
+            refetch().then( => setRefresh(false))
         }
     }, [refresh, refetch, setRefresh]);
     if (isError) {

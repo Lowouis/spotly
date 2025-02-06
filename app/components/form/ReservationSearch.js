@@ -10,11 +10,10 @@ import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import ReservationUserListing from "@/app/components/reservations/Listings";
 import { constructDate } from "../../utils/global";
-import {useQuery} from "@tanstack/react-query";
+import {useQueryClient, useQuery} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
 import MatchingEntriesTable from "@/app/components/tables/MatchingEntriesTable";
-import {getEmailTemplate} from "@/app/utils/mails/templates";
-import {useEmail} from "@/app/context/EmailContext";
+
 
 
 const schemaFirstPart = yup.object().shape({
@@ -28,6 +27,7 @@ const schemaFirstPart = yup.object().shape({
 
 const ReservationSearch = () => {
     const { data: session  } = useSession();
+    const queryClient = useQueryClient();
     const [searchMode, setSearchMode] = useState("search");
     const [refresh, setRefresh] = useState(false);
     const [availableResources, setAvailableResources] = useState();
@@ -40,11 +40,10 @@ const ReservationSearch = () => {
     });
     const [toast, setToast ] = useState({title: "", description: "", type: ""});
 
-    const { mutate: sendEmail, emailError } = useEmail();
-
-    const {watch, setValue} = methods;
+    const { watch, setValue} = methods;
     const watchSite = watch('site');
     const watchCategory = watch('category');
+
 
 
 
@@ -53,24 +52,36 @@ const ReservationSearch = () => {
     }
     const handleRefresh = ()=>{
         setRefresh(true);
+        handleResetAllFilters();
+        userEntriesRefetch();
     }
-    const { data: userEntries, error, isLoading, refetch } = useQuery({
+    const { data: userEntries, refetch : userEntriesRefetch } = useQuery({
         queryKey: ['userEntries', session?.user?.id],
+
         queryFn: async ({ queryKey }) => {
             const userId = queryKey[1];
-            const response = await fetch(`http://localhost:3000/api/entry/?userId=${userId}`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?userId=${userId}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             return response.json();
-        }});
+        }
+    });
 
+    //this section is dedicated to handle delayed stuff and contrain user to return theirs resources to search for another one
+    const [delayed, setDelayed] = useState(0);
+
+    useEffect(() => {
+        if (userEntries) {
+            setDelayed(userEntries.filter((entry) => entry.moderate === "USED" && new Date(entry.endDate) < new Date()).length);        }
+    }, [userEntries]);
+    console.log(delayed)
 
     const { data: fetchedDomAndCat } = useQuery({
         queryKey: ['dom_cat'],
         queryFn: async () => {
-            const cat = await fetch('http://localhost:3000/api/categories');
-            const dom = await fetch("http://localhost:3000/api/domains");
+            const cat = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/categories`);
+            const dom = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/domains`);
 
             if (!cat.ok) {
                 throw new Error('Network response for categories was not ok');
@@ -82,37 +93,46 @@ const ReservationSearch = () => {
         },
     });
 
-    const { data: resources } = useQuery({
+    const { data: resources, refetch : refetchResources } = useQuery({
         queryKey: ['resource', watchCategory, watchSite],
         queryFn: async ({ queryKey }) => {
             const [_, category, site] = queryKey;
             if (category && site) {
-                const response = await fetch(`http://localhost:3000/api/resources/?categoryId=${category}&domainId=${site}`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/resources/?categoryId=${category}&domainId=${site}&status=AVAILABLE`);
                 return await response.json();
             }
-            return [];
+            return null;
         }
     });
 
-    const { data: matchingEntries,  } = useQuery({
-        queryKey: ['entries', isSubmitted && data],
+    const { data: matchingEntries, refetch : refetchMatchingEntries} = useQuery({
+        queryKey: ['entries', data],
         queryFn: async ({ queryKey }) => {
-            const [_, isSubmitted, data] = queryKey;
-            if (isSubmitted && data) {
+            const [_, data] = queryKey;
+            if (data) {
                 const startDate = constructDate(data.date.start);
                 const endDate = constructDate(data.date.end);
                 const response = await fetch(
-                    `http://localhost:3000/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
+                    `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
                 );
-                return await response.json();
+                const result = await response.json();
+                console.log("Fetched entries:", result);  // Ajouter un log pour debug
+                return result;
             }
             return [];
         }
     });
 
+    useEffect(() => {
+
+        if (data) {
+            refetchMatchingEntries();  // Déclencher le refetch quand isSubmitted change
+        }
+    }, [isSubmitted, data, refetchMatchingEntries]);
 
     useEffect(() => {
         if (isSubmitted && matchingEntries) {
+            console.log("entries", matchingEntries);
             const cpAvailableResources = [...resources];
             const filteredResourcesByMatches = cpAvailableResources.filter(
                 (resource) =>
@@ -131,20 +151,35 @@ const ReservationSearch = () => {
         }
     }, [availableResources, isSubmitted, matchingEntries, resources, data]);
 
-    ///THIS USE EFFECT WILL BE THE ONLY ONE AT THE END
     useEffect(() => {
         if(refresh){
-            refetch().then(r => console.log("TICKET USERS TO UPDATE"));
-            setRefresh(false);
+            refetchResources().then(()=>{
+                setRefresh(false);
+            })
         }
-    }, [setRefresh, refresh, refetch]);
+    }, [setRefresh, refresh, refetchResources]);
     const handleResourceOnReset = ()=>{
         setValue('resource', null);
         setData({...data, resource: null});
+        queryClient.removeQueries({ queryKey : ['resource'] });
+        methods.trigger('resource');
+    }
+    const handleResetAllFilters = ()=>{
+        methods.reset({
+            site : null,
+            category : null,
+            resource : null,
+            date : null,
+        });
+        setData(null);
+        setAvailableResources(null);
+        setIsRecurrent(false);
     }
     const onSubmit = (data) => {
+        console.log(data);
         setData(data);
         setIsSubmitted(true);
+
     };
     if (!methods) {
         return <p>Error: Form could not be initialized</p>;
@@ -152,26 +187,32 @@ const ReservationSearch = () => {
 
     return (
         <div className="py-4">
-            <AlternativeMenu user={session?.user} handleSearchMode={handleSearchMode} userEntriesQuantity={userEntries?.length}/>
-            {/*<Button
-                onPress={()=> {
-                    sendEmail({
-                        "to": session.user.email,
-                        "subject": "Nouvelle réservation Spotly",
-                        "text": getEmailTemplate("reservationConfirmation", {
-                            name: "Louis",
-                            resource: {name:"CLIO05", domains : {name : "Caen"}},
-                            startDate: "05/02/2025 à 12h00",
-                            endDate: "05/02/2025 à 16h00",
-                            key : "123456"
-                        })
-                    })
-                }
-            }
-                    color="primary" variant="flat" className="mb-4">MAIL TEST</Button>*/}
+            <AlternativeMenu
+                user={session?.user}
+                handleSearchMode={handleSearchMode}
+                userEntriesQuantity={userEntries?.length}
+                handleRefresh={handleRefresh}
+            />
             <div className="flex flex-col md:w-full">
                 <div className="flex flex-col justify-center items-center">
-                    {searchMode === "search" &&  (
+                    {searchMode === "search" && delayed !== 0 &&  (
+                        <div className="flex flex-col justify-center items-center w-2/3">
+                            <div className="flex flex-col justify-center items-center w-full">
+                                <Alert
+                                    color="danger"
+                                    variant="solid"
+                                    title="Retard"
+                                    description={
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-bold">Vous avez des réservations en retard.</span>
+                                        <span>Merci de vous rentre dans la section réservations pour restitué les ressources manquante pour pouvoir effectuer une nouvelle réservation.</span>
+                                </div>
+                                    }
+                                />
+                            </div>
+                        </div>
+                    )}
+                    {searchMode === "search" && delayed === 0 &&  (
                         <FormProvider {...methods}>
                             <form onSubmit={methods.handleSubmit(onSubmit)} className={`bg-slate-50  ${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200`}>
                                 <div className="flex flex-row">
@@ -187,7 +228,8 @@ const ReservationSearch = () => {
                                                 name="category"
                                                 label="Catégorie"
                                                 options={fetchedDomAndCat?.categories}
-                                                className=""
+                                                onReset={handleResourceOnReset}
+                                                
                                             />
                                             {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESOURCES   */}
                                             <SelectField
@@ -195,7 +237,7 @@ const ReservationSearch = () => {
                                                 name="resource"
                                                 label="Resources"
                                                 options={resources}
-                                                disabled={!resources}
+                                                disabled={resources === null}
                                                 isRequired={false}
                                                 onReset={handleResourceOnReset}
                                             />
@@ -210,7 +252,7 @@ const ReservationSearch = () => {
                                                     id="allday"
                                                     color="primary"
                                                     className="mb-2"
-                                                    onClick={(e) => {
+                                                    onClick={() => {
                                                         setIsRecurrent(!isRecurrent)
                                                     }}
                                                 >
@@ -289,7 +331,7 @@ const ReservationSearch = () => {
                             )}
                         </FormProvider>
                     )}
-                    {searchMode === "search" &&  (
+                    {searchMode === "search" && delayed === 0 &&  (
                         <div className="flex 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>

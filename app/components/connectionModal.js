@@ -3,18 +3,17 @@
 import Banner from "@/app/components/utils/banner";
 import React, {useState} from "react";
 import {signIn} from "next-auth/react";
-import {redirect, useRouter} from 'next/navigation'
+import { useRouter} from 'next/navigation'
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
 import {
     Alert,
     Card,
     CardBody,
-    Divider,
     InputOtp,
     Modal, ModalBody,
     ModalContent, ModalFooter,
-    ModalHeader, Skeleton,
+    ModalHeader,
     Tab,
     Tabs, Tooltip,
     useDisclosure
@@ -23,9 +22,10 @@ import Link from "next/link";
 import {ArrowRightCircleIcon} from "@heroicons/react/24/solid";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ClockIcon} from "@heroicons/react/24/outline";
+import {lastestPickable} from "@/app/utils/global.js";
 
 export async function updateEntry({setUserAlert, id, moderate, returned=false}) {
-    const response = await fetch(`http://localhost:3000/api/entry/${id}`, {
+    const response = await fetch(`${process.env.API_ENDPOINT}/api/entry/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -62,10 +62,8 @@ export function ConnectionModal({}) {
         }
     ]);
     const [ifl, setIfl] = useState({"username": "", "otp": ""});
-    const [authorized, setAuthorized] = useState(false);
     const [userAlert, setUserAlert] = useState({"type" : "", "message" : ""});
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const [submitLuckyEntry, setSubmitLuckyEntry] = useState(false);
 
     const handleSubmit = async () => {
         const result = await signIn('credentials', {
@@ -92,11 +90,11 @@ export function ConnectionModal({}) {
     });
 
 
-    const {data: entry, isLoading, isError, error, refetch} = useQuery({
+    const {data: entry, refetch} = useQuery({
         queryKey: ['lucky_entry'],
         queryFn: async () => {
             if(ifl.otp.length === 6){
-                const response = await fetch('http://localhost:3000/api/entry?returnedConfirmationCode=' + ifl.otp);
+                const response = await fetch(`${process.env.API_ENDPOINT}/api/entry?returnedConfirmationCode=` + ifl.otp);
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
@@ -107,21 +105,34 @@ export function ConnectionModal({}) {
         },
     });
 
+    const fetchIP = async () => {
+        const res = await fetch(process.env.NEXT_PUBLIC_API_ENDPOINT+"/api/ip");
+        if (!res.ok) throw new Error("Erreur lors de la récupération de l'IP");
+        return res.json();
+    }
+
+    const {data:clientIP } = useQuery({
+        queryKey: ['clientIP'],
+        queryFn: fetchIP,
+    });
+    console.log(clientIP)
+
+    const { data: user } = useQuery({
+        queryKey: ['user'],
+        queryFn: async () => {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/user`);
+            return response.json();
+        }
+    });
 
     const handleSubmitLuckyEntry = async () => {
         if(ifl.otp.length === 6){
-            refetch().then(r=>{
-                if(r.data.resource.pickable === "HIGH_AUTH" || r.data.resource.category.pickable === "HIGH_AUTH" || r.data.resource.domains.pickable === "HIGH_AUTH"){
-                    return r.data.user.username === ifl.username;
-                }
+            refetch();
+            //checker IP dans la plage autorisée si HIGH_AUTH
 
-            });
             return true; // Attend la fin de la requête
         }
-
         return false;
-
-
     }
     const handleChange = (e, index) => {
         const {name, value} = e.target;
@@ -135,11 +146,9 @@ export function ConnectionModal({}) {
     const handleIFLActions = async () => {
         if(entry.moderate === "ACCEPTED"){
             mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "USED"});
-            console.log("Récupération de l'objet");
             setUserAlert({"type" : "primary", "message" : "La prise de la ressource a bien été enregistrée. A la prochaine connexion sur cette inteface vous pourrez retourner votre ressource."
             });
         } else if (entry.moderate === "USED"){
-            console.log("Retour de l'objet");
             mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "ENDED", returned:true});
             setUserAlert({"type" : "success", "message" : "La ressource à bien été retourner."});
         }
@@ -182,7 +191,7 @@ export function ConnectionModal({}) {
                                     ))}
 
                                     <div className="">
-                                        <Button fullWidth onPress={async (e) => {
+                                        <Button fullWidth onPress={async () => {
                                             await handleSubmit()
                                         }}
                                                 color="primary"
@@ -222,7 +231,6 @@ export function ConnectionModal({}) {
                                             color="primary"
                                             onPress={() => {
                                                 handleSubmitLuckyEntry().then(r => {
-                                                    console.log(r)
                                                     if(r){onOpen();}
                                                 });
                                             }}
@@ -249,7 +257,7 @@ export function ConnectionModal({}) {
                                     {entry?.resource.name}
                             </ModalHeader>
                             <ModalBody>
-                                {entry.moderate === "ACCEPTED" || entry.moderate === "USED"  && entry.startDate <= new Date().toISOString() ?
+                                {entry.moderate === "ACCEPTED" || entry.moderate === "USED"  && entry.startDate <= new Date().toISOString() && lastestPickable(entry)=== "HIGH_AUTH" || lastestPickable(entry) === "LOW_AUTH" ?
                                     <div>
                                         {userAlert.message !== "" &&
                                             <div className="mb-6">
@@ -318,11 +326,9 @@ export function ConnectionModal({}) {
                                             </div>
                                         }
                                     </div> :
-                                    <div className="text-center">
-                                        Votre réservation n&apos;est pas accessible par cette interface
-                                        {entry?.moderate === "REJECTED" && " car elle a été refusée."}
-                                        {entry?.moderate === "ENDED" && " car elle est terminée."}
-                                        {entry?.moderate === "WAITING" && " car elle est en attente de validation d'un administrateur."}
+                                    <div className="text-center space-y-2 flex flex-col">
+                                        <span className="font-bold">Votre réservation n&apos;est pas accessible par cette interface.</span>
+                                        <span className="text-sm text-neutral-800">Pour la consulter, merci de vous connecter avec vos identifiants.</span>
                                     </div>
                                 }
                             </ModalBody>

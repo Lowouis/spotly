@@ -21,7 +21,7 @@ const SelectField = ({
     const { data: optionsFetched, isLoading } = useQuery({
         queryKey: ['options', options], // Use `options` as part of the query key
         queryFn: async () => {
-            const response = await fetch(`http://localhost:3000/api/${options}`);
+            const response = await fetch(`${process.env.API_ENDPOINT}/api/${options}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }

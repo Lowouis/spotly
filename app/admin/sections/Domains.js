@@ -43,13 +43,12 @@ const Domains = ({})=>{
     ]
     useEffect(() => {
         if(refresh){
-            refetch().then(r=>setRefresh(false))
+            refetch().then(()=>setRefresh(false))
         }
     }, [refetch, refresh, setRefresh]);
     if (isError) {
         return <div>Error: {error.message}</div>;
     }
-    console.log(items);
     return (
         <div className="flex flex-col gap-3 w-full mx-2">
             <ItemsOnTable setRefresh={setRefresh} model="domains" formFields={DomainFields} isLoading={isLoading} items={items} name={"Sites"} columnsGreatNames={columnsGreatNames}   />

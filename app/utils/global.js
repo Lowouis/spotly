@@ -8,6 +8,28 @@ const constructDate = (date) => {
     return d;
 }
 
+function formatDuration(ms) {
+    const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+    const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+    let result = '';
+    if (days > 0) result += `${days} jour${days !== 1 ? 's' : ''} `;
+    if (hours > 0) result += `${hours} heure${hours !== 1 ? 's' : ''} `;
+    if (minutes > 0) result += `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    return result.trim();
+}
+
+const lastestPickable = (entry) => {
+    if(entry.resource.pickable !== null){
+        return entry.resource.pickable;
+    } else if (entry.resource.category.pickable !== null){
+        return entry.resource.category.pickable;
+    } else if (entry.resource.domains.pickable !== null){
+        return entry.resource.domains.pickable;
+    } else {
+        return null;
+    }
+}
 
 
 const whoIsPickable = (entry) => {
@@ -37,16 +59,7 @@ const whoIsOwner = (entry) => {
 
 
 
-
-
-
-
-
-
-
-
-
-export {constructDate, whoIsPickable, whoIsOwner};
+export {constructDate, whoIsPickable, whoIsOwner, lastestPickable, formatDuration};
 
 
 

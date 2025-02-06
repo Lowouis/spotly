@@ -17,14 +17,14 @@ import {constructDate, whoIsOwner, whoIsPickable} from "@/app/utils/global";
 import {useMutation} from "@tanstack/react-query";
 import {useEmail} from "@/app/context/EmailContext";
 import {getEmailTemplate} from "@/app/utils/mails/templates";
-export default function ModalValidBooking({EntryData, isOpen, onOpenChange, session, setPush, handleRefresh, setToast, handleResetFetchedResources}) {
+export default function ModalValidBooking({EntryData, isOpen, onOpenChange, session, handleRefresh, setToast, handleResetFetchedResources}) {
 
     const [sumbitted, setSubmitted] = useState(false);
     const [formData, setFormData] = useState({
         comment: "",
         cgu: false,
     });
-    const { mutate: sendEmail, emailError } = useEmail();
+    const { mutate: sendEmail } = useEmail();
 
 
     const handleInputChange = (e) => {
@@ -36,7 +36,7 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
     };
     const mutation = useMutation({
         mutationFn: async (newEntry) => {
-            const response = await fetch('http://localhost:3000/api/entry', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
             }
             return response.json();
         },
-        onSuccess: (data, variables, context) => {
+        onSuccess: (data) => {
             handleRefresh();
             handleResetFetchedResources();
 
@@ -111,13 +111,13 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
                 });
             } else {
                     sendEmail({
-                        "to" : session.user.email,
-                        "subject" : "Nouvelle réservation Spotly - " + EntryData.resource.name,
+                        "to" : data.user.email,
+                        "subject" : "Nouvelle réservation Spotly - " + data.resource.name,
                         "text" : getEmailTemplate("reservationConfirmation",
                             {
-                                name: session.user.surname,
-                                resource: EntryData.resource.name,
-                                domain: EntryData.resource.domains.name,
+                                name: data.user.name + " " + data.user.surname,
+                                resource: data.resource.name,
+                                domain: data.resource.domains.name,
                                 startDate : new Date(data.startDate).toLocaleString("FR-fr", {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"}),
                                 endDate : new Date(data.endDate).toLocaleString("FR-fr", {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric"}),
                                 key : data.returnedConfirmationCode,
@@ -147,7 +147,6 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
                 moderate: EntryData.resource.moderate ? "WAITING" : whoIsPickable(EntryData) ? "USED" : "ACCEPTED",
             });
             setSubmitted(true);
-            setPush(true);
             onClose();
         }
     };
@@ -162,7 +161,7 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             placement="center"
-            backdrop="blur"
+            backdrop="opaque"
             size="lg"
             motionProps={{
                 variants: {

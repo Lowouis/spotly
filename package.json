@@ -1,14 +1,16 @@
 {
   "name": "chronos",
+  "type" : "module",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev-turbo": "next dev --turbo",
+    "dev-turbo": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev --turbo && node cron.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "update prisma": "prisma db push"
+    "update prisma": "prisma db push",
+    "run cron": "node utils/cron.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.0",
@@ -17,6 +19,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@nextui-org/button": "^2.0.38",
+    "@nextui-org/form": "^2.1.8",
     "@nextui-org/input": "^2.2.5",
     "@nextui-org/react": "^2.4.8",
     "@nextui-org/system": "^2.2.6",
@@ -35,6 +38,7 @@
     "marked": "^15.0.6",
     "next": "14.2.15",
     "next-auth": "^4.24.8",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.9.16",
     "react": "^18",
     "react-aria": "^3.35.1",
@@ -51,3 +55,5 @@
     "tailwindcss": "^3.4.1"
   }
 }
+
+

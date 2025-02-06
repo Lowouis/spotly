@@ -24,22 +24,25 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
     const [alertContent, setAlertContent ] = useState({title: "", description: "", status: ""});
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const [modalStepper, setModalStepper] = useState("main");
-    const handlePickUp = ()=>{
+    const { mutate: sendEmail } = useEmail();
+
+    const handlePickUp = (onClose)=>{
         setError(null);
         setOtp("");
-        if(whichPickable() !== "TRUST"){
+        if(whichPickable() === "DIGIT"){
             setModalStepper("pickup")
         } else {
             handlePickUpUpdate({entry});
+            onClose();
         }
+        handleRefresh();
     }
-    const { mutate: sendEmail, emailError } = useEmail();
 
-    const handleReturnDigit = ()=>{
+    const handleReturn = ()=>{
         setError(null);
         setOtp("");
 
-        if(entryAction() !== "fluent"){
+        if(entryAction() === "DIGIT"){
             setModalStepper("return")
         } else {
             handleReturnUpdate({entry});
@@ -57,11 +60,10 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
     }
 
     const entryAction = ()=> {
-        console.log("aaa - ", whichPickable(entry))
-        if(whichPickable(entry) === "TRUST" ||whichPickable(entry) === "FLUENT"){
-            return "fluent";
+        if(whichPickable(entry) === "LOW_TRUST" || whichPickable(entry) === "HIGH_TRUST" || whichPickable(entry) === "FLUENT"){
+            return "NODIGIT";
         } else {
-            return "digit"
+            return "DIGIT"
         }
     }
 
@@ -95,7 +97,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
             handleRefresh();
             setUserAlert(alertContent);
         },
-        onError: (error) => {
+        onError: () => {
             setUserAlert({title: "Erreur", description: "Il y a eu un problème lors de la récupération de la ressource.", status: "danger"});
         }
     });
@@ -120,13 +122,21 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
             method : "PUT"
         });
         setModalStepper("main");
-
+        sendEmail({
+            "to": entry.user.email,
+            "subject": "Confirmation de restitution - " + entry.resource.name,
+            "text": getEmailTemplate("reservationReturnedConfirmation",
+                {
+                    resource: entry.resource,
+                    endDate: new Date(entry.endDate),
+                })
+        });
         handleRefresh();
     }
 
 
     const handleDeleteEntry = () => {
-        setAlertContent({title: "Suppression", description: "Votre réservation à bien été supprimer avec succès.", status: "success"});
+        setAlertContent({title: "Suppression", description: "Votre réservation à bien été annuler avec succès.", status: "success"});
         updateEntry({
             entry,
             method : "DELETE"
@@ -331,7 +341,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                                     whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && entry.startDate <= new Date().toISOString() &&  entry?.endDate > new Date().toISOString() && (
                                                         <Button
                                                             className="text-blue-500 font-bold ml-6"
-                                                            size="lg" variant="flat" onPress={handlePickUp}
+                                                            size="lg" variant="flat" onPress={()=>handlePickUp(onClose)}
                                                         >
                                                             Prendre
                                                             <HandRaisedIcon width={24} height={24} className="font-bold transform transition-transform group-hover:translate-x-2"/>
@@ -361,7 +371,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                                             className="font-bold text-orange-700  underline-offset-4 ml-2"
                                                             size="lg"
                                                             variant="light"
-                                                            onPress={handleReturnDigit}
+                                                            onPress={handleReturn}
                                                         >
                                                             Retourner
                                                             <ArrowRightIcon
@@ -404,7 +414,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                     size={"lg"}
                                     color="danger"
                                     variant="flat"
-                                    onPress={e=>{setModalStepper("delete")}}
+                                    onPress={()=>{setModalStepper("delete")}}
                                 >
                                     Annuler
                                 </Button>
@@ -412,7 +422,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                         {modalStepper !== "main" && (<Button size={"lg"} color="primary" variant="flat" onPress={()=>setModalStepper("main")}>Retour</Button>)}
                         {entry.moderate !== "ENDED" || entry.moderate === "ACCEPTED" && <Button size={"lg"} color="success" onPress={onClose}>Modifier</Button>}
 
-                        <Button size={"lg"} color="danger" variant="light" onPress={e=>{onClose(); setModalStepper("main")}}>
+                        <Button size={"lg"} color="danger" variant="light" onPress={()=>{onClose(); setModalStepper("main")}}>
                             Fermer
                         </Button>
                         </ModalFooter>

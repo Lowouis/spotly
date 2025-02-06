@@ -45,12 +45,11 @@ const categorySchema = yup.object().shape({
     });
 
 const deleteItems = async ({ selectedItems, model }) => {
-    console.log("deleteItems called with:", selectedItems, model);
     const data = {
         ids: Array.from(selectedItems),
     };
     try {
-        const response = await fetch(`http://localhost:3000/api/${model}`, {
+        const response = await fetch(`${process.env.API_ENDPOINT}/api/${model}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -71,7 +70,7 @@ const deleteItems = async ({ selectedItems, model }) => {
 
 export default function ItemsOnTable({formFields,actions, model,columnsGreatNames, items, name, isLoading, create_hidden=false, selectionMode=true ,setRefresh=()=>{console.log("refreshOnContextLater")}}) {
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const {data: session, status} = useSession();
+    const {data: session} = useSession();
     const methods = useForm({
         resolver: yupResolver(categorySchema),
         mode: 'onSubmit',
@@ -188,12 +187,12 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                     {selectionMode && selectedItems.size > 0 && (
                         <Button
                             isIconOnly={true}
-                            onClick={handleDeleteItem}
+
                             variant="flat"
                             isLoading={isLoading}
                             radius="full"
                             color="danger"
-                            onPress={setRefresh}
+                            onPress={()=>{setRefresh();handleDeleteItem();}}
                         >
                             <TrashIcon width={20} color="red" height={20}/>
                         </Button>

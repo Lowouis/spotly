@@ -25,9 +25,8 @@ const Categories = ({})=>{
 
 
     useEffect(() => {
-        console.log(refresh);
         if (refresh) {
-            refetch().then(r => setRefresh(false))
+            refetch().then(() => setRefresh(false))
         }
     }, [refresh, refetch, setRefresh]);
 

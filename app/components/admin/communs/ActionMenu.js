@@ -4,7 +4,6 @@ import { CheckIcon, XMarkIcon} from "@heroicons/react/24/solid";
 import ModalCheckingBooking from "@/app/components/modals/ModalCheckingBooking";
 
 export default function ActionMenuModerate({actions, entry}) {
-    console.log(typeof actions);
     return (
         <ButtonGroup variant="flat" color="primary" size="lg" >
             {actions.includes('view') && <ModalCheckingBooking entry={entry} adminMode={true} />}

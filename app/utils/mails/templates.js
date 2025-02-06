@@ -1,4 +1,5 @@
 import { marked } from 'marked';
+import {formatDuration} from "@/app/utils/global.js";
 
 /**
  * Ajoute un style par défaut pour les emails.
@@ -18,6 +19,7 @@ const wrapInHtmlTemplate = (body) => `
 
             <hr style="border: none; border-top: 1px solid #eee;">
             <p>Merci d'utiliser notre service !</p>
+            <p>⚠️ Ce message est généré automatiquement, merci de ne pas y répondre.</p>
         </footer>
     </div>
 `;
@@ -91,6 +93,40 @@ Une nouvelle réservation a été soumise par **${data.user}** :
 - **Date de fin**   : ${data.endDate}
 
 Merci de valider ou rejeter cette réservation dans les plus brefs délais dans la section administrateur de votre application Spotly.
+
+---
+Cordialement,  
+Votre système de gestion des ressources.
+    `
+    ,reservationReturnedConfirmation: (data) => `
+# Confirmation de restitution 
+
+La ressource de votre réservation a été restitué avec succès. 
+
+### Détails de la réstitution :
+- **Ressource** : ${data.resource.name}
+- **Date de restitution** : ${new Date().toLocaleString("FR-fr", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric"
+    })}
+- **Retard** : ${formatDuration(new Date() - new Date(data.endDate))}
+
+### Nous vous remercions d'avoir utilisé Spotly.
+---
+Cordialement,  
+Votre système de gestion des ressources.
+    `,
+    reservationDelayedAlert: (data) => `
+# Vous avez une réservation en retard 
+
+La ressource de votre réservation à été restitué avec succès. 
+Veuillez restitué dans les plus bref delais la ressource suivante : ${data.resource.name}
+
+Retard : ${formatDuration(new Date(data.endDate - new Date()))}
 
 ---
 Cordialement,  

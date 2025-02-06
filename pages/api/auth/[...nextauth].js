@@ -50,7 +50,6 @@ export const authConfig = {
                         throw new Error("LDAP user search failed / rejected : " + e);
                     });
 
-                    console.log("Founded user from ldap : ", ldapUser)
                     //Creer mettre a jour user dans prisma
                     try {
                            if(!user){
@@ -64,11 +63,8 @@ export const authConfig = {
                                        password :  null,
                                    }
                                });
-                               console.log("NEW USER CREATED:", newUser);
                                return newUser;
                            } else {
-                               console.log("Utilisateur trouvé (a mettre à jour) : ", ldapUser);
-                               console.log("LDAP USER FOUND + UPDATED", ldapUser, user);
                                return await prisma.user.update({
                                    where : {
                                      id : user.id
@@ -90,9 +86,7 @@ export const authConfig = {
 
                 const isValidPassword = await bycrypt.compare(credentials.password, user.password);
 
-                const t = bycrypt.hash("password", 10).then((hash) => {
-                    console.log(hash);
-                });
+
 
                 if(!isValidPassword){
                     throw new Error("Invalid password");
@@ -101,7 +95,6 @@ export const authConfig = {
 
 
                 delete user.password;
-                console.log("NEXTAUTH RETURN SIDE", user);
                 return user;
             },
         }),
@@ -116,11 +109,9 @@ export const authConfig = {
     callbacks: {
 
         jwt: async ({ token, user }) => {
-            console.log("JWT SIDE", token, user);
             return {...token, ...user};
         },
         session: async ({ session, token }) => {
-            console.log("SESSION SIDE", session);
             session.user = token;
             return session;
         },

@@ -51,19 +51,20 @@ export default function App() {
                                                 r="70">
                                         </circle>
                                     </svg>
-                                }/>
+                            }/>
                     </div>
                 </span>
             </div>
         ) : (
             <div className="mx-auto font-[family-name:var(--font-geist-sans)]">
-                <main className="flex flex-col justify-center items-center sm:items-start">
+                <div className="flex flex-col justify-center items-center sm:items-start">
                     <div className="flex flex-col w-full justify-center items-center mx-auto">
                         <div className="flex flex-col w-full">
                             <ReservationSearch />
                         </div>
                     </div>
-                </main>
+                </div>
+
             </div>
         );
 

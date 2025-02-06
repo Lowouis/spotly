@@ -1,10 +1,9 @@
 'use client';
 
-import {Card, Spacer} from "@nextui-org/react";
+import { Spacer} from "@nextui-org/react";
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
 import React, {useState} from "react";
-import dotenv from "dotenv";
 
 const LDAP = ({})=>{
 
@@ -14,7 +13,6 @@ const LDAP = ({})=>{
         adminCn:        process.env.LDAP_ADMIN_DN ?? "",
         adminPassword:  process.env.LDAP_ADMIN_PASSWORD ?? "",
     });
-    console.log(formData)
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;

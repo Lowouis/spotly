@@ -22,7 +22,6 @@ export default async function handler(req, res) {
         res.status(200).json(domain);
     } else if (req.method === "DELETE") {
         const { ids } = req.body;
-        console.log(ids)
 
         if (!Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ message: "Invalid or missing 'ids' in request body" });

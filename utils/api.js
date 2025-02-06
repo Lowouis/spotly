@@ -1,7 +1,9 @@
 import * as qs from "postcss";
 
+const API_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
+
 export function getURL(url) {
-    return `${process.env.API_URL}${url}`;
+    return `${API_ENDPOINT}${url}`;
 }
 export async function fetchAPI(path, urlParamsObject = {}, options = {}) {
 

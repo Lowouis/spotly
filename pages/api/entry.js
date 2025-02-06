@@ -5,7 +5,8 @@ import prisma from "@/prismaconf/init";
 export default async function handler(req, res) {
     try {
         if(req.method === "GET"){
-            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode, otherParams } = req.query;
+            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode } = req.query;
+            console.log(req.query)
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"
@@ -60,8 +61,6 @@ export default async function handler(req, res) {
             const { userId,
                     startDate,
                     endDate,
-                    category,
-                    site,
                     resourceId,
                     key,
                     moderate,
@@ -99,7 +98,6 @@ export default async function handler(req, res) {
                     }
                 }
             });
-            console.log(entry);
             res.status(201).json(entry);
         }
 
