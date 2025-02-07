@@ -36,7 +36,7 @@ const Dashboard = ({})=>{
     });
     useEffect(() => {
         if (refresh) {
-            refetch().then( => setRefresh(false))
+            refetch().then(() => setRefresh(false))
         }
     }, [refresh, refetch, setRefresh]);
     if (isError) {
