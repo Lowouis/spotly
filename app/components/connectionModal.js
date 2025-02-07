@@ -243,11 +243,7 @@ export function ConnectionModal({}) {
                         </Tabs>
                     </CardBody>
                 </Card>
-                <Link target="_blank" href="https://github.com/Lowouis/spotly">
-                    <h2 className="flex text-blue-200 text-xl hover:cursor-pointer hover:text-blue-400 transition font-bold py-2 px-4 rounded">
-                        Spotly
-                    </h2>
-                </Link>
+             
             </div>
             {entry !== null && <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="xl">
                 <ModalContent>

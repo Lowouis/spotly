@@ -1,9 +1,9 @@
 import {ConnectionModal} from "@/app/components/connectionModal";
 import {useRouter} from 'next/navigation';
-import {SessionProvider, useSession} from 'next-auth/react';
-import {useEffect} from 'react';
+import {useSession} from 'next-auth/react';
+import React, {useEffect} from 'react';
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
-import {NextUIProvider} from "@nextui-org/react";
+import Footer from "@/app/components/utils/Footer";
 
 
 export default function Login() {

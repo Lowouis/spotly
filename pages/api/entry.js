@@ -6,7 +6,6 @@ export default async function handler(req, res) {
     try {
         if(req.method === "GET"){
             const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode } = req.query;
-            console.log(req.query)
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"

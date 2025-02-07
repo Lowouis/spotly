@@ -16,8 +16,7 @@
 
 body {
   color: var(--foreground);
-  background-size: cover;
-  background: url("/bg.jpg") no-repeat center;
+  background: url("/bg.jpg") no-repeat fixed center center / cover;
   height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
   position: relative;
