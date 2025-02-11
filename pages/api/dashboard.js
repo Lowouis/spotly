@@ -12,10 +12,10 @@ export default async function handler(req, res) {
                 }
             }
         );
-        const bookedResourcesTotal = await prisma.resource.count(
+        const bookedResourcesTotal = await prisma.entry.count(
             {
                 where : {
-                    status : "BOOKED"
+                    moderate : "USED"
                 }
             }
         )

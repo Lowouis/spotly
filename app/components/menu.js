@@ -92,7 +92,11 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                                              <div className="bg-blue-700 rounded-full mr-3">
 
                                                                  <div className="m-1 text-2xl text-blue-100 p-5 ">
-                                                                     <span>{user?.name[0]}{user?.surname[0]}</span>
+                                                                     {user?.name &&
+                                                                         (
+                                                                             <span>{user?.name[0].toUpperCase()}{user?.name[1].toUpperCase()}</span>
+                                                                         )
+                                                                     }
                                                                  </div>
                                                              </div>
                                                              <div className="flex flex-col justify-start items-start">

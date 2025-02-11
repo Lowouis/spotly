@@ -194,7 +194,7 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
             className=""
             size="lg"
             color="default"
-            variant="flat"
+            variant={adminMode ? "ghost" : "flat"}
             onPress={onOpen}
         >
             <span className="flex justify-center items-center">

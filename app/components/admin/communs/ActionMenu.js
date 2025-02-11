@@ -6,7 +6,6 @@ import ModalCheckingBooking from "@/app/components/modals/ModalCheckingBooking";
 export default function ActionMenuModerate({actions, entry}) {
     return (
         <ButtonGroup variant="flat" color="primary" size="lg" >
-            {actions.includes('view') && <ModalCheckingBooking entry={entry} adminMode={true} />}
             {actions.includes('confirm') &&
             <Button
                 isIconOnly={true}
@@ -28,6 +27,8 @@ export default function ActionMenuModerate({actions, entry}) {
                 >
                     <span className="flex justify-center items-center"><XMarkIcon width="32" height="32" color={"red"} /></span>
                 </Button>}
+            {actions.includes('view') && <ModalCheckingBooking entry={entry} adminMode={true} />}
+
 
         </ButtonGroup>
     );

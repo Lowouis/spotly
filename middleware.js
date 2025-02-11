@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function middleware(req) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    console.log("TOKEN", token.role)
+
     // Vérifie si l'utilisateur est authentifié et a le rôle admin
     if (!token || token.role === "USER") {
         return NextResponse.redirect(new URL('/', req.url)); // Redirige si non autorisé

@@ -26,6 +26,7 @@ import {Input} from "@nextui-org/input";
 import {useMutation} from "@tanstack/react-query";
 import ActionMenuModerate from "@/app/components/admin/communs/ActionMenu";
 import {useSession} from "next-auth/react";
+import EntryDTO, {EntriesDTO} from "@/app/components/utils/DTO";
 
 const domainSchema = yup.object().shape({
     name: yup.string().required(),
@@ -68,14 +69,13 @@ const deleteItems = async ({ selectedItems, model }) => {
     }
 };
 
-export default function ItemsOnTable({formFields,actions, model,columnsGreatNames, items, name, isLoading, create_hidden=false, selectionMode=true ,setRefresh=()=>{console.log("refreshOnContextLater")}}) {
+export default function ItemsOnTable({formFields,actions, model, columnsGreatNames, items, filter, name, isLoading, create_hidden=false, selectionMode=true ,setRefresh=()=>{console.log("refreshOnContextLater")}}) {
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const {data: session} = useSession();
     const methods = useForm({
         resolver: yupResolver(categorySchema),
         mode: 'onSubmit',
     });
-    console.log("actions:", actions); // Add this line to log the prop
     const [selectedItems, setSelectedItems] = useState(new Set());
 
     const mutation = useMutation({
@@ -100,7 +100,7 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                     </div>
                     <div className="flex justify-center items-center">
                         <Skeleton className="rounded-full"  isLoaded={!isLoading} >
-                            <Chip color="default" size="md" radius="full">{items?.length}</Chip>
+                            <Chip color="default" size="md" radius="full">{items?.length ? items?.length : "0"}</Chip>
                         </Skeleton>
                     </div>
                 </div>
@@ -134,7 +134,7 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                                     Filtrer
                                 </Button>
                             </DropdownTrigger>
-                            <DropdownMenu
+                            {/*<DropdownMenu
                                 aria-label="filterBy"
                                 variant="flat"
                                 closeOnSelect={false}
@@ -142,11 +142,11 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                                 selectionMode="multiple"
                             >
                                 {items && Object.keys(items[0]).map((item, index) => {
-                                    if (typeof item !== 'object') {
+                                    if (item && typeof item !== 'object') {
                                         <DropdownItem key={index}>{item}</DropdownItem>
                                     }
                                 })}
-                            </DropdownMenu>
+                            </DropdownMenu>*/}
                         </Dropdown>
                     </Skeleton>
                     <Skeleton className="rounded-lg" isLoaded={!isLoading}>
@@ -159,7 +159,7 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                                     Trier par
                                 </Button>
                             </DropdownTrigger>
-                            <DropdownMenu
+                            {/*<DropdownMenu
                                 aria-label="filterBy"
                                 variant="flat"
                                 closeOnSelect={false}
@@ -170,7 +170,7 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
                                 {items && Object.keys(items[0]).map((item, index) => (
                                     typeof item !== "object" && <DropdownItem key={index}>{item}</DropdownItem>
                                 ))}
-                            </DropdownMenu>
+                            </DropdownMenu>*/}
                         </Dropdown>
                     </Skeleton>
                     <Button
@@ -208,7 +208,7 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
             </div>
             <Skeleton className="rounded-lg h-[400px]" isLoaded={!isLoading}>
                 {
-                    items ?
+                    items && items.length > 0 ?
                         (<Table
                             aria-label="Rows actions table example with dynamic content"
                             selectionMode={selectionMode ? "multiple" : "none"}
@@ -232,86 +232,93 @@ export default function ItemsOnTable({formFields,actions, model,columnsGreatName
 
                             </TableHeader>
                             <TableBody>
-                                {items.map((item, index) => (
-                                    <TableRow key={item.id}>
-                                        {Object.keys(item).map((key) => (
-                                            <TableCell key={key}>
-                                                {(() => {
-                                                    switch (typeof item[key]) {
-                                                        case "object":
-                                                            return (
-                                                                item[key]?.name ?
-                                                                <Tooltip width={300}
-                                                                         height={400}
-                                                                         title={item[key]?.name || "Inconnu"}
-                                                                         placement="bottom"
-                                                                         content={
-                                                                             session?.user.role === "SUPERADMIN" &&
-                                                                             (<div className="px-1 py-2">
-                                                                                 <div className="text-tiny">
-                                                                                     {item[key]?.name}
-                                                                                 </div>
-                                                                             </div>)
-                                                                         }
-                                                                >
-                                                                    {item[key]?.name}
-                                                                </Tooltip> :
-                                                                    <Button
-                                                                        className="text-default-500 font-medium underline underline-offset-4"
-                                                                        size="sm"
-                                                                        variant="light"
-                                                                    >
-                                                                        Ajouter
-                                                                    </Button>
-                                                            );
-                                                        case "number":
-                                                            return <Chip color="default" size="md">{item[key]}</Chip>;
-                                                        case "boolean":
-                                                            return item[key] ? "Oui" : "Non";
-                                                        case "string":
-                                                            if (!isNaN(Date.parse(item[key]))) {
-                                                                return new Date(item[key]).toLocaleDateString('fr-FR',{
-                                                                    year: 'numeric',
+                                {items.map((item, index) => {
+                                    const itemDTO=EntryDTO(item, filter);
+                                    console.log(itemDTO);
+
+                                    return (
+                                        <TableRow key={itemDTO.id}>
+                                            {Object.keys(itemDTO).map((key) => (
+                                                <TableCell key={`${itemDTO.id}-${key}`}>
+                                                    {(() => {
+                                                        switch (typeof itemDTO[key]) {
+                                                            case "object":
+                                                                return (
+                                                                    itemDTO[key]?.name ?
+                                                                        <Tooltip width={300}
+                                                                                 height={400}
+                                                                                 title={itemDTO[key]?.name || "Inconnu"}
+                                                                                 placement="bottom"
+                                                                                 content={
+                                                                                     session?.user.role === "SUPERADMIN" &&
+                                                                                     (<div className="px-1 py-2">
+                                                                                         <div className="text-tiny">
+                                                                                             {itemDTO[key]?.name}
+                                                                                         </div>
+                                                                                     </div>)
+                                                                                 }
+                                                                        >
+                                                                            {itemDTO[key]?.name}
+                                                                        </Tooltip> :
+                                                                        <Button
+                                                                            className="text-default-500 font-medium underline underline-offset-4"
+                                                                            size="sm"
+                                                                            variant="light"
+                                                                        >
+                                                                            Ajouter
+                                                                        </Button>
+                                                                );
+                                                            case "number":
+                                                                return <Chip color="default"
+                                                                             size="md">{itemDTO[key]}</Chip>;
+                                                            case "boolean":
+                                                                return itemDTO[key] ? "Oui" : "Non";
+                                                            case "string":
+                                                                if (!isNaN(Date.parse(itemDTO[key]))) {
+                                                                    return new Date(itemDTO[key]).toLocaleDateString('fr-FR', {
+                                                                        year: 'numeric',
                                                                         month: 'short',
                                                                         day: 'numeric',
                                                                         hour: '2-digit',
                                                                         minute: '2-digit',
-                                                                });
-                                                            }
-                                                            if(!isNaN(parseInt(item[key]))){
-                                                                return <Snippet size="sm" symbol="">{item[key]}</Snippet>
-                                                            }
-                                                            if(
-                                                                item[key] === "DELAYED" ||
-                                                                item[key] === "LOCKED" ||
-                                                                item[key] === "REJECTED" ||
-                                                                item[key] === "ENDED"
-                                                            ){
-                                                                return <Chip color="danger">{item[key]}</Chip>
-                                                            }
-                                                            if( item[key] === "WAITING" ||
-                                                                item[key] === "PENDING" ||
-                                                                item[key] === "BOOKED" ||
-                                                                item[key] === "AVAILABLE" ||
-                                                                item[key] === "WAITING"
-                                                            ){
-                                                                return <Chip color="primary">{item[key]}</Chip>
-                                                            }
+                                                                    });
+                                                                }
+                                                                if (!isNaN(parseInt(itemDTO[key]))) {
+                                                                    return <Snippet size="sm"
+                                                                                    symbol="">{itemDTO[key]}</Snippet>
+                                                                }
+                                                                if (
+                                                                    itemDTO[key] === "DELAYED" ||
+                                                                    itemDTO[key] === "LOCKED" ||
+                                                                    itemDTO[key] === "REJECTED" ||
+                                                                    itemDTO[key] === "ENDED"
+                                                                ) {
+                                                                    return <Chip color="danger">{itemDTO[key]}</Chip>
+                                                                }
+                                                                if (itemDTO[key] === "WAITING" ||
+                                                                    itemDTO[key] === "PENDING" ||
+                                                                    itemDTO[key] === "BOOKED" ||
+                                                                    itemDTO[key] === "AVAILABLE" ||
+                                                                    itemDTO[key] === "WAITING"
+                                                                ) {
+                                                                    return <Chip color="primary">{itemDTO[key]}</Chip>
+                                                                }
 
-                                                        default:
-                                                            return item[key];
-                                                    }
-                                                })()}
+                                                            default:
+                                                                return itemDTO[key];
+                                                        }
+                                                    })()}
+                                                </TableCell>
+                                            ))}
+                                            <TableCell key={`actions-${itemDTO.key}`}>
+                                                {actions && <ActionMenuModerate actions={actions} entry={item}/>}
                                             </TableCell>
-                                        ))}
-                                        <TableCell key={`actions-${item.key}`}>
-                                            {actions && <ActionMenuModerate actions={actions} entry={item}/>}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                        </TableRow>
+                                    )
+                                })}
                             </TableBody>
                         </Table>) : (
-                            <div className="flex justify-center items-center">
+                            <div className="flex justify-center items-center mt-10 text-slate-600">
                                 <p>Aucun éléments à afficher</p>
                             </div>
                         )}
