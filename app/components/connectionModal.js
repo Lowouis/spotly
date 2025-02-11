@@ -18,7 +18,6 @@ import {
     Tabs, Tooltip,
     useDisclosure
 } from "@nextui-org/react";
-import Link from "next/link";
 import {ArrowRightCircleIcon} from "@heroicons/react/24/solid";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ClockIcon} from "@heroicons/react/24/outline";
@@ -115,7 +114,7 @@ export function ConnectionModal({}) {
         queryKey: ['clientIP'],
         queryFn: fetchIP,
     });
-    console.log(clientIP)
+
 
     const { data: user } = useQuery({
         queryKey: ['user'],

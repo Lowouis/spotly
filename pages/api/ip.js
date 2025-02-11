@@ -9,7 +9,6 @@ export default function handler(req, res) {
     if (ip.startsWith("::ffff:")) {
         ip = ip.substring(7);
     }
-    console.log(req)
 
     res.json({ ip });
 }

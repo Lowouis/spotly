@@ -75,7 +75,7 @@ const ReservationSearch = () => {
         if (userEntries) {
             setDelayed(userEntries.filter((entry) => entry.moderate === "USED" && new Date(entry.endDate) < new Date()).length);        }
     }, [userEntries]);
-    console.log(delayed)
+
 
     const { data: fetchedDomAndCat } = useQuery({
         queryKey: ['dom_cat'],
@@ -116,7 +116,6 @@ const ReservationSearch = () => {
                     `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
                 );
                 const result = await response.json();
-                console.log("Fetched entries:", result);  // Ajouter un log pour debug
                 return result;
             }
             return [];
@@ -132,7 +131,6 @@ const ReservationSearch = () => {
 
     useEffect(() => {
         if (isSubmitted && matchingEntries) {
-            console.log("entries", matchingEntries);
             const cpAvailableResources = [...resources];
             const filteredResourcesByMatches = cpAvailableResources.filter(
                 (resource) =>

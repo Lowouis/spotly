@@ -27,6 +27,7 @@ import {useMutation} from "@tanstack/react-query";
 import ActionMenuModerate from "@/app/components/admin/communs/ActionMenu";
 import {useSession} from "next-auth/react";
 import EntryDTO, {EntriesDTO} from "@/app/components/utils/DTO";
+import {isValidDateTimeFormat} from "@/app/utils/global";
 
 const domainSchema = yup.object().shape({
     name: yup.string().required(),
@@ -115,7 +116,7 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                 )}
             </div>
             <div className="flex flex-row">
-                <div className="w-1/2 flex flex-row justify-end items-center space-x-4">
+                <div className="flex flex-row justify-end items-center space-x-4 w-full">
                     <Input
                         isClearable
                         radius="lg"
@@ -198,8 +199,8 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                         </Button>
                     )}
                     {selectionMode && (
-                        <div className="flex items-center text-sm uppercase w-full">
-                            {selectedItems.size <= 1 ? selectedItems.size + " Selectionné" : selectedItems.size + " Selectionnés"}
+                        <div className="flex items-center text-xs uppercase w-full text-slate-500">
+                            {selectedItems.size <= 1 ? selectedItems.size + " selectionné" : selectedItems.size + " selectionnés"}
                         </div>
                     )}
 
@@ -216,8 +217,10 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                                setSelectedItems(selected);
                             }}
                             selectionBehavior="toggle"
-                            shadow="none"
+                            shadow="xs"
                             color="primary"
+                            className="mt-3"
+                            radius="md"
                         >
                             <TableHeader>
 
@@ -234,8 +237,6 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                             <TableBody>
                                 {items.map((item, index) => {
                                     const itemDTO=EntryDTO(item, filter);
-                                    console.log(itemDTO);
-
                                     return (
                                         <TableRow key={itemDTO.id}>
                                             {Object.keys(itemDTO).map((key) => (
@@ -260,13 +261,19 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                                                                         >
                                                                             {itemDTO[key]?.name}
                                                                         </Tooltip> :
-                                                                        <Button
-                                                                            className="text-default-500 font-medium underline underline-offset-4"
-                                                                            size="sm"
-                                                                            variant="light"
-                                                                        >
-                                                                            Ajouter
-                                                                        </Button>
+                                                                        <div className="flex justify-center items-center w-full">
+                                                                            <Button
+                                                                                className="text-default-500 font-medium underline underline-offset-4"
+                                                                                size="sm"
+                                                                                variant="flat"
+                                                                                color="primary"
+                                                                                isIconOnly
+                                                                                radius="full"
+                                                                            >
+                                                                                <PlusCircleIcon className="text-blue-500"/>
+                                                                            </Button>
+                                                                        </div>
+
                                                                 );
                                                             case "number":
                                                                 return <Chip color="default"
@@ -274,7 +281,7 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                                                             case "boolean":
                                                                 return itemDTO[key] ? "Oui" : "Non";
                                                             case "string":
-                                                                if (!isNaN(Date.parse(itemDTO[key]))) {
+                                                                if (isValidDateTimeFormat(itemDTO[key])) {
                                                                     return new Date(itemDTO[key]).toLocaleDateString('fr-FR', {
                                                                         year: 'numeric',
                                                                         month: 'short',
@@ -310,8 +317,8 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                                                     })()}
                                                 </TableCell>
                                             ))}
-                                            <TableCell key={`actions-${itemDTO.key}`}>
-                                                {actions && <ActionMenuModerate actions={actions} entry={item}/>}
+                                            <TableCell key={`actions-${item.key}`}>
+                                                <ActionMenuModerate actions={actions} entry={item}/>
                                             </TableCell>
                                         </TableRow>
                                     )

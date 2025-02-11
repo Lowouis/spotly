@@ -22,7 +22,8 @@ export default async function handler(req, res) {
         const delayedResourcesTotal = await prisma.resource.count(
             {
                 where : {
-                    status: "DELAYED"
+                    status: "ENDED",
+
                 }
             }
         )

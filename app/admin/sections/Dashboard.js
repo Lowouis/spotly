@@ -11,10 +11,6 @@ const Dashboard = ({})=>{
 
     const { activitiesStats, activitiesStatsLoading, waitingEntries, waitingEntriesLoading,  refresh } = useDataHandlerContext();
 
-    if(!waitingEntriesLoading){
-        console.log(EntriesDTO(waitingEntries, 'adminNote', 'moderate', 'updatedAt', 'createdAt', 'returned', 'comment', 'lastUpdatedModerateStatus'));
-    }
-
     if (!activitiesStats) {
         return <div>Error: XXXX</div>;
     }

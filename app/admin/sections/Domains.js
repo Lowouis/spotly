@@ -6,6 +6,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useEffect, useState} from "react";
 
 
+
 const Domains = ({})=>{
     const [refresh, setRefresh] = useState(false);
     const DomainFields = [
@@ -21,7 +22,8 @@ const Domains = ({})=>{
     const { data: items, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['domains'],
         queryFn: async () => {
-            const response = await fetch('http://localhost:3000/api/domains');
+            const response = await fetch(`http://localhost:3000/api/domains`);
+            //for some reson the ${process.env.API_ENDPOINT} is not working
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -29,17 +31,16 @@ const Domains = ({})=>{
         },
     });
     const columnsGreatNames = [
-        "ID",
-        "Ville",
-        "a del",
-        "Adresse",
+        "Nom",
         "Code",
+        "Adresse",
+        "Ville",
         "Pays",
         "Ville",
         "Code postal",
         "Téléphone",
-        "N°",
-        "Début",
+        "Sécurité",
+        "Propriétaire",
     ]
     useEffect(() => {
         if(refresh){
@@ -51,7 +52,17 @@ const Domains = ({})=>{
     }
     return (
         <div className="flex flex-col gap-3 w-full mx-2">
-            <ItemsOnTable setRefresh={setRefresh} model="domains" formFields={DomainFields} isLoading={isLoading} items={items} name={"Sites"} columnsGreatNames={columnsGreatNames}   />
+            <ItemsOnTable
+                setRefresh={setRefresh}
+                model="domains"
+                formFields={DomainFields}
+                isLoading={isLoading}
+                items={items}
+                name={"Sites"}
+                actions={["create", "delete"]}
+                columnsGreatNames={columnsGreatNames}
+                filter={['updatedAt', 'createdAt', 'ownerId', 'id']}
+            />
         </div>
     );
 }

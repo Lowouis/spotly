@@ -8,7 +8,7 @@ import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/app/components/admin/form/ItemForm";
 
 const postItem = async ({data, model}) => {
-    const response = await fetch(`${process.env.API_ENDPOINT}/api/${model}`, {
+    const response = await fetch(`http://localhost:3000/api/${model}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -98,8 +98,8 @@ export default function ReservationUserListing({entries, handleRefresh}) {
 
                 </div>
             ) : (
-                <div className="flex justify-center items-center">
-                    <h1 className="text-2xl text-center text-slate-600">Aucune réservation</h1>
+                <div className="flex justify-center items-center mt-4 p-3">
+                    <h1 className="text-xl text-center text-slate-400">Aucune réservation</h1>
                 </div>
             )}
         </div>
