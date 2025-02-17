@@ -33,6 +33,7 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
                 onChange={handleChange}
                 zone={getLocalTimeZone()}
                 radius="lg"
+                aria-labelledby={name}
                 />) : (
                 <DateRangePicker
                     onChange={handleChange}
@@ -52,7 +53,7 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
                     isRequired={true}
                     isDisabled={false}
                     variant="bordered"
-
+                    aria-labelledby={name}
                 />
             )}
 

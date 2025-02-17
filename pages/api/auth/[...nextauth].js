@@ -36,13 +36,13 @@ export const authConfig = {
                 if(!user || user.external === true){
                     const ldapUser = await authenticate({
                         ldapOpts: {
-                            url: process.env.LDAP_DOMAIN,
+                            url: process.env.NEXT_PUBLIC_LDAP_DOMAIN,
                             //tlsOptions : {rejectUnauthorized: false}
                         },
-                        adminDn: process.env.LDAP_ADMIN_DN,
-                        adminPassword: process.env.LDAP_ADMIN_PASSWORD,
+                        adminDn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN,
+                        adminPassword: process.env.NEXT_PUBLIC_LDAP_ADMIN_PASSWORD,
                         userPassword: credentials.password,
-                        userSearchBase: process.env.LDAP_BASEDN,
+                        userSearchBase: process.env.NEXT_PUBLIC_LDAP_BASEDN,
                         usernameAttribute: 'cn',
                         username: credentials.username,
                         attributes: ['dc','cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
@@ -53,7 +53,7 @@ export const authConfig = {
                     //Creer mettre a jour user dans prisma
                     try {
                            if(!user){
-                               const newUser = await prisma.user.create({
+                               return await prisma.user.create({
                                    data: {
                                        email:      ldapUser.mail,
                                        name:       ldapUser.givenName,
@@ -63,7 +63,6 @@ export const authConfig = {
                                        password :  null,
                                    }
                                });
-                               return newUser;
                            } else {
                                return await prisma.user.update({
                                    where : {

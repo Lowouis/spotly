@@ -5,15 +5,25 @@ export default async function handler(req, res) {
 
 
     if(req.method === "GET"){
-        const categories = await prisma.category.findMany();
+        const categories = await prisma.category.findMany(
+            {
+                include: {
+                    owner: true,
+                }
+            }
+        );
         res.status(200).json(categories);
     } else if (req.method === "POST"){
-        const {name, description, comment } = req.body;
+        const {name, description, comment, owner, pickable } = req.body;
         const category = await prisma.category.create({
             data: {
                 name,
                 description,
                 comment,
+                pickable: pickable.key,
+                owner: {
+                    connect: { id: owner.id }
+                }
             }
         });
         res.status(200).json(category);

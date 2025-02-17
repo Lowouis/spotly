@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev-turbo": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev --turbo && node cron.js",
+    "dev-turbo": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -21,6 +21,7 @@
     "@nextui-org/form": "^2.1.8",
     "@nextui-org/input": "^2.2.5",
     "@nextui-org/react": "^2.4.8",
+    "@nextui-org/select": "^2.4.9",
     "@nextui-org/system": "^2.2.6",
     "@nextui-org/theme": "^2.2.11",
     "@prisma/client": "^5.20.0",
@@ -44,6 +45,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.53.0",
     "react-hot-toast": "^2.4.1",
+    "utils": "^0.3.1",
     "yup": "^1.4.0"
   },
   "devDependencies": {
@@ -54,5 +56,3 @@
     "tailwindcss": "^3.4.1"
   }
 }
-
-

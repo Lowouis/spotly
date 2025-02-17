@@ -24,7 +24,7 @@ import {ClockIcon} from "@heroicons/react/24/outline";
 import {lastestPickable} from "@/app/utils/global.js";
 
 export async function updateEntry({setUserAlert, id, moderate, returned=false}) {
-    const response = await fetch(`${process.env.API_ENDPOINT}/api/entry/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/${id}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',

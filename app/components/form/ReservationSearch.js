@@ -17,8 +17,8 @@ import MatchingEntriesTable from "@/app/components/tables/MatchingEntriesTable";
 
 
 const schemaFirstPart = yup.object().shape({
-    site: yup.string().required('Vous devez choisir un site'),
-    category: yup.string().required('Vous devez choisir une ressource'),
+    site: yup.object().required('Vous devez choisir un site'),
+    category: yup.object().required('Vous devez choisir une ressource'),
     resource: yup.object().optional().default(null).nullable(),
     date: yup.object().required('Vous devez choisir une date'),
 });
@@ -98,7 +98,8 @@ const ReservationSearch = () => {
         queryFn: async ({ queryKey }) => {
             const [_, category, site] = queryKey;
             if (category && site) {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/resources/?categoryId=${category}&domainId=${site}&status=AVAILABLE`);
+                console.log("category", category, "site", site);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/resources/?categoryId=${category.id}&domainId=${site.id}&status=AVAILABLE`);
                 return await response.json();
             }
             return null;
@@ -115,8 +116,7 @@ const ReservationSearch = () => {
                 const response = await fetch(
                     `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
                 );
-                const result = await response.json();
-                return result;
+                return await response.json();
             }
             return [];
         }

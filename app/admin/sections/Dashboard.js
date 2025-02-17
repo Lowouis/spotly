@@ -29,7 +29,7 @@ const Dashboard = ({})=>{
             <div className="font-semibold text-3xl p-2 m-4">
                 Tableau de bord
             </div>
-            <div className="flex flex-row space-x-2 w-full my-3 ">
+            <div className="flex flex-row space-x-2 w-full my-3 px-2 ">
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.usersTotal} label="utilisateurs"
                        logo={<UsersIcon color={"#0369a1"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.entriesTotal} label="réservations"

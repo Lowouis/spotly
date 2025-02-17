@@ -9,6 +9,29 @@ import {useEffect, useState} from "react";
 
 const Domains = ({})=>{
     const [refresh, setRefresh] = useState(false);
+    const { data: items, isLoading, isError, error, refetch } = useQuery({
+        queryKey: ['domains'],
+        queryFn: async () => {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/domains`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        },
+    });
+    const { data: owners, isLoading: isLoadingOwners, isError: isErrorOwners, error: errorOwners } = useQuery(
+        {
+            queryKey: ['owners'],
+            queryFn: async () => {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users?ownerable=1`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            },
+        }
+    )
+
     const DomainFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom' },
         { required: true, name: 'code', type: 'number', label: 'Code' },
@@ -18,18 +41,20 @@ const Domains = ({})=>{
         { required: true, name: 'address', type: 'text', label: 'Adresse' },
         { required: true, name: 'zip', type: 'number', label: 'Code Postal' },
         { required: true, name: 'phone', type: 'number', label: 'Téléphone' },
-    ];
-    const { data: items, isLoading, isError, error, refetch } = useQuery({
-        queryKey: ['domains'],
-        queryFn: async () => {
-            const response = await fetch(`http://localhost:3000/api/domains`);
-            //for some reson the ${process.env.API_ENDPOINT} is not working
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
+        { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : [
+            {name : "Aucune confirmation", key : "FLUENT", id : 0},
+            {name : "Confirmation de restitution par click", key : "HIGH_TRUST", id: 1},
+            {name : "Confirmation de ramassage et de restitution par click", key : "LOW_TRUST", id: 2},
+            {name : "Confirmation de ramassage et de restitution par code", key :  "DIGIT", id: 3},
+            {name : "Confirmation de ramassage et de restitution avec code sans connexion", key : "LOW_AUTH", id: 4},
+            {name : "Confirmation de ramassage et de restitution avec code et restriction de localisation", key : "HIGH_AUTH", id: 5}
+            ],
+            defaultValue : {name : "Aucune confirmation", key: "HIGH_TRUST", id: 1}
         },
-    });
+        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: owners},
+    ];
+
+
     const columnsGreatNames = [
         "Nom",
         "Code",
@@ -39,7 +64,7 @@ const Domains = ({})=>{
         "Ville",
         "Code postal",
         "Téléphone",
-        "Sécurité",
+        "Niveau de protection",
         "Propriétaire",
     ]
     useEffect(() => {
@@ -59,7 +84,7 @@ const Domains = ({})=>{
                 isLoading={isLoading}
                 items={items}
                 name={"Sites"}
-                actions={["create", "delete"]}
+                actions={["edit", "delete"]}
                 columnsGreatNames={columnsGreatNames}
                 filter={['updatedAt', 'createdAt', 'ownerId', 'id']}
             />

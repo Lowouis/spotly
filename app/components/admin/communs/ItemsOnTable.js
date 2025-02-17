@@ -1,4 +1,5 @@
 import {
+    ButtonGroup,
     Chip,
     Divider,
     Dropdown,
@@ -28,6 +29,7 @@ import ActionMenuModerate from "@/app/components/admin/communs/ActionMenu";
 import {useSession} from "next-auth/react";
 import EntryDTO, {EntriesDTO} from "@/app/components/utils/DTO";
 import {isValidDateTimeFormat} from "@/app/utils/global";
+import PopupDoubleCheckAction from "@/app/components/utils/PopupDoubleCheckAction";
 
 const domainSchema = yup.object().shape({
     name: yup.string().required(),
@@ -51,7 +53,7 @@ const deleteItems = async ({ selectedItems, model }) => {
         ids: Array.from(selectedItems),
     };
     try {
-        const response = await fetch(`${process.env.API_ENDPOINT}/api/${model}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -70,8 +72,12 @@ const deleteItems = async ({ selectedItems, model }) => {
     }
 };
 
-export default function ItemsOnTable({formFields,actions, model, columnsGreatNames, items, filter, name, isLoading, create_hidden=false, selectionMode=true ,setRefresh=()=>{console.log("refreshOnContextLater")}}) {
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+export default function ItemsOnTable({formFields, actions, model, columnsGreatNames, items, filter, name, isLoading, create_hidden=false, selectionMode=true ,setRefresh=()=>{console.log("refreshOnContextLater")}}) {
+    const {isOpen : isOpenOnItem, onOpen : onOpenOnItem, onOpenChange : onOpenChangeOnItem} = useDisclosure();
+    const [currentAction, setCurrentAction] = useState("create");
+    const [currentItem, setCurrentItem] = useState();
+    console.log("current item ", currentItem);
+    const {isOpen : isOpenDeleteConfirm, onOpen : onOpenDeleteConfirm, onOpenChange : onOpenChangeDeleteConfirm} = useDisclosure();
     const {data: session} = useSession();
     const methods = useForm({
         resolver: yupResolver(categorySchema),
@@ -86,12 +92,18 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
         },
         onSuccess: () => {
             setRefresh(true);
+            setSelectedItems(new Set());
         }
-
     });
-    const handleDeleteItem = () => {
-        mutation.mutate({selectedItems, model});
+    const handleDeleteItem = (item) => {
+        if(!item){
+            mutation.mutate({selectedItems, model});
+        } else {
+            mutation.mutate({selectedItems: new Set([item]), model});
+        }
     };
+
+
     return (
         <div className="mx-5 flex-1 relative">
             <div className="flex row justify-start items-center">
@@ -105,15 +117,6 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                         </Skeleton>
                     </div>
                 </div>
-
-                {!create_hidden && (
-                    <div className="flex items-end ml-auto">
-                        <Skeleton className="rounded-lg" isLoaded={!isLoading}>
-                            <Button size="md" color="primary" onPress={onOpen} endContent={<PlusCircleIcon height={24} width={24}/>}>Créer</Button>
-                            {items &&  <AddItem model={model} setRefresh={setRefresh} formFields={formFields} isOpen={isOpen} onOpenChange={onOpenChange} schema={domainSchema} methods={methods} />}
-                        </Skeleton>
-                    </div>
-                )}
             </div>
             <div className="flex flex-row">
                 <div className="flex flex-row justify-end items-center space-x-4 w-full">
@@ -188,19 +191,55 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                     {selectionMode && selectedItems.size > 0 && (
                         <Button
                             isIconOnly={true}
-
                             variant="flat"
                             isLoading={isLoading}
                             radius="full"
                             color="danger"
-                            onPress={()=>{setRefresh();handleDeleteItem();}}
+                            onPress={onOpenChangeDeleteConfirm}
                         >
                             <TrashIcon width={20} color="red" height={20}/>
                         </Button>
                     )}
+                    <PopupDoubleCheckAction
+                        onConfirm={handleDeleteItem}
+                        isOpen={isOpenDeleteConfirm}
+                        onOpenChange={onOpenChangeDeleteConfirm}
+                        title="Confirmation de suppression"
+                        message={`Voulez-vous vraiment supprimer ${selectedItems.size > 1 ? selectedItems.size : 'cet'} élément ?`}
+                    />
+
                     {selectionMode && (
                         <div className="flex items-center text-xs uppercase w-full text-slate-500">
                             {selectedItems.size <= 1 ? selectedItems.size + " selectionné" : selectedItems.size + " selectionnés"}
+                        </div>
+                    )}
+                    {!create_hidden && (
+                        <div className="flex items-end ml-auto">
+                            <Skeleton className="rounded-lg" isLoaded={!isLoading}>
+                                <Button size="md" color="primary"
+                                        onPress={()=> {
+                                            setCurrentAction('create');
+                                        onOpenOnItem();
+                                        }}
+                                        endContent={<PlusCircleIcon height={24} width={24}/>}
+                                        className="mr-4"
+                                >
+                                    Créer
+                                </Button>
+                                {items &&
+                                    <AddItem
+                                        model={model}
+                                        setRefresh={setRefresh}
+                                        formFields={formFields}
+                                        isOpen={isOpenOnItem}
+                                        onOpenChange={onOpenChangeOnItem}
+                                        schema={domainSchema}
+                                        methods={methods}
+                                        action={currentAction}
+                                        defaultValues={currentAction === "edit" ? currentItem : null}
+                                    />
+                                }
+                            </Skeleton>
                         </div>
                     )}
 
@@ -214,33 +253,33 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                             aria-label="Rows actions table example with dynamic content"
                             selectionMode={selectionMode ? "multiple" : "none"}
                             onSelectionChange={(selected) => {
-                               setSelectedItems(selected);
+                                const integerSelected = new Set(Array.from(selected).map(Number));
+                                setSelectedItems(integerSelected);
                             }}
                             selectionBehavior="toggle"
-                            shadow="xs"
+                            shadow="none"
                             color="primary"
                             className="mt-3"
                             radius="md"
                         >
                             <TableHeader>
-
                                 {columnsGreatNames.map((item, index) => (
                                     <TableColumn key={index} align="left">
                                         {item}
                                     </TableColumn>
                                 ))}
                                 <TableColumn key="actions" align="right" >
-                                    {""}
+                                    {"<>"}
                                 </TableColumn>
-
                             </TableHeader>
                             <TableBody>
                                 {items.map((item, index) => {
-                                    const itemDTO=EntryDTO(item, filter);
+                                    const itemDTO = EntryDTO(item, filter);
+                                    console.log(itemDTO);
                                     return (
-                                        <TableRow key={itemDTO.id}>
+                                        <TableRow key={item.id}>
                                             {Object.keys(itemDTO).map((key) => (
-                                                <TableCell key={`${itemDTO.id}-${key}`}>
+                                                <TableCell key={key}>
                                                     {(() => {
                                                         switch (typeof itemDTO[key]) {
                                                             case "object":
@@ -262,16 +301,7 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                                                                             {itemDTO[key]?.name}
                                                                         </Tooltip> :
                                                                         <div className="flex justify-center items-center w-full">
-                                                                            <Button
-                                                                                className="text-default-500 font-medium underline underline-offset-4"
-                                                                                size="sm"
-                                                                                variant="flat"
-                                                                                color="primary"
-                                                                                isIconOnly
-                                                                                radius="full"
-                                                                            >
-                                                                                <PlusCircleIcon className="text-blue-500"/>
-                                                                            </Button>
+                                                                            -
                                                                         </div>
 
                                                                 );
@@ -289,26 +319,11 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                                                                         hour: '2-digit',
                                                                         minute: '2-digit',
                                                                     });
-                                                                }
-                                                                if (!isNaN(parseInt(itemDTO[key]))) {
+                                                                }else if (!isNaN(parseInt(itemDTO[key]))) {
                                                                     return <Snippet size="sm"
                                                                                     symbol="">{itemDTO[key]}</Snippet>
-                                                                }
-                                                                if (
-                                                                    itemDTO[key] === "DELAYED" ||
-                                                                    itemDTO[key] === "LOCKED" ||
-                                                                    itemDTO[key] === "REJECTED" ||
-                                                                    itemDTO[key] === "ENDED"
-                                                                ) {
-                                                                    return <Chip color="danger">{itemDTO[key]}</Chip>
-                                                                }
-                                                                if (itemDTO[key] === "WAITING" ||
-                                                                    itemDTO[key] === "PENDING" ||
-                                                                    itemDTO[key] === "BOOKED" ||
-                                                                    itemDTO[key] === "AVAILABLE" ||
-                                                                    itemDTO[key] === "WAITING"
-                                                                ) {
-                                                                    return <Chip color="primary">{itemDTO[key]}</Chip>
+                                                                } else if(itemDTO[key] === itemDTO[key].toUpperCase()) {
+                                                                    return <Chip color="default">{itemDTO[key]}</Chip>
                                                                 }
 
                                                             default:
@@ -318,7 +333,21 @@ export default function ItemsOnTable({formFields,actions, model, columnsGreatNam
                                                 </TableCell>
                                             ))}
                                             <TableCell key={`actions-${item.key}`}>
-                                                <ActionMenuModerate actions={actions} entry={item}/>
+                                                <ActionMenuModerate
+                                                    actions={actions}
+                                                    onActionDelete={()=> {
+                                                        setSelectedItems(new Set([item.id]));
+                                                        onOpenChangeDeleteConfirm();
+                                                    }}
+                                                    onActionEdit={()=> {
+                                                        setCurrentAction('edit');
+                                                        setCurrentItem(item);
+                                                        onOpenOnItem();
+                                                    }}
+                                                    entry={item}
+
+                                                    isOpen={isOpenDeleteConfirm}
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     )

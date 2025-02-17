@@ -6,8 +6,12 @@ import BooleanInput from "@/app/components/admin/form/utils/BooleanInput";
 import SelectField from "@/app/components/form/SelectField";
 
 
-export default function ItemForm({ onSubmit, onClose, action, fields }) {
-    const methods = useForm();
+export default function ItemForm({ onSubmit, onClose, action, fields, defaultValues }) {
+    const methods = useForm({
+        defaultValues: Object.fromEntries(
+            fields.map(field => [field.name, field.type === 'object' ? null : ''])
+        )
+    });
     return (
         <FormProvider {...methods}>
             <form onSubmit={methods.handleSubmit(onSubmit)}>
@@ -24,6 +28,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields }) {
                                             label={field.label}
                                             name={field.name}
                                             errors={methods?.errors}
+                                            value={defaultValues ? defaultValues[field.name] : ""}
                                         />
                                     );
                                 case "number":
@@ -35,6 +40,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields }) {
                                             label={field.label}
                                             name={field.name}
                                             errors={methods?.errors}
+                                            value={defaultValues ? defaultValues[field.name] : ""}
                                         />
                                     );
                                 case "boolean":
@@ -44,6 +50,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields }) {
                                             required={field.required}
                                             label={field.label}
                                             name={field.name}
+                                            value={defaultValues ? defaultValues[field.name] : null}
                                         />
                                     );
                                 case "object":
@@ -54,7 +61,8 @@ export default function ItemForm({ onSubmit, onClose, action, fields }) {
                                             label={field.label}
                                             name={field.name}
                                             variant="solid"
-                                            options={field.name} // Remplacez `field.name` par l'identifiant approprié si nécessaire
+                                            options={field.options}
+                                            defaultValue={defaultValues ? defaultValues[field.name] : ""}
                                         />
                                     );
                                 default:
@@ -71,7 +79,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields }) {
                     <Button color="danger" variant="light" onPress={onClose}>
                         Annuler
                     </Button>
-                    <Button color="primary" type="submit" onPress={onClose}>
+                    <Button color="primary" type="submit" variant="light" onPress={onClose}>
                         {action === "create" ? "Créer" : "Modifier"}
                     </Button>
                 </ModalFooter>

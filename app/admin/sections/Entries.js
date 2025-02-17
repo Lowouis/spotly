@@ -22,9 +22,33 @@ const Entries = ({})=>{
         return <div>Error: {error.message}</div>;
     }
 
+    const columnsGreatNames = [
+        "Commentaire utilisateur",
+        "Status",
+        "Dernière modification",
+        "Commentaire administrateur",
+        "Date de début",
+        "Date de fin",
+        "Restitué",
+        "Code",
+        "Utilisateur",
+        "Ressource",
+    ]
+
+
+
     return (
         <div className="flex flex-col gap-3 w-full mx-2">
-            <ItemsOnTable create_hidden={true} isLoading={isLoading} items={items} name={"Réservations"} />
+            <ItemsOnTable
+                create_hidden={true}
+                isLoading={isLoading}
+                items={items}
+                name={"Réservations"}
+                columnsGreatNames={columnsGreatNames}
+                actions={['delete', 'view']}
+                filter={['createdAt', 'updatedAt', 'id']}
+                model={"entry"}
+            />
         </div>
     );
 }

@@ -58,10 +58,10 @@ const whoIsOwner = (entry) => {
 
 
 export function isValidDateTimeFormat(dateTimeString) {
-    return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/.test(dateTimeString);
+    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(dateTimeString);
 }
 
-export {constructDate, whoIsPickable, whoIsOwner, lastestPickable, formatDuration, isValidDateTimeFormat};
+export {constructDate, whoIsPickable, whoIsOwner, lastestPickable, formatDuration};
 
 
 

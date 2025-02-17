@@ -17,7 +17,6 @@ export default async function handler(req, res) {
         tls: {
             rejectUnauthorized: false,
         },
-
     });
 
     try {
@@ -25,7 +24,7 @@ export default async function handler(req, res) {
             headers: {
                 'Content-Type': 'text/html; charset=utf-8',
             },
-            from: process.env.EMAIL_USER,
+            from: process.env.NEXT_PUBLIC_EMAIL_USER,
             to  ,
             subject,
             text,

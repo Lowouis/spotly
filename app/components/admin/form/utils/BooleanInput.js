@@ -3,27 +3,33 @@ import {Radio, RadioGroup} from "@nextui-org/react";
 import {useFormContext} from "react-hook-form";
 
 
-export default function BooleanInput({  label, name }) {
+export default function BooleanInput({  label, name, value: defaultValue }) {
     const { watch, setValue, formState: { errors: formErrors } } = useFormContext();
-    const value = watch(name); // Suivre la valeur de l'input
-
+    const value = watch(name) !== "" ? watch(name) : defaultValue ? "1" : "0";
     const handleChange = (selectedValue) => {
-        setValue(name, selectedValue.target.value); // Met à jour la valeur dans le contexte du formulaire
+        setValue(name, selectedValue.target.value);
     };
 
+    console.log("BOOLEAN (FOR " + name + ") : ", value);
     return (
         <div className="form-group">
             <RadioGroup
                 id={name}
                 label={label}
-                value={value || "0"} // Valeur par défaut
-                onChange={handleChange} // Mise à jour lors du changement
+                onChange={handleChange}
                 className={`form-input ${formErrors[name] ? 'input-error' : ''}`}
+                value={value}
             >
-                <Radio value="1" description="Un modérateur doit valider la réservation pour cette ressource">
+                <Radio
+                    value={"1"}
+                    description="Un modérateur doit valider la réservation pour cette ressource"
+                >
                     Oui
                 </Radio>
-                <Radio value="0" description="La ressource est en libre disposition">
+                <Radio
+                    value={"0"}
+                    description="La ressource est en libre disposition"
+                >
                     Non
                 </Radio>
             </RadioGroup>

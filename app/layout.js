@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import SessionProviderWrapper from "@/app/wrappers/SessionProviderWrapper";
 import React from "react";
 import Footer from "@/app/components/utils/Footer";
+import BlurryBlob from "@/components/animata/background/blurry-blob";
+import Dot from "@/components/animata/background/dot";
 
 
 
@@ -29,6 +31,11 @@ export default function RootLayout({children}) {
             className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen `}
         >
         <main className="flex-grow">
+            <Dot
+                size={3}
+                spacing={10}
+                color={"#E7E5E4"}
+            />
             <SessionProviderWrapper>{children}</SessionProviderWrapper>
         </main>
         <Footer />

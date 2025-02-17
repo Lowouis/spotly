@@ -5,7 +5,7 @@ import {useState} from "react";
 
 
 const handleStatus = (entry) => {
-    if (entry.moderate === "REFUSED") {
+    if (entry.moderate === "REJECTED") {
         return "rejected";
     }else if(entry.moderate === "WAITING"){
         return "waiting";
@@ -37,7 +37,6 @@ export default function ReservationUserListing({entries, handleRefresh}) {
             waiting: [],
             ongoing: [],
             upcoming: [],
-            rejected: [],
             ended: [],
         }
         entries.forEach((entry) => {
@@ -47,10 +46,8 @@ export default function ReservationUserListing({entries, handleRefresh}) {
                 entriesByStatus.upcoming.push(entry);
             } else if (handleStatus(entry) === "begin") {
                 entriesByStatus.ongoing.push(entry);
-            } else if (handleStatus(entry) === "ended" || handleStatus(entry) === "expired") {
+            } else if (handleStatus(entry) === "ended" || handleStatus(entry) === "expired" || handleStatus(entry) === "rejected") {
                 entriesByStatus.ended.push(entry);
-            } else if(handleStatus(entry) === "rejected"){
-                entriesByStatus.rejected.push(entry);
             } else {
                 entriesByStatus.ongoing.push(entry);
             }
@@ -111,7 +108,6 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
         "En attente",
         "En cours",
         "A venir",
-        "Refusé",
         "Terminé"
     ]
 
@@ -143,6 +139,7 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                                                         ${handleStatus(entry) === "begin" && "bg-green-600"}
                                                         ${handleStatus(entry) === "ongoing" && "bg-violet-800"}
                                                         ${handleStatus(entry) === "expired" && "bg-red-800"}
+                                                        ${handleStatus(entry) === "rejected" && "bg-red-500"}
                                                         rounded-full`}>
                                                         </div>
                                                         {/* Animation de ping */}
@@ -173,6 +170,7 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                                                     {handleStatus(entry) === "expired" && "Expiré"}
                                                     {handleStatus(entry) === "begin" && "Disponible"}
                                                     {handleStatus(entry) === "ongoing" && "En cours d'utilisation"}
+                                                    {handleStatus(entry) === "rejected" && "Rejeté"}
                                                 </div>
                                             </div>
                                         </div>

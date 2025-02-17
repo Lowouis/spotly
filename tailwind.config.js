@@ -10,12 +10,22 @@ module.exports = {
     ],
     theme: {
         extend: {
-            colors: {
-                background: "var(--background)",
-                foreground: "var(--foreground)",
-            },
-            backgroundImage: {
-                'hero': "url('https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?crop=entropy&cs=tinysrgb&fm=jpg&ixlib=rb-1.2.1&q=80&raw_url=true&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2676')",
+            keyframes: {
+                "pop-blob": {
+                    "0%": { transform: "scale(1)" },
+                    "33%": { transform: "scale(1.2)" },
+                    "66%": { transform: "scale(0.8)" },
+                    "100%": { transform: "scale(1)" },
+                },
+                colors: {
+                    filter: {
+                        "blur-20": "blur(20px)",
+                        "blur-25": "blur(25px)",
+                    },
+                },
+                animation: {
+                    "pop-blob": "pop-blob 5s infinite",
+                }
             },
         },
     },
