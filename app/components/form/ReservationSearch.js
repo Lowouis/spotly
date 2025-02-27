@@ -41,8 +41,7 @@ const ReservationSearch = () => {
     const [toast, setToast ] = useState({title: "", description: "", type: ""});
 
     const { watch, setValue} = methods;
-    const watchSite = watch('site');
-    const watchCategory = watch('category');
+
 
 
 
@@ -120,7 +119,7 @@ const ReservationSearch = () => {
             setAvailableResources(filteredResourcesByResources || null);
             setIsSubmitted(false);
         }
-    }, [availableResources, isSubmitted, matchingEntries, data]);
+    }, [availableResources, isSubmitted, matchingEntries, data, queryClient, watch]);
 
     /*useEffect(() => {
         if(refresh){
