@@ -5,12 +5,8 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
 import { authenticate } from 'ldap-authentication';
-const ghId = process.env.AUTH_GITHUB_ID;
-const ghSecret = process.env.AUTH_GITHUB_SECRET;
 
-if(!ghId || !ghSecret){
-    throw new Error("GITHUB ID or SECRET are not defined");
-}
+
 
 export const authConfig = {
     adapter: PrismaAdapter(prisma),
@@ -23,13 +19,11 @@ export const authConfig = {
                 password: { label : 'password', type : 'password' }
             },
             async authorize(credentials){
-
                 const user = await prisma.user.findUnique({
-                        where : {
-                            username: credentials?.username
-                        }
+                    where: {
+                        username: credentials?.username
                     }
-                ).catch((e) => {
+                }).catch((e) => {
                     console.log(e);
                 });
 
@@ -97,10 +91,6 @@ export const authConfig = {
                 return user;
             },
         }),
-        GithubProvider({
-            clientId: ghId,
-            clientSecret: ghSecret
-        })
     ],
     session: {
         strategy: "jwt",

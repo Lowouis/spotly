@@ -13,6 +13,7 @@ export default async function handler(req, res) {
         res.status(200).json(domains);
     } else if (req.method === "POST"){
         const {name, code, owner, pickable, address, street_number, country, city, zip, phone} = req.body;
+
         const domain = await prisma.domain.create({
             data: {
                 name,
@@ -23,13 +24,39 @@ export default async function handler(req, res) {
                 city,
                 zip,
                 phone,
-                pickable: pickable.key,
+                pickable: pickable.name,
                 owner: {
                     connect: { id: owner.id }
                 },
             }
         });
         res.status(200).json(domain);
+    } else if (req.method === "PUT") {
+        console.log(req.body);
+        const {id, name, code, owner, pickable, address, street_number, country, city, zip, phone} = req.body;
+        const domain = await prisma.domain.update({
+            where: {
+                id: id,
+            },
+            data: {
+                name,
+                code,
+                address,
+                street_number,
+                country,
+                city,
+                zip,
+                phone,
+                pickable: pickable.name,
+                ...(owner?.id ? {
+                    owner: {
+                        connect: { id: owner.id }
+                    }
+                } : { ownerId: null })
+            }
+        });
+        res.status(200).json(domain);
+
     } else if (req.method === "DELETE") {
         const { ids } = req.body;
 
@@ -38,7 +65,7 @@ export default async function handler(req, res) {
         }
 
         try {
-            const domainsCategories = await prisma.domain.deleteMany({
+            const domains = await prisma.domain.deleteMany({
                 where: {
                     id: {
                         in: ids,
@@ -46,11 +73,11 @@ export default async function handler(req, res) {
                 },
             });
 
-            if (domainsCategories.count === 0) {
+            if (domains.count === 0) {
                 return res.status(404).json({ message: "No domains found to delete" });
             }
 
-            res.status(200).json({ message: "Categories deleted successfully", count: domainsCategories.count });
+            res.status(200).json({ message: "Categories deleted successfully", count: domains.count });
         } catch (error) {
             console.error("Error deleting domains:", error);
             res.status(500).json({ message: "Failed to delete domains" });

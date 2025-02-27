@@ -1,22 +1,13 @@
 import "./globals.css";
-import localFont from "next/font/local";
 import SessionProviderWrapper from "@/app/wrappers/SessionProviderWrapper";
 import React from "react";
 import Footer from "@/app/components/utils/Footer";
-import BlurryBlob from "@/components/animata/background/blurry-blob";
 import Dot from "@/components/animata/background/dot";
+import { DM_Sans } from 'next/font/google';
 
-
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const dmSans = DM_Sans({
+    subsets: ['latin'],
+    weight: ['400','700']
 });
 
 export const metadata = {
@@ -28,12 +19,12 @@ export default function RootLayout({children}) {
     return (
         <html lang="en">
         <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen `}
+            className={`${dmSans.className} antialiased flex flex-col min-h-screen `}
         >
         <main className="flex-grow">
             <Dot
-                size={3}
-                spacing={10}
+                size={1}
+                spacing={15}
                 color={"#E7E5E4"}
             />
             <SessionProviderWrapper>{children}</SessionProviderWrapper>

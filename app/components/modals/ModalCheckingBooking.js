@@ -7,7 +7,10 @@ import {InputOtp} from "@nextui-org/react";
 import {ArrowRightIcon, ChevronRightIcon, HandRaisedIcon} from "@heroicons/react/24/outline";
 import {getEmailTemplate} from "@/app/utils/mails/templates";
 import {useEmail} from "@/app/context/EmailContext";
-import {TrashIcon, XMarkIcon} from "@heroicons/react/24/solid";
+import {TrashIcon} from "@heroicons/react/24/solid";
+import {addToast} from "@heroui/toast";
+
+
 export const formatDate = (date) => {
     return new Date(date).toLocaleDateString('fr-FR', {
         day: '2-digit',
@@ -68,8 +71,6 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
         }
     }
 
-
-
     //ADMIN SIDE
     //CONFIRM ANY ENTRIES ASKED FOR
     //SWITCH ENTRY STATUS TO ACCEPTED
@@ -96,15 +97,67 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
         },
         onSuccess: () => {
             handleRefresh();
-            setUserAlert(alertContent);
         },
         onError: () => {
-            setUserAlert({title: "Erreur", description: "Il y a eu un problème lors de la récupération de la ressource.", status: "danger"});
+            addToast({
+                title: "Erreur",
+                description : "La ressource n'as pas pu être modifié. Si le problème persiste contacter un administrateur.",
+                timeout: 5000,
+                shouldShowTimeoutProgess: true,
+                variant : "solid",
+                radius : "sm",
+                classNames: {
+                    closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+                },
+                closeIcon: (
+                    <svg
+                        fill="none"
+                        height="32"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        width="32"
+                    >
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                ),
+                color : "danger"
+            });
         }
     });
 
     const handlePickUpUpdate = () => {
-        setAlertContent({title: "Pick-up", description: "La récupèration de la ressource à bien été prise en compte.", status: "success"});
+        addToast({
+            title: "Pick-up",
+            description : "La récupèration de la ressource à bien été prise en compte.",
+            timeout: 5000,
+            shouldShowTimeoutProgess: true,
+            variant : "solid",
+            radius : "sm",
+            classNames: {
+                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+            },
+            closeIcon: (
+                <svg
+                    fill="none"
+                    height="32"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    width="32"
+                >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            ),
+            color : "primary"
+        });
+
         updateEntry({
             entry,
             updateData: { moderate: "USED" },
@@ -116,7 +169,33 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
     }
 
     const handleReturnUpdate = () => {
-        setAlertContent({title: "Restitution", description: "La ressource à bien été retournée.", status: "success"});
+        addToast({
+            title: "Restitution",
+            description : "La ressource à bien été retournée.",
+            timeout: 5000,
+            shouldShowTimeoutProgess: true,
+            variant : "solid",
+            radius : "sm",
+            classNames: {
+                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+            },
+            closeIcon: (
+                <svg
+                    fill="none"
+                    height="32"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    width="32"
+                >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            ),
+            color : "success"
+        });
         updateEntry({
             entry,
             updateData: { returned: true, moderate: "ENDED" },
@@ -137,7 +216,6 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
 
 
     const handleDeleteEntry = () => {
-        setAlertContent({title: "Suppression", description: "Votre réservation à bien été "+(adminMode ? "supprimer" : "Annuler")+"avec succès.", status: "success"});
         updateEntry({
             entry,
             method : "DELETE"
@@ -168,6 +246,33 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
         });
         setModalStepper("main")
         handleRefresh();
+        addToast({
+            title: "Annulation de réservation",
+            description : "Votre réservation à bien été "+(adminMode ? "supprimer" : "annuler")+" avec succès.", status: "success",
+            timeout: 5000,
+            shouldShowTimeoutProgess: true,
+            variant : "solid",
+            radius : "sm",
+            classNames: {
+                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+            },
+            closeIcon: (
+                <svg
+                    fill="none"
+                    height="32"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    width="32"
+                >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                </svg>
+            ),
+            color : "success"
+        });
     }
 
     const handleUpdateEntity = () => {

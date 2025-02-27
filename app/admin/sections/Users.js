@@ -3,10 +3,13 @@
 
 import ItemsOnTable from "@/app/components/admin/communs/ItemsOnTable";
 import {useQuery} from "@tanstack/react-query";
+import { useRefreshContext } from "@/app/context/RefreshContext";
+
 
 const Users = ({})=>{
+    const { isRefreshing } = useRefreshContext();
 
-    const { data: items, isLoading, isError, error } = useQuery({
+    const { data: items, refetch ,isLoading, isError, error } = useQuery({
         queryKey: ['users'],
         queryFn: async () => {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`);
@@ -15,21 +18,16 @@ const Users = ({})=>{
             }
             return response.json();
         },
+        enabled : !isRefreshing
     });
 
     const UsersFields = [
-        { required: true, name: 'name', type: 'text', label: 'Nom' },
-        { required: true, name: 'surname', type: 'text', label: 'Prénom' },
-        { required: true, name: 'username', type: 'text', label: 'Utilisateur'},
-        { required: true, name: 'password', type: 'text', label: 'Mot de passe'},
-        { required: true, name: 'email', type: 'text', label: 'Mail'},
-        { required: true, name: 'role', type: 'object', label: 'Rôle', options : [
-                {name : "Administrateur", id : "SUPERADMIN"},
-                {name : "Modérateur", id : "ADMIN"},
-                {name : "Utilisateur", id : "USER"},
-            ]
-        },
-
+        { required: true, name: 'name', type: 'text', label: 'Nom', placeholder: 'ex : Lucas, Pauline' },
+        { required: true, name: 'surname', type: 'text', label: 'Prénom', placeholder: 'ex : Dupont, Martin' },
+        { required: true, name: 'username', type: 'text', label: 'Utilisateur', placeholder: 'ex : lucas.dupont, ldupont' },
+        { required: true, name: 'password', type: 'text', label: 'Mot de passe', placeholder: 'Mot de passe' },
+        { required: true, name: 'email', type: 'text', label: 'Mail', placeholder: "ldupont@outlook.com"},
+        { required: true, name: 'role', type: 'object', label: 'Rôle', options : "roles", placeholder: "Choisir un rôle"},
     ];
 
     const columnsGreatNames = [
@@ -41,10 +39,6 @@ const Users = ({})=>{
         "Rôle",
     ]
 
-
-    if (isError) {
-        return <div>Error: {error.message}</div>;
-    }
 
     return (
         <div className="flex flex-col gap-3 w-full mx-2">

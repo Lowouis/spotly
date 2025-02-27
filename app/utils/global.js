@@ -8,6 +8,10 @@ const constructDate = (date) => {
     return d;
 }
 
+function firstLetterUppercase(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 function formatDuration(ms) {
     const days = Math.floor(ms / (24 * 60 * 60 * 1000));
     const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
@@ -61,7 +65,7 @@ export function isValidDateTimeFormat(dateTimeString) {
     return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(dateTimeString);
 }
 
-export {constructDate, whoIsPickable, whoIsOwner, lastestPickable, formatDuration};
+export {constructDate, whoIsPickable, whoIsOwner, lastestPickable, formatDuration, firstLetterUppercase};
 
 
 

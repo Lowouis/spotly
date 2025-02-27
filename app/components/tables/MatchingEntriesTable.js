@@ -1,8 +1,8 @@
-import { Tooltip, useDisclosure} from "@nextui-org/react";
-import {Button} from "@nextui-org/button";
-import { ShieldExclamationIcon} from "@heroicons/react/24/solid";
+import { Tooltip, useDisclosure } from "@nextui-org/react";
+import { Button } from "@nextui-org/button";
+import { ShieldExclamationIcon } from "@heroicons/react/24/solid";
 import ModalValidBooking from "@/app/components/modals/ModalValidBooking";
-import React, {useState} from "react";
+import React from "react";
 import BlinkingDotText from "@/app/components/utils/BlinkingDotText";
 
 
@@ -56,8 +56,9 @@ export default function MatchingEntriesTable({resources, data, setData, setToast
                 )) : (
                     <div className="w-full flex justify-center items-center">
                         {/* A AJOUTER PLUS TARD ICI LES RESSOURCES NON DISPONIBLE AVEC LE NOM DE L'UTILISATEUR*/}
-                            <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
+                            <div className="h-full flex justify-center items-center mt-5 text-xl opacity-70">
                                 Malheureusement, aucune ressource n&apos;est disponible avec ces critères
+
                             </div>
                         </div>
                         )}

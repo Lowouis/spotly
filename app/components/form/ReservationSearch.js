@@ -77,34 +77,6 @@ const ReservationSearch = () => {
     }, [userEntries]);
 
 
-    const { data: fetchedDomAndCat } = useQuery({
-        queryKey: ['dom_cat'],
-        queryFn: async () => {
-            const cat = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/categories`);
-            const dom = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/domains`);
-
-            if (!cat.ok) {
-                throw new Error('Network response for categories was not ok');
-            }
-            if (!dom.ok) {
-                throw new Error('Network response for domains was not ok');
-            }
-            return {categories: await cat.json(), domains: await dom.json()};
-        },
-    });
-
-    const { data: resources, refetch : refetchResources } = useQuery({
-        queryKey: ['resource', watchCategory, watchSite],
-        queryFn: async ({ queryKey }) => {
-            const [_, category, site] = queryKey;
-            if (category && site) {
-                console.log("category", category, "site", site);
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/resources/?categoryId=${category.id}&domainId=${site.id}&status=AVAILABLE`);
-                return await response.json();
-            }
-            return null;
-        }
-    });
 
     const { data: matchingEntries, refetch : refetchMatchingEntries} = useQuery({
         queryKey: ['entries', data],
@@ -130,8 +102,9 @@ const ReservationSearch = () => {
     }, [isSubmitted, data, refetchMatchingEntries]);
 
     useEffect(() => {
-        if (isSubmitted && matchingEntries) {
-            const cpAvailableResources = [...resources];
+        const cpAvailableResources = queryClient.getQueryData(['resource', `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE`]);
+        if (isSubmitted && matchingEntries && cpAvailableResources !== undefined) {
+            console.log(cpAvailableResources);
             const filteredResourcesByMatches = cpAvailableResources.filter(
                 (resource) =>
                     !matchingEntries?.some((entry) => entry.resourceId === resource.id)
@@ -147,15 +120,16 @@ const ReservationSearch = () => {
             setAvailableResources(filteredResourcesByResources || null);
             setIsSubmitted(false);
         }
-    }, [availableResources, isSubmitted, matchingEntries, resources, data]);
+    }, [availableResources, isSubmitted, matchingEntries, data]);
 
-    useEffect(() => {
+    /*useEffect(() => {
         if(refresh){
+            console.log("refreshing");
             refetchResources().then(()=>{
                 setRefresh(false);
             })
         }
-    }, [setRefresh, refresh, refetchResources]);
+    }, [setRefresh, refresh, refetchResources]);*/
     const handleResourceOnReset = ()=>{
         setValue('resource', null);
         setData({...data, resource: null});
@@ -174,7 +148,6 @@ const ReservationSearch = () => {
         setIsRecurrent(false);
     }
     const onSubmit = (data) => {
-        console.log(data);
         setData(data);
         setIsSubmitted(true);
 
@@ -182,6 +155,8 @@ const ReservationSearch = () => {
     if (!methods) {
         return <p>Error: Form could not be initialized</p>;
     }
+
+
 
     return (
         <div className="py-4">
@@ -219,25 +194,26 @@ const ReservationSearch = () => {
                                             <SelectField
                                                 name="site"
                                                 label="Site"
-                                                options={fetchedDomAndCat?.domains}
-                                                className=""
+                                                options={"domains"}
+                                                placeholder={"Choisir un site"}
                                             />
                                             <SelectField
                                                 name="category"
                                                 label="Catégorie"
-                                                options={fetchedDomAndCat?.categories}
+                                                options={"categories"}
                                                 onReset={handleResourceOnReset}
+                                                placeholder={"Choisir une catégorie"}
                                                 
                                             />
                                             {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESOURCES   */}
                                             <SelectField
-                                                object={true}
                                                 name="resource"
+                                                awaiting={watch('category') === undefined ||  watch('site') === undefined}
                                                 label="Resources"
-                                                options={resources}
-                                                disabled={resources === null}
+                                                options={`resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE`}
                                                 isRequired={false}
                                                 onReset={handleResourceOnReset}
+                                                placeholder={"Toutes les ressources"}
                                             />
                                             <DateRangePickerCompatible name={"date"} alternative={true}/>
 
@@ -262,10 +238,7 @@ const ReservationSearch = () => {
                                             <SelectField
                                                 name="recursive_unit"
                                                 label="Fréquence"
-                                                options={[{id: '1', name: 'Quotidien'}, {id: '2', name: 'Hébdomadaire '}, {
-                                                    id: '3',
-                                                    name: 'Mensuel'
-                                                }]}
+                                                options={"recursive_units"}
                                                 disabled={!isRecurrent}
                                                 isRequired={false}
                                                 className="mb-2"
@@ -323,7 +296,7 @@ const ReservationSearch = () => {
                             </div>
 
                             {!isSubmitted && !availableResources && (
-                                <div className="h-full flex justify-center items-center mt-5 text-xl opacity-25">
+                                <div className="h-full flex justify-center items-center mt-5 text-xl opacity-65">
                                     Pour commencer faite une recherche
                                 </div>
                             )}

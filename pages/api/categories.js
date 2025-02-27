@@ -14,16 +14,38 @@ export default async function handler(req, res) {
         );
         res.status(200).json(categories);
     } else if (req.method === "POST"){
-        const {name, description, comment, owner, pickable } = req.body;
+        const {name, description, owner, pickable } = req.body;
         const category = await prisma.category.create({
             data: {
                 name,
                 description,
-                comment,
                 pickable: pickable.key,
-                owner: {
-                    connect: { id: owner.id }
-                }
+                ...(owner?.id ? {
+                    owner: {
+                        connect: { id: owner.id }
+                    }
+                } : { ownerId: null })
+            }
+        });
+        res.status(200).json(category);
+    } else if (req.method === "PUT") {
+
+        const {id, name, description, owner, pickable } = req.body;
+        const category = await prisma.category.update({
+            where: {
+                id: id,
+            },
+            data: {
+                name,
+                ...(description ? {
+                    description
+                } : { description : null }),
+                pickable: pickable.name,
+                ...(owner?.id ? {
+                    owner: {
+                        connect: { id: owner.id }
+                    }
+                } : { ownerId: null })
             }
         });
         res.status(200).json(category);

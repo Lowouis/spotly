@@ -35,7 +35,6 @@ export const AdminDataManager = ({ children }) => {
     });
 
     const updateEntryModerate = (entry, moderate) => {
-        console.log("DATA PROCESSED", entry, moderate);
         mutation.mutate({entry, moderate}, {
             onSuccess: (data) => {
                 console.log("Mutation successful", data);
@@ -46,7 +45,7 @@ export const AdminDataManager = ({ children }) => {
         });
     }
     return (
-        <AdminDataManagerContext.Provider value={{ updateEntryModerate}}>
+        <AdminDataManagerContext.Provider value={{ updateEntryModerate }}>
             {children}
         </AdminDataManagerContext.Provider>
     );

@@ -5,7 +5,7 @@ import {
     Dropdown,
     DropdownItem,
     DropdownMenu,
-    DropdownTrigger, Skeleton, Snippet,
+    DropdownTrigger, Pagination, Skeleton, Snippet,
     Table, TableBody, TableCell,
     TableColumn,
     TableHeader, TableRow, Tooltip, useDisclosure
@@ -30,6 +30,8 @@ import {useSession} from "next-auth/react";
 import EntryDTO, {EntriesDTO} from "@/app/components/utils/DTO";
 import {isValidDateTimeFormat} from "@/app/utils/global";
 import PopupDoubleCheckAction from "@/app/components/utils/PopupDoubleCheckAction";
+import {addToast} from "@heroui/toast";
+import {useRefreshContext} from "@/app/context/RefreshContext";
 
 const domainSchema = yup.object().shape({
     name: yup.string().required(),
@@ -47,6 +49,37 @@ const categorySchema = yup.object().shape({
     description: yup.string().optional(),
     comment: yup.string(),
     });
+
+export const postItem = async ({data, model}) => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+        throw new Error('Failed to create item');
+    }
+
+    return response.json();
+};
+
+export const updateItem = async ({data, model}) => {
+    console.log("--> DATA -->", data);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+        throw new Error('Failed to create item');
+    }
+
+    return response.json();
+};
 
 const deleteItems = async ({ selectedItems, model }) => {
     const data = {
@@ -67,16 +100,25 @@ const deleteItems = async ({ selectedItems, model }) => {
         }
         return await response.json();
     } catch (error) {
-        console.error("Error deleting items:", error);
         throw error;
     }
 };
 
-export default function ItemsOnTable({formFields, actions, model, columnsGreatNames, items, filter, name, isLoading, create_hidden=false, selectionMode=true ,setRefresh=()=>{console.log("refreshOnContextLater")}}) {
+export default function ItemsOnTable({formFields, actions, model, columnsGreatNames, items, filter, name, isLoading, create_hidden=false, selectionMode=true}) {
     const {isOpen : isOpenOnItem, onOpen : onOpenOnItem, onOpenChange : onOpenChangeOnItem} = useDisclosure();
     const [currentAction, setCurrentAction] = useState("create");
     const [currentItem, setCurrentItem] = useState();
-    console.log("current item ", currentItem);
+    const { refreshData } = useRefreshContext();
+    const [page, setPage] = React.useState(1);
+    const rowsPerPage = 10;
+    const pages = Math.ceil(items?.length / rowsPerPage);
+    items = React.useMemo(() => {
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+
+        return items?.slice(start, end);
+    }, [page, items]);
+
     const {isOpen : isOpenDeleteConfirm, onOpen : onOpenDeleteConfirm, onOpenChange : onOpenChangeDeleteConfirm} = useDisclosure();
     const {data: session} = useSession();
     const methods = useForm({
@@ -90,9 +132,45 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
         onMutate: (variables) => {
             console.log("Mutation variables:", variables);
         },
+        onError: () => {
+            addToast({
+                title: "Suppression d'éléments",
+                description : "Une erreur s'est produite lors de la suppression des éléments. Vérifiez que cette élément n'est pas encore relié à un autre.",
+                color : "danger"
+          })
+        },
         onSuccess: () => {
-            setRefresh(true);
+            refreshData([model]);
             setSelectedItems(new Set());
+            addToast({
+                title: "Suppression",
+                description : "Les éléments ont été supprimés avec succès.",
+                color : "warning",
+                timeout: 5000,
+                shouldShowTimeoutProgess: true,
+                variant : "flat",
+                radius : "sm",
+                classNames: {
+                    closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
+                },
+                closeIcon: (
+                    <svg
+                        fill="none"
+                        height="32"
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        width="32"
+                    >
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                ),
+
+
+            });
         }
     });
     const handleDeleteItem = (item) => {
@@ -104,6 +182,8 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
     };
 
 
+
+
     return (
         <div className="mx-5 flex-1 relative">
             <div className="flex row justify-start items-center">
@@ -112,9 +192,16 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                         <h1 className="text-2xl my-3 font-bold">{name}</h1>
                     </div>
                     <div className="flex justify-center items-center">
-                        <Skeleton className="rounded-full"  isLoaded={!isLoading} >
-                            <Chip color="default" size="md" radius="full">{items?.length ? items?.length : "0"}</Chip>
-                        </Skeleton>
+                            <Button 
+                                color="primary" 
+                                size="md" 
+                                radius="full"
+                                isLoading={isLoading}
+                                isIconOnly
+                                isDisabled
+                                >
+                                    {items?.length ? items?.length : "0"}
+                            </Button>
                     </div>
                 </div>
             </div>
@@ -128,7 +215,7 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                             <MagnifyingGlassIcon width={24} height={24}/>
                         }
                     />
-                    <Skeleton className="rounded-lg" isLoaded={!isLoading}>
+                   
                         <Dropdown>
                             <DropdownTrigger>
                                 <Button
@@ -152,8 +239,6 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                 })}
                             </DropdownMenu>*/}
                         </Dropdown>
-                    </Skeleton>
-                    <Skeleton className="rounded-lg" isLoaded={!isLoading}>
                         <Dropdown>
                             <DropdownTrigger>
                                 <Button
@@ -176,14 +261,13 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                 ))}
                             </DropdownMenu>*/}
                         </Dropdown>
-                    </Skeleton>
                     <Button
                         isIconOnly={true}
                         variant="flat"
                         isLoading={isLoading}
                         radius="full"
-                        color="default"
-                        onPress={setRefresh}
+                        color="primary"
+                        onPress={()=>refreshData([model])}
                     >
                         <ArrowPathIcon width={20} height={20}/>
                     </Button>
@@ -215,21 +299,22 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                     )}
                     {!create_hidden && (
                         <div className="flex items-end ml-auto">
-                            <Skeleton className="rounded-lg" isLoaded={!isLoading}>
-                                <Button size="md" color="primary"
-                                        onPress={()=> {
-                                            setCurrentAction('create');
+                                <Button
+                                    size="md"
+                                    variant="flat"
+                                    color="primary"
+                                    onPress={()=> {
+                                        setCurrentAction('create');
                                         onOpenOnItem();
-                                        }}
-                                        endContent={<PlusCircleIcon height={24} width={24}/>}
-                                        className="mr-4"
+                                    }}
+                                    endContent={<PlusCircleIcon height={24} width={24}/>}
+                                    className="mr-4"
                                 >
                                     Créer
                                 </Button>
                                 {items &&
                                     <AddItem
                                         model={model}
-                                        setRefresh={setRefresh}
                                         formFields={formFields}
                                         isOpen={isOpenOnItem}
                                         onOpenChange={onOpenChangeOnItem}
@@ -239,17 +324,36 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                         defaultValues={currentAction === "edit" ? currentItem : null}
                                     />
                                 }
-                            </Skeleton>
                         </div>
                     )}
 
 
                 </div>
             </div>
-            <Skeleton className="rounded-lg h-[400px]" isLoaded={!isLoading}>
+            <Skeleton className="rounded-lg mt-2 h-full" isLoaded={!isLoading}>
                 {
                     items && items.length > 0 ?
                         (<Table
+                            classNames={{
+                                wrapper: "min-h-[222px] max-h-[1000px] overflow-y-auto",
+                            }}
+                            bottomContent={(
+                                <div className="flex w-full justify-center">
+                                    <Pagination
+                                        loop
+                                        siblings={3}
+                                        color="default"
+                                        variant={"faded"}
+                                        page={page}
+                                        total={pages}
+                                        size={"md"}
+                                        classNames={{
+                                            cursor: "bg-foreground text-background",
+                                        }}
+                                        onChange={(page) => setPage(page)}
+                                    />
+                                </div>
+                            )}
                             aria-label="Rows actions table example with dynamic content"
                             selectionMode={selectionMode ? "multiple" : "none"}
                             onSelectionChange={(selected) => {
@@ -259,7 +363,7 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                             selectionBehavior="toggle"
                             shadow="none"
                             color="primary"
-                            className="mt-3"
+                            className="mt-2 border border-neutral-200 rounded-lg"
                             radius="md"
                         >
                             <TableHeader>
@@ -275,7 +379,6 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                             <TableBody>
                                 {items.map((item, index) => {
                                     const itemDTO = EntryDTO(item, filter);
-                                    console.log(itemDTO);
                                     return (
                                         <TableRow key={item.id}>
                                             {Object.keys(itemDTO).map((key) => (
@@ -345,7 +448,6 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                                         onOpenOnItem();
                                                     }}
                                                     entry={item}
-
                                                     isOpen={isOpenDeleteConfirm}
                                                 />
                                             </TableCell>
@@ -357,7 +459,9 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                             <div className="flex justify-center items-center mt-10 text-slate-600">
                                 <p>Aucun éléments à afficher</p>
                             </div>
-                        )}
+                        )
+                }
+
             </Skeleton>
         </div>
     );

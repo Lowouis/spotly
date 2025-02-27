@@ -36,24 +36,24 @@ model Session {
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
+  id            Int        @id @default(autoincrement())
   name          String?
   surname       String?
-  username      String?   @unique
+  username      String?    @unique
   password      String?
-  email         String?   @unique
+  email         String?    @unique
   emailVerified DateTime?
   image         String?
-  external      Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  external      Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
   accounts      Account[]
   sessions      Session[]
   entry         entry[]
-  role          role      @default(USER)
-  domain        domain?   @relation("userToDomain")
-  category      category? @relation("userToCategory")
-  resource      resource? @relation("userToResource")
+  role          role       @default(USER)
+  domains       domain[]   @relation("userToDomain")
+  categories    category[] @relation("userToCategory")
+  resources     resource[] @relation("userToResource")
 }
 
 enum role {
@@ -77,13 +77,14 @@ model category {
   id          Int         @id @default(autoincrement())
   name        String
   description String?
-  comment     String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   resource    resource[]
-  ownerId     Int?        @unique
-  owner       User?       @relation("userToCategory", fields: [ownerId], references: [id])
+  ownerId     Int?
+  owner       User?       @relation("userToCategory", fields: [ownerId], references: [id], onDelete: SetNull)
   pickable    PickStatus? @default(HIGH_TRUST)
+
+  @@index([ownerId])
 }
 
 enum PickStatus {
@@ -107,7 +108,7 @@ model domain {
   phone         String
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
-  ownerId       Int?       @unique
+  ownerId       Int?
   owner         User?      @relation("userToDomain", fields: [ownerId], references: [id])
   pickable      PickStatus @default(HIGH_TRUST)
   resource      resource[]
@@ -137,7 +138,7 @@ model resource {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   entry       entry[]
-  ownerId     Int?        @unique
+  ownerId     Int?
   owner       User?       @relation("userToResource", fields: [ownerId], references: [id])
   pickable    PickStatus? @default(HIGH_TRUST)
 }

@@ -1,39 +1,47 @@
 import {
-    Modal, ModalBody,
-    ModalContent, ModalFooter,
+    Modal,
+    ModalContent,
     ModalHeader,
 } from "@nextui-org/react";
-import {Button} from "@nextui-org/button";
 import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/app/components/admin/form/ItemForm";
+import React from "react";
+import {useRefreshContext} from "@/app/context/RefreshContext";
+import {postItem, updateItem} from "@/app/components/admin/communs/ItemsOnTable.js";
 
-const postItem = async ({data, model}) => {
-    console.log(JSON.stringify(data));
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-        });
-        if (!response.ok) {
-            throw new Error('Failed to create item');
-        }
-
-        return response.json();
-};
+export default function ActionOnItem({isOpen, onOpenChange, action, defaultValues, formFields, model}) {
+    const { refreshData } = useRefreshContext();
+    const handleSuccess = (action) => {
+        return () => {
+            refreshData();
+        };
+    };
 
 
-export default function ActionOnItem({isOpen, onOpenChange, action, defaultValues, formFields, model, setRefresh}) {
-    const mutation = useMutation({
-        mutationFn : postItem,
-        onSuccess: () => {
-            setRefresh(true);
-        }
 
+    const createMutation = useMutation({
+        mutationFn: postItem,
+        onSuccess: handleSuccess("créé"),
     });
+
+    const updateMutation = useMutation({
+        mutationFn: updateItem,
+        onSuccess: handleSuccess("modifié"),
+    });
+
+
     const handleFormSubmit = (data) => {
-        mutation.mutate({data, model});
+        if(action === "create") {
+            createMutation.mutate({data, model});
+        } else {
+            updateMutation.mutate({
+            data : {
+                id: defaultValues.id,
+                ...data
+            },
+                model
+            });
+        }
     };
 
     return (

@@ -16,7 +16,6 @@ const LDAP = ({}) => {
         adminPassword: "",
     });
 
-    console.log(formData)
     console.log(process.env.NEXT_PUBLIC_LDAP_DOMAIN)
     useEffect(() => {
         setFormData({
@@ -34,7 +33,6 @@ const LDAP = ({}) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("Form data submitted:", formData);
         try {
             const response = await fetch('/api/save-ldap-config', {
                 method: 'POST',

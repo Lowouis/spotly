@@ -17,6 +17,7 @@ import {constructDate, whoIsOwner, whoIsPickable} from "@/app/utils/global";
 import {useMutation} from "@tanstack/react-query";
 import {useEmail} from "@/app/context/EmailContext";
 import {getEmailTemplate} from "@/app/utils/mails/templates";
+import {addToast} from "@heroui/toast";
 export default function ModalValidBooking({EntryData, isOpen, onOpenChange, session, handleRefresh, setToast, handleResetFetchedResources}) {
 
     const [sumbitted, setSubmitted] = useState(false);
@@ -51,8 +52,6 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
         onSuccess: (data) => {
             handleRefresh();
             handleResetFetchedResources();
-
-
             if(data.moderate === "WAITING") {
                 const owner = whoIsOwner(data);
                 sendEmail({
@@ -124,11 +123,19 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
                             })
                     });
             }
-            setToast({title: "Nouvelle réservation", description: `Votre ${data.moderate === "WAITING" ? "demande" : "réservation"} est bien enregistrer, un mail de confirmation à été envoyé à ${session.user.email}`, type: "success"});
+            addToast({
+                title: "Nouvelle réservation",
+                description : `Votre ${data.moderate === "WAITING" ? "demande" : "réservation"} est bien enregistrer, un mail de confirmation à été envoyé à ${session.user.email}`,
+                color : "success"
+            });
         },
         onError: (error) => {
-            console.error(error);
-            setToast({title: "Erreur", description: "La réservation n'a pas pu être effectuée. Si le problème pérsite merci de contacter un administrateur.", type: "danger"});
+            addToast({
+                title: "Erreur : Nouvelle réservation",
+                description : "La réservation n'a pas pu être effectuée. Si le problème pérsite merci de contacter un administrateur.",
+                color : "danger"
+            });
+
         },
     });
 

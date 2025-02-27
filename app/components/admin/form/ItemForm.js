@@ -4,20 +4,50 @@ import React from "react";
 import InputField from "@/app/components/admin/form/utils/InputField";
 import BooleanInput from "@/app/components/admin/form/utils/BooleanInput";
 import SelectField from "@/app/components/form/SelectField";
+import {addToast, ToastProvider} from "@heroui/toast";
 
 
 export default function ItemForm({ onSubmit, onClose, action, fields, defaultValues }) {
     const methods = useForm({
+        type: "onSubmit",
         defaultValues: Object.fromEntries(
             fields.map(field => [field.name, field.type === 'object' ? null : ''])
         )
     });
+
+    const handleSubmit = async (data) => {
+        try {
+            await onSubmit(data);
+            addToast({
+                title: `${action === "create" ? "Création" : "Modification"} d'un élément`,
+                description: `L'élément a été ${action === "create" ? "créé" : "modifié"} avec succès.`,
+                timeout: 5000,
+                variant: "solid",
+                radius: "sm",
+                color: "success"
+            });
+            onClose();
+        } catch (error) {
+            addToast({
+                title: `Erreur lors de la ${action === "create" ? "création" : "modification"} de l'élément`,
+                description: error.message,
+                timeout: 5000,
+                variant: "solid",
+                radius: "sm",
+                color: "danger"
+            })
+        }
+    };
+
     return (
         <FormProvider {...methods}>
-            <form onSubmit={methods.handleSubmit(onSubmit)}>
+            <form onSubmit={methods.handleSubmit(handleSubmit)}>
                 <ModalBody>
                     <div className="flex flex-col space-y-3">
                         {fields.map((field, index) => {
+                            const rules = {
+                                required : field.required ? `${field.label} est requis` : false
+                            }
                             switch (field.type) {
                                 case "text" :
                                     return (
@@ -27,8 +57,9 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             type={field.type}
                                             label={field.label}
                                             name={field.name}
-                                            errors={methods?.errors}
                                             value={defaultValues ? defaultValues[field.name] : ""}
+                                            register={methods.register(field.name, rules)}
+                                            placeholder={field.placeholder}
                                         />
                                     );
                                 case "number":
@@ -62,7 +93,8 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             name={field.name}
                                             variant="solid"
                                             options={field.options}
-                                            defaultValue={defaultValues ? defaultValues[field.name] : ""}
+                                            defaultValue={defaultValues ? defaultValues[field.name] : null}
+                                            placeholder={field.placeholder}
                                         />
                                     );
                                 default:
@@ -79,7 +111,11 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                     <Button color="danger" variant="light" onPress={onClose}>
                         Annuler
                     </Button>
-                    <Button color="primary" type="submit" variant="light" onPress={onClose}>
+                    <Button 
+                        color="primary" 
+                        type="submit" 
+                        variant="light"
+                     >
                         {action === "create" ? "Créer" : "Modifier"}
                     </Button>
                 </ModalFooter>

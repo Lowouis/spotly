@@ -1,11 +1,11 @@
-import React from "react";
+import React, {useEffect} from "react";
 import {Radio, RadioGroup} from "@nextui-org/react";
 import {useFormContext} from "react-hook-form";
 
 
 export default function BooleanInput({  label, name }) {
     const {  watch, setValue, formState: { errors: formErrors } } = useFormContext();
-    const value = watch(name); // Suivre la valeur de l'input
+    const value = watch(name);
 
     const handleChange = (selectedValue) => {
         setValue(name, selectedValue.target.value); // Met à jour la valeur dans le contexte du formulaire

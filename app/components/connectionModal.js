@@ -1,7 +1,7 @@
 'use client';
 
 import Banner from "@/app/components/utils/banner";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {signIn} from "next-auth/react";
 import { useRouter} from 'next/navigation'
 import {Input} from "@nextui-org/input";
@@ -22,6 +22,7 @@ import {ArrowRightCircleIcon} from "@heroicons/react/24/solid";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {ClockIcon} from "@heroicons/react/24/outline";
 import {lastestPickable} from "@/app/utils/global.js";
+import {addToast} from "@heroui/toast";
 
 export async function updateEntry({setUserAlert, id, moderate, returned=false}) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/${id}`, {
@@ -45,7 +46,7 @@ export function ConnectionModal({}) {
     const queryClient = useQueryClient();
     const router = useRouter();
     const [selected, setSelected] = useState("login");
-    const [wrongPassword, setWrongPassword] = useState(false);
+    const [wrongCreditential, setWrongCreditential] = useState(false);
     const [creditentials, setCreditentials] = useState([
         {
             "label": "Nom d'utilisateur",
@@ -71,18 +72,16 @@ export function ConnectionModal({}) {
             password: creditentials[1].value,
         }).then((response) => {
             if (response.status === 401) {
-                setWrongPassword(true);
+                setWrongCreditential(true);
             }
             if (response.ok) {
-                setWrongPassword(false);
+                setWrongCreditential(false);
                 router.push('/');
             }
         });
 
-        if (result?.error) {
-            console.error("Error : ", result.error);
-        }
     };
+
 
     const mutation = useMutation({
         mutationFn : updateEntry,
@@ -93,7 +92,7 @@ export function ConnectionModal({}) {
         queryKey: ['lucky_entry'],
         queryFn: async () => {
             if(ifl.otp.length === 6){
-                const response = await fetch(`${process.env.API_ENDPOINT}/api/entry?returnedConfirmationCode=` + ifl.otp);
+                const response = await fetch(`${process.env.API_ENDPOINT}/api/entry?returnedConfirmationCode=`+ifl.otp);
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
@@ -110,13 +109,13 @@ export function ConnectionModal({}) {
         return res.json();
     }
 
-    const {data:clientIP } = useQuery({
+    const {data : clientIP } = useQuery({
         queryKey: ['clientIP'],
         queryFn: fetchIP,
     });
 
 
-    const { data: user } = useQuery({
+    const { data : user } = useQuery({
         queryKey: ['user'],
         queryFn: async () => {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/user`);
@@ -170,12 +169,6 @@ export function ConnectionModal({}) {
                         >
                             <Tab key="login" title="Se connecter">
                                 <form className="flex flex-col justify-center space-y-4">
-                                    {wrongPassword &&
-                                        <div className="my-2">
-                                            <p className="text-red-600 font-bold text-xs">Identifiant ou mots de passe
-                                                incorrects</p>
-                                        </div>
-                                    }
                                     {creditentials.map((input, index) => (
                                         <div key={index}>
                                             <p className="text-default-700 text-small mb-2">{input.label}</p>
@@ -190,11 +183,17 @@ export function ConnectionModal({}) {
                                     ))}
 
                                     <div className="">
-                                        <Button fullWidth onPress={async () => {
-                                            await handleSubmit()
-                                        }}
-                                                color="primary"
-                                                size="lg"
+                                        <Button
+                                            fullWidth
+                                            onPress={async () => {
+                                                await handleSubmit().then(r => {
+                                                    if(r){
+                                                        console.log(r);
+                                                    }
+                                                });
+                                            }}
+                                            color="primary"
+                                            size="lg"
                                         >
                                             Connexion
                                         </Button>
