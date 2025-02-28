@@ -72,6 +72,7 @@ export function ConnectionModal({}) {
             username: creditentials[0].value,
             password: creditentials[1].value,
         }).then((response) => {
+            console.log(response);
             if (response.status === 401) {
                 setWrongCredentials(true);
             }

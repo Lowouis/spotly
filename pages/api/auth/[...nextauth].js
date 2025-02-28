@@ -104,6 +104,12 @@ export const authConfig = {
             session.user = token;
             return session;
         },
+        redirect: async ({ url, baseUrl }) => {
+            if (url === '/api/auth/signout') {
+                return baseUrl;
+            }
+            return url;
+        },
     },
     options : {
         debug : true
