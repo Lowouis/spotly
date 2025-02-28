@@ -16,7 +16,11 @@ export default function SessionProviderWrapper({ children }) {
                 <EmailProvider>
                     <RefreshProvider>
                         <NextUIProvider>
-                            <ToastProvider placement="bottom-right" />
+                            <ToastProvider
+                                placement="bottom-right"
+                                maxVisibleToasts={5}
+                                toastOffset={16}
+                            />
                             <SessionProvider>
                                     {children}
                             </SessionProvider>

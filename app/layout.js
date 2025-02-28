@@ -4,36 +4,36 @@ import React from "react";
 import Footer from "@/app/components/utils/Footer";
 import Dot from "@/components/animata/background/dot";
 import { DM_Sans } from 'next/font/google';
+import { metadata } from "@/app/metadata";
 
 const dmSans = DM_Sans({
     subsets: ['latin'],
-    weight: ['400','700']
+    weight: ['400', '700'],
+    variable: '--font-dm-sans'
 });
 
-export const metadata = {
-    title: "Spotly",
-    description: "Booking your resources, our priority",
-};
-
-export default function RootLayout({children}) {
+export default function RootLayout({ children }) {
     return (
-        <html lang="en">
-        <body
-            className={`${dmSans.className} antialiased flex flex-col min-h-screen `}
-        >
-        <main className="flex-grow">
+        <html lang="en" className={dmSans.variable}>
+        <head>
+            <title>{metadata.title}</title>
+            <meta name="description" content={metadata.description} />
+        </head>
+        <body className="antialiased flex flex-col min-h-screen">
+        <main className="flex-1">
             <Dot
                 size={1}
                 spacing={15}
                 color={"#E7E5E4"}
             />
-            <SessionProviderWrapper>{children}</SessionProviderWrapper>
+            <SessionProviderWrapper>
+                {children}
+            </SessionProviderWrapper>
         </main>
-        <Footer />
+        <footer>
+            <Footer />
+        </footer>
         </body>
-
         </html>
-
-
     );
 }

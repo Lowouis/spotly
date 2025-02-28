@@ -13,6 +13,8 @@ import LDAP from "@/app/admin/sections/LDAP";
 import {ScrollShadow} from "@nextui-org/react";
 import {useEffect, useState} from "react";
 import {DataHandlerProvider} from "@/app/context/DataHandler";
+import SideBor from "@/app/components/admin/SideBor";
+
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -30,7 +32,8 @@ export default function Admin(){
             <DataHandlerProvider>
             <div className={`flex flex-col ${GeistSans.variable} ${GeistMono.variable} antialiased h-full w-full`}>
                 <div className="flex flex-row h-screen">
-                    <Sidebar  />
+                    {/*<Sidebar  />*/}
+                    <SideBor />
                     <div className="flex-1 flex flex-col overflow-y-auto">
                         <ScrollShadow className="h-screen" hideScrollBar size={25}>
                             <Content />

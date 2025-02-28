@@ -4,13 +4,15 @@ import bycrypt from 'bcrypt';
 
 export default async function handler(req, res) {
     if(req.method === "GET"){
+        const { id } = req.body;
         const users = await prisma.user.findMany({
             where: {
                 OR: [
                     { role: "ADMIN" },
                     { role: "SUPERADMIN" },
                     { role: "USER" },
-                ]
+                ],
+                ...(id && { id : id })
             },
         });
         const sanitizedUsers = users.map(({ password, ...rest }) => rest);

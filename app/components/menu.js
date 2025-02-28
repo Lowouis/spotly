@@ -9,17 +9,22 @@ import {
     DrawerHeader,
     DrawerBody,
     DrawerFooter,
-    useDisclosure, Image, Tooltip, Divider,
+    useDisclosure,
+    Divider,
 } from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {BookmarkIcon} from "@heroicons/react/24/outline";
 import {Tab} from "@nextui-org/react";
-import {ArrowPathIcon, LockClosedIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
 import {signOut} from "next-auth/react";
 import {Form} from "@nextui-org/form";
 import {Input} from "@nextui-org/input";
 import {useState} from "react";
 import HeadTitle from "@/app/components/utils/HeadTitle";
+import {addToast} from "@heroui/toast";
+import { BsWrench  } from "react-icons/bs";
+import {CiLogout} from "react-icons/ci";
+
 
 
 export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, handleRefresh}) {
@@ -82,8 +87,28 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                             {user?.username.charAt(1).toUpperCase()}
                                         </span>
                                      </Button>
-                                     <Drawer isOpen={isOpen} size="lg" onClose={onClose} backdrop="opaque" radius="none"
-                                             shadow="lg">
+                                     <Drawer
+                                         isOpen={isOpen}
+                                         size="lg"
+                                         onClose={onClose}
+                                         backdrop="blur"
+                                         motionProps={{
+                                             variants: {
+                                                 enter: {
+                                                     opacity: 1,
+                                                     x: 0,
+                                                     duration: 0.3,
+                                                 },
+                                                 exit: {
+                                                     x: 100,
+                                                     opacity: 0,
+                                                     duration: 0.3,
+                                                 },
+                                             },
+                                         }}
+                                         radius="none"
+                                         shadow="lg"
+                                     >
                                          <DrawerContent>
                                              {(onClose) => (
                                                  <>
@@ -115,17 +140,17 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                                          </div>
                                                      </DrawerHeader>
                                                      <DrawerBody>
-                                                         <div className="flex flex-col space-y-2 ">
-                                                             <Form className="w-full " validationBehavior="native"
-                                                                   onSubmit={onOpen}>
+                                                         <div className="flex flex-col space-y-2 h-full">
+                                                             {!user?.external && (
+                                                                 <Form className="w-full " validationBehavior="native"
+                                                                    onSubmit={onOpen}>
 
                                                                  <div
-                                                                     className="flex flex-row justify-center items-end w-full">
+                                                                     className="flex flex-row justify-between items-end w-full">
                                                                      <div className="w-full">
                                                                          <Input
                                                                              label="Email"
                                                                              size="lg"
-                                                                             disabled={user?.external}
                                                                              value={user?.email}
                                                                              labelPlacement="outside"
                                                                              name="email"
@@ -134,33 +159,21 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
 
                                                                          />
                                                                      </div>
-                                                                     <div className="m-1">
-                                                                         {!user?.external ? (
-                                                                             <Button
-                                                                                 onPress={() => console.log("refresh data")}
-                                                                                 color="success" type="submit"
-                                                                                 variant="solid"
-                                                                                 isIconOnly
-                                                                             >
-                                                                                 <ArrowPathIcon width="24" height="24"
-                                                                                                color="black"/>
-                                                                             </Button>
-                                                                         ) : (
-                                                                             <Tooltip color="warning"
-                                                                                      variant="flat"
-                                                                                      isIconOnly
-                                                                                      size="lg"
-                                                                                      content="Cette donnée est automatiquement configurer par LDAP."
-                                                                             >
-                                                                                 <Button isIconOnly disableAnimation
-                                                                                         variant="solid"
-                                                                                         color="warning">
-                                                                                     <LockClosedIcon width="24"
-                                                                                                     height="24"
-                                                                                                     color="black"/>
-                                                                                 </Button>
-                                                                             </Tooltip>
-                                                                         )}
+                                                                     <div className="m-1 flex items-end">
+                                                                         <Button
+                                                                             onPress={() => console.log("refresh mail")}
+                                                                             color="default"
+                                                                             type="submit"
+                                                                             variant="flat"
+                                                                             isIconOnly
+                                                                             size="md"
+                                                                         >
+                                                                             <ArrowPathIcon
+                                                                                 width="20"
+                                                                                 height="20"
+                                                                                 className={'text-neutral-600'}
+                                                                             />
+                                                                         </Button>
                                                                      </div>
                                                                  </div>
                                                                  <div
@@ -168,56 +181,74 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                                                      <div className="w-full">
                                                                          <Input
                                                                              label="Mot de passe"
-                                                                             disabled={user?.external}
                                                                              size="lg"
                                                                              value=""
                                                                              labelPlacement="outside"
                                                                              name="email"
-                                                                             placeholder="****************"
+                                                                             placeholder="Entrer un nouveau mot de passe"
                                                                              type="password"
                                                                          />
                                                                      </div>
                                                                      <div className="m-1">
-                                                                         {!user?.external ? (
-                                                                             <Button
-                                                                                 onPress={() => console.log("refresh data")}
-                                                                                 color="success" type="submit"
-                                                                                 variant="solid"
-                                                                                 isIconOnly
-                                                                             >
-                                                                                 <ArrowPathIcon width="24" height="24"
-                                                                                                color="black"/>
-                                                                             </Button>
-                                                                         ) : (
-                                                                             <Tooltip color="warning"
-                                                                                      variant="flat"
-                                                                                      isIconOnly
-                                                                                      size="lg"
-                                                                                      content="Cette donnée est automatiquement configurer par LDAP."
-                                                                             >
-                                                                                 <Button isIconOnly disableAnimation
-                                                                                         variant="solid"
-                                                                                         color="warning">
-                                                                                     <LockClosedIcon width="24"
-                                                                                                     height="24"
-                                                                                                     color="black"/>
-                                                                                 </Button>
-                                                                             </Tooltip>
-                                                                         )}
+                                                                         <Button
+                                                                             onPress={() => console.log("refresh password")}
+                                                                             color="default"
+                                                                             type="submit"
+                                                                             variant="flat"
+                                                                             isIconOnly
+                                                                             size="md"
+                                                                             disabled={user?.external}
+                                                                         >
+                                                                             <ArrowPathIcon
+                                                                                 width="20"
+                                                                                 height="20"
+                                                                                 className={'text-neutral-600'}
+                                                                             />
+                                                                         </Button>
+
                                                                      </div>
                                                                  </div>
-
-
-                                                             </Form>
+                                                             </Form>)}
                                                              <Divider className="my-2 text-gray-800"/>
-                                                             {user.role !== 'USER' &&
-                                                                 <Button as={Link} variant="flat" color="warning"
-                                                                         size="lg" href="/admin"
-                                                                         className="text-lg uppercase">administration</Button>}
-                                                             <Button variant="flat" color="danger" size="lg"
-                                                                     onPress={() => signOut().then(() => console.log("Successfull logout"))}
-                                                                     className="text-lg uppercase">Deconnexion
-                                                             </Button>
+                                                             <div className="flex flex-row h-full justify-center items-start ">
+                                                                 {user.role !== 'USER' &&
+                                                                    (<Button as={Link}
+                                                                            variant="flat"
+                                                                             fullWidth
+                                                                            color="warning"
+                                                                            size="lg"
+                                                                            href="/admin"
+                                                                            className="uppercase text-xs m-1 h-[10rem]">
+                                                                        <span className={'flex flex-col justify-between items-center'}>
+                                                                            <BsWrench size={30}  />
+                                                                            <span>
+                                                                                Administration
+                                                                            </span>
+                                                                        </span>
+                                                                    </Button>)
+                                                                }
+                                                                 <Button
+                                                                     variant="flat"
+                                                                     color="danger"
+                                                                     fullWidth
+                                                                     size="lg"
+                                                                     onPress={() => signOut().then(() => {
+                                                                             addToast({
+                                                                                    title: 'Déconnexion',
+                                                                                    message: 'Vous avez été déconnecté',
+                                                                                    type: 'success',
+                                                                                    duration: 5000,
+                                                                             });
+                                                                     })}
+                                                                     className="uppercase text-xs m-1 h-[10rem]">
+                                                                     <span className={'flex flex-col justify-between items-center'}>
+                                                                         <CiLogout size={30} />
+                                                                         <span>
+                                                                             Deconnexion
+                                                                         </span>
+                                                                     </span>
+                                                                 </Button>
+                                                             </div>
                                                          </div>
                                                      </DrawerBody>
                                                      <DrawerFooter>

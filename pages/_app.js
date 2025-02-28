@@ -1,16 +1,15 @@
 import '../app/globals.css';
-import { SessionProvider } from "next-auth/react";
-import Footer from "@/app/components/utils/Footer";
+import RootLayout from '@/app/layout';
 import React from "react";
-
+import SessionProviderWrapper from "@/app/wrappers/SessionProviderWrapper";
 
 export default function App({ Component, pageProps }) {
     return (
-
-            <SessionProvider session={pageProps.session}>
+        <SessionProviderWrapper>
+            <main className="flex-1">
                 <Component {...pageProps} />
-                <Footer />
-            </SessionProvider>
+            </main>
+        </SessionProviderWrapper>
 
         );
 }

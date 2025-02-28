@@ -11,14 +11,17 @@
   :root {
     --background: #ffffff;
     --foreground: #ededed;
+    --font-dm-sans: 'DM Sans', sans-serif;
+
   }
 }
 
 body {
   color: var(--foreground);
-  height: 100vh;
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
   position: relative;
+  margin: 0;
+  font-family: var(--font-dm-sans), Arial, Helvetica, sans-serif;
 }
 
 body::before {

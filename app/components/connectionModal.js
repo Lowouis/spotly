@@ -46,7 +46,8 @@ export function ConnectionModal({}) {
     const queryClient = useQueryClient();
     const router = useRouter();
     const [selected, setSelected] = useState("login");
-    const [wrongCreditential, setWrongCreditential] = useState(false);
+    const [wrongCredentials, setWrongCredentials] = useState(false);
+    const [connectionLoading, setConnectionLoading] = useState(false);
     const [creditentials, setCreditentials] = useState([
         {
             "label": "Nom d'utilisateur",
@@ -72,16 +73,30 @@ export function ConnectionModal({}) {
             password: creditentials[1].value,
         }).then((response) => {
             if (response.status === 401) {
-                setWrongCreditential(true);
+                setWrongCredentials(true);
             }
             if (response.ok) {
-                setWrongCreditential(false);
+                setWrongCredentials(false);
                 router.push('/');
             }
+            setConnectionLoading(false);
         });
 
     };
 
+    useEffect(() => {
+        if (wrongCredentials) {
+            addToast({
+                title: "Erreur d'authentification",
+                description: "Nom d'utilisateur ou mot de passe incorrect",
+                timeout: 5000,
+                variant: "solid",
+                radius: "sm",
+                color: "danger"
+            });
+            setWrongCredentials(false);
+        }
+    }, [wrongCredentials, setWrongCredentials]);
 
     const mutation = useMutation({
         mutationFn : updateEntry,
@@ -118,7 +133,7 @@ export function ConnectionModal({}) {
     const { data : user } = useQuery({
         queryKey: ['user'],
         queryFn: async () => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/user`);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`);
             return response.json();
         }
     });
@@ -176,6 +191,7 @@ export function ConnectionModal({}) {
                                                    type={input.type}
                                                    placeholder={"Entrer votre " + input.label.toLowerCase()}
                                                    className="mb-2"
+                                                   radius="sm"
                                                    name={input.name}
                                                    size="lg"
                                                    onChange={(e) => handleChange(e, index)}/>
@@ -186,16 +202,17 @@ export function ConnectionModal({}) {
                                         <Button
                                             fullWidth
                                             onPress={async () => {
+                                                setConnectionLoading(true);
                                                 await handleSubmit().then(r => {
-                                                    if(r){
-                                                        console.log(r);
-                                                    }
+
                                                 });
                                             }}
                                             color="primary"
+                                            isLoading={connectionLoading}
                                             size="lg"
+                                            radius="sm"
                                         >
-                                            Connexion
+                                            { !connectionLoading ? "Connexion" : "En cours de connexion"}
                                         </Button>
                                     </div>
                                 </form>
