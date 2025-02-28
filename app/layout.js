@@ -30,9 +30,6 @@ export default function RootLayout({ children }) {
                 {children}
             </SessionProviderWrapper>
         </main>
-        <footer>
-            <Footer />
-        </footer>
         </body>
         </html>
     );

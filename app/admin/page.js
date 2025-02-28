@@ -1,7 +1,6 @@
 'use client'
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
-import Sidebar from "@/app/components/admin/Sidebar";
 import Dashboard from "@/app/admin/sections/Dashboard";
 import Domains from "@/app/admin/sections/Domains";
 import {AdminProvider, useAdminContext} from "@/app/context/Admin";
@@ -13,9 +12,7 @@ import LDAP from "@/app/admin/sections/LDAP";
 import {ScrollShadow} from "@nextui-org/react";
 import {useEffect, useState} from "react";
 import {DataHandlerProvider} from "@/app/context/DataHandler";
-import SideBor from "@/app/components/admin/SideBor";
-
-
+import Sidebar from "@/app/components/admin/Sidebar";
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
 
@@ -32,8 +29,7 @@ export default function Admin(){
             <DataHandlerProvider>
             <div className={`flex flex-col ${GeistSans.variable} ${GeistMono.variable} antialiased h-full w-full`}>
                 <div className="flex flex-row h-screen">
-                    {/*<Sidebar  />*/}
-                    <SideBor />
+                    <Sidebar />
                     <div className="flex-1 flex flex-col overflow-y-auto">
                         <ScrollShadow className="h-screen" hideScrollBar size={25}>
                             <Content />

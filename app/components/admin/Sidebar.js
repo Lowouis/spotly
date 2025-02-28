@@ -1,239 +1,252 @@
-'use client';
-
+import React, { useState } from 'react'
 import {
-    ArrowLeftStartOnRectangleIcon,
-    EnvelopeIcon,
-    ServerIcon,
-    Squares2X2Icon,
-    TableCellsIcon,
-    UserCircleIcon,
-    GlobeEuropeAfricaIcon, HomeIcon, BookmarkIcon
-} from "@heroicons/react/24/solid";
-import {Badge, Divider, Link, ScrollShadow, Skeleton} from "@nextui-org/react";
-import {useAdminContext} from "@/app/context/Admin";
-import {RectangleStackIcon} from "@heroicons/react/16/solid";
-import {
-    ChartPieIcon,
-    ClipboardDocumentListIcon,
-    RectangleGroupIcon,
-    UsersIcon,
-    WrenchIcon
-} from "@heroicons/react/24/solid/index";
+    FiGrid,
+} from 'react-icons/fi'
 import {signOut, useSession} from "next-auth/react";
+import {useRouter} from "next/navigation";
+import {useAdminContext} from "@/app/context/Admin";
+import {Skeleton} from "@nextui-org/react";
+import {MdArrowForwardIos, MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from "react-icons/md";
+import { CiLogout, CiServer} from "react-icons/ci";
 import UserInitialsIcon from "@/app/components/utils/UserInitialsIcon";
-import { useRouter } from "next/navigation";
-import {Button} from "@nextui-org/button";
-import {useState} from "react";
+import {TfiBackLeft} from "react-icons/tfi";
+import {addToast} from "@heroui/toast";
+import {IoMdGlobe} from "react-icons/io";
+import {GrResources} from "react-icons/gr";
+import {RiMailSettingsLine} from "react-icons/ri";
+import {FaRegUser} from "react-icons/fa";
 
+const sideItems = [
+    {
+        "title": "Administration",
+        "items": [
+            {
+                "title": "Tableau de bord",
+                "id" : "dashboard",
+                "icon": <MdOutlineSpaceDashboard />,
+            },
+        ]
+    },
+    {
+        "title": "Données",
+        "items": [
+            {
+                "id" : "domains",
+                "title": "Sites",
+                "icon": <IoMdGlobe />,
+            },
+            {
+                "id" : "categories",
+                "title": "Catégories",
+                "icon": <MdOutlineCategory />,
+
+            },
+            {
+                "id" : "resources",
+                "title": "Ressources",
+                "icon": <GrResources />,
+            }
+        ]
+    },
+    {
+        "title": "Utilisateurs",
+        "items": [
+            {
+                "id" : "users",
+                "title": "Utilisateurs",
+                "icon": <FaRegUser />,
+
+            },
+            {
+                "id" : "entries",
+                "title": "Réservations",
+                "icon": <MdBookmarkBorder />,
+            }
+        ]
+    },
+    {
+        "title": "Mail",
+        "icon": <FiGrid />,
+        "items": [
+            {
+                "id" : "smtp",
+                "title": "SMTP",
+                "icon": <RiMailSettingsLine />,
+
+            },
+        ]
+    },
+    {
+        "title": "LDAP",
+        "items": [
+            {
+                "id" : "ldap",
+                "title": "Configuration",
+                "icon": <CiServer />,
+
+            }
+        ]
+    }
+];
 
 export default function Sidebar() {
+    const [isOpen, setIsOpen] = useState(true)
     const {data : session} = useSession();
     const router = useRouter();
-    const {activeSection, setActiveSection} = useAdminContext();
-    const [open, setOpen] = useState(false);
-
-    const handleOpenSideBar = () => {
-        setOpen(!open);
-    }
-
-    const sideItems = [
-        {
-            "title": "Administration",
-            "icon": "Squares2X2Icon",
-            "items": [
-                {
-                    "title": "Administration",
-                    "href": "/admin",
-                    "id" : "dashboard",
-                    "icon": "RectangleGroup",
-                },
-            ]
-        },
-        {
-            "title": "Données",
-            "icon": "GlobeEuropeAfrica",
-            "items": [
-                {
-                    "id" : "domains",
-                    "title": "Sites",
-                    "href": "/admin/site",
-                    "icon": "GlobeEuropeAfrica",
-                },
-                {
-                    "id" : "categories",
-                    "title": "Catégories",
-                    "href": "/admin/category",
-                    "icon": "RectangleStack",
-
-                },
-                {
-                    "id" : "resources",
-                    "title": "Ressources",
-                    "href": "/admin/resource",
-                    "icon": "ClipboardDocumentList",
-                }
-            ]
-        },
-        {
-            "title": "Utilisateurs",
-            "icon": "UserCircleIcon",
-            "items": [
-                {
-                    "id" : "users",
-                    "title": "Utilisateurs",
-                    "href": "/admin/users",
-                    "icon": "Users",
-
-                },
-                {
-                    "id" : "entries",
-                    "title": "Réservations",
-                    "href": "/admin/reservations",
-                    "icon": "Bookmark",
-
-                }
-            ]
-        },
-        {
-            "title": "Mail",
-            "icon": "EnvelopeIcon",
-            "items": [
-                {
-                    "id" : "smtp",
-                    "title": "SMTP",
-                    "href": "/admin/smtp",
-                    "icon": "GlobeEuropeAfrica",
-
-                },
-                {
-                    "id" : "templates",
-                    "title": "Templates",
-                    "href": "/admin/mails",
-                    "icon": "GlobeEuropeAfrica",
-
-                }
-            ]
-        },
-        {
-            "title": "LDAP",
-            "icon": "ServerIcon",
-            "items": [
-                {
-                    "id" : "ldap",
-                    "title": "Configuration",
-                    "href": "/admin/ldap",
-                    "icon": "Wrench",
-
-                }
-            ]
-        }
-    ];
-
-
+    const {setActiveSection} = useAdminContext();
+    const toggleSidebar = () => setIsOpen(!isOpen)
 
     return (
         <div
-            onMouseEnter={handleOpenSideBar}
-            onMouseLeave={handleOpenSideBar}
-            className={`bg-black text-white h-screen px-4 pt-4 mr-2 pb-2 flex flex-col justify-between ${open ? 'w-[20rem]' : 'w-[5vw]'} transition-all duration-300`}>
-            {/* Profile */}
-            <Skeleton className="rounded-lg bg-black" isLoaded={!!session}>
-                <div className="flex items-center gap-4 mb-8">
-                    <UserInitialsIcon user={session?.user} />
-                    <div>
-                        <h3 className="font-bold text-lg">{session?.user.name} {session?.user.surname} </h3>
-                        <p className="text-gray-400 text-sm">Rôle</p>
-                    </div>
-                </div>
-            </Skeleton>
+            className={`
+        flex flex-col h-screen bg-white border-r border-gray-200
+        transition-all duration-300
+        ${isOpen ? 'w-64' : 'w-20'} 
+      `}
+        >
+            <div className="flex items-center px-4 py-3 border-b border-gray-200">
+                <div className="text-lg font-semibold text-gray-900 mr-auto flex items-center overflow-hidden">
+                        <span
+                            className={`
+                  transition-all duration-300
+                  overflow-hidden whitespace-nowrap
+                  ${isOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}
+                `}
+                        >
+                            Spotly
+              </span>
 
-            {/* Overview Section */}
-            <ScrollShadow hideScrollBar >
-                <div>
+                </div>
+
+                <button
+                    onClick={toggleSidebar}
+                    className="p-2 ml-auto text-gray-500 rounded-md hover:bg-gray-200"
+                >
+                    <MdArrowForwardIos className={`${isOpen ? "rotate-180" : "rotate-0"} transition-all duration-400`} size={18} />
+                </button>
+            </div>
+            <nav className="flex-1 mt-4">
                 {sideItems.map((group, index)=> (
                     <div className="space-y-4 mb-2" key={index}>
-                        <h4 className="text-gray-500 uppercase text-xs tracking-wider hidden">{group.title}</h4>
+                        <SectionTitle title={group.title} isOpen={isOpen} />
                         <div className="space-y-2">
                             {group.items.map((item, index)=>(
-                                <SidebarItem
-                                    key={ index }
-                                    label={ item.title }
-                                    icon={ item.icon }
-                                    id={ item.id }
-                                    setActiveSection={ setActiveSection }
-                                    active={ activeSection === item.id }
-                                    isOpen={open}
+                                <NavItem
+                                    key={index}
+                                    id={item.id}
+                                    icon={item.icon}
+                                    label={item.title}
+                                    isOpen={isOpen}
+                                    action={()=>setActiveSection(item.id)}
                                 />
+
                             ))}
                         </div>
                     </div>
                 ))}
+            </nav>
+
+            <div className="p-4 border-t border-neutral-200">
+                <NavItem
+                    icon={<TfiBackLeft />}
+                    label="Spotly"
+                    isOpen={isOpen}
+                    action={()=>router.push("/")}
+                />
+                <NavItem
+                    icon={<CiLogout />}
+                    label="Se deconnecter"
+                    isOpen={isOpen}
+                    color={"bg-red-300"}
+                    action={() => signOut().then(() => {
+                        addToast({
+                            title: "Déconnexion",
+                            message: "Vous avez été déconnecté avec succès",
+                            color: "success",
+                            duration: 5000,
+                        });
+                    })}
+                />
+
+
+                <div className="flex items-center mt-4 overflow-hidden">
+                    {/* Avatar toujours visible */}
+                    <Skeleton className="rounded-lg bg-black" isLoaded={!!session}>
+                        <UserInitialsIcon user={session?.user} />
+                    </Skeleton>
+                    {/* Bloc texte animé */}
+                    <div
+                        className={`
+              ml-2 transition-all duration-300
+              ${isOpen ? 'opacity-100 max-w-[200px]' : 'opacity-0 max-w-0'}
+              overflow-hidden
+            `}
+                    >
+                        <Skeleton className="rounded-lg bg-neutral-100 w-full"
+                                  isLoaded={!!session}
+                        >
+                            <p className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                {session?.user.name} {session?.user.surname}
+                            </p>
+                            <p className="text-sm text-gray-500 whitespace-nowrap">
+                                {session?.user.role}
+                            </p>
+                        </Skeleton>
+                    </div>
                 </div>
-            </ScrollShadow>
-
-
-            {/* Bouton Se Déconnecter */}
-            <div>
-                <Divider className="bg-neutral-500" orientation="horizontal"/>
-                <Button
-                    fullWidth
-                    onPress={() => signOut().then(() => console.log("Successfull logout"))}
-                    className={`flex mt-3 text-neutral-300 items-center justify-between p-3 border-2 border-transparent transition rounded-lg hover:bg-red-700 hover:border-2 hover:border-red-500 bg-red-800 cursor-pointer`}>
-                    <div className="flex items-center gap-5 w-full">
-                        <ArrowLeftStartOnRectangleIcon />
-                        <span className="w-full text-center hidden">Se deconnecter</span>
-                    </div>
-                </Button>
-                <Button
-                    fullWidth
-                    onPress={()=>router.push("/")}
-                    className={`flex mt-3  text-neutral-300 items-center justify-between p-3 border-2 border-transparent transition rounded-lg hover:bg-blue-700 hover:border-2 hover:border-blue-500 bg-blue-800 cursor-pointer`}>
-                    <div className="flex items-center gap-5 w-full">
-                        <span className="text-2xl text-white uppercase">S</span>
-                        <span className="w-full text-center hidden " >Spotly</span>
-                    </div>
-                </Button>
             </div>
         </div>
-    );
+    )
 }
 
-function SidebarItem({label, icon, badge, id, isOpen}) {
-    const {activeSection, setActiveSection} = useAdminContext();
-    const IconMapping = {
-        Squares2X2Icon: Squares2X2Icon,
-        TableCells: TableCellsIcon,
-        UserCircleIcon: UserCircleIcon,
-        EnvelopeIcon: EnvelopeIcon,
-        ServerIcon: ServerIcon,
-        GlobeEuropeAfrica: GlobeEuropeAfricaIcon,
-        RectangleStack: RectangleStackIcon,
-        ChartPie : ChartPieIcon,
-        ClipboardDocumentList : ClipboardDocumentListIcon,
-        Users: UsersIcon,
-        Bookmark : BookmarkIcon,
-        Wrench : WrenchIcon,
-        RectangleGroup: RectangleGroupIcon
 
-    };
-    const Icon = IconMapping[icon];
+function SectionTitle({ title, isOpen }) {
     return (
-        <div onClick={e => setActiveSection(id)}
-             className={`flex items-center justify-between p-3 transition rounded-lg hover:bg-gray-900 ${activeSection === id ? "bg-gray-900 text-neutral-100" : "text-neutral-300"} cursor-pointer`}>
-            <div className={`flex items-center gap-3`} >
-                <Icon className="h-6 w-6 mr-2" />
-                {isOpen && <span className=''>{label}</span>}
+        <h2
+            className={`
+        px-4 mb-2 text-xs font-semibold text-gray-400 uppercase
+        transition-all duration-300
+        ${isOpen ? 'opacity-100 max-h-6' : 'opacity-0 max-h-0'}
+        overflow-hidden
+      `}
+        >
+            {title}
+        </h2>
+    )
+}
+
+
+function NavItem({
+                     icon,
+                     label,
+                     isOpen,
+                     badge,
+                     id,
+                     color="bg-gray-200",
+                     action = ()=>{console.log("Set an action to this item")},
+                 }) {
+    const {activeSection, setActiveSection} = useAdminContext();
+    return (
+        <a
+            onClick={action}
+            href="#"
+            className={`flex transition-all items-center text-gray-700 ${color && "hover:"+color}  px-4 py-2 ${activeSection === id && "bg-gray-200 " }`}
+        >
+            <div className={`text-xl transition-all ${isOpen && 'mr-2' }`}>{icon}</div>
+
+            <div
+                className={`
+          flex items-center
+          overflow-hidden
+          transition-all duration-300
+          ${isOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}
+        `}
+            >
+                <span className="whitespace-nowrap">{label}</span>
+                {badge && (
+                    <span className="px-2 ml-auto text-sm text-gray-500">{badge}</span>
+                )}
             </div>
-            {badge && (
-                <Badge
-                    size="lg"
-                    color={"default"}
-                    className="bg-gray-700 text-white"
-                    content={badge}
-                 />
-
-
-            )}
-        </div>
-    );
+        </a>
+    )
 }
