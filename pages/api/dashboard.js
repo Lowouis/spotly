@@ -1,7 +1,11 @@
 'use server';
 import prisma from "@/prismaconf/init";
+import {runMiddleware} from "@/lib/core";
 
 export default async function handler(req, res) {
+
+    await runMiddleware(req, res);
+
     if(req.method === "GET"){
         const usersTotal = await prisma.user.count();
         const entriesTotal = await prisma.entry.count();

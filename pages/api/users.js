@@ -1,8 +1,10 @@
 'use server';
 import prisma from "@/prismaconf/init";
 import bycrypt from 'bcrypt';
+import {runMiddleware} from "@/lib/core";
 
 export default async function handler(req, res) {
+    await runMiddleware(req, res);
     if(req.method === "GET"){
         const { id } = req.body;
         const users = await prisma.user.findMany({

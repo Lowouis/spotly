@@ -1,4 +1,7 @@
-export default function handler(req, res) {
+import {runMiddleware} from "@/lib/core";
+
+export default async function handler(req, res) {
+    await runMiddleware(req, res);
     let ip =
         req.headers["x-forwarded-for"]?.split(",")[0] ||
         req.connection?.remoteAddress ||

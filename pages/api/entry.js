@@ -1,8 +1,10 @@
 'use server';
 import prisma from "@/prismaconf/init";
+import {runMiddleware} from "@/lib/core";
 
 
 export default async function handler(req, res) {
+    await runMiddleware(req, res);
     try {
         if(req.method === "GET"){
             const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode } = req.query;
