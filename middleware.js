@@ -11,8 +11,12 @@ export async function middleware(req) {
 
     if (req.method === "OPTIONS") {
         return new Response(null, {
-            status: 200,
-            headers: response.headers,
+            status: 204,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            },
         });
     }
 
