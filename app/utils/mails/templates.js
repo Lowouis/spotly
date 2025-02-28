@@ -15,7 +15,7 @@ const wrapInHtmlTemplate = (body) => `
         </div>
         ${body}
         <footer class="flex flex-col justify-start items-start" style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666;">
-        <span><a href="http://localhost:3000">Spotly</a></span>
+        <span><a href="${process.env.NEXT_PUBLIC_API_ENDPOINT}">Spotly</a></span>
 
             <hr style="border: none; border-top: 1px solid #eee;">
             <p>Merci d'utiliser notre service !</p>

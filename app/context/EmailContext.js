@@ -7,7 +7,7 @@ export const EmailProvider = ({ children }) => {
     const [emailError, setEmailError] = useState({"type": "", "message": ""});
     const mutation = useMutation({
         mutationFn: async (emailData) => {
-            const response = await fetch('http://localhost:3000/api/sendEmail', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/sendEmail`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

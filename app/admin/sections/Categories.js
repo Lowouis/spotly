@@ -12,7 +12,7 @@ const Categories = ({})=>{
     const { data: items, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['categories'],
         queryFn: async () => {
-            const response = await fetch('http://localhost:3000/api/categories');
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/categories`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
