@@ -1,3 +1,4 @@
+'use client';
 import React from "react";
 import {Input} from "@nextui-org/input";
 import {useFormContext} from "react-hook-form";
@@ -10,8 +11,10 @@ export default function InputField({ required, type, label, name, value, placeho
         if (value !== undefined) {
             setValue(name, value);
         }
+        console.log(value);
     }, [value, name, setValue]);
 
+    console.log(watch(name), "  ---  ", value);
 
     return (
         <div className="form-group">

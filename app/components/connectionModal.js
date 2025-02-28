@@ -108,7 +108,7 @@ export function ConnectionModal({}) {
         queryKey: ['lucky_entry'],
         queryFn: async () => {
             if(ifl.otp.length === 6){
-                const response = await fetch(`${process.env.API_ENDPOINT}/api/entry?returnedConfirmationCode=`+ifl.otp);
+                const response = await fetch(`${process.env.PUBLIC_NEXT_API_ENDPOINT}/api/entry?returnedConfirmationCode=`+ifl.otp);
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
