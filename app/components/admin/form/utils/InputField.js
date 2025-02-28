@@ -2,19 +2,16 @@
 import React from "react";
 import {Input} from "@nextui-org/input";
 import {useFormContext} from "react-hook-form";
-import { useEffect } from "react";
 
 
 export default function InputField({ required, type, label, name, value, placeholder }) {
     const { register, watch, setValue, formState: { errors } } = useFormContext(); // Connexion au formulaire global
-    useEffect(() => {
-        if (value !== undefined) {
-            setValue(name, value);
-        }
-        console.log(value);
-    }, [value, name, setValue]);
 
-    console.log(watch(name), "  ---  ", value);
+    if (value !== undefined) {
+        setValue(name, value);
+    }
+
+
 
     return (
         <div className="form-group">
