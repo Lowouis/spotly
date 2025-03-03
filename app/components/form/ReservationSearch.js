@@ -208,7 +208,7 @@ const ReservationSearch = () => {
                                             {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESOURCES   */}
                                             <SelectField
                                                 name="resource"
-                                                awaiting={watch('category') === undefined ||  watch('site') === undefined}
+                                                awaiting={watch('category') === undefined &&  watch('site') === undefined}
                                                 label="Resources"
                                                 options={`resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE`}
                                                 isRequired={false}

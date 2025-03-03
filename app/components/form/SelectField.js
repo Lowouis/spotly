@@ -3,6 +3,8 @@ import { useFormContext } from 'react-hook-form';
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectItem } from "@nextui-org/select";
 import { firstLetterUppercase } from "@/app/utils/global";
+import {Badge, Chip, Spinner} from "@nextui-org/react";
+import {Avatar} from "@heroui/react";
 const SelectField = ({
                         name,
                         label,
@@ -69,7 +71,18 @@ const SelectField = ({
                     isRequired={isRequired}
                     id={name}
                     name={name}
-                    label={label}
+                    label={
+                    <span className="p-0.5">
+                        <span className="mr-2">{label}</span>
+                        <Chip
+                            radius={'full'}
+                            variant={'flat'}
+                            size="sm"
+                            color={resolvedOptions && resolvedOptions?.length !== 0 ? "primary" : "danger"}
+                        >{resolvedOptions?.length ? resolvedOptions.length : 0}</Chip>
+
+                    </span>
+                    }
                     variant={variant}
                     labelPlacement={labelPlacement}
                     items={resolvedOptions || []}

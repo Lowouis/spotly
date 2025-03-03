@@ -1,11 +1,14 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext } from 'react';
 import {useQuery} from "@tanstack/react-query";
-
+import {useSession} from "next-auth/react";
 const dataHandlerContext = createContext();
 
 export const DataHandlerProvider = ({ children }) => {
+    const {data : session} = useSession();
+    console.log(session?.user.role);
     const fetchWaitingEntries = async () => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?moderate=WAITING`);
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?moderate=WAITING${session?.user.role === "SUPERADMIN" ? "" : `&owned=${session?.user?.id}`}`);
         if (!response.ok) {
             throw new Error('Échec de la récupération des entrées en attente');
         }

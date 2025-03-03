@@ -5,8 +5,7 @@ import {BookmarkIcon, ShieldExclamationIcon} from "@heroicons/react/24/solid";
 import {CubeIcon, ExclamationTriangleIcon, FireIcon} from "@heroicons/react/16/solid";
 import Block from "@/app/components/admin/Block";
 import ItemsOnTable from "@/app/components/admin/communs/ItemsOnTable";
-import EntryDTO, {EntriesDTO} from "@/app/components/utils/DTO";
-import { Skeleton } from "@nextui-org/react";
+
 
 const Dashboard = ({})=>{
 

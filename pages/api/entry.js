@@ -7,12 +7,20 @@ export default async function handler(req, res) {
     await runMiddleware(req, res);
     try {
         if(req.method === "GET"){
-            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode } = req.query;
+            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode, owned } = req.query;
+            console.log("owned : ", owned)
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"
                 },
                 where: {
+                    ...(owned && {resource: {
+                            OR: [
+                                { domains: { ownerId: parseInt(owned) } },
+                                { ownerId: parseInt(owned) },
+                                { category: { ownerId: parseInt(owned) } }
+                            ]
+                        }}),
                     ...(moderate && {moderate : moderate}),
                     ...(userId && {userId : parseInt(userId)}),
                     ...(resourceId && {
@@ -68,8 +76,6 @@ export default async function handler(req, res) {
                     comment
             } = req.body;
 
-
-
             const entry = await prisma.entry.create({
                 data: {
                     startDate: startDate,
@@ -84,7 +90,7 @@ export default async function handler(req, res) {
                             id : resourceId
                         }
                     },
-                    comment: comment,
+                    ...(comment !== "" && comment !== null && {comment: comment}),
                     key: key,
                     moderate: moderate
                 },
@@ -100,9 +106,18 @@ export default async function handler(req, res) {
                 }
             });
             res.status(201).json(entry);
+        } else if(req.method === "DELETE"){
+            const { ids } = req.query;
+            const entry = await prisma.entry.deleteMany({
+                where: {
+                    id: {
+                        in: ids,
+                    },
+                },
+            });
+
+            res.status(200).json(entry);
         }
-
-
     } catch (error) {
         console.error("Failed to parse JSON:");
         res.status(500).json({error: "Failed to parse JSON"});

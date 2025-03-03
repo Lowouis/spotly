@@ -9,11 +9,10 @@ import {Skeleton} from "@nextui-org/react";
 import {MdArrowForwardIos, MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from "react-icons/md";
 import { CiLogout, CiServer} from "react-icons/ci";
 import UserInitialsIcon from "@/app/components/utils/UserInitialsIcon";
-import {TfiBackLeft} from "react-icons/tfi";
 import {addToast} from "@heroui/toast";
 import {IoMdGlobe} from "react-icons/io";
 import {GrResources} from "react-icons/gr";
-import {RiMailSettingsLine} from "react-icons/ri";
+import {RiApps2Line, RiMailSettingsLine} from "react-icons/ri";
 import {FaRegUser} from "react-icons/fa";
 
 const sideItems = [
@@ -148,7 +147,7 @@ export default function Sidebar() {
 
             <div className="p-4 border-t border-neutral-200">
                 <NavItem
-                    icon={<TfiBackLeft />}
+                    icon={<RiApps2Line />}
                     label="Spotly"
                     isOpen={isOpen}
                     action={()=>router.push("/")}
@@ -157,8 +156,9 @@ export default function Sidebar() {
                     icon={<CiLogout />}
                     label="Se deconnecter"
                     isOpen={isOpen}
-                    color={"bg-red-300"}
+
                     action={() => signOut().then(() => {
+                        router.push("/");
                         addToast({
                             title: "Déconnexion",
                             message: "Vous avez été déconnecté avec succès",

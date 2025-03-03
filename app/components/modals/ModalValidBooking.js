@@ -213,7 +213,7 @@ export default function ModalValidBooking({EntryData, isOpen, onOpenChange, sess
                                             </div>
                                             <div className="w-1/5 relative">
                                                 <div
-                                                    className="animate-ping absolute inset-1 inset-x-7 -inset-y-0.5  h-6 w-6 inline-flex rounded-full bg-sky-400 opacity-75"></div>
+                                                    className="animate-ping absolute inset-1 inset-x-8 -inset-y-0.5  h-6 w-6 inline-flex rounded-full bg-sky-400 opacity-75"></div>
                                                 <ArrowRightCircleIcon className="absolute inset-0 m-auto" width="32"
                                                                       height="32" color="blue"/>
                                             </div>

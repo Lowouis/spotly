@@ -13,7 +13,7 @@ import {
     InputOtp,
     Modal, ModalBody,
     ModalContent, ModalFooter,
-    ModalHeader,
+    ModalHeader, Spinner,
     Tab,
     Tabs, Tooltip,
     useDisclosure

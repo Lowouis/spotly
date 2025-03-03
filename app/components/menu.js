@@ -82,7 +82,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                  <div className="flex justify-end">
                                      <Button size="lg" onPress={onOpen} isIconOnly={true} radius="full">
                                         <span
-                                            className="font-semibold  cursor-pointer bg-blue-300 p-4 rounded-full place-content-center text-xl text-black flex justify-center items-center">
+                                            className="font-semibold  cursor-pointer bg-cyan-600 p-4 rounded-full place-content-center text-xl text-neutral-100 flex justify-center items-center">
                                             {user?.username.charAt(0).toUpperCase()}
                                             {user?.username.charAt(1).toUpperCase()}
                                         </span>

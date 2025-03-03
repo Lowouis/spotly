@@ -19,12 +19,14 @@ export async function middleware(req) {
             },
         });
     }
-
     // Vérifie si l'utilisateur est authentifié et a le rôle admin
-    if (!token || token.role === "USER") {
-
+    if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
+        // Redirect to homepage or login if trying to access admin routes
+        const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
+        if (isAdminRoute) {
+            return NextResponse.redirect(new URL('/', req.url));
+        }
     }
-
     return response;
 }
 

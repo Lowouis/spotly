@@ -1,4 +1,4 @@
-import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@nextui-org/react";
+import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, useDisclosure} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import Stepper from "@/app/components/utils/Stepper";
 import React, {useState} from "react";
@@ -298,21 +298,23 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
             {adminMode ?
                 (
                     <div className="flex justify-center items-center">
-                        <Button
-                            className="text-default-500 font-medium underline underline-offset-4"
-                            size="sm"
-                            variant="flat"
-                            color="default"
-                            isIconOnly
-                            radius="full"
-                            onPress={onOpen}
-                        >
-                            <ChevronRightIcon
-                                className="font-bold text-black"
-                                width="18"
-                                height="18"
-                            />
-                        </Button>
+                        <Tooltip content="Consulter" color="default"  size={'sm'} showArrow>
+                            <Button
+                                className="text-default-500 font-medium underline underline-offset-4"
+                                size="sm"
+                                variant="flat"
+                                color="default"
+                                isIconOnly
+                                radius="sm"
+                                onPress={onOpen}
+                            >
+                                <ChevronRightIcon
+                                    className="font-bold text-black"
+                                    width="18"
+                                    height="18"
+                                />
+                            </Button>
+                        </Tooltip>
                     </div>
                 ) : (
                     <Button

@@ -111,7 +111,7 @@ export const authConfig = {
         },
     },
     options : {
-        debug : true
+        debug : false
     }
 };
 

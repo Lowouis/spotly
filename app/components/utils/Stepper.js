@@ -5,6 +5,7 @@ import React from "react";
 import {ButtonGroup} from "@nextui-org/react";
 import process from "next/dist/build/webpack/loaders/resolve-url-loader/lib/postcss";
 import {useAdminDataManagerContext} from "@/app/context/AdminDataManager";
+import {XMarkIcon} from "@heroicons/react/24/solid";
 
 
 export default function Stepper({step, done=false, last=false, content, handleReturnStep=null, adminMode=false, entry=null, returned, failed}) {
@@ -29,8 +30,14 @@ export default function Stepper({step, done=false, last=false, content, handleRe
             {step===2 && adminMode && !done && (
                 <div className="flex justify-center items-start">
                     <ButtonGroup className="ml-10">
-                        <Button variant="ghost" onPress={()=>updateEntryModerate(entry, "ACCEPTED")} color="success" size="md">Autoriser</Button>
-                        <Button variant="ghost" onPress={()=>updateEntryModerate(entry, "REFUSED")} color="danger" size="md">Refuser</Button>
+                        <Button variant="ghost" onPress={()=> {
+                            updateEntryModerate(entry, "REFUSED");
+                        }} color="default" size="md">
+                            <XMarkIcon width="18" height="18" color={"red"} />
+                        </Button>
+                        <Button variant="ghost" onPress={()=>updateEntryModerate(entry, "ACCEPTED")} color="default" size="md">
+                            <CheckIcon width="18" height="18" color={"green"}/>
+                        </Button>
                     </ButtonGroup>
                 </div>
 
