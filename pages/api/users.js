@@ -49,6 +49,31 @@ export default async function handler(req, res) {
 
         const { password: _, ...userWithoutPassword } = user;
         return res.status(201).json(userWithoutPassword);
+    } else if (req.method === "PUT") {
+        const { id, email, name, surname, username, password, role } = req.body;
+
+        const hashedPassword = await bycrypt.hash(password, 10);
+
+        const user = await prisma.user.update({
+            where: {
+                id: id,
+            },
+            data: {
+                email,
+                name,
+                surname,
+                username,
+                ...(password !== "" && password !== null && {password: password !== "" ? hashedPassword : null}),
+                role: role.name || "USER",
+                external: false
+            }
+        });
+
+        const { password: _, ...userWithoutPassword } = user;
+        return res.status(200).json(userWithoutPassword);
+
+
+
     } else if (req.method === "DELETE") {
         const { ids } = req.body;
         await prisma.user.deleteMany({

@@ -4,11 +4,15 @@ import {Input} from "@nextui-org/input";
 import {useFormContext} from "react-hook-form";
 
 
-export default function InputField({ required, type, label, name, value, placeholder }) {
+export default function InputField({ required, type, label, name, value, placeholder, dependsOn }) {
     const { register, watch, setValue, formState: { errors } } = useFormContext(); // Connexion au formulaire global
 
     if (value !== undefined) {
-        setValue(name, value);
+        if(dependsOn !== undefined){
+            setValue(name, null);
+        } else {
+            setValue(name, value);
+        }
     }
 
 
@@ -19,11 +23,12 @@ export default function InputField({ required, type, label, name, value, placeho
             <Input
                 id={name}
                 type={type}
+                isDisabled={dependsOn !== undefined ? dependsOn : false}
                 isInvalid={!!errors[name]}
                 placeholder={placeholder}
-                isRequired={required}
+                isRequired={dependsOn !== undefined ? dependsOn : required}
                 errorMessage={errors[name]?.message}
-                {...register(name, { required })}
+                {...register(name, { required : dependsOn !== undefined ? false : required })}
                 className={`form-input ${errors[name] ? 'input-error' : ''}`}
                 variant="bordered"
             />

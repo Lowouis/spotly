@@ -48,6 +48,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                             const rules = {
                                 required : field.required ? `${field.label} est requis` : false
                             }
+                            console.log(field?.dependsOn)
                             switch (field.type) {
                                 case "text" :
                                     return (
@@ -58,7 +59,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             label={field.label}
                                             name={field.name}
                                             value={defaultValues ? defaultValues[field.name] : ""}
-                                            register={methods.register(field.name, rules)}
+                                            dependsOn={defaultValues && field?.dependsOn !== undefined ? defaultValues[field.dependsOn] : undefined}                                            register={methods.register(field.name, rules)}
                                             placeholder={field.placeholder}
                                         />
                                     );
