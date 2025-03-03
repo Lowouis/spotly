@@ -1,21 +1,23 @@
 'use client';
-import React from "react";
-import {Input} from "@nextui-org/input";
-import {useFormContext} from "react-hook-form";
-
+import React, { useEffect, useRef } from "react";
+import { Input } from "@nextui-org/input";
+import { useFormContext } from "react-hook-form";
 
 export default function InputField({ required, type, label, name, value, placeholder, dependsOn }) {
-    const { register, watch, setValue, formState: { errors } } = useFormContext(); // Connexion au formulaire global
+    const { register, watch, setValue, formState: { errors } } = useFormContext();
+    const initialRenderRef = useRef(true);
 
-    if (value !== undefined) {
-        if(dependsOn !== undefined){
-            setValue(name, null);
-        } else {
-            setValue(name, value);
+    // Only set initial values once on mount
+    useEffect(() => {
+        if (initialRenderRef.current && value !== undefined) {
+            if (dependsOn !== undefined) {
+                setValue(name, null);
+            } else {
+                setValue(name, value);
+            }
+            initialRenderRef.current = false;
         }
-    }
-
-
+    }, [name, value, dependsOn, setValue]);
 
     return (
         <div className="form-group">
@@ -28,7 +30,9 @@ export default function InputField({ required, type, label, name, value, placeho
                 placeholder={placeholder}
                 isRequired={dependsOn !== undefined ? dependsOn : required}
                 errorMessage={errors[name]?.message}
-                {...register(name, { required : dependsOn !== undefined ? false : required })}
+                {...register(name, {
+                    required: dependsOn !== undefined ? false : required
+                })}
                 className={`form-input ${errors[name] ? 'input-error' : ''}`}
                 variant="bordered"
             />

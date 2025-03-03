@@ -48,7 +48,6 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                             const rules = {
                                 required : field.required ? `${field.label} est requis` : false
                             }
-                            console.log(field?.dependsOn)
                             switch (field.type) {
                                 case "text" :
                                     return (

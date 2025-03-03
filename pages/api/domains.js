@@ -27,9 +27,11 @@ export default async function handler(req, res) {
                 zip,
                 phone,
                 pickable: pickable.name,
-                owner: {
-                    connect: { id: owner.id }
-                },
+                ...(owner?.id ? {
+                    owner: {
+                        connect: { id: owner.id }
+                    }
+                } : { ownerId: null })
             }
         });
         res.status(200).json(domain);

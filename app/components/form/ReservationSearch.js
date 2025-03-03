@@ -85,8 +85,9 @@ const ReservationSearch = () => {
                 const startDate = constructDate(data.date.start);
                 const endDate = constructDate(data.date.end);
                 const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
+                    `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site.id}&categoryId=${data.category.id}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
                 );
+                console.log(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`)
                 return await response.json();
             }
             return [];
@@ -94,16 +95,16 @@ const ReservationSearch = () => {
     });
 
     useEffect(() => {
-
+        console.log("data : ", data)
         if (data) {
             refetchMatchingEntries();  // Déclencher le refetch quand isSubmitted change
         }
     }, [isSubmitted, data, refetchMatchingEntries]);
-
+    console.log(matchingEntries);
     useEffect(() => {
         const cpAvailableResources = queryClient.getQueryData(['resource', `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE`]);
         if (isSubmitted && matchingEntries && cpAvailableResources !== undefined) {
-            console.log(cpAvailableResources);
+            console.log(matchingEntries);
             const filteredResourcesByMatches = cpAvailableResources.filter(
                 (resource) =>
                     !matchingEntries?.some((entry) => entry.resourceId === resource.id)
