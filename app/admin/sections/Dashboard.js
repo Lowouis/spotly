@@ -22,24 +22,24 @@ const Dashboard = ({})=>{
 
     return (
         <div className="w-full">
-            <div className="font-semibold text-3xl p-2 m-4">
+            <div className="text-3xl p-2 m-4">
                 Tableau de bord
             </div>
             <div className="flex flex-row space-x-2 w-full my-3 px-2 ">
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.usersTotal} label="utilisateurs"      
-                    logo={<UsersIcon color={"#0369a1"} width={48} height={48}/>}/>
+                    logo={<UsersIcon color={"#374151"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.entriesTotal} label="réservations"
-                    logo={<BookmarkIcon color={"#0369a1"} width={48} height={48}/>}/>
+                    logo={<BookmarkIcon color={"#374151"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.availableResourcesTotal} label="disponibles"
-                    logo={<CubeIcon color={"#0369a1"} width={48} height={48}/>}/>
+                    logo={<CubeIcon color={"#374151"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.bookedResourcesTotal} label="utilisées"
-                    logo={<FireIcon color={"#ea580c"} width={48} height={48}/>}/>
+                    logo={<FireIcon color={"#374151"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.delayedResourcesTotal} label="retards"
-                    logo={<ExclamationTriangleIcon color={"#ef4444"} width={48} height={48}/>}/>
+                    logo={<ExclamationTriangleIcon color={"#374151"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.ratio+"%"} label="disponibilité"
-                    logo={<ChartPieIcon color={"#0369a1"} width={48} height={48}/>}/>
+                    logo={<ChartPieIcon color={"#374151"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.delayedResourcesTotal} label="en attentes"
-                    logo={<ShieldExclamationIcon color={"#ef4444"} width={48} height={48}/>}/>
+                    logo={<ShieldExclamationIcon color={"#374151"} width={48} height={48}/>}/>
             </div>
             <div>
                 <div>

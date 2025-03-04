@@ -24,8 +24,8 @@ const Categories = ({})=>{
     const CategoryFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom', placeholder : "ex : vidéo-projecteur, ordinateur" },
         { required: false, name: 'description', type: 'text', label: 'Description', placeholder : "ex : ordinateur 4gb ram & 500gb" },
-        { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables", placeholder: "Choisir un niveau de protection"},
-        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables", placeholder: "Aucun"},
+        { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables", placeholder: "Choix par héritage du site"},
+        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables", placeholder: "Choix par héritage du site"},
     ];
     const columnsGreatNames = [
         "Nom",

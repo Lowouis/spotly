@@ -4,6 +4,7 @@ import {useRouter} from 'next/navigation'
 import React, {useEffect, useState} from "react";
 import {ReservationSearch} from "@/app/components/form/ReservationSearch";
 import {Button} from "@nextui-org/button";
+import Footer from "@/app/components/utils/Footer";
 
 export default function App() {
     const router = useRouter()

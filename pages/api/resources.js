@@ -39,7 +39,19 @@ export default async function handler(req, res) {
                 ...(domainId && {domainId : parseInt(domainId)}),
                 ...(status && {status : status}),
             },
-            include: { domains : true, category : true, owner : true }
+            include: {
+                domains: {
+                    include: {
+                        owner: true
+                    }
+                },
+                category: {
+                    include: {
+                        owner: true
+                    }
+                },
+                owner: true
+            }
         });
         const sanitizedResources = resources.map(({ domainId, categoryId, ...rest }) => rest);
 
@@ -52,15 +64,15 @@ export default async function handler(req, res) {
                 name : name,
                 description : description,
                 moderate : moderate === "1",
-                pickable : pickable.name,
+                ...(pickable && {pickable: pickable || pickable.name}),
                 domains : {
                     connect : { id : domains.id }
                 },
-                ...(owner?.id ? {
+                ...( owner?.id && {
                     owner: {
-                        connect: { id: owner.id }
+                        connect: {id: owner.id}
                     }
-                } : { ownerId: null }),
+                }),
                 category : {
                     connect : {
                         id : category.id
@@ -69,7 +81,7 @@ export default async function handler(req, res) {
         return res.status(200).json(ressource);
     } else if (req.method === "PUT") {
         const {id, name, description, moderate, domains, category, owner, pickable } = req.body;
-        console.log(domains);
+        console.log(req.body);
         const ressource = await prisma.resource.update({
             where: {
                 id: id,
@@ -81,11 +93,11 @@ export default async function handler(req, res) {
                 domains : {
                     connect : { id : domains.id }
                 },
-                ...(owner?.id ? {
-                    owner: {
-                        connect: { id: owner.id }
-                    }
-                } : { owner: null, ownerId: null }),
+                owner : owner?.id ? {
+                    connect: { id: owner.id }
+                } : {
+                    disconnect: true
+                },
                 ...(description ? {
                     description
                 } : { description : null }),

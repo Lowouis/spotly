@@ -1,9 +1,13 @@
+'use client'
 import {Divider} from "@nextui-org/react";
 import React from "react";
 import Link from "next/link";
+import {usePathname} from "next/navigation";
 
 export default function Footer(){
-    return (
+    const pathname = usePathname();
+    console.log(pathname);
+    return pathname.startsWith('/admin') ? null : (
         <footer className="w-full text-slate-500 text-center py-4">
             <div className="flex flex-row justify-center items-center w-full ">
                 <div className="flex flex-row space-x-3 justify-start items-start">

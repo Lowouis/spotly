@@ -31,6 +31,10 @@ import {addToast} from "@heroui/toast";
 import {useRefreshContext} from "@/app/context/RefreshContext";
 import {DropdownItem, DropdownMenu} from "@heroui/react";
 import TableDropDown from "@/app/components/admin/communs/TableDropDown";
+import {GrInherit} from "react-icons/gr";
+import {CiUser} from "react-icons/ci";
+import {IoMdGlobe} from "react-icons/io";
+import {MdOutlineCategory} from "react-icons/md";
 
 const domainSchema = yup.object().shape({
     name: yup.string().required(),
@@ -206,7 +210,7 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
             <div className="flex row justify-start items-center">
                 <div className="flex flex-row space-x-2">
                     <div className="flex justify-center items-center">
-                        <h1 className="text-2xl my-3 font-bold">{name}</h1>
+                        <h1 className="text-2xl my-3">{name}</h1>
                     </div>
                     <div className="flex justify-center items-center">
                             <Button 
@@ -362,6 +366,7 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                             <TableBody>
                                 {items.map((item, index) => {
                                     const itemDTO = EntryDTO(item, filter);
+                                    console.log(item);
                                     return (
                                         <TableRow key={item.id}>
                                             {Object.keys(itemDTO).map((key) => (
@@ -384,10 +389,34 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                                                                      </div>)
                                                                                  }
                                                                         >
-                                                                            {itemDTO[key]?.name}
+                                                                            <span className="flex flex-row justify-start items-center ">
+                                                                                {itemDTO[key]?.name} {" "}
+                                                                                {itemDTO[key]?.surname}
+                                                                            </span>
                                                                         </Tooltip> :
-                                                                        <div className="flex justify-center items-center w-full">
-                                                                            -
+                                                                        <div className="flex justify-start items-center w-full">
+                                                                            {item?.category?.owner?.name ? (
+                                                                                <Tooltip content="Hérite de sa catégorie" color="default"  size={'sm'} showArrow>
+                                                                                <span className="flex items-center gap-1">
+                                                                                    {item?.category?.owner?.name}
+                                                                                    {item?.category?.owner?.surname}
+                                                                                        <MdOutlineCategory />
+                                                                                </span>
+                                                                                </Tooltip>
+
+                                                                            ) : (item?.domains && item.domains?.owner?.name) ? (
+                                                                                <Tooltip content="Hérite de son site" color="default"  size={'sm'} showArrow>
+
+                                                                                <span className="flex items-center gap-1">
+                                                                                    {item.domains.owner.name}{" "}
+                                                                                    {item.domains.owner.surname}
+                                                                                        <IoMdGlobe />
+                                                                                </span>
+                                                                                </Tooltip>
+
+                                                                            ) : (
+                                                                                <span>-</span>
+                                                                            )}
                                                                         </div>
 
                                                                 );

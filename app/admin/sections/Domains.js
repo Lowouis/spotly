@@ -21,15 +21,15 @@ const Domains = ({})=>{
     });
     const DomainFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom' },
-        { required: true, name: 'code', type: 'number', label: 'Code' },
-        { required: true, name: 'country', type: 'text', label: 'Pays' },
-        { required: true, name: 'city', type: 'text', label: 'Ville' },
-        { required: true, name: 'street_number', type: 'number', label: 'N°' },
-        { required: true, name: 'address', type: 'text', label: 'Adresse' },
-        { required: true, name: 'zip', type: 'number', label: 'Code Postal' },
+        { required: false, name: 'code', type: 'number', label: 'Code' },
+        { required: false, name: 'country', type: 'text', label: 'Pays' },
+        { required: false, name: 'city', type: 'text', label: 'Ville' },
+        { required: false, name: 'street_number', type: 'number', label: 'N°' },
+        { required: false, name: 'address', type: 'text', label: 'Adresse' },
+        { required: false, name: 'zip', type: 'number', label: 'Code Postal' },
         { required: false, name: 'phone', type: 'number', label: 'Téléphone' },
         { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables"},
-        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables"},
+        { required: true, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables"},
     ];
 
 

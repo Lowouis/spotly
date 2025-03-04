@@ -27,8 +27,8 @@ const Resources = ({})=>{
         { required: true, name: 'domains', type: 'object', label: 'Site', options: "domains", placeholder: "Choisir un site" },
         { required: true, name: 'category', type: 'object', label: 'Catégorie', options: "categories", placeholder: "Choisir une catégorie" },
         { required: true, name: 'moderate', type: 'boolean', label: 'Modérer'},
-        { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables", placeholder: "Choisir un niveau de protection"},
-        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables", placeholder: "Aucun"},
+        { required: false, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables", placeholder: "Choix par héritage de la catégorie"},
+        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables", placeholder: "Choix par héritage de la catégorie"},
 
     ];
     const columnsGreatNames = [
