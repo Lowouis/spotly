@@ -13,7 +13,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
         defaultValues: defaultValues
             ? fields.reduce((acc, field) => {
                 acc[field.name] = defaultValues[field.name] !== undefined
-                    ? defaultValues[field.name]
+                    ? (typeof defaultValues[field.name] === "boolean" ? (defaultValues[field.name] ? "1" : "0") : defaultValues[field.name] )
                     : field.type === 'object' ? null : '';
                 return acc;
             }, {})
@@ -89,7 +89,6 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             required={field.required}
                                             label={field.label}
                                             name={field.name}
-                                            value={defaultValues ? defaultValues[field.name] : null}
                                         />
                                     );
                                 case "object":
