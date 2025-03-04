@@ -1,10 +1,7 @@
 import {
-    ButtonGroup,
     Chip,
     Divider,
     Dropdown,
-    DropdownItem,
-    DropdownMenu,
     DropdownTrigger, Pagination, Skeleton, Snippet,
     Table, TableBody, TableCell,
     TableColumn,
@@ -27,11 +24,13 @@ import {Input} from "@nextui-org/input";
 import {useMutation} from "@tanstack/react-query";
 import ActionMenuModerate from "@/app/components/admin/communs/ActionMenu";
 import {useSession} from "next-auth/react";
-import EntryDTO, {EntriesDTO} from "@/app/components/utils/DTO";
+import EntryDTO from "@/app/components/utils/DTO";
 import {isValidDateTimeFormat} from "@/app/utils/global";
 import PopupDoubleCheckAction from "@/app/components/utils/PopupDoubleCheckAction";
 import {addToast} from "@heroui/toast";
 import {useRefreshContext} from "@/app/context/RefreshContext";
+import {DropdownItem, DropdownMenu} from "@heroui/react";
+import TableDropDown from "@/app/components/admin/communs/TableDropDown";
 
 const domainSchema = yup.object().shape({
     name: yup.string().required(),
@@ -182,6 +181,24 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
     };
 
 
+    const dropdownitems = [
+        {
+            key: "new",
+            label: "New file",
+        },
+        {
+            key: "copy",
+            label: "Copy link",
+        },
+        {
+            key: "edit",
+            label: "Edit file",
+        },
+        {
+            key: "delete",
+            label: "Delete file",
+        },
+    ];
 
 
     return (
@@ -215,52 +232,18 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                             <MagnifyingGlassIcon width={24} height={24}/>
                         }
                     />
-                   
-                        <Dropdown>
-                            <DropdownTrigger>
-                                <Button
-                                    variant="flat"
-                                    startContent={<AdjustmentsHorizontalIcon height={24} width={24}/>}
-                                >
-                                    Filtrer
-                                </Button>
-                            </DropdownTrigger>
-                            {/*<DropdownMenu
-                                aria-label="filterBy"
-                                variant="flat"
-                                closeOnSelect={false}
-                                disallowEmptySelection
-                                selectionMode="multiple"
-                            >
-                                {items && Object.keys(items[0]).map((item, index) => {
-                                    if (item && typeof item !== 'object') {
-                                        <DropdownItem key={index}>{item}</DropdownItem>
-                                    }
-                                })}
-                            </DropdownMenu>*/}
-                        </Dropdown>
-                        <Dropdown>
-                            <DropdownTrigger>
-                                <Button
-                                    variant="flat"
-                                    startContent={<ArrowsUpDownIcon height={24} width={24}/>}
-                                >
-                                    Trier par
-                                </Button>
-                            </DropdownTrigger>
-                            {/*<DropdownMenu
-                                aria-label="filterBy"
-                                variant="flat"
-                                closeOnSelect={false}
-                                disallowEmptySelection
-                                selectionMode="multiple"
-                                selectedKeys={items && Object.keys(items[0])}
-                            >
-                                {items && Object.keys(items[0]).map((item, index) => (
-                                    typeof item !== "object" && <DropdownItem key={index}>{item}</DropdownItem>
-                                ))}
-                            </DropdownMenu>*/}
-                        </Dropdown>
+
+                    <TableDropDown icon={
+                        <AdjustmentsHorizontalIcon color='#444937' height={25} width={25}/>
+                    }
+                                items={dropdownitems}
+                    />
+                    <TableDropDown icon={
+                        <ArrowsUpDownIcon color="#444937" height={25} width={25}/>
+                    }
+                                items={dropdownitems}
+                    />
+
                     <Button
                         isIconOnly={true}
                         variant="flat"
@@ -414,7 +397,13 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                                             case "boolean":
                                                                 return itemDTO[key] ? "Oui" : "Non";
                                                             case "string":
-                                                                if (isValidDateTimeFormat(itemDTO[key])) {
+                                                                if(itemDTO[key] === "" || itemDTO[key] === null){
+                                                                    return (
+                                                                        <div className="flex justify-center items-center w-full">
+                                                                            -
+                                                                        </div>
+                                                                    )
+                                                                } else if (isValidDateTimeFormat(itemDTO[key])) {
                                                                     return new Date(itemDTO[key]).toLocaleDateString('fr-FR', {
                                                                         year: 'numeric',
                                                                         month: 'short',
@@ -423,10 +412,17 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                                                         minute: '2-digit',
                                                                     });
                                                                 }else if (!isNaN(parseInt(itemDTO[key]))) {
-                                                                    return <Snippet size="sm"
-                                                                                    symbol="">{itemDTO[key]}</Snippet>
+                                                                    return (
+                                                                            <Snippet size="sm" radius="md" symbol={""} color="primary">
+                                                                            {itemDTO[key]}
+                                                                            </Snippet>
+                                                                    );
                                                                 } else if(itemDTO[key] === itemDTO[key].toUpperCase()) {
-                                                                    return <Chip color="default">{itemDTO[key]}</Chip>
+                                                                    return (
+                                                                        <Chip className="capitalize" color ="primary" size="sm" variant="flat">
+                                                                            {itemDTO[key]}
+                                                                        </Chip>
+                                                                    )
                                                                 }
 
                                                             default:
