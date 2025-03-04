@@ -2,7 +2,7 @@ import React from "react";
 import {Radio, RadioGroup} from "@nextui-org/react";
 import {useFormContext, Controller} from "react-hook-form";
 
-export default function BooleanInput({label, name, required}) {
+export default function BooleanInput({label, name, value, required}) {
     const {control, formState: {errors: formErrors}} = useFormContext();
 
     return (
@@ -10,6 +10,7 @@ export default function BooleanInput({label, name, required}) {
             <Controller
                 name={name}
                 control={control}
+                defaultValue={value !== undefined ? String(value) === "1" || value === true ? "1" : "0" : "0"}
                 rules={{required: required ? "Ce champ est requis" : false}}
                 render={({field}) => (
                     <RadioGroup
