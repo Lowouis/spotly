@@ -326,7 +326,7 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                         loop
                                         siblings={3}
                                         color="default"
-                                        variant={"faded"}
+                                        variant="light"
                                         page={page}
                                         total={pages}
                                         size={"md"}

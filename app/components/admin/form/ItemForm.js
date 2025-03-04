@@ -10,10 +10,18 @@ import {addToast, ToastProvider} from "@heroui/toast";
 export default function ItemForm({ onSubmit, onClose, action, fields, defaultValues }) {
     const methods = useForm({
         type: "onSubmit",
-        defaultValues: Object.fromEntries(
-            fields.map(field => [field.name, field.type === 'object' ? null : ''])
-        )
+        defaultValues: defaultValues
+            ? fields.reduce((acc, field) => {
+                acc[field.name] = defaultValues[field.name] !== undefined
+                    ? defaultValues[field.name]
+                    : field.type === 'object' ? null : '';
+                return acc;
+            }, {})
+            : Object.fromEntries(
+                fields.map(field => [field.name, field.type === 'object' ? null : ''])
+            )
     });
+
 
     const handleSubmit = async (data) => {
         try {
