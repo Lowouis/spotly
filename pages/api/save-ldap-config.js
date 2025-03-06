@@ -23,6 +23,7 @@ export default async function handler(req, res) {
             bindDN: bindDn,
             bindCredentials: adminPassword
         };
+        console.log(ldapConfig);
 
         const connectionResult = await ldapConnectionTest(ldapConfig);
 
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
             data: {
                 ...encryptedData,
                 lastUpdated: new Date(),
-                updatedBy: req.session.userId // À adapter selon votre système d'authentification
+                updatedBy: req.session.user.name + _ + req.session.user.surname // À adapter selon votre système d'authentification
             }
         });
 
