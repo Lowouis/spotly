@@ -24,14 +24,28 @@ const Categories = ({})=>{
     const CategoryFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom', placeholder : "ex : vidéo-projecteur, ordinateur" },
         { required: false, name: 'description', type: 'text', label: 'Description', placeholder : "ex : ordinateur 4gb ram & 500gb" },
-        { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables", placeholder: "Choix par héritage du site"},
-        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables", placeholder: "Choix par héritage du site"},
+        {
+            required: false,
+            name: 'pickable',
+            type: 'object',
+            label: 'Niveau de protection',
+            options: "pickables",
+            placeholder: "Aucun"
+        },
+        {
+            required: false,
+            name: 'owner',
+            type: 'object',
+            label: 'Propriétaire',
+            options: "ownerables",
+            placeholder: "Aucun"
+        },
     ];
     const columnsGreatNames = [
         "Nom",
         "Description",
-        "Niveau de protection",
         "Propriétaire",
+        "Niveau de protection",
     ]
 
     return (
@@ -44,7 +58,7 @@ const Categories = ({})=>{
                 name={"Catégories"}
                 columnsGreatNames={columnsGreatNames}
                 actions={['edit', 'delete']}
-                filter={['updatedAt', 'id', 'ownerId', 'createdAt']}
+                filter={['updatedAt', 'id', 'ownerId', 'createdAt', 'pickableId']}
             />
         </div>
     );

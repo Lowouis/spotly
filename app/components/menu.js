@@ -10,7 +10,7 @@ import {
     DrawerBody,
     DrawerFooter,
     useDisclosure,
-    Divider,
+    Divider, Tooltip,
 } from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import {BookmarkIcon} from "@heroicons/react/24/outline";
@@ -24,6 +24,7 @@ import HeadTitle from "@/app/components/utils/HeadTitle";
 import {addToast} from "@heroui/toast";
 import { BsWrench  } from "react-icons/bs";
 import {CiLogout} from "react-icons/ci";
+import DarkModeSwitch from "@/app/components/utils/DarkModeSwitch";
 
 
 
@@ -46,7 +47,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                  <Tabs
                                      size="lg"
                                      aria-label="Options"
-                                     color="primary"
+                                     color="default"
                                      variant="underlined"
                                      selectedKey={selectedTab}
                                      onSelectionChange={handleTabChange}
@@ -55,7 +56,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                          key="search"
                                          title={
                                              <div className="flex items-center space-x-2">
-                                                 <MagnifyingGlassCircleIcon width="24" height="24" color="black"/>
+                                                 <MagnifyingGlassCircleIcon width="24" height="24"/>
                                                  <span>Chercher</span>
                                              </div>
                                          }
@@ -66,7 +67,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                              <div className="flex items-center space-x-2">
                                                  {userEntriesQuantity >= 0 &&
                                                      <Badge size="lg" content={userEntriesQuantity} color="secondary">
-                                                         <BookmarkIcon width="24" height="24" color=""/>
+                                                         <BookmarkIcon width="24" height="24"/>
                                                      </Badge>
                                                  }
                                                  <span>Réservations</span>
@@ -80,9 +81,12 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
 
                              <div className="w-1/3 justify-end items-end">
                                  <div className="flex justify-end">
+                                     <div className="flex justify-center items-center mr-4">
+                                         <DarkModeSwitch/>
+                                     </div>
                                      <Button size="lg" onPress={onOpen} isIconOnly={true} radius="full">
                                         <span
-                                            className="font-semibold  cursor-pointer bg-cyan-600 p-4 rounded-full place-content-center text-xl text-neutral-100 flex justify-center items-center">
+                                            className="font-semibold cursor-pointer bg-blue-400 p-4 rounded-full place-content-center text-xl text-neutral-100 flex justify-center items-center">
                                             {user?.username.charAt(0).toUpperCase()}
                                             {user?.username.charAt(1).toUpperCase()}
                                         </span>
@@ -112,31 +116,71 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                          <DrawerContent>
                                              {(onClose) => (
                                                  <>
-                                                     <DrawerHeader className="flex flex-col gap-1">
-                                                         <div className="flex flex-row ml-1 justify-start items-center">
-                                                             <div className="bg-blue-700 rounded-full mr-3">
+                                                     <DrawerHeader
+                                                         className="flex flex-col gap-2 p-4 bg-opacity-10 bg-gray-100">
+                                                         <div className="flex items-center justify-between gap-4">
+                                                             {/* Section utilisateur */}
+                                                             <div className="flex items-center flex-1 gap-4">
+                                                                 {/* Avatar */}
+                                                                 <div
+                                                                     aria-label="Avatar utilisateur"
+                                                                     className="flex items-center justify-center bg-blue-500 rounded-full aspect-square w-14 text-blue-100"
+                                                                 >
+                                                                     {user?.name && (
+                                                                         <span className="text-2xl font-medium">
+                                                                            {user.name[0].toUpperCase()}
+                                                                             {user.name[1]?.toUpperCase()}
+                                                                         </span>
+                                                                     )}
+                                                                 </div>
 
-                                                                 <div className="m-1 text-2xl text-blue-100 p-5 ">
-                                                                     {user?.name &&
-                                                                         (
-                                                                             <span>{user?.name[0].toUpperCase()}{user?.name[1].toUpperCase()}</span>
-                                                                         )
-                                                                     }
+                                                                 {/* Infos utilisateur */}
+                                                                 <div className="flex flex-col flex-1 min-w-0">
+                                                                     <h2 className="text-xl font-light truncate">
+                                                                         {user?.name} {user?.surname}
+                                                                     </h2>
+                                                                     <p className="text-sm font-normal truncate text-gray-600">
+                                                                         {user?.email}
+                                                                     </p>
                                                                  </div>
                                                              </div>
-                                                             <div className="flex flex-col justify-start items-start">
-                                                                 <div
-                                                                     className="flex flex-row justify-center items-center">
-                                                                 <span
-                                                                     className="text-xl font-extralight">{user?.name}&nbsp;{user?.surname}</span>
-                                                                 </div>
-                                                                 <div
-                                                                     className="flex flex-row justify-center items-center font-thin">
-                                                                 <span
-                                                                     className="text-sm font-normal">{user?.email}</span>
-                                                                 </div>
-                                                             </div>
 
+                                                             {/* Boutons d'actions */}
+                                                             <div className="flex flex-row gap-2 ml-auto mr-4">
+                                                                 {user.role !== 'USER' && (
+                                                                     <Tooltip content={"Administration"} showArrow>
+                                                                         <Button
+                                                                             as={Link}
+                                                                             variant="flat"
+                                                                             color="default"
+                                                                             href="/admin"
+                                                                             className="flex flex-col items-center justify-center px-2 py-1 text-xs uppercase"
+                                                                             aria-label="Accéder à l'administration"
+                                                                         >
+                                                                             <BsWrench size={20} aria-hidden="true"/>
+                                                                         </Button>
+                                                                     </Tooltip>
+                                                                 )}
+
+                                                                 <Tooltip content={"Se déconnecter"} showArrow>
+                                                                     <Button
+                                                                         variant="flat"
+                                                                         color="default"
+                                                                         onPress={() => signOut().then(() => {
+                                                                             addToast({
+                                                                                 title: 'Déconnexion',
+                                                                                 message: 'Vous avez été déconnecté',
+                                                                                 type: 'success',
+                                                                                 duration: 5000,
+                                                                             });
+                                                                         })}
+                                                                         className="flex flex-col items-center justify-center px-2 py-1 text-xs uppercase"
+                                                                         aria-label="Se déconnecter"
+                                                                     >
+                                                                         <CiLogout size={20} aria-hidden="true"/>
+                                                                     </Button>
+                                                                 </Tooltip>
+                                                             </div>
                                                          </div>
                                                      </DrawerHeader>
                                                      <DrawerBody>
@@ -160,20 +204,24 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                                                          />
                                                                      </div>
                                                                      <div className="m-1 flex items-end">
-                                                                         <Button
+                                                                         <Tooltip content={"Changer l'email"} showArrow
+                                                                                  placement="top-end">
+                                                                             <Button
                                                                              onPress={() => console.log("refresh mail")}
                                                                              color="default"
                                                                              type="submit"
                                                                              variant="flat"
                                                                              isIconOnly
                                                                              size="md"
-                                                                         >
+                                                                             >
                                                                              <ArrowPathIcon
                                                                                  width="20"
                                                                                  height="20"
                                                                                  className={'text-neutral-600'}
                                                                              />
-                                                                         </Button>
+                                                                             </Button>
+                                                                         </Tooltip>
+
                                                                      </div>
                                                                  </div>
                                                                  <div
@@ -190,72 +238,30 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                                                          />
                                                                      </div>
                                                                      <div className="m-1">
-                                                                         <Button
-                                                                             onPress={() => console.log("refresh password")}
-                                                                             color="default"
-                                                                             type="submit"
-                                                                             variant="flat"
-                                                                             isIconOnly
-                                                                             size="md"
-                                                                             disabled={user?.external}
-                                                                         >
-                                                                             <ArrowPathIcon
-                                                                                 width="20"
-                                                                                 height="20"
-                                                                                 className={'text-neutral-600'}
-                                                                             />
-                                                                         </Button>
-
+                                                                         <Tooltip content={"Changer le mot de passe"}
+                                                                                  showArrow placement="top-end">
+                                                                             <Button
+                                                                                 onPress={() => console.log("refresh password")}
+                                                                                 color="default"
+                                                                                 type="submit"
+                                                                                 variant="flat"
+                                                                                 isIconOnly
+                                                                                 size="md"
+                                                                                 disabled={user?.external}
+                                                                             >
+                                                                                 <ArrowPathIcon
+                                                                                     width="20"
+                                                                                     height="20"
+                                                                                     className={'text-neutral-600'}
+                                                                                 />
+                                                                             </Button>
+                                                                         </Tooltip>
                                                                      </div>
                                                                  </div>
                                                              </Form>)}
                                                              <Divider className="my-2 text-gray-800"/>
-                                                             <div className="flex flex-row h-full justify-center items-start ">
-                                                                 {user.role !== 'USER' &&
-                                                                    (<Button as={Link}
-                                                                            variant="flat"
-                                                                             fullWidth
-                                                                            color="warning"
-                                                                            size="lg"
-                                                                            href="/admin"
-                                                                            className="uppercase text-xs m-1 h-[10rem]">
-                                                                        <span className={'flex flex-col justify-between items-center'}>
-                                                                            <BsWrench size={30}  />
-                                                                            <span>
-                                                                                Administration
-                                                                            </span>
-                                                                        </span>
-                                                                    </Button>)
-                                                                }
-                                                                 <Button
-                                                                     variant="flat"
-                                                                     color="danger"
-                                                                     fullWidth
-                                                                     size="lg"
-                                                                     onPress={() => signOut().then(() => {
-                                                                             addToast({
-                                                                                    title: 'Déconnexion',
-                                                                                    message: 'Vous avez été déconnecté',
-                                                                                    type: 'success',
-                                                                                    duration: 5000,
-                                                                             });
-                                                                     })}
-                                                                     className="uppercase text-xs m-1 h-[10rem]">
-                                                                     <span className={'flex flex-col justify-between items-center'}>
-                                                                         <CiLogout size={30} />
-                                                                         <span>
-                                                                             Deconnexion
-                                                                         </span>
-                                                                     </span>
-                                                                 </Button>
-                                                             </div>
                                                          </div>
                                                      </DrawerBody>
-                                                     <DrawerFooter>
-                                                         <Button color="danger" variant="light" onPress={onClose}>
-                                                             Fermer
-                                                         </Button>
-                                                     </DrawerFooter>
                                                  </>
                                              )}
                                          </DrawerContent>

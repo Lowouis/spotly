@@ -7,6 +7,13 @@
   --foreground: #171717;
 }
 
+@theme {
+  --color-coffee: #1E201E;
+  --color-brown: #3C3D37;
+  --color-lighter: #697565;
+  --color-clean: #ECDFCC;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #ffffff;

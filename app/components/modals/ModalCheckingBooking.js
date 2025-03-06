@@ -545,7 +545,6 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
                                     onPress={()=>{setModalStepper("delete")}}
                                 >
                                     <TrashIcon width={24} height={24} className=""/>
-                                    {adminMode ? "Supprimer" : "Annuler"}
                                 </Button>
                         )}
                         {modalStepper !== "main" && (<Button size={"lg"} color="primary" variant="flat" onPress={()=>setModalStepper("main")}>Retour</Button>)}

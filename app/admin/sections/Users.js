@@ -25,7 +25,15 @@ const Users = ({})=>{
         { required: true, name: 'name', type: 'text', label: 'Nom', placeholder: 'ex : Lucas, Pauline' },
         { required: true, name: 'surname', type: 'text', label: 'Prénom', placeholder: 'ex : Dupont, Martin' },
         { required: true, name: 'username', type: 'text', label: 'Utilisateur', placeholder: 'ex : lucas.dupont, ldupont' },
-        { required: true, name: 'password', type: 'text', label: 'Mot de passe', placeholder: 'Mot de passe', dependsOn: 'external'},
+        {
+            required: true,
+            name: 'password',
+            type: 'text',
+            label: 'Mot de passe',
+            placeholder: 'Mot de passe',
+            dependsOn: 'external',
+            hidden: true
+        },
         { required: true, name: 'email', type: 'text', label: 'Mail', placeholder: "ldupont@outlook.com"},
         { required: true, name: 'role', type: 'object', label: 'Rôle', options : "roles", placeholder: "Choisir un rôle"},
     ];

@@ -13,6 +13,7 @@ import { constructDate } from "../../utils/global";
 import {useQueryClient, useQuery} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
 import MatchingEntriesTable from "@/app/components/tables/MatchingEntriesTable";
+import {useTheme} from "@/app/context/ThemeContext";
 
 
 
@@ -38,6 +39,7 @@ const ReservationSearch = () => {
         resolver: yupResolver(schemaFirstPart),
         mode: 'onSubmit',
     });
+    const {theme} = useTheme();
     const [toast, setToast ] = useState({title: "", description: "", type: ""});
 
     const { watch, setValue} = methods;
@@ -122,14 +124,6 @@ const ReservationSearch = () => {
         }
     }, [availableResources, isSubmitted, matchingEntries, data, queryClient, watch]);
 
-    /*useEffect(() => {
-        if(refresh){
-            console.log("refreshing");
-            refetchResources().then(()=>{
-                setRefresh(false);
-            })
-        }
-    }, [setRefresh, refresh, refetchResources]);*/
     const handleResourceOnReset = ()=>{
         setValue('resource', null);
         setData({...data, resource: null});
@@ -167,10 +161,10 @@ const ReservationSearch = () => {
                 handleRefresh={handleRefresh}
             />
             <div className="flex flex-col md:w-full">
-                <div className="flex flex-col justify-center items-center">
+                <div className="flex flex-col justify-center items-center ">
                     {searchMode === "search" && delayed !== 0 &&  (
-                        <div className="flex flex-col justify-center items-center w-2/3">
-                            <div className="flex flex-col justify-center items-center w-full">
+                        <div className="flex flex-col justify-center items-center w-2/3 ">
+                            <div className="flex flex-col justify-center items-center w-full bg-red-600">
                                 <Alert
                                     color="danger"
                                     variant="solid"
@@ -251,7 +245,7 @@ const ReservationSearch = () => {
                                             isIconOnly
                                             size="lg"
                                             radius="full"
-                                            color="primary"
+                                            color={theme ? "primary" : "default"}
                                             type="submit"
                                             className="ml-6"
                                             shadow="lg"

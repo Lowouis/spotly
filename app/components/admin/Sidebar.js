@@ -7,7 +7,7 @@ import {useRouter} from "next/navigation";
 import {useAdminContext} from "@/app/context/Admin";
 import {Skeleton} from "@nextui-org/react";
 import {MdArrowForwardIos, MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from "react-icons/md";
-import { CiLogout, CiServer} from "react-icons/ci";
+import {CiLogout, CiServer, CiSettings} from "react-icons/ci";
 import UserInitialsIcon from "@/app/components/utils/UserInitialsIcon";
 import {addToast} from "@heroui/toast";
 import {IoMdGlobe} from "react-icons/io";
@@ -24,6 +24,17 @@ const sideItems = [
                 "id" : "dashboard",
                 "icon": <MdOutlineSpaceDashboard />,
             },
+        ]
+    },
+    {
+        "title": "Global",
+        "items": [
+            {
+                "id": "general",
+                "title": "Général",
+                "icon": <CiSettings/>,
+
+            }
         ]
     },
     {
@@ -85,7 +96,8 @@ const sideItems = [
 
             }
         ]
-    }
+    },
+
 ];
 
 export default function Sidebar() {

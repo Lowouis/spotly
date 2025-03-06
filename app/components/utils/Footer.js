@@ -18,7 +18,7 @@ export default function Footer(){
                     <div
                         className="flex flex-row justify-center items-center space-x-1 transition-all">
                         <a
-                            className="hover:cursor-pointer hover:text-slate-900"
+                            className="hover:cursor-pointer hover:text-slate-900 dark:hover:text-slate-100"
                             href="https://github.com/Lowouis/spotly"
                             target="_blank"
                         >
@@ -28,7 +28,7 @@ export default function Footer(){
                     <div
                         className="flex flex-row justify-center items-center space-x-1 transition-all">
                         <a
-                            className="hover:cursor-pointer hover:text-slate-900"
+                            className="hover:cursor-pointer hover:text-slate-900 dark:hover:text-slate-100"
                             href="https://www.linkedin.com/in/louisgurita/"
                             target="_blank"
                         >
@@ -38,7 +38,7 @@ export default function Footer(){
                     <div
                         className="flex flex-row justify-center items-center space-x-1 transition-all">
                         <a
-                            className="hover:cursor-pointer hover:text-slate-900"
+                            className="hover:cursor-pointer hover:text-slate-900 dark:hover:text-slate-100"
                             href="https://www.youtube.com/channel/UCjtaWAPNoNn1r_O3H73yQUg"
                             target="_blank"
                         >
@@ -48,7 +48,7 @@ export default function Footer(){
                     <div
                         className="flex flex-row justify-center items-center space-x-1 transition-all">
                         <Link
-                            className="hover:cursor-pointer hover:text-slate-900"
+                            className="hover:cursor-pointer hover:text-slate-900 dark:hover:text-slate-100"
                             href="/faq"
                         >
                             FAQ

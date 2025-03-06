@@ -21,13 +21,6 @@ const Domains = ({})=>{
     });
     const DomainFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom' },
-        { required: false, name: 'code', type: 'number', label: 'Code' },
-        { required: false, name: 'country', type: 'text', label: 'Pays' },
-        { required: false, name: 'city', type: 'text', label: 'Ville' },
-        { required: false, name: 'street_number', type: 'number', label: 'N°' },
-        { required: false, name: 'address', type: 'text', label: 'Adresse' },
-        { required: false, name: 'zip', type: 'number', label: 'Code Postal' },
-        { required: false, name: 'phone', type: 'number', label: 'Téléphone' },
         { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables"},
         { required: true, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables"},
     ];
@@ -35,15 +28,8 @@ const Domains = ({})=>{
 
     const columnsGreatNames = [
         "Nom",
-        "Code",
-        "Adresse",
-        "Ville",
-        "Pays",
-        "Ville",
-        "Code postal",
-        "Téléphone",
-        "Niveau de protection",
         "Propriétaire",
+        "Niveau de protection",
     ];
 
 
@@ -57,7 +43,7 @@ const Domains = ({})=>{
                     name={"Sites"}
                     actions={["edit", "delete"]}
                     columnsGreatNames={columnsGreatNames}
-                    filter={['updatedAt', 'createdAt', 'ownerId', 'id']}
+                    filter={['updatedAt', 'createdAt', 'ownerId', 'id', 'pickableId']}
                 />
         </div>
     );

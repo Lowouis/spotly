@@ -22,9 +22,9 @@ cron.schedule('* * * * *', async () => {
             where: {
                 moderate: "ACCEPTED",
                 OR: [
-                    { resource: { pickable: "FLUENT" } },
-                    { resource: { category: { pickable: "FLUENT" }  } },
-                    { resource: { domains:  { pickable: "FLUENT" }  } }
+                    {resource: {pickable: {name: "FLUENT"}}},
+                    {resource: {category: {pickable: {name: "FLUENT"}}}},
+                    {resource: {domains: {pickable: {name: "FLUENT"}}}}
                 ],
                 startDate : {
                     lte: now
@@ -41,9 +41,9 @@ cron.schedule('* * * * *', async () => {
             where: {
                 moderate: "USED",
                 OR: [
-                    { resource: { pickable: "FLUENT" || "HIGH_TRUST" } },
-                    { resource: { category: { pickable: "FLUENT" || "HIGH_TRUST" } } },
-                    { resource: { domains:  { pickable: "FLUENT" || "HIGH_TRUST" } } }
+                    {resource: {pickable: {name: "FLUENT" || "HIGH_TRUST"}}},
+                    {resource: {category: {pickable: {name: "FLUENT" || "HIGH_TRUST"}}}},
+                    {resource: {domains: {pickable: {name: "FLUENT" || "HIGH_TRUST"}}}}
                 ],
             },
             include : {

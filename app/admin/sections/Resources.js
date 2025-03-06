@@ -27,8 +27,22 @@ const Resources = ({})=>{
         { required: true, name: 'domains', type: 'object', label: 'Site', options: "domains", placeholder: "Choisir un site" },
         { required: true, name: 'category', type: 'object', label: 'Catégorie', options: "categories", placeholder: "Choisir une catégorie" },
         { required: true, name: 'moderate', type: 'boolean', label: 'Modérer'},
-        { required: false, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables", placeholder: "Choix par héritage de la catégorie"},
-        { required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables", placeholder: "Choix par héritage de la catégorie"},
+        {
+            required: false,
+            name: 'pickable',
+            type: 'object',
+            label: 'Niveau de protection',
+            options: "pickables",
+            placeholder: "Choix par héritage."
+        },
+        {
+            required: false,
+            name: 'owner',
+            type: 'object',
+            label: 'Propriétaire',
+            options: "ownerables",
+            placeholder: "Choix par héritage."
+        },
 
     ];
     const columnsGreatNames = [
@@ -36,10 +50,10 @@ const Resources = ({})=>{
         "Description",
         "Modérer",
         "Status",
-        "Niveau de protection",
         "Site",
         "Catégorie",
         "Propriétaire",
+        "Niveau de protection",
     ]
 
     return (
@@ -52,7 +66,7 @@ const Resources = ({})=>{
                 name={"Ressources"}
                 actions={['edit', 'delete']}
                 columnsGreatNames={columnsGreatNames}
-                filter={['updatedAt', 'id', 'ownerId','domainId', 'categoryId', 'createdAt']}
+                filter={['updatedAt', 'id', 'ownerId', 'domainId', 'categoryId', 'createdAt', 'pickableId']}
             />
         </div>
     );

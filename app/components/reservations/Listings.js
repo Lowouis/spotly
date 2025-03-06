@@ -74,7 +74,8 @@ export default function ReservationUserListing({entries, handleRefresh}) {
             )}
             { entries && entries?.length > 0 ? (
                 <div className="w-full flex-col flex justify-between items-center">
-                    <Tabs variant="underlined" aria-label="entries_sort" default="all" fullWidth onSelectionChange={handleSectionChange} >
+                    <Tabs color="default" variant="underlined" aria-label="entries_sort" default="all" fullWidth
+                          onSelectionChange={handleSectionChange}>
                         <Tab key="all" title="Toutes" className="w-full">
                             {renderEntries(sortEntriesByStatus(entries), handleRefresh, true, setUserAlert)}
                         </Tab>

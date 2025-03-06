@@ -25,16 +25,14 @@ import {useMutation} from "@tanstack/react-query";
 import ActionMenuModerate from "@/app/components/admin/communs/ActionMenu";
 import {useSession} from "next-auth/react";
 import EntryDTO from "@/app/components/utils/DTO";
-import {isValidDateTimeFormat} from "@/app/utils/global";
 import PopupDoubleCheckAction from "@/app/components/utils/PopupDoubleCheckAction";
 import {addToast} from "@heroui/toast";
 import {useRefreshContext} from "@/app/context/RefreshContext";
-import {DropdownItem, DropdownMenu} from "@heroui/react";
 import TableDropDown from "@/app/components/admin/communs/TableDropDown";
-import {GrInherit} from "react-icons/gr";
-import {CiUser} from "react-icons/ci";
 import {IoMdGlobe} from "react-icons/io";
 import {MdOutlineCategory} from "react-icons/md";
+import {truncateString, pickablesDescriptions, firstLetterUppercase} from "@/app/utils/global";
+
 
 const domainSchema = yup.object().shape({
     name: yup.string().required(),
@@ -51,7 +49,7 @@ const categorySchema = yup.object().shape({
     name: yup.string().required(),
     description: yup.string().optional(),
     comment: yup.string(),
-    });
+});
 
 export const postItem = async ({data, model}) => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
@@ -84,7 +82,7 @@ export const updateItem = async ({data, model}) => {
     return response.json();
 };
 
-const deleteItems = async ({ selectedItems, model }) => {
+const deleteItems = async ({selectedItems, model}) => {
     const data = {
         ids: Array.from(selectedItems),
     };
@@ -107,11 +105,22 @@ const deleteItems = async ({ selectedItems, model }) => {
     }
 };
 
-export default function ItemsOnTable({formFields, actions, model, columnsGreatNames, items, filter, name, isLoading, create_hidden=false, selectionMode=true}) {
-    const {isOpen : isOpenOnItem, onOpen : onOpenOnItem, onOpenChange : onOpenChangeOnItem} = useDisclosure();
+export default function ItemsOnTable({
+                                         formFields,
+                                         actions,
+                                         model,
+                                         columnsGreatNames,
+                                         items,
+                                         filter,
+                                         name,
+                                         isLoading,
+                                         create_hidden = false,
+                                         selectionMode = true
+                                     }) {
+    const {isOpen: isOpenOnItem, onOpen: onOpenOnItem, onOpenChange: onOpenChangeOnItem} = useDisclosure();
     const [currentAction, setCurrentAction] = useState("create");
     const [currentItem, setCurrentItem] = useState();
-    const { refreshData } = useRefreshContext();
+    const {refreshData} = useRefreshContext();
     const [page, setPage] = React.useState(1);
     const rowsPerPage = 10;
     const pages = Math.ceil(items?.length / rowsPerPage);
@@ -122,7 +131,11 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
         return items?.slice(start, end);
     }, [page, items]);
 
-    const {isOpen : isOpenDeleteConfirm, onOpen : onOpenDeleteConfirm, onOpenChange : onOpenChangeDeleteConfirm} = useDisclosure();
+    const {
+        isOpen: isOpenDeleteConfirm,
+        onOpen: onOpenDeleteConfirm,
+        onOpenChange: onOpenChangeDeleteConfirm
+    } = useDisclosure();
     const {data: session} = useSession();
     const methods = useForm({
         resolver: yupResolver(categorySchema),
@@ -131,28 +144,28 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
     const [selectedItems, setSelectedItems] = useState(new Set());
 
     const mutation = useMutation({
-        mutationFn : deleteItems,
+        mutationFn: deleteItems,
         onMutate: (variables) => {
             console.log("Mutation variables:", variables);
         },
         onError: () => {
             addToast({
                 title: "Suppression d'éléments",
-                description : "Une erreur s'est produite lors de la suppression des éléments. Vérifiez que cette élément n'est pas encore relié à un autre.",
-                color : "danger"
-          })
+                description: "Une erreur s'est produite lors de la suppression des éléments. Vérifiez que cette élément n'est pas encore relié à un autre.",
+                color: "danger"
+            })
         },
         onSuccess: () => {
             refreshData([model]);
             setSelectedItems(new Set());
             addToast({
                 title: "Suppression",
-                description : "Les éléments ont été supprimés avec succès.",
-                color : "warning",
+                description: "Les éléments ont été supprimés avec succès.",
+                color: "warning",
                 timeout: 5000,
                 shouldShowTimeoutProgess: true,
-                variant : "flat",
-                radius : "sm",
+                variant: "flat",
+                radius: "sm",
                 classNames: {
                     closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
                 },
@@ -167,8 +180,8 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                         viewBox="0 0 24 24"
                         width="32"
                     >
-                        <path d="M18 6 6 18" />
-                        <path d="m6 6 12 12" />
+                        <path d="M18 6 6 18"/>
+                        <path d="m6 6 12 12"/>
                     </svg>
                 ),
 
@@ -177,7 +190,7 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
         }
     });
     const handleDeleteItem = (item) => {
-        if(!item){
+        if (!item) {
             mutation.mutate({selectedItems, model});
         } else {
             mutation.mutate({selectedItems: new Set([item]), model});
@@ -213,16 +226,16 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                         <h1 className="text-2xl my-3">{name}</h1>
                     </div>
                     <div className="flex justify-center items-center">
-                            <Button 
-                                color="primary" 
-                                size="md" 
-                                radius="full"
-                                isLoading={isLoading}
-                                isIconOnly
-                                isDisabled
-                                >
-                                    {items?.length ? items?.length : "0"}
-                            </Button>
+                        <Button
+                            color="primary"
+                            size="md"
+                            radius="full"
+                            isLoading={isLoading}
+                            isIconOnly
+                            isDisabled
+                        >
+                            {items?.length ? items?.length : "0"}
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -232,32 +245,29 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                         isClearable
                         radius="lg"
                         placeholder="Rechercher..."
-                        startContent={
-                            <MagnifyingGlassIcon width={24} height={24}/>
-                        }
+                        startContent={<MagnifyingGlassIcon width={24} height={24}/>}
                     />
+                    <TableDropDown
+                        icon={<AdjustmentsHorizontalIcon color="#444937" height={25} width={25}/>}
+                        items={dropdownitems}
+                    />
+                    <TableDropDown
+                        icon={<ArrowsUpDownIcon color="#444937" height={25} width={25}/>}
+                        items={dropdownitems}
+                    />
+                    <Tooltip content={"Rafraîchir les données"} color="primary" size="sm" showArrow>
+                        <Button
+                            isIconOnly={true}
+                            variant="flat"
+                            isLoading={isLoading}
+                            radius="full"
+                            color="primary"
+                            onPress={() => refreshData([model])}
+                        >
+                            <ArrowPathIcon width={20} height={20}/>
+                        </Button>
+                    </Tooltip>
 
-                    <TableDropDown icon={
-                        <AdjustmentsHorizontalIcon color='#444937' height={25} width={25}/>
-                    }
-                                items={dropdownitems}
-                    />
-                    <TableDropDown icon={
-                        <ArrowsUpDownIcon color="#444937" height={25} width={25}/>
-                    }
-                                items={dropdownitems}
-                    />
-
-                    <Button
-                        isIconOnly={true}
-                        variant="flat"
-                        isLoading={isLoading}
-                        radius="full"
-                        color="primary"
-                        onPress={()=>refreshData([model])}
-                    >
-                        <ArrowPathIcon width={20} height={20}/>
-                    </Button>
                     <Divider orientation="vertical" />
                     {selectionMode && selectedItems.size > 0 && (
                         <Button
@@ -276,22 +286,26 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                         isOpen={isOpenDeleteConfirm}
                         onOpenChange={onOpenChangeDeleteConfirm}
                         title="Confirmation de suppression"
-                        message={`Voulez-vous vraiment supprimer ${selectedItems.size > 1 ? selectedItems.size : 'cet'} élément ?`}
+                        message={`Voulez-vous vraiment supprimer ${
+                            selectedItems.size > 1 ? selectedItems.size : "cet"
+                        } élément ?`}
                     />
-
                     {selectionMode && (
                         <div className="flex items-center text-xs uppercase w-full text-slate-500">
-                            {selectedItems.size <= 1 ? selectedItems.size + " selectionné" : selectedItems.size + " selectionnés"}
+                            {selectedItems.size <= 1
+                                ? selectedItems.size + " selectionné"
+                                : selectedItems.size + " selectionnés"}
                         </div>
                     )}
                     {!create_hidden && (
                         <div className="flex items-end ml-auto">
+                            <Tooltip content={"Créer un nouvel élément"} color="primary" size="sm" showArrow>
                                 <Button
                                     size="md"
                                     variant="flat"
                                     color="primary"
-                                    onPress={()=> {
-                                        setCurrentAction('create');
+                                    onPress={() => {
+                                        setCurrentAction("create");
                                         onOpenOnItem();
                                     }}
                                     endContent={<PlusCircleIcon height={24} width={24}/>}
@@ -299,195 +313,317 @@ export default function ItemsOnTable({formFields, actions, model, columnsGreatNa
                                 >
                                     Créer
                                 </Button>
-                                {items &&
-                                    <AddItem
-                                        model={model}
-                                        formFields={formFields}
-                                        isOpen={isOpenOnItem}
-                                        onOpenChange={onOpenChangeOnItem}
-                                        schema={domainSchema}
-                                        methods={methods}
-                                        action={currentAction}
-                                        defaultValues={currentAction === "edit" ? currentItem : null}
-                                    />
-                                }
+                            </Tooltip>
+                            {items && (
+                                <AddItem
+                                    model={model}
+                                    formFields={formFields}
+                                    isOpen={isOpenOnItem}
+                                    onOpenChange={onOpenChangeOnItem}
+                                    schema={domainSchema}
+                                    methods={methods}
+                                    action={currentAction}
+                                    defaultValues={currentAction === "edit" ? currentItem : null}
+                                />
+                            )}
                         </div>
                     )}
-
-
                 </div>
             </div>
             <Skeleton className="rounded-lg mt-2 h-full" isLoaded={!isLoading}>
-                {
-                    items && items.length > 0 ?
-                        (<Table
-                            classNames={{
-                                wrapper: "min-h-[222px] max-h-[1000px] overflow-y-auto",
-                            }}
-                            bottomContent={(
-                                <div className="flex w-full justify-center">
-                                    <Pagination
-                                        loop
-                                        siblings={3}
-                                        color="default"
-                                        variant="light"
-                                        page={page}
-                                        total={pages}
-                                        size={"md"}
-                                        classNames={{
-                                            cursor: "bg-foreground text-background",
-                                        }}
-                                        onChange={(page) => setPage(page)}
-                                    />
-                                </div>
-                            )}
-                            aria-label="Rows actions table example with dynamic content"
-                            selectionMode={selectionMode ? "multiple" : "none"}
-                            onSelectionChange={(selected) => {
-                                const integerSelected = new Set(Array.from(selected).map(Number));
-                                setSelectedItems(integerSelected);
-                            }}
-                            selectionBehavior="toggle"
-                            shadow="none"
-                            color="primary"
-                            className="mt-2 border border-neutral-200 rounded-lg"
-                            radius="md"
-                        >
-                            <TableHeader>
-                                {columnsGreatNames.map((item, index) => (
-                                    <TableColumn key={index} align="left">
-                                        {item}
-                                    </TableColumn>
-                                ))}
-                                <TableColumn key="actions" align="right" >
-                                    {"<>"}
-                                </TableColumn>
-                            </TableHeader>
-                            <TableBody>
-                                {items.map((item, index) => {
-                                    const itemDTO = EntryDTO(item, filter);
-                                    console.log(item);
-                                    return (
-                                        <TableRow key={item.id}>
-                                            {Object.keys(itemDTO).map((key) => (
-                                                <TableCell key={key}>
-                                                    {(() => {
-                                                        switch (typeof itemDTO[key]) {
-                                                            case "object":
-                                                                return (
-                                                                    itemDTO[key]?.name ?
-                                                                        <Tooltip width={300}
-                                                                                 height={400}
-                                                                                 title={itemDTO[key]?.name || "Inconnu"}
-                                                                                 placement="bottom"
-                                                                                 content={
-                                                                                     session?.user.role === "SUPERADMIN" &&
-                                                                                     (<div className="px-1 py-2">
-                                                                                         <div className="text-tiny">
-                                                                                             {itemDTO[key]?.name}
-                                                                                         </div>
-                                                                                     </div>)
-                                                                                 }
-                                                                        >
-                                                                            <span className="flex flex-row justify-start items-center ">
-                                                                                {itemDTO[key]?.name} {" "}
-                                                                                {itemDTO[key]?.surname}
-                                                                            </span>
-                                                                        </Tooltip> :
-                                                                        <div className="flex justify-start items-center w-full">
-                                                                            {item?.category?.owner?.name ? (
-                                                                                <Tooltip content="Hérite de sa catégorie" color="default"  size={'sm'} showArrow>
-                                                                                <span className="flex items-center gap-1">
-                                                                                    {item?.category?.owner?.name}
-                                                                                    {item?.category?.owner?.surname}
-                                                                                        <MdOutlineCategory />
-                                                                                </span>
-                                                                                </Tooltip>
-
-                                                                            ) : (item?.domains && item.domains?.owner?.name) ? (
-                                                                                <Tooltip content="Hérite de son site" color="default"  size={'sm'} showArrow>
-
-                                                                                <span className="flex items-center gap-1">
-                                                                                    {item.domains.owner.name}{" "}
-                                                                                    {item.domains.owner.surname}
-                                                                                        <IoMdGlobe />
-                                                                                </span>
-                                                                                </Tooltip>
-
-                                                                            ) : (
-                                                                                <span>-</span>
-                                                                            )}
-                                                                        </div>
-
-                                                                );
-                                                            case "number":
-                                                                return <Chip color="default"
-                                                                             size="md">{itemDTO[key]}</Chip>;
-                                                            case "boolean":
-                                                                return itemDTO[key] ? "Oui" : "Non";
-                                                            case "string":
-                                                                if(itemDTO[key] === "" || itemDTO[key] === null){
-                                                                    return (
-                                                                        <div className="flex justify-center items-center w-full">
-                                                                            -
-                                                                        </div>
-                                                                    )
-                                                                } else if (isValidDateTimeFormat(itemDTO[key])) {
-                                                                    return new Date(itemDTO[key]).toLocaleDateString('fr-FR', {
-                                                                        year: 'numeric',
-                                                                        month: 'short',
-                                                                        day: 'numeric',
-                                                                        hour: '2-digit',
-                                                                        minute: '2-digit',
-                                                                    });
-                                                                }else if (!isNaN(parseInt(itemDTO[key]))) {
-                                                                    return (
-                                                                            <Snippet size="sm" radius="md" symbol={""} color="primary">
-                                                                            {itemDTO[key]}
-                                                                            </Snippet>
-                                                                    );
-                                                                } else if(itemDTO[key] === itemDTO[key].toUpperCase()) {
-                                                                    return (
-                                                                        <Chip className="capitalize" color ="primary" size="sm" variant="flat">
-                                                                            {itemDTO[key]}
-                                                                        </Chip>
-                                                                    )
-                                                                }
-
-                                                            default:
-                                                                return itemDTO[key];
-                                                        }
-                                                    })()}
-                                                </TableCell>
-                                            ))}
-                                            <TableCell key={`actions-${item.key}`}>
-                                                <ActionMenuModerate
-                                                    actions={actions}
-                                                    onActionDelete={()=> {
-                                                        setSelectedItems(new Set([item.id]));
-                                                        onOpenChangeDeleteConfirm();
-                                                    }}
-                                                    onActionEdit={()=> {
-                                                        setCurrentAction('edit');
-                                                        setCurrentItem(item);
-                                                        onOpenOnItem();
-                                                    }}
-                                                    entry={item}
-                                                    isOpen={isOpenDeleteConfirm}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>) : (
-                            <div className="flex justify-center items-center mt-10 text-slate-600">
-                                <p>Aucun éléments à afficher</p>
+                {items && items.length > 0 ? (
+                    <Table
+                        classNames={{
+                            wrapper: "min-h-[222px] max-h-[1000px] overflow-y-auto",
+                        }}
+                        bottomContent={
+                            <div className="flex w-full justify-center">
+                                <Pagination
+                                    loop
+                                    siblings={3}
+                                    color="default"
+                                    variant="light"
+                                    page={page}
+                                    total={pages}
+                                    size={"md"}
+                                    classNames={{
+                                        cursor: "bg-foreground text-background",
+                                    }}
+                                    onChange={(page) => setPage(page)}
+                                />
                             </div>
-                        )
-                }
+                        }
+                        aria-label="Rows actions table example with dynamic content"
+                        selectionMode={selectionMode ? "multiple" : "none"}
+                        onSelectionChange={(selected) => {
+                            const integerSelected = new Set(Array.from(selected).map(Number));
+                            setSelectedItems(integerSelected);
+                        }}
+                        selectionBehavior="toggle"
+                        shadow="none"
+                        color="primary"
+                        className="mt-2 border border-neutral-200 rounded-lg"
+                        radius="md"
+                    >
+                        <TableHeader>
+                            {columnsGreatNames.map((item, index) => (
+                                <TableColumn key={index} align="left">
+                                    {item}
+                                </TableColumn>
+                            ))}
+                            <TableColumn key="actions" align="right">
+                                {"<>"}
+                            </TableColumn>
+                        </TableHeader>
+                        <TableBody>
+                            {items.map((item, index) => {
+                                const itemDTO = EntryDTO(item, filter);
+                                return (
+                                    <TableRow key={item.id}>
+                                        {Object.keys(itemDTO).map((key) => (
+                                            <TableCell key={key}>
+                                                {(() => {
+                                                    console.log(item.category);
+                                                    if (
+                                                        (itemDTO[key] === "" || itemDTO[key] === null) &&
+                                                        key !== "owner" &&
+                                                        key !== "pickable"
+                                                    ) {
+                                                        return <span className="flex justify-center"> - </span>;
+                                                    } else if (
+                                                        key === "name" ||
+                                                        key === "surname" ||
+                                                        key === "username" ||
+                                                        key === "email" ||
+                                                        key === "address" ||
+                                                        key === "street_number" ||
+                                                        key === "country" ||
+                                                        key === "city"
+                                                    ) {
+                                                        return itemDTO[key];
+                                                    } else if (key === "phone" || key === "code" || key === "zip" || key === "returnedConfirmationCode") {
+                                                        return (
+                                                            <Snippet
+                                                                size="md"
+                                                                disableTooltip
+                                                                radius="md"
+                                                                symbol={""}
+                                                                color="primary"
+                                                            >
+                                                                {itemDTO[key]}
+                                                            </Snippet>
+                                                        );
+                                                    } else if (key === "pickable") {
+                                                        console.log(itemDTO[key]);
+                                                        return itemDTO[key] !== null ? ((
+                                                                <div
+                                                                    className="flex justify-start items-center w-full space-x-1">
+                                                                    <Chip className="capitalize" color="warning"
+                                                                          size="sm" variant="flat">
+                                                                        {itemDTO[key]?.name}
+                                                                    </Chip>
+                                                                    <Tooltip
+                                                                        content={itemDTO[key].description}
+                                                                        color="default"
+                                                                        size="sm"
+                                                                        showArrow
+                                                                    >
+                                                                        <Chip color="default" size="sm" variant="flat"
+                                                                              className={"capitalize border-1 border-neutral-300"}>
+                                                                        <span
+                                                                            className="flex flex-row justify-center items-center">
+                                                                            ?
+                                                                        </span>
+                                                                        </Chip>
+                                                                    </Tooltip>
+                                                                </div>
+                                                            )
+                                                        ) : (
+                                                            item?.category?.pickable !== undefined && item?.category?.pickable !== null ? (
+                                                                <div
+                                                                    className="flex justify-start items-center w-full space-x-1">
+                                                                    <Tooltip
+                                                                        content="Hérite de sa catégorie"
+                                                                        color="default"
+                                                                        size="sm"
+                                                                        showArrow
+                                                                    >
+                                                                        <Chip className="capitalize" color="warning"
+                                                                              size="sm" variant="flat">
+                                                                        <span
+                                                                            className="flex flex-row justify-center items-center">
+                                                                            {item.category?.pickable.name}
+                                                                            <MdOutlineCategory className='ml-2'/>
+                                                                        </span>
+                                                                        </Chip>
+                                                                    </Tooltip>
+                                                                    <Tooltip
+                                                                        content={item.category.pickable.description}
+                                                                        color="default"
+                                                                        size="sm"
+                                                                        showArrow
+                                                                    >
+                                                                        <Chip color="default" size="sm" variant="flat"
+                                                                              className={"capitalize border-1 border-neutral-300"}>
+                                                                        <span
+                                                                            className="flex flex-row justify-center items-center">
+                                                                            ?
+                                                                        </span>
+                                                                        </Chip>
+                                                                    </Tooltip>
+                                                                </div>
+                                                            ) : item?.domains?.pickable !== undefined && item?.domains?.pickable !== null ? (
+                                                                <div
+                                                                    className="flex justify-start items-center w-full space-x-1">
+                                                                    <Tooltip
+                                                                        content="Hérite de son site"
+                                                                        color="default"
+                                                                        size="sm"
+                                                                        showArrow
+                                                                    >
+                                                                        <Chip className="capitalize" color="warning"
+                                                                              size="sm" variant="flat">
+                                                                            <span
+                                                                                className="flex flex-row justify-center items-center space-x-2">
+                                                                                {item.domains.pickable.name}
+                                                                                <IoMdGlobe/>
+                                                                            </span>
+                                                                        </Chip>
+                                                                    </Tooltip>
+                                                                    <Tooltip
+                                                                        content={item.domains.pickable.description}
+                                                                        color="default"
+                                                                        size="sm"
+                                                                        showArrow
+                                                                    >
+                                                                        <Chip color="default" size="sm" variant="flat"
+                                                                              className={"capitalize border-1 border-neutral-300"}>
+                                                                        <span
+                                                                            className="flex flex-row justify-center items-center">
+                                                                            ?
+                                                                        </span>
+                                                                        </Chip>
+                                                                    </Tooltip>
+                                                                </div>
+                                                            ) : (
+                                                                <span> - </span>
+                                                            )
+                                                        );
+                                                    } else if (
+                                                        key === "owner" ||
+                                                        key === "category" ||
+                                                        key === "domains" ||
+                                                        key === "user" ||
+                                                        key === "resource"
+                                                    ) {
+                                                        return itemDTO[key]?.name ? (
+                                                            <span className="flex flex-row justify-start items-center">
+                                                                {itemDTO[key]?.name} {itemDTO[key]?.surname}
+                                                              </span>
+                                                        ) : (
+                                                            <div className="flex justify-start items-center w-full">
+                                                                {item?.category?.owner?.name ? (
+                                                                    <Tooltip content="Hérite de sa catégorie"
+                                                                             color="default" size="sm" showArrow>
+                                                                      <span className="flex items-center gap-1">
+                                                                        {item?.category?.owner?.name} {item?.category?.owner?.surname}
+                                                                          <MdOutlineCategory/>
+                                                                      </span>
+                                                                    </Tooltip>
+                                                                ) : item?.domains && item.domains?.owner?.name ? (
+                                                                    <Tooltip content="Hérite de son site"
+                                                                             color="default" size="sm" showArrow>
+                                                                      <span className="flex items-center gap-1">
+                                                                        {item.domains.owner.name} {item.domains.owner.surname}
+                                                                          <IoMdGlobe/>
+                                                                      </span>
+                                                                    </Tooltip>
+                                                                ) : (
+                                                                    <span>-</span>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    } else if ((key === "moderate" && model === "resources") || key === "external" || key === "returned") {
+                                                        return itemDTO[key] ?
+                                                            <Chip className="capitalize" color="success" size="sm"
+                                                                  variant="flat">
+                                                                Oui
+                                                            </Chip>
+                                                            :
+                                                            <Chip className="capitalize" color="danger" size="sm"
+                                                                  variant="flat">
+                                                                Non
+                                                            </Chip>;
+                                                    } else if (key === "status" || key === "moderate" || key === "role") {
+                                                        return <Chip size="sm" variant="dot" color={
+                                                            itemDTO[key] === "AVAILABLE" || itemDTO[key] === "ACCEPTED" || itemDTO[key] === "USER" ? "success"
+                                                                : itemDTO[key] === "WAITING" || itemDTO[key] === "ADMIN" ? "warning" :
+                                                                    itemDTO[key] === "BOOKED" ? "default" : "danger"
+                                                        }>
+                                                            {itemDTO[key]}
+                                                        </Chip>;
+                                                    } else if (
+                                                        key === "createdAt" ||
+                                                        key === "updatedAt" ||
+                                                        key === "lastUpdatedModerateStatus" ||
+                                                        key === "startDate" ||
+                                                        key === "endDate"
+                                                    ) {
+                                                        return new Date(itemDTO[key]).toLocaleDateString("fr-FR", {
+                                                            year: "numeric",
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        });
+                                                    } else if (key === "description" || key === "adminNote" || key === "comment") {
+                                                        return (
+                                                            <span
+                                                                className="flex flex-row space-x-2 justify-start items-center">
 
+                                                                <Tooltip
+                                                                    showArrow
+                                                                    size="sm"
+                                                                    variant="flat"
+                                                                    color="default"
+                                                                    content={itemDTO[key]}
+                                                                >
+                                                                    {truncateString(itemDTO[key], 20)}
+                                                                </Tooltip>
+                                                            </span>
+                                                        );
+                                                    }
+                                                })()}
+                                            </TableCell>
+                                        ))}
+                                        <TableCell key={`actions-${item.key}`}>
+                                            <ActionMenuModerate
+                                                actions={actions}
+                                                onActionDelete={() => {
+                                                    setSelectedItems(new Set([item.id]));
+                                                    onOpenChangeDeleteConfirm();
+                                                }}
+                                                onActionEdit={() => {
+                                                    setCurrentAction("edit");
+                                                    setCurrentItem(item);
+                                                    onOpenOnItem();
+                                                }}
+                                                entry={item}
+                                                isOpen={isOpenDeleteConfirm}
+                                            />
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <div className="flex justify-center items-center mt-10 text-slate-600">
+                        <p>Aucun éléments à afficher</p>
+                    </div>
+                )}
             </Skeleton>
         </div>
     );
+
 }

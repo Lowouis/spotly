@@ -12,6 +12,13 @@ function firstLetterUppercase(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+function truncateString(string, maxLength) {
+    if (string.length > maxLength) {
+        return string.slice(0, maxLength) + '...';
+    }
+    return string;
+}
+
 function formatDuration(ms) {
     const days = Math.floor(ms / (24 * 60 * 60 * 1000));
     const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
@@ -25,11 +32,11 @@ function formatDuration(ms) {
 
 const lastestPickable = (entry) => {
     if(entry.resource.pickable !== null){
-        return entry.resource.pickable;
+        return entry.resource.pickable.name;
     } else if (entry.resource.category.pickable !== null){
-        return entry.resource.category.pickable;
+        return entry.resource.category.pickable.name;
     } else if (entry.resource.domains.pickable !== null){
-        return entry.resource.domains.pickable;
+        return entry.resource.domains.pickable.name;
     } else {
         return null;
     }
@@ -38,11 +45,11 @@ const lastestPickable = (entry) => {
 
 const whoIsPickable = (entry) => {
     if(entry.resource.pickable !== null){
-        return entry.resource.pickable === "TRUST";
+        return entry.resource.pickable.name === "TRUST";
     } else if(entry.resource.category.pickable !== null){
-        return entry.resource.category.pickable === "TRUST";
+        return entry.resource.category.pickable.name === "TRUST";
     } else if(entry.resource.domains.pickable !== null){
-        return entry.resource.domains.pickable === "TRUST";
+        return entry.resource.domains.pickable.name === "TRUST";
     } else {
         return "TRUST";
     }
@@ -65,7 +72,25 @@ export function isValidDateTimeFormat(dateTimeString) {
     return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(dateTimeString);
 }
 
-export {constructDate, whoIsPickable, whoIsOwner, lastestPickable, formatDuration, firstLetterUppercase};
+const pickablesDescriptions = {
+    "FLUENT": "Aucun contrôle si le pickup et le retour de la ressource.",
+    "HIGH_TRUST": "Récupération de la ressource sans contrôle, mais restitution à confirmer par click.",
+    "LOW_TRUST": "Récupération et restitution de la ressource avec un click.",
+    "DIGIT": "Récupération et restitution de la ressource avec un code à 6 chiffres.",
+    "LOW_AUTH": "Récupération et restitution de la ressource avec un code à 6 chiffres, en étant authentifié ou non.",
+    "HIGH_AUTH": "Récupération et restitution de la ressource avec un code à 6 chiffres, en étant authentifié avec un restriction de localisation.",
+}
+
+export {
+    constructDate,
+    whoIsPickable,
+    whoIsOwner,
+    lastestPickable,
+    formatDuration,
+    firstLetterUppercase,
+    truncateString,
+    pickablesDescriptions
+};
 
 
 

@@ -74,44 +74,30 @@ model VerificationRequest {
 }
 
 model category {
-  id          Int         @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   name        String
   description String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
   resource    resource[]
   ownerId     Int?
-  owner       User?       @relation("userToCategory", fields: [ownerId], references: [id], onDelete: SetNull)
-  pickable    PickStatus? @default(HIGH_TRUST)
+  owner       User?      @relation("userToCategory", fields: [ownerId], references: [id], onDelete: SetNull)
+  pickable    pickable?  @relation(fields: [pickableId], references: [id])
+  pickableId  Int?
 
   @@index([ownerId])
 }
 
-enum PickStatus {
-  FLUENT
-  HIGH_TRUST
-  LOW_TRUST
-  DIGIT
-  LOW_AUTH
-  HIGH_AUTH
-}
-
 model domain {
-  id            Int        @id @default(autoincrement())
-  name          String
-  code          String
-  address       String
-  street_number String
-  country       String
-  city          String
-  zip           String
-  phone         String
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  ownerId       Int?
-  owner         User?      @relation("userToDomain", fields: [ownerId], references: [id])
-  pickable      PickStatus @default(HIGH_TRUST)
-  resource      resource[]
+  id         Int        @id @default(autoincrement())
+  name       String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  ownerId    Int?
+  owner      User?      @relation("userToDomain", fields: [ownerId], references: [id])
+  pickable   pickable   @relation(fields: [pickableId], references: [id])
+  pickableId Int
+  resource   resource[]
 }
 
 enum status {
@@ -125,22 +111,34 @@ enum status {
 }
 
 model resource {
-  id          Int         @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
   moderate    Boolean
   domainId    Int
-  options     option[]    @relation("resourceToOption")
+  options     option[]  @relation("resourceToOption")
   categoryId  Int
-  status      status      @default(AVAILABLE)
-  category    category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  domains     domain      @relation(fields: [domainId], references: [id])
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  status      status    @default(AVAILABLE)
+  category    category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  domains     domain    @relation(fields: [domainId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   entry       entry[]
   ownerId     Int?
-  owner       User?       @relation("userToResource", fields: [ownerId], references: [id])
-  pickable    PickStatus? @default(HIGH_TRUST)
+  owner       User?     @relation("userToResource", fields: [ownerId], references: [id])
+  pickable    pickable? @relation(fields: [pickableId], references: [id])
+  pickableId  Int?
+}
+
+model pickable {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  categories  category[]
+  domains     domain[]
+  resource    resource[]
 }
 
 model option {
@@ -154,7 +152,7 @@ model option {
 
 model entry {
   id                        Int       @id @default(autoincrement())
-  resourceId                Int
+  resourceId                Int?
   userId                    Int
   comment                   String?
   moderate                  status    @default(ACCEPTED)
@@ -166,7 +164,7 @@ model entry {
   returned                  Boolean   @default(false)
   returnedConfirmationCode  String?   @unique
   updatedAt                 DateTime  @updatedAt
-  resource                  resource  @relation(fields: [resourceId], references: [id])
+  resource                  resource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
   user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -176,4 +174,15 @@ model authorizedLocation {
   ip        String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model LdapConfig {
+  id            String   @id @default(uuid())
+  serverUrl     String   @db.Text
+  bindDn        String   @db.Text
+  adminCn       String   @db.Text
+  adminPassword String   @db.Text
+  lastUpdated   DateTime @updatedAt
+  updatedBy     String
+  isActive      Boolean  @default(true)
 }

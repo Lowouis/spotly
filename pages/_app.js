@@ -1,5 +1,4 @@
 import '../app/globals.css';
-import RootLayout from '@/app/layout';
 import React from "react";
 import SessionProviderWrapper from "@/app/wrappers/SessionProviderWrapper";
 

@@ -1,8 +1,12 @@
-import { PickStatus } from '@prisma/client';
 import {runMiddleware} from "@/lib/core";
+import prisma from "@/prismaconf/init";
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
-    const ps = Object.values(PickStatus).map((status, index) => ({id: index + 1, name: status}));
-    res.status(200).json(ps);
+    if (req.method === "GET") {
+        const pickables = await prisma.pickable.findMany();
+        res.status(200).json(pickables);
+    } else {
+        res.status(405).json({message: "Method not allowed"});
+    }
 }

@@ -1,5 +1,6 @@
+'use client';
 import React from "react";
-
+import {useTheme} from "@/app/context/ThemeContext";
 interface DotProps {
     /**
      * Color of the dot
@@ -38,7 +39,6 @@ function Placeholder() {
 }
 
 export default function Dot({
-                                color = "#cacaca",
                                 size = 1,
                                 spacing = 10,
                                 children,
@@ -47,6 +47,9 @@ export default function Dot({
                                     backgroundColor: "white",
                                 },
                             }: DotProps) {
+
+    const {theme} = useTheme();
+
     return (
         <div
             style={{
@@ -56,7 +59,8 @@ export default function Dot({
                 left: 0,
                 width: "100%",
                 height: "100%",
-                backgroundImage: `radial-gradient(${color} ${size}px, transparent ${size}px)`,
+                backgroundColor: theme === "dark" ? "#1E201E" : "#F8FAFC",
+                backgroundImage: `radial-gradient(${theme === 'dark' ? '#697565' : "#DCD7C9"} ${size}px, transparent ${size}px)`,
                 backgroundSize: `calc(${spacing} * ${size}px) calc(${spacing} * ${size}px)`,
                 zIndex: -1,
             }}

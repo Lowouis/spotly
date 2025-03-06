@@ -1,14 +1,17 @@
 'use client';
 
-import {Alert, Spacer} from "@nextui-org/react";
+import {Alert, Spacer, Spinner} from "@nextui-org/react";
 import { Input } from "@nextui-org/input";
 import { Button } from "@nextui-org/button";
 import React, { useState, useEffect } from "react";
-import {ArrowPathIcon, EyeIcon, EyeSlashIcon} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, EyeIcon, EyeSlashIcon, CheckIcon} from "@heroicons/react/24/outline";
+import {addToast} from "@heroui/toast";
 
-const LDAP = ({}) => {
-    const [isVisible, setIsVisible] = React.useState(false);
-    const toggleVisibility = () => setIsVisible(!isVisible);
+const LDAP = () => {
+    const [isVisible, setIsVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+
     const [formData, setFormData] = useState({
         serverUrl: "",
         bindDn: "",
@@ -16,134 +19,179 @@ const LDAP = ({}) => {
         adminPassword: "",
     });
 
-    console.log(process.env.NEXT_PUBLIC_LDAP_DOMAIN)
     useEffect(() => {
+        // Chargement sécurisé des variables d'environnement
         setFormData({
-            serverUrl: process.env.NEXT_PUBLIC_LDAP_DOMAIN ?? "",
-            bindDn: process.env.NEXT_PUBLIC_LDAP_BASEDN ?? "",
-            adminCn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN ?? "",
-            adminPassword: process.env.NEXT_PUBLIC_LDAP_ADMIN_PASSWORD ?? "",
+            serverUrl: process.env.NEXT_PUBLIC_LDAP_DOMAIN || "",
+            bindDn: process.env.NEXT_PUBLIC_LDAP_BASEDN || "",
+            adminCn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN || "",
+            adminPassword: "", // Ne pas pré-remplir le mot de passe pour des raisons de sécurité
         });
     }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData(prev => ({...prev, [name]: value}));
+        // Reset des messages d'erreur lors de la modification
+        if (errorMessage) setErrorMessage(null);
+    };
+
+    const validateForm = () => {
+        if (!formData.serverUrl || !formData.bindDn || !formData.adminCn) {
+            setErrorMessage("Tous les champs obligatoires doivent être remplis");
+            return false;
+        }
+        return true;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!validateForm()) return;
+
+        setIsLoading(true);
         try {
             const response = await fetch('/api/save-ldap-config', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
             });
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
+
             const result = await response.json();
-            console.log('Configuration saved:', result);
+
+            if (!response.ok) {
+                addToast({
+                    title: 'Configuration LDAP',
+                    description: 'Erreur lors de la sauvegarde',
+                    color: 'danger',
+                    duration: 5000,
+                    variant: "flat"
+                })
+                throw new Error(result.message || 'Erreur lors de la sauvegarde');
+            }
+            addToast({
+                title: 'Configuration LDAP',
+                description: 'Configuration sauvegardée avec succès',
+                color: 'success',
+                duration: 5000,
+                variant: "flat"
+            })
+
         } catch (error) {
-            console.error('Error saving configuration:', error);
+            console.error('Erreur:', error);
+            setErrorMessage(error.message || "Une erreur est survenue");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="flex justify-center items-center flex-col w-full mx-2">
-            <Spacer y={1} />
-            <form onSubmit={handleSubmit} className="w-2/3 mx-auto">
-                <div className="p-3 w-full mx-auto space-y-4 ">
-                    <Alert
-                        variant="flat"
-                        color="warning"
-                        title="Configuration LDAP"
-                        description="Veuillez saisir les informations de connexion à votre serveur LDAP"
-
-
-                    />
+        <div
+            className="flex bg-white  flex-col p-6 rounded-lg shadow-sm h-full w-full space-y-2 justify-start items-start">
+            <h2 className="text-xl font-semibold mb-4">Configuration LDAP</h2>
+            <form onSubmit={handleSubmit} className="flex flex-col w-full gap-4 ">
+                <div className="flex-1">
                     <Input
-                        clearable
-                        bordered
-                        fullWidth
+                        required
                         name="serverUrl"
                         label="URL du serveur LDAP"
+                        labelPlacement="outside"
                         placeholder="ldap://example.com"
                         value={formData.serverUrl}
                         onChange={handleInputChange}
+                        isInvalid={!!errorMessage && !formData.serverUrl}
                     />
-                    <Spacer y={1} />
+                </div>
+
+                <div>
                     <Input
-                        clearable
-                        fullWidth
-                        bordered
+                        required
                         name="bindDn"
                         label="Bind Distinguished Name"
+                        labelPlacement="outside"
                         placeholder="cn=admin,dc=example,dc=com"
                         value={formData.bindDn}
                         onChange={handleInputChange}
+                        isInvalid={!!errorMessage && !formData.bindDn}
                     />
-                    <Spacer y={1} />
+                </div>
+
+
+                <div>
+
                     <Input
-                        bordered
-                        fullWidth
+                        required
                         name="adminCn"
-                        label="Nom Commun de l'adminstrateur LDAP"
-                        placeholder="CN de l'adminstrateur LDAP"
+                        label={"Nom commun de l'administrateur LDAP"}
+                        labelPlacement="outside"
                         value={formData.adminCn}
                         onChange={handleInputChange}
+                        isInvalid={!!errorMessage && !formData.adminCn}
                     />
-                    <Spacer y={1} />
+                </div>
+
+
+                <div>
                     <Input
-                        clearable
-                        bordered
-                        fullWidth
+                        required
                         name="adminPassword"
-                        label="Mot de passe adminstrateur LDAP"
+                        label={"Mot de passe administrateur LDAP"}
+                        labelPlacement={"outside"}
                         type={isVisible ? "text" : "password"}
-                        placeholder="Mot de passe adminstrateur LDAP"
                         value={formData.adminPassword}
                         onChange={handleInputChange}
+                        placeholder="Mot de passe"
                         endContent={
                             <Button
-                                aria-label="toggle password visibility"
-                                className="focus:outline-none h-full"
                                 type="button"
                                 isIconOnly
-                                onPress={toggleVisibility}
+                                radius="full"
+                                variant="flat"
+                                onPress={() => {
+                                    setIsVisible(!isVisible)
+                                }}
+                                aria-label={isVisible ? "Cacher le mot de passe" : "Afficher le mot de passe"}
                             >
                                 {isVisible ? (
-                                    <EyeSlashIcon color="black" width={18} className="pointer-events-none" />
+                                    <EyeSlashIcon className="h-5 w-5 text-default-400"/>
                                 ) : (
-                                    <EyeIcon color="black" width={18} className="pointer-events-none" />
+                                    <EyeIcon className="h-5 w-5 text-default-400"/>
                                 )}
                             </Button>
                         }
                     />
-                    <Spacer y={2} />
-                    <div className="flex justify-center flex-row items-center w-full">
-                        <Button type="submit" variant="solid" fullWidth color="success" isIconOnly >
-                            <ArrowPathIcon width={24} className="rounded-full"/>
-                        </Button>
-                    </div>
+                </div>
 
+                <div className="flex justify-end gap-4">
+                    <Button
+                        color={"default"}
+                        type="button"
+                        variant="flat"
+                    >
+                        Tester la connexion
+                        </Button>
+                    <Button
+                        type="submit"
+                        color="primary"
+                        variant="flat"
+                        isLoading={isLoading}
+                        startContent={!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
+                    >
+                        Mettre à jour
+                    </Button>
                 </div>
             </form>
-            <Spacer y={2} />
-            <div className="w-2/3">
-                <Alert
-                variant="flat"
-                color="warning"
-                title="Gestion des rôles"
-                description="Veuillez saisir les informations de connexion à votre serveur LDAP"
-                />
-                <div>
-                    add user role on cn later here
+
+            <Spacer y={4}/>
+
+            <div className="p-3 w-full mx-auto space-y-4">
+                <h2 className="text-xl font-semibold mb-4">Configuration avancée des permissions LDAP</h2>
+
+                <div className="mt-4 p-4 bg-content1 rounded-lg">
+                    <p className="text-sm text-default-500">
+                        Fonctionnalité en cours de développement...
+                    </p>
                 </div>
             </div>
-
         </div>
     );
 };

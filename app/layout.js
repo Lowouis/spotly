@@ -13,6 +13,8 @@ const dmSans = DM_Sans({
 });
 
 export default function RootLayout({ children }) {
+    // get local theme state from context
+
     return (
         <html lang="en" className={dmSans.variable}>
         <head>
@@ -21,12 +23,11 @@ export default function RootLayout({ children }) {
         </head>
         <body className="antialiased flex flex-col min-h-screen">
         <main className="flex-1">
-            <Dot
-                size={1}
-                spacing={15}
-                color={"#E7E5E4"}
-            />
             <SessionProviderWrapper>
+                <Dot
+                    size={1}
+                    spacing={40}
+                />
                 {children}
             </SessionProviderWrapper>
         </main>

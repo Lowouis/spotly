@@ -9,24 +9,22 @@ export default async function handler(req, res) {
             {
                 include: {
                     owner: true,
+                    pickable: true
                 }
             }
         );
         res.status(200).json(domains);
     } else if (req.method === "POST"){
-        const {name, code, owner, pickable, address, street_number, country, city, zip, phone} = req.body;
+        const {name, owner, pickable} = req.body;
 
         const domain = await prisma.domain.create({
             data: {
                 name,
-                code,
-                address,
-                street_number,
-                country,
-                city,
-                zip,
-                phone,
-                pickable: pickable.name,
+                ...(pickable?.id ? {
+                    pickable: {
+                        connect: {id: pickable.id}
+                    }
+                } : {pickable: null}),
                 ...(owner?.id ? {
                     owner: {
                         connect: { id: owner.id }
@@ -37,21 +35,18 @@ export default async function handler(req, res) {
         res.status(200).json(domain);
     } else if (req.method === "PUT") {
         console.log(req.body);
-        const {id, name, code, owner, pickable, address, street_number, country, city, zip, phone} = req.body;
+        const {id, name, owner, pickable} = req.body;
         const domain = await prisma.domain.update({
             where: {
                 id: id,
             },
             data: {
                 name,
-                code,
-                address,
-                street_number,
-                country,
-                city,
-                zip,
-                phone,
-                pickable: pickable.name,
+                ...(pickable?.id ? {
+                    pickable: {
+                        connect: {id: pickable.id}
+                    }
+                } : {pickable: null}),
                 ...(owner?.id ? {
                     owner: {
                         connect: { id: owner.id }

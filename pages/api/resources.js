@@ -42,15 +42,18 @@ export default async function handler(req, res) {
             include: {
                 domains: {
                     include: {
-                        owner: true
+                        owner: true,
+                        pickable: true
                     }
                 },
                 category: {
                     include: {
-                        owner: true
+                        owner: true,
+                        pickable: true
                     }
                 },
-                owner: true
+                owner: true,
+                pickable: true
             }
         });
         const sanitizedResources = resources.map(({ domainId, categoryId, ...rest }) => rest);
@@ -64,7 +67,11 @@ export default async function handler(req, res) {
                 name : name,
                 description : description,
                 moderate : moderate === "1",
-                ...(pickable && {pickable: pickable || pickable.name}),
+                ...(pickable?.id && {
+                    pickable: {
+                        connect: {id: pickable.id}
+                    }
+                }),
                 domains : {
                     connect : { id : domains.id }
                 },
@@ -89,15 +96,27 @@ export default async function handler(req, res) {
             data: {
                 name,
                 moderate: moderate === "1",
-                pickable: pickable.name,
+                ...(pickable !== null && pickable !== undefined ? {
+                    pickable: {
+                        connect: {id: pickable.id}
+                    }
+                } : {
+                    pickable: {
+                        disconnect: true
+                    }
+                }),
                 domains : {
                     connect : { id : domains.id }
                 },
-                owner : owner?.id ? {
-                    connect: { id: owner.id }
+                ...(owner !== null && owner !== undefined ? {
+                    owner: {
+                        connect: {id: owner.id}
+                    }
                 } : {
-                    disconnect: true
-                },
+                    owner: {
+                        disconnect: true
+                    }
+                }),
                 ...(description ? {
                     description
                 } : { description : null }),

@@ -11,28 +11,27 @@ export default async function handler(req, res) {
             {
                 include: {
                     owner: true,
+                    pickable: true
                 }
             }
         );
         res.status(200).json(categories);
     } else if (req.method === "POST"){
         const {name, description, owner, pickable } = req.body;
+        console.log(req.body);
         const category = await prisma.category.create({
             data: {
                 name,
                 description,
-                pickable: pickable.key,
-                ...(owner?.id ? {
-                    owner: {
-                        connect: { id: owner.id }
-                    }
-                } : { ownerId: null })
+                ownerId: owner !== null ? owner.id : null,
+                pickableId: pickable !== null ? pickable.id : null
             }
         });
         res.status(200).json(category);
     } else if (req.method === "PUT") {
 
         const {id, name, description, owner, pickable } = req.body;
+        console.log(req.body)
         const category = await prisma.category.update({
             where: {
                 id: id,
@@ -42,12 +41,8 @@ export default async function handler(req, res) {
                 ...(description ? {
                     description
                 } : { description : null }),
-                pickable: pickable.name,
-                ...(owner?.id ? {
-                    owner: {
-                        connect: { id: owner.id }
-                    }
-                } : { ownerId: null })
+                ownerId: owner !== null && owner !== undefined ? owner.id : null,
+                pickableId: pickable !== null && pickable !== undefined ? pickable.id : null
             }
         });
         res.status(200).json(category);

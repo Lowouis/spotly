@@ -1,16 +1,18 @@
 import React from "react";
 import { Input } from "@nextui-org/input";
 import { useFormContext } from "react-hook-form";
+import {IoEyeOffOutline, IoEyeOutline} from "react-icons/io5";
+import {Button} from "@nextui-org/button";
 
-export default function InputField({ required, type, label, name, placeholder, dependsOn }) {
+export default function InputField({required, type, label, name, placeholder, dependsOn, hidden = false}) {
     const { register, formState: { errors } } = useFormContext();
-
+    const [isVisible, setIsVisible] = React.useState(false);
     return (
         <div className="form-group">
             <label htmlFor={name}> {label} </label>
             <Input
                 id={name}
-                type={type}
+                type={hidden && !isVisible ? "password" : type}
                 isDisabled={dependsOn !== undefined ? dependsOn : false}
                 isInvalid={!!errors[name]}
                 placeholder={placeholder}
@@ -21,6 +23,17 @@ export default function InputField({ required, type, label, name, placeholder, d
                 })}
                 className={`form-input ${errors[name] ? 'input-error' : ''}`}
                 variant="bordered"
+                endContent={
+                    hidden &&
+                    <Button className="scale-75" size="md" variant="faded" onPress={() => setIsVisible(!isVisible)}
+                            isIconOnly radius="full">
+                        {isVisible ? (
+                            <IoEyeOutline size={25}/>
+                        ) : (
+                            <IoEyeOffOutline size={25}/>
+                        )}
+                    </Button>
+                }
             />
             {errors[name] && (
                 <p className="text-red-500 error-message text-sm mx-2">

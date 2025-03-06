@@ -68,6 +68,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             value={defaultValues ? defaultValues[field.name] : ""}
                                             dependsOn={defaultValues && field?.dependsOn !== undefined ? defaultValues[field.dependsOn] : undefined}                                            register={methods.register(field.name, rules)}
                                             placeholder={field.placeholder}
+                                            hidden={field?.hidden && field.hidden}
                                         />
                                     );
                                 case "number":

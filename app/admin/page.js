@@ -13,6 +13,9 @@ import {ScrollShadow} from "@nextui-org/react";
 import {useEffect, useState} from "react";
 import {DataHandlerProvider} from "@/app/context/DataHandler";
 import Sidebar from "@/app/components/admin/Sidebar";
+import SMTPSettings from "@/app/admin/sections/SMTP";
+import {General} from "@/app/admin/sections/General";
+
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
 
@@ -52,6 +55,8 @@ const Content = () => {
             return <Dashboard/>;
         case 'domains':
             return <Domains/>;
+        case 'general':
+            return <General/>;
         case 'categories':
             return <Categories />;
         case 'resources':
@@ -62,6 +67,8 @@ const Content = () => {
             return <Entries />;
         case 'ldap':
             return <LDAP />;
+        case 'smtp':
+            return <SMTPSettings/>;
         default:
             return <div>Section en cours de développement</div>;
     }

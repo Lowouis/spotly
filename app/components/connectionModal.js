@@ -201,13 +201,14 @@ export function ConnectionModal({}) {
 
                                     <div className="">
                                         <Button
+                                            type={"submit"}
                                             fullWidth
                                             onPress={async () => {
                                                 setConnectionLoading(true);
                                                 await handleSubmit().then(r => {
-
                                                 });
                                             }}
+
                                             color="primary"
                                             isLoading={connectionLoading}
                                             size="lg"
@@ -244,6 +245,7 @@ export function ConnectionModal({}) {
                                         <Button
                                             size="lg"
                                             fullWidth
+                                            type={"submit"}
                                             color="primary"
                                             onPress={() => {
                                                 handleSubmitLuckyEntry().then(r => {
