@@ -1,6 +1,7 @@
 import {IncomingForm} from 'formidable';
 import fs from 'fs';
 import path from 'path';
+import {runMiddleware} from "@/lib/core";
 
 // Désactiver le parsing automatique du body par Next.js
 export const config = {
@@ -10,6 +11,9 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+
+    await runMiddleware(req, res);
+
     // Vérifier la méthode HTTP
     if (req.method !== 'POST') {
         return res.status(405).json({status: 'error', message: 'Méthode non autorisée'});

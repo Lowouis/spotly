@@ -2,7 +2,8 @@ import {useState} from 'react';
 import {CiCamera, CiCircleAlert, CiCircleCheck} from 'react-icons/ci';
 import {Button} from '@nextui-org/button';
 import {addToast} from "@heroui/toast";
-import {Image} from 'next/image';
+import Image from 'next/image';
+
 
 export const General = () => {
     const [uploadState, setUploadState] = useState(null);
