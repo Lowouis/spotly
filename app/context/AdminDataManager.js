@@ -1,6 +1,5 @@
-import { createContext, useContext, useState } from 'react';
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
+import {createContext, useContext} from 'react';
+import {useMutation, useQueryClient} from "@tanstack/react-query";
 
 
 const AdminDataManagerContext = createContext();
@@ -18,6 +17,7 @@ export const AdminDataManager = ({ children }) => {
                 },
                 body: JSON.stringify({
                     moderate: moderate,
+                    adminNote: entry.adminNote !== undefined && entry.adminNote !== null && entry.adminNote !== "" ? entry.adminNote : null,
                     lastUpdatedModerateStatus: new Date().toISOString(),
                 }),
             });
@@ -31,6 +31,7 @@ export const AdminDataManager = ({ children }) => {
         onSuccess: () => {
             // Invalider le cache pour forcer un rechargement des données
             queryClient.invalidateQueries(['entries']);
+
         },
     });
 

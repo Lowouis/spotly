@@ -1,6 +1,6 @@
-import {useState, useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {Input} from "@nextui-org/input";
-import {Checkbox, Spinner} from "@nextui-org/react";
+import {Checkbox} from "@nextui-org/react";
 import {addToast} from "@heroui/toast";
 import {Button} from "@nextui-org/button";
 
@@ -141,7 +141,7 @@ export default function SMTPSettings() {
                     </Button>
                     <Button
                         type="submit"
-                        color={"success"}
+                        color={"primary"}
                         variant={"flat"}
                     >
                         Sauvegarder

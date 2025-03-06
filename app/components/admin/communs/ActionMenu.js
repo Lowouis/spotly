@@ -1,13 +1,18 @@
 import React from "react";
-import {Button, ButtonGroup, Tooltip} from "@nextui-org/react";
-import {CheckIcon, TrashIcon, XMarkIcon} from "@heroicons/react/24/solid";
+import {Button, Tooltip, useDisclosure} from "@nextui-org/react";
+import {TrashIcon} from "@heroicons/react/24/solid";
 import ModalCheckingBooking from "@/app/components/modals/ModalCheckingBooking";
 import {PencilIcon} from "@heroicons/react/24/outline";
-import {useAdminDataManagerContext} from "@/app/context/AdminDataManager";
+import {CommentBeforeAction} from "@/app/components/modals/CommentBeforeAction";
+import {IoHammerOutline} from "react-icons/io5";
 
 export default function ActionMenuModerate({actions, entry, onActionDelete, onActionEdit}) {
+    const {
+        isOpen: isOpenCommentBeforeAction,
+        onOpen: onOpenCommentBeforeAction,
+        onOpenChange: onOpenChangeCommentBeforeAction
+    } = useDisclosure();
 
-    const { updateEntryModerate } = useAdminDataManagerContext()
     return (
         <>
             <div className="flex flex-row justify-start space-x-2">
@@ -47,28 +52,9 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
                     </Tooltip>
                 </div>
             }
-            {actions.includes('confirm') &&
-                    <div className="flex justify-center items-center">
-                        <Tooltip content="Accepter" color="default"  size={'sm'} showArrow>
-                            <Button
-                            className="text-default-500 font-medium underline underline-offset-4"
-                            size="sm"
-                            variant="flat"
-                            color="default"
-                            isIconOnly
-                            radius="sm"
-                            onPress={()=>{
-                                updateEntryModerate(entry, "ACCEPTED")
-                            }}
-                            >
-                                <CheckIcon width="18" height="18" color={"green"}/>
-                            </Button>
-                        </Tooltip>
-                    </div>
-            }
-            {actions.includes('reject') &&
+                {actions.includes('reject') && actions.includes('confirm') &&
                 <div className="flex justify-center items-center">
-                    <Tooltip content="Refuser" color="default"  size={'sm'} showArrow>
+                    <Tooltip content="Decider" color="default" size={'sm'} showArrow>
                         <Button
                             className="text-default-500 font-medium underline underline-offset-4"
                             size="sm"
@@ -76,19 +62,24 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
                             color="default"
                             isIconOnly
                             radius="sm"
-                            onPress={()=>{
-                                updateEntryModerate(entry, "REJECTED")
-                            }}
+                            onPress={onOpenChangeCommentBeforeAction}
                         >
-                            <XMarkIcon width="18" height="18" color={"red"} />
+                            <IoHammerOutline size={20}/>
                         </Button>
                     </Tooltip>
+                    <CommentBeforeAction
+                        item={entry}
+                        isOpen={isOpenCommentBeforeAction}
+                        onOpen={onOpenCommentBeforeAction}
+                        onOpenChange={onOpenChangeCommentBeforeAction}
+                    />
                 </div>
             }
             {actions.includes('view') && (
                 <ModalCheckingBooking entry={entry} adminMode={true} />
             )}
-        </div>
+
+            </div>
             </>
     );
 }

@@ -3,8 +3,8 @@
 
 import ItemsOnTable from "@/app/components/admin/communs/ItemsOnTable";
 import {useQuery} from "@tanstack/react-query";
-import {useEffect, useState} from "react";
 import {useRefreshContext} from "@/app/context/RefreshContext";
+
 const Resources = ({})=>{
     const { isRefreshing } = useRefreshContext();
 
@@ -23,7 +23,13 @@ const Resources = ({})=>{
 
     const ResourcesFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom', placeholder : "ex : P-ADMIN12, Audi A4 Bleu" },
-        { required: true, name: 'description', type: 'text', label: 'Description', placeholder: "ex : FB1298SX, FB-365-VR" },
+        {
+            required: false,
+            name: 'description',
+            type: 'text',
+            label: 'Description',
+            placeholder: "ex : FB1298SX, FB-365-VR"
+        },
         { required: true, name: 'domains', type: 'object', label: 'Site', options: "domains", placeholder: "Choisir un site" },
         { required: true, name: 'category', type: 'object', label: 'Catégorie', options: "categories", placeholder: "Choisir une catégorie" },
         { required: true, name: 'moderate', type: 'boolean', label: 'Modérer'},

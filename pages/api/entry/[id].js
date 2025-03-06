@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
     if (req.method === "PUT") {
         try {
-            const { moderate, returned } = req.body;
+            const {moderate, returned, adminNote} = req.body;
 
             const entry = await prisma.entry.update({
                 where: {
@@ -17,6 +17,7 @@ export default async function handler(req, res) {
                 },
                 data: {
                     ...(moderate && { moderate }),
+                    ...(adminNote && {adminNote}),
                     ...(returned && { returned })
                 }
             });

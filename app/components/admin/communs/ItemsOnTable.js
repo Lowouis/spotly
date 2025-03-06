@@ -1,11 +1,17 @@
 import {
     Chip,
     Divider,
-    Dropdown,
-    DropdownTrigger, Pagination, Skeleton, Snippet,
-    Table, TableBody, TableCell,
+    Pagination,
+    Skeleton,
+    Snippet,
+    Table,
+    TableBody,
+    TableCell,
     TableColumn,
-    TableHeader, TableRow, Tooltip, useDisclosure
+    TableHeader,
+    TableRow,
+    Tooltip,
+    useDisclosure
 } from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import React, {useState} from "react";
@@ -31,7 +37,7 @@ import {useRefreshContext} from "@/app/context/RefreshContext";
 import TableDropDown from "@/app/components/admin/communs/TableDropDown";
 import {IoMdGlobe} from "react-icons/io";
 import {MdOutlineCategory} from "react-icons/md";
-import {truncateString, pickablesDescriptions, firstLetterUppercase} from "@/app/utils/global";
+import {truncateString} from "@/app/utils/global";
 
 
 const domainSchema = yup.object().shape({
@@ -67,7 +73,6 @@ export const postItem = async ({data, model}) => {
 };
 
 export const updateItem = async ({data, model}) => {
-    console.log("--> DATA -->", data);
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
         method: 'PUT',
         headers: {
@@ -104,6 +109,7 @@ const deleteItems = async ({selectedItems, model}) => {
         throw error;
     }
 };
+
 
 export default function ItemsOnTable({
                                          formFields,
@@ -196,7 +202,6 @@ export default function ItemsOnTable({
             mutation.mutate({selectedItems: new Set([item]), model});
         }
     };
-
 
     const dropdownitems = [
         {
@@ -580,7 +585,6 @@ export default function ItemsOnTable({
                                                         return (
                                                             <span
                                                                 className="flex flex-row space-x-2 justify-start items-center">
-
                                                                 <Tooltip
                                                                     showArrow
                                                                     size="sm"
@@ -623,6 +627,7 @@ export default function ItemsOnTable({
                     </div>
                 )}
             </Skeleton>
+
         </div>
     );
 

@@ -1,9 +1,17 @@
-import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Tooltip, useDisclosure} from "@nextui-org/react";
+import {
+    InputOtp,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    Tooltip,
+    useDisclosure
+} from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import Stepper from "@/app/components/utils/Stepper";
 import React, {useState} from "react";
 import {useMutation} from "@tanstack/react-query";
-import {InputOtp} from "@nextui-org/react";
 import {ArrowRightIcon, ChevronRightIcon, HandRaisedIcon} from "@heroicons/react/24/outline";
 import {getEmailTemplate} from "@/app/utils/mails/templates";
 import {useEmail} from "@/app/context/EmailContext";
@@ -286,9 +294,9 @@ export default function ModalCheckingBooking({entry, adminMode=false, handleRefr
             if (entry.resource.owner !== null){
                 return entry.resource.owner.name + " " + entry.resource.owner.surname;
             } else if(entry.resource.category.owner !== null) {
-                return entry.resource.category.owner.name + entry.resource.category.owner.surname;
+                return entry.resource.category.owner.name + " " + entry.resource.category.owner.surname;
             } else if(entry.resource.domains.owner !== null) {
-                return entry.resource.domains.owner.name + entry.resource.domains.owner.surname;
+                return entry.resource.domains.owner.name + " " + entry.resource.domains.owner.surname;
             } else {
                 return null;
             }
