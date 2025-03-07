@@ -1,7 +1,5 @@
-import React, { useState } from 'react'
-import {
-    FiGrid,
-} from 'react-icons/fi'
+import React, {useState} from 'react'
+import {FiGrid,} from 'react-icons/fi'
 import {signOut, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
 import {useAdminContext} from "@/app/context/Admin";
@@ -14,6 +12,7 @@ import {IoMdGlobe} from "react-icons/io";
 import {GrResources} from "react-icons/gr";
 import {RiApps2Line, RiMailSettingsLine} from "react-icons/ri";
 import {FaRegUser} from "react-icons/fa";
+import DarkModeSwitch from "@/app/components/utils/DarkModeSwitch";
 
 const sideItems = [
     {
@@ -156,7 +155,9 @@ export default function Sidebar() {
                     </div>
                 ))}
             </nav>
-
+            <div className="mt-2 mb-3 ml-1 flex items-center justify-start text-gray-700 space-x-2">
+                <DarkModeSwitch size={'md'}/>
+            </div>
             <div className="border-t border-neutral-200">
                 <NavItem
                     icon={<RiApps2Line />}

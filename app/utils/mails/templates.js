@@ -1,4 +1,4 @@
-import { marked } from 'marked';
+import {marked} from 'marked';
 import {formatDuration} from "@/app/utils/global.js";
 
 /**
@@ -25,6 +25,18 @@ const wrapInHtmlTemplate = (body) => `
 `;
 
 const templates = {
+    test: () => `
+# Test d'email
+
+Bonjour,
+
+Ceci est un email de test envoyé depuis Spotly.
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources 
+`,
     reservationConfirmation: (data) => `
 # Confirmation de réservation
 

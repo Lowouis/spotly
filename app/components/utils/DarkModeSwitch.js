@@ -3,7 +3,7 @@ import {useTheme} from "../../context/ThemeContext";
 import {LuSunDim} from "react-icons/lu";
 import {IoMoonOutline} from "react-icons/io5";
 
-export default function DarkModeSwitch() {
+export default function DarkModeSwitch({size = 'lg'}) {
     const {theme, toggleTheme} = useTheme();
 
     return (
@@ -12,7 +12,7 @@ export default function DarkModeSwitch() {
             onChange={toggleTheme}
             color="primary"
             endContent={<IoMoonOutline/>}
-            size="lg"
+            size={size}
             startContent={<LuSunDim/>}
             aria-label="Basculer le thème"
         />

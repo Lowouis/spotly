@@ -3,6 +3,9 @@ import {Input} from "@nextui-org/input";
 import {Checkbox} from "@nextui-org/react";
 import {addToast} from "@heroui/toast";
 import {Button} from "@nextui-org/button";
+import {useEmail} from "@/app/context/EmailContext";
+import {getEmailTemplate} from "@/app/utils/mails/templates";
+import {constructDate} from "@/app/utils/global";
 
 export default function SMTPSettings() {
     const [smtpConfig, setSmtpConfig] = useState({
@@ -11,6 +14,9 @@ export default function SMTPSettings() {
         secure: false,
         from: process.env.NEXT_PUBLIC_EMAIL_USER || '',
     });
+
+    const [testEmail, setTestEmail] = useState();
+    const {mutate: sendMail} = useEmail();
 
     const [isTesting, setIsTesting] = useState(false);
 
@@ -74,6 +80,21 @@ export default function SMTPSettings() {
         }
     };
 
+
+    const handleMailTest = async () => {
+        sendMail({
+            "to": testEmail,
+            "subject": "Test de mail de spotly - " + constructDate(new Date()),
+            "text": getEmailTemplate("test", {})
+        });
+        addToast({
+            title: 'Email de test envoyé',
+            description: 'Un email de test a été envoyé à ' + testEmail,
+            color: 'success',
+            duration: 5000,
+            variant: "flat"
+        })
+    }
     return (
         <div
             className="flex flex-col p-6 rounded-lg shadow-sm h-full w-full space-y-2 justify-start items-start bg-white">
@@ -145,6 +166,38 @@ export default function SMTPSettings() {
                         variant={"flat"}
                     >
                         Sauvegarder
+                    </Button>
+                </div>
+            </form>
+            <form className="flex flex-col w-full gap-4 mt-6">
+                <h3 className="text-lg font-medium">Envoyer un email de test</h3>
+                <p className="text-sm text-gray-500">
+                    Envoyez un email de test pour vérifier que votre configuration fonctionne correctement.
+                </p>
+
+                <div className="flex flex-col gap-2">
+                    <Input
+                        label="Adresse email de destination"
+                        labelPlacement="outside"
+                        type="email"
+                        required
+                        errorMessage={"Vous devez spécifier une adresse email"}
+                        color="default"
+                        placeholder="exemple@domaine.com"
+                        value={testEmail}
+                        onChange={(e) => setTestEmail(e.target.value)}
+                    />
+                </div>
+
+                <div className="flex justify-end">
+                    <Button
+                        color="secondary"
+                        type="button"
+                        variant="flat"
+                        onPress={handleMailTest}
+                        isDisabled={!testEmail}
+                    >
+                        Envoyer un email de test
                     </Button>
                 </div>
             </form>
