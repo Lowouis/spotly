@@ -6,15 +6,16 @@ import {Button} from "@nextui-org/button";
 import {useEmail} from "@/app/context/EmailContext";
 import {getEmailTemplate} from "@/app/utils/mails/templates";
 import {constructDate} from "@/app/utils/global";
+import {useSession} from 'next-auth/react';
 
 export default function SMTPSettings() {
     const [smtpConfig, setSmtpConfig] = useState({
-        host: 'bluemind',
-        port: 25,
-        secure: false,
-        from: process.env.NEXT_PUBLIC_EMAIL_USER || '',
+        host: process.env.NEXT_PUBLIC_SMTP_HOST || '',
+        port: process.env.NEXT_PUBLIC_SMTP_PORT  || 25 ,
+        secure: process.env.NEXT_PUBLIC_SMTP_SECURE === 'true',
+        from: process.env.NEXT_PUBLIC_EMAIL_USER || null,
     });
-
+    const {data: session } = useSession();
     const [testEmail, setTestEmail] = useState();
     const {mutate: sendMail} = useEmail();
 
@@ -40,16 +41,15 @@ export default function SMTPSettings() {
     const testConnection = async () => {
         setIsTesting(true);
         try {
-            const response = await fetch('/api/smtp/test', {
+            const response = await fetch('/api/mail/test', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(smtpConfig),
+                body: JSON.stringify({smtpConfig, user: session?.user.email}),
             });
 
             const data = await response.json();
-
             if (response.ok) {
                 addToast({
                     title: 'Test de connexion SMTP',
@@ -61,7 +61,7 @@ export default function SMTPSettings() {
             } else {
                 addToast({
                     title: 'Échec du test SMTP',
-                    description: data.error || 'Impossible de se connecter au serveur SMTP',
+                    description: 'Impossible de se connecter au serveur SMTP',
                     color: 'danger',
                     duration: 5000,
                     variant: "flat"
@@ -145,6 +145,7 @@ export default function SMTPSettings() {
                         type="email"
                         color={"default"}
                         variant={'flat'}
+                        placeholder="spotly@domain.fr"
                         value={smtpConfig.from}
                         onChange={(e) => setSmtpConfig({...smtpConfig, from: e.target.value})}
                     />
@@ -166,38 +167,6 @@ export default function SMTPSettings() {
                         variant={"flat"}
                     >
                         Sauvegarder
-                    </Button>
-                </div>
-            </form>
-            <form className="flex flex-col w-full gap-4 mt-6">
-                <h3 className="text-lg font-medium">Envoyer un email de test</h3>
-                <p className="text-sm text-gray-500">
-                    Envoyez un email de test pour vérifier que votre configuration fonctionne correctement.
-                </p>
-
-                <div className="flex flex-col gap-2">
-                    <Input
-                        label="Adresse email de destination"
-                        labelPlacement="outside"
-                        type="email"
-                        required
-                        errorMessage={"Vous devez spécifier une adresse email"}
-                        color="default"
-                        placeholder="exemple@domaine.com"
-                        value={testEmail}
-                        onChange={(e) => setTestEmail(e.target.value)}
-                    />
-                </div>
-
-                <div className="flex justify-end">
-                    <Button
-                        color="secondary"
-                        type="button"
-                        variant="flat"
-                        onPress={handleMailTest}
-                        isDisabled={!testEmail}
-                    >
-                        Envoyer un email de test
                     </Button>
                 </div>
             </form>

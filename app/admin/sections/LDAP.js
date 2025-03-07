@@ -50,7 +50,7 @@ const LDAP = () => {
 
         setIsLoading(true);
         try {
-            const response = await fetch('/api/save-ldap-config', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/save-ldap-config`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),

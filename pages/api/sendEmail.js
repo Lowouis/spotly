@@ -14,10 +14,7 @@ export default async function handler(req, res) {
         host: process.env.NEXT_PUBLIC_SMTP_HOST || 'bluemind',
         port: process.env.NEXT_PUBLIC_SMTP_PORT || 25,
         secure: process.env.NEXT_PUBLIC_SMTP_SECURE === 'true',
-        auth: process.env.NEXT_PUBLIC_SMTP_AUTH ? {
-            user: process.env.NEXT_PUBLIC_SMTP_USER,
-            pass: process.env.NEXT_PUBLIC_SMTP_PASS
-        } : null,
+        auth: null,
         tls: {
             rejectUnauthorized: false,
         },

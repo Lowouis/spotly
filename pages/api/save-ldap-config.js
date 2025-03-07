@@ -11,7 +11,6 @@ export default async function handler(req, res) {
 
     // Validation des données
     const { serverUrl, bindDn, adminCn, adminPassword } = req.body;
-
     if (!serverUrl || !bindDn || !adminCn || !adminPassword) {
         return res.status(400).json({message: 'Tous les champs sont requis'});
     }
@@ -21,12 +20,13 @@ export default async function handler(req, res) {
         const ldapConfig = {
             url: serverUrl,
             bindDN: bindDn,
-            bindCredentials: adminPassword
+            bindCredentials: adminPassword,
+            adminCn : adminCn
         };
         console.log(ldapConfig);
 
         const connectionResult = await ldapConnectionTest(ldapConfig);
-
+        console.log("TEST EN COURS")
         if (!connectionResult.success) {
             return res.status(401).json({
                 message: 'Échec de la connexion LDAP',
