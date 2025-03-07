@@ -9,12 +9,11 @@ import {AlternativeMenu} from "@/app/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import ReservationUserListing from "@/app/components/reservations/Listings";
-import { constructDate } from "../../utils/global";
-import {useQueryClient, useQuery} from "@tanstack/react-query";
+import {constructDate} from "../../utils/global";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
 import MatchingEntriesTable from "@/app/components/tables/MatchingEntriesTable";
 import {useTheme} from "@/app/context/ThemeContext";
-
 
 
 const schemaFirstPart = yup.object().shape({
@@ -291,7 +290,7 @@ const ReservationSearch = () => {
 
                             {!isSubmitted && !availableResources && (
                                 <div className="h-full flex justify-center items-center mt-5 text-xl opacity-65">
-                                    Pour commencer faite une recherche
+                                    Pour commencer faites une recherche
                                 </div>
                             )}
                         </FormProvider>
