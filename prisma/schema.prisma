@@ -164,7 +164,7 @@ model entry {
   returned                  Boolean   @default(false)
   returnedConfirmationCode  String?   @unique
   updatedAt                 DateTime  @updatedAt
-  resource                  resource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  resource                  resource? @relation(fields: [resourceId], references: [id], onDelete: Restrict)
   user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

@@ -1,6 +1,6 @@
 'use client';
 import React from "react";
-import {useTheme} from "@/app/context/ThemeContext";
+import {useTheme} from "@/context/ThemeContext";
 interface DotProps {
     /**
      * Color of the dot
@@ -57,6 +57,7 @@ export default function Dot({
                 position: "fixed",
                 top: 0,
                 left: 0,
+                transition: "background-color 0.2s",
                 width: "100%",
                 height: "100%",
                 backgroundColor: theme === "dark" ? "#1E201E" : "#F8FAFC",

@@ -1,7 +1,7 @@
 import "./globals.css";
-import SessionProviderWrapper from "@/app/wrappers/SessionProviderWrapper";
+import Providers from "@/providers/Providers";
 import React from "react";
-import Footer from "@/app/components/utils/Footer";
+import Footer from "@/components/utils/Footer";
 import Dot from "@/components/animata/background/dot";
 import { DM_Sans } from 'next/font/google';
 import { metadata } from "@/app/metadata";
@@ -23,13 +23,13 @@ export default function RootLayout({ children }) {
         </head>
         <body className="antialiased flex flex-col min-h-screen">
         <main className="flex-1">
-            <SessionProviderWrapper>
+            <Providers>
                 <Dot
                     size={1}
                     spacing={40}
                 />
                 {children}
-            </SessionProviderWrapper>
+            </Providers>
         </main>
        <footer>
            <Footer/>

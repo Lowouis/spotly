@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     if (req.method === "PUT") {
         try {
             const {moderate, returned, adminNote} = req.body;
-
+            console.log(returned);
             const entry = await prisma.entry.update({
                 where: {
                     id: parseInt(id)
@@ -18,7 +18,10 @@ export default async function handler(req, res) {
                 data: {
                     ...(moderate && { moderate }),
                     ...(adminNote && {adminNote}),
-                    ...(returned && { returned })
+                    ...(returned && {
+                        returned: returned,
+                        endDate: new Date()
+                    })
                 }
             });
             

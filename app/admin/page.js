@@ -1,20 +1,20 @@
 'use client'
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
-import Dashboard from "@/app/admin/sections/Dashboard";
-import Domains from "@/app/admin/sections/Domains";
-import {AdminProvider, useAdminContext} from "@/app/context/Admin";
-import Categories from "@/app/admin/sections/Categories";
-import Resources from "@/app/admin/sections/Resources";
-import Users from "@/app/admin/sections/Users";
-import Entries from "@/app/admin/sections/Entries";
-import LDAP from "@/app/admin/sections/LDAP";
+import Dashboard from "@/sections/Dashboard";
+import Domains from "@/sections/Domains";
+import {AdminProvider, useAdminContext} from "@/context/Admin";
+import Categories from "@/sections/Categories";
+import Resources from "@/sections/Resources";
+import Users from "@/sections/Users";
+import Entries from "@/sections/Entries";
+import LDAP from "@/sections/LDAP";
 import {ScrollShadow} from "@nextui-org/react";
 import {useEffect, useState} from "react";
-import {DataHandlerProvider} from "@/app/context/DataHandler";
-import Sidebar from "@/app/components/admin/Sidebar";
-import SMTPSettings from "@/app/admin/sections/SMTP";
-import {General} from "@/app/admin/sections/General";
+import {DataHandlerProvider} from "@/context/DataHandler";
+import Sidebar from "@/components/admin/Sidebar";
+import SMTPSettings from "@/sections/SMTP";
+import {General} from "@/sections/General";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -37,7 +37,6 @@ export default function Admin(){
                         <ScrollShadow className="h-screen" hideScrollBar size={25}>
                             <Content />
                         </ScrollShadow>
-
                     </div>
                 </div>
             </div>

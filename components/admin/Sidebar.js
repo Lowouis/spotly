@@ -1,0 +1,266 @@
+import React, {useState} from 'react'
+import {FiGrid,} from 'react-icons/fi'
+import {signOut, useSession} from "next-auth/react";
+import {useRouter} from "next/navigation";
+import {useAdminContext} from "@/context/Admin";
+import {Skeleton} from "@nextui-org/react";
+import {MdArrowForwardIos, MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from "react-icons/md";
+import {CiLogout, CiServer, CiSettings} from "react-icons/ci";
+import UserInitialsIcon from "@/components/utils/UserInitialsIcon";
+import {addToast} from "@heroui/toast";
+import {IoMdGlobe} from "react-icons/io";
+import {GrResources} from "react-icons/gr";
+import {RiApps2Line, RiMailSettingsLine} from "react-icons/ri";
+import {FaRegUser} from "react-icons/fa";
+import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
+
+const sideItems = [
+    {
+        "title": "Administration",
+        "items": [
+            {
+                "title": "Tableau de bord",
+                "id" : "dashboard",
+                "icon": <MdOutlineSpaceDashboard />,
+            },
+        ]
+    },
+    {
+        "title": "Global",
+        "items": [
+            {
+                "id": "general",
+                "title": "Général",
+                "icon": <CiSettings/>,
+
+            }
+        ]
+    },
+    {
+        "title": "Données",
+        "items": [
+            {
+                "id" : "domains",
+                "title": "Sites",
+                "icon": <IoMdGlobe />,
+            },
+            {
+                "id" : "categories",
+                "title": "Catégories",
+                "icon": <MdOutlineCategory />,
+
+            },
+            {
+                "id" : "resources",
+                "title": "Ressources",
+                "icon": <GrResources />,
+            }
+        ]
+    },
+    {
+        "title": "Utilisateurs",
+        "items": [
+            {
+                "id" : "users",
+                "title": "Utilisateurs",
+                "icon": <FaRegUser />,
+
+            },
+            {
+                "id" : "entries",
+                "title": "Réservations",
+                "icon": <MdBookmarkBorder />,
+            }
+        ]
+    },
+    {
+        "title": "Mail",
+        "icon": <FiGrid />,
+        "items": [
+            {
+                "id" : "smtp",
+                "title": "SMTP",
+                "icon": <RiMailSettingsLine />,
+
+            },
+        ]
+    },
+    {
+        "title": "LDAP",
+        "items": [
+            {
+                "id" : "ldap",
+                "title": "Configuration",
+                "icon": <CiServer />,
+
+            }
+        ]
+    },
+
+];
+
+export default function Sidebar() {
+    const [isOpen, setIsOpen] = useState(true)
+    const {data : session} = useSession();
+    const router = useRouter();
+    const {setActiveSection} = useAdminContext();
+    const toggleSidebar = () => setIsOpen(!isOpen)
+
+    return (
+        <div
+            className={`
+        flex flex-col h-screen bg-white dark:border-neutral-700 dark:bg-neutral-900  border-r border-gray-200
+        transition-all duration-300
+        ${isOpen ? 'w-64' : 'w-14'} 
+      `}
+        >
+            <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+                <div
+                    className="text-lg font-semibold text-gray-900 dark:text-gray-200 mr-auto flex items-center overflow-hidden">
+                        <span
+                            className={`
+                  transition-all duration-300
+                  overflow-hidden whitespace-nowrap
+                  ${isOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}
+                `}
+                        >
+                            Spotly
+              </span>
+
+                </div>
+
+                <button
+                    onClick={toggleSidebar}
+                    className="p-1 text-gray-500 rounded-md hover:bg-gray-200"
+                >
+                    <MdArrowForwardIos className={`${isOpen ? "rotate-180" : "rotate-0"} transition-all duration-400`} size={18} />
+                </button>
+            </div>
+            <nav className="flex-1 mt-4">
+                {sideItems.map((group, index)=> (
+                    <div className="space-y-4 mb-2" key={index}>
+                        <SectionTitle title={group.title} isOpen={isOpen} />
+                        <div className="space-y-2">
+                            {group.items.map((item, index)=>(
+                                <NavItem
+                                    key={index}
+                                    id={item.id}
+                                    icon={item.icon}
+                                    label={item.title}
+                                    isOpen={isOpen}
+                                    action={()=>setActiveSection(item.id)}
+                                />
+
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </nav>
+            <div className="mt-2 mb-3 ml-1 flex items-center justify-start text-gray-700 dark:text-gray-200 space-x-2">
+                <DarkModeSwitch size={'md'}/>
+            </div>
+            <div className="border-t border-neutral-200 dark:border-gray-500">
+                <NavItem
+                    icon={<RiApps2Line />}
+                    label="Spotly"
+                    isOpen={isOpen}
+                    action={()=>router.push("/")}
+                />
+                <NavItem
+                    icon={<CiLogout />}
+                    label="Se deconnecter"
+                    isOpen={isOpen}
+
+                    action={() => signOut().then(() => {
+                        router.push("/");
+                        addToast({
+                            title: "Déconnexion",
+                            message: "Vous avez été déconnecté avec succès",
+                            color: "success",
+                            duration: 5000,
+                        });
+                    })}
+                />
+
+
+                <div className="flex p-2 items-center mt-4 overflow-hidden">
+                    {/* Avatar toujours visible */}
+                    <Skeleton className="rounded-lg bg-black" isLoaded={!!session}>
+                        <UserInitialsIcon user={session?.user} />
+                    </Skeleton>
+                    {/* Bloc texte animé */}
+                    <div
+                        className={`
+              ml-2 transition-all duration-300
+              ${isOpen ? 'opacity-100 max-w-[200px]' : 'opacity-0 max-w-0'}
+              overflow-hidden
+            `}
+                    >
+                        <Skeleton className="rounded-lg bg-neutral-100 w-full"
+                                  isLoaded={!!session}
+                        >
+                            <p className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                {session?.user.name} {session?.user.surname}
+                            </p>
+                            <p className="text-sm text-gray-500 whitespace-nowrap">
+                                {session?.user.role}
+                            </p>
+                        </Skeleton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+
+function SectionTitle({ title, isOpen }) {
+    return (
+        <h2
+            className={`
+        px-4 mb-2 text-xs font-semibold text-gray-400 uppercase
+        transition-all duration-300
+        ${isOpen ? 'opacity-100 max-h-6' : 'opacity-0 max-h-0'}
+        overflow-hidden
+      `}
+        >
+            {title}
+        </h2>
+    )
+}
+
+
+function NavItem({
+                     icon,
+                     label,
+                     isOpen,
+                     badge,
+                     id,
+                     color="bg-gray-200",
+                     action = ()=>{console.log("Set an action to this item")},
+                 }) {
+    const {activeSection, setActiveSection} = useAdminContext();
+    return (
+        <a
+            onClick={action}
+            href="#"
+            className={`flex transition-all items-center text-gray-700 dark:text-gray-200 ${color && "hover:" + color + " hover:dark:bg-neutral-700"} px-1 py-2 ${activeSection === id && "bg-gray-200 dark:bg-gray-700 "}`}
+        >
+            <div className={`text-xl transition-all ml-3 ${isOpen && 'mr-2' }`}>{icon}</div>
+
+            <div
+                className={`
+          flex items-center
+          overflow-hidden
+          transition-all duration-300
+          ${isOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}
+        `}
+            >
+                <span className="whitespace-nowrap">{label}</span>
+                {badge && (
+                    <span className="px-2 ml-auto text-sm text-gray-500">{badge}</span>
+                )}
+            </div>
+        </a>
+    )
+}
