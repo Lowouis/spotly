@@ -1,29 +1,28 @@
 'use client';
 
 import {
-    Link,
-    Tabs,
     Badge,
+    Divider,
     Drawer,
+    DrawerBody,
     DrawerContent,
     DrawerHeader,
-    DrawerBody,
+    Link,
+    Tab,
+    Tabs,
+    Tooltip,
     useDisclosure,
-    Divider, Tooltip,
 } from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
-import {BookmarkIcon} from "@heroicons/react/24/outline";
-import {Tab} from "@nextui-org/react";
-import {ArrowPathIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, BookmarkIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
 import {signOut} from "next-auth/react";
 import {Form} from "@nextui-org/form";
 import {Input} from "@nextui-org/input";
 import React, {useState} from "react";
 import {addToast} from "@heroui/toast";
-import { BsWrench  } from "react-icons/bs";
+import {BsWrench} from "react-icons/bs";
 import {CiLogout} from "react-icons/ci";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
-import {Logo} from "@/components/animata/background/logo";
 import RotatingText from "@/addons/TextAnimations/RotatingText/RotatingText";
 
 
