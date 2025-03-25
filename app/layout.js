@@ -5,6 +5,7 @@ import Footer from "@/components/utils/Footer";
 import Dot from "@/components/animata/background/dot";
 import { DM_Sans } from 'next/font/google';
 import { metadata } from "@/app/metadata";
+import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
 
 const dmSans = DM_Sans({
     subsets: ['latin'],
@@ -13,11 +14,20 @@ const dmSans = DM_Sans({
 });
 
 export default function RootLayout({ children }) {
-    // get local theme state from context
 
     return (
-        <html lang="en" className={dmSans.variable}>
+        <html lang="en" className={`${dmSans.variable} light`}>
         <head>
+            <script dangerouslySetInnerHTML={{
+                __html: `
+                    try {
+                        const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                        document.documentElement.classList.add(theme);
+                    } catch (e) {
+                        document.documentElement.classList.add('light');
+                    }
+                `
+            }}/>
             <title>{metadata.title}</title>
             <meta name="description" content={metadata.description} />
         </head>
@@ -26,7 +36,7 @@ export default function RootLayout({ children }) {
             <Providers>
                 <Dot
                     size={1}
-                    spacing={40}
+                    spacing={70}
                 />
                 {children}
             </Providers>

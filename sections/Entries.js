@@ -22,10 +22,8 @@ const Entries = ({})=>{
 
 
     const columnsGreatNames = [
-        "Commentaire utilisateur",
         "Status",
         "Dernière modification",
-        "Commentaire administrateur",
         "Date de début",
         "Date de fin",
         "Restitué",
@@ -45,8 +43,9 @@ const Entries = ({})=>{
                 name={"Réservations"}
                 columnsGreatNames={columnsGreatNames}
                 actions={['delete', 'view']}
-                filter={['createdAt', 'updatedAt', 'id']}
+                filter={['createdAt', 'updatedAt', 'id', 'comment', 'adminNote']}
                 model={"entry"}
+                searchBy={{tag: "status", attr: "moderate"}}
             />
         </div>
     );

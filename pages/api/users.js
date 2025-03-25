@@ -64,10 +64,9 @@ export default async function handler(req, res) {
                 surname,
                 username,
                 ...(password !== "" && password !== null && {password: password !== "" ? hashedPassword : null}),
-                role: role.name || "USER",
+                ...(role && {role: role.name}),
             }
         });
-        console.log(user);
         const { password: _, ...userWithoutPassword } = user;
         return res.status(200).json(userWithoutPassword);
 

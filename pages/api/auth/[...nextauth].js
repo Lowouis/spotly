@@ -5,7 +5,7 @@ import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
 import { authenticate } from 'ldap-authentication';
 
-
+const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
 
 export const authConfig = {
     adapter: PrismaAdapter(prisma),
@@ -93,6 +93,7 @@ export const authConfig = {
     ],
     session: {
         strategy: "jwt",
+        maxAge: SESSION_EXPIRATION_TIME,
     },
     callbacks: {
 

@@ -3,7 +3,7 @@ import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
-import {Alert, Switch} from "@nextui-org/react";
+import {Alert, Switch, Modal, ModalBody, ModalContent, ModalHeader} from "@nextui-org/react";
 import DateRangePickerCompatible from "@/components/form/DateRangePickerCompatible";
 import {AlternativeMenu} from "@/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
@@ -13,9 +13,8 @@ import {constructDate} from "@/global";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
 import MatchingEntriesTable from "@/components/listing/MatchingEntriesTable";
-import {useTheme} from "@/context/ThemeContext";
-import RotatingText from "@/addons/TextAnimations/RotatingText/RotatingText";
-
+import {addToast} from "@heroui/toast";
+import {useMediaQuery} from 'react-responsive';
 
 const schemaFirstPart = yup.object().shape({
     site: yup.object().required('Vous devez choisir un site'),
@@ -24,41 +23,77 @@ const schemaFirstPart = yup.object().shape({
     date: yup.object().required('Vous devez choisir une date'),
 });
 
-
-
 const ReservationSearch = () => {
     const { data: session  } = useSession();
     const queryClient = useQueryClient();
     const [searchMode, setSearchMode] = useState("search");
-    const [refresh, setRefresh] = useState(false);
-    const [availableResources, setAvailableResources] = useState();
     const [data, setData] = useState(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isRecurrent, setIsRecurrent] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const isMobile = useMediaQuery({query: '(max-width: 768px)'}); // Détecte les écrans de moins de 768px
+
     const methods = useForm({
         resolver: yupResolver(schemaFirstPart),
         mode: 'onSubmit',
     });
-    const {theme} = useTheme();
-    const [toast, setToast ] = useState({title: "", description: "", type: ""});
 
     const { watch, setValue} = methods;
-
-
-
-
 
     const handleSearchMode = (current) => {
         setSearchMode(current);
     }
+
     const handleRefresh = ()=>{
-        setRefresh(true);
         handleResetAllFilters();
         userEntriesRefetch();
+        setIsSubmitted(false);
+        setData(null);
     }
+
+    const isAvailable = async ({queryKey}) => {
+        const [_, data] = queryKey;
+        if (data) {
+            const startDate = constructDate(data.date.start);
+            const endDate = constructDate(data.date.end);
+
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/reservation/?siteId=${data.site.id}&categoryId=${data.category.id}&domainId=${data.site.id}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
+            );
+            setIsSubmitted(false);
+            if (response.status === 200) {
+                addToast({
+                    title: 'Ressources disponibles récupérées avec succès',
+                    color: 'success',
+                    duration: 5000,
+                    variant: "flat",
+                });
+                return await response.json();
+            } else if (response.status === 404) {
+                addToast({
+                    title: 'Aucune ressource disponible',
+                    description: "Essayer un autre intervalle de date ou d'autres critères.",
+                    color: 'warning',
+                    duration: 5000,
+                    variant: "flat",
+                });
+            } else {
+                addToast({
+                    title: 'Une erreur est survenue',
+                    color: 'danger',
+                    duration: 5000,
+                    variant: "flat",
+                });
+            }
+            ;
+            setIsSubmitted(false);
+        }
+
+        return null;
+    }
+
     const { data: userEntries, refetch : userEntriesRefetch } = useQuery({
         queryKey: ['userEntries', session?.user?.id],
-
         queryFn: async ({ queryKey }) => {
             const userId = queryKey[1];
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?userId=${userId}`);
@@ -69,67 +104,27 @@ const ReservationSearch = () => {
         }
     });
 
-    //this section is dedicated to handle delayed stuff and contrain user to return theirs resources to search for another one
     const [delayed, setDelayed] = useState(0);
 
     useEffect(() => {
         if (userEntries) {
-            setDelayed(userEntries.filter((entry) => entry.moderate === "USED" && new Date(entry.endDate) < new Date()).length);        }
+            setDelayed(userEntries.filter((entry) => entry.moderate === "USED" && new Date(entry.endDate) < new Date()).length);
+        }
     }, [userEntries]);
 
-
-
-    const { data: matchingEntries, refetch : refetchMatchingEntries} = useQuery({
-        queryKey: ['entries', data],
-        queryFn: async ({ queryKey }) => {
-            const [_, data] = queryKey;
-            if (data) {
-                const startDate = constructDate(data.date.start);
-                const endDate = constructDate(data.date.end);
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site.id}&categoryId=${data.category.id}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
-                );
-                console.log(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?siteId=${data.site}&categoryId=${data.category}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`)
-                return await response.json();
-            }
-            return [];
-        }
+    const {data: availableResources, refetch: refetchARD} = useQuery({
+        queryKey: ['isAvailable', data],
+        queryFn: isAvailable,
+        enabled: isSubmitted,
     });
 
-    useEffect(() => {
-        console.log("data : ", data)
-        if (data) {
-            refetchMatchingEntries();  // Déclencher le refetch quand isSubmitted change
-        }
-    }, [isSubmitted, data, refetchMatchingEntries]);
-    console.log(matchingEntries);
-    useEffect(() => {
-        const cpAvailableResources = queryClient.getQueryData(['resource', `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE`]);
-        if (isSubmitted && matchingEntries && cpAvailableResources !== undefined) {
-            console.log(matchingEntries);
-            const filteredResourcesByMatches = cpAvailableResources.filter(
-                (resource) =>
-                    !matchingEntries?.some((entry) => entry.resourceId === resource.id)
-            );
-
-            const filteredResourcesByResources =
-                data?.resource !== null
-                    ? filteredResourcesByMatches?.filter(
-                        (resource) => data.resource.id === resource.id
-                    )
-                    : filteredResourcesByMatches;
-
-            setAvailableResources(filteredResourcesByResources || null);
-            setIsSubmitted(false);
-        }
-    }, [availableResources, isSubmitted, matchingEntries, data, queryClient, watch]);
-
-    const handleResourceOnReset = ()=>{
+    const handleResourceOnReset = () => {
         setValue('resource', null);
         setData({...data, resource: null});
-        queryClient.removeQueries({ queryKey : ['resource'] });
+        queryClient.invalidateQueries({queryKey: ['resource']});
         methods.trigger('resource');
     }
+
     const handleResetAllFilters = ()=>{
         methods.reset({
             site : null,
@@ -138,19 +133,20 @@ const ReservationSearch = () => {
             date : null,
         });
         setData(null);
-        setAvailableResources(null);
+        queryClient.invalidateQueries({queryKey: ['isAvailable']})
+        queryClient.invalidateQueries(['domains']);
+        queryClient.invalidateQueries(['categories']);
+        queryClient.invalidateQueries(['resources']);
         setIsRecurrent(false);
     }
+
     const onSubmit = (data) => {
         setData(data);
         setIsSubmitted(true);
-
+        if (isMobile) {
+            setIsModalOpen(false); // Ferme le modal après la soumission sur mobile
+        }
     };
-    if (!methods) {
-        return <p>Error: Form could not be initialized</p>;
-    }
-
-
 
     return (
         <div className="py-4">
@@ -173,152 +169,208 @@ const ReservationSearch = () => {
                                     <div className="flex flex-col">
                                         <span className="text-sm font-bold">Vous avez des réservations en retard.</span>
                                         <span>Merci de vous rentre dans la section réservations pour restitué les ressources manquante pour pouvoir effectuer une nouvelle réservation.</span>
-                                </div>
+                                    </div>
                                     }
                                 />
                             </div>
                         </div>
                     )}
                     {searchMode === "search" && delayed === 0 &&  (
-                        <FormProvider {...methods}>
-                            <form onSubmit={methods.handleSubmit(onSubmit)}
-                                  className={`bg-slate-50 dark:bg-neutral-800 ${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200 dark:border-neutral-700`}>
-                                <div className="flex flex-row">
-                                    <div className="flex flex-col order-1 w-11/12">
-                                        <div className="flex flex-row space-x-2 w-full">
-                                            <SelectField
-                                                name="site"
-                                                label="Site"
-                                                options={"domains"}
-                                                placeholder={"Choisir un site"}
-                                            />
-                                            <SelectField
-                                                name="category"
-                                                label="Catégorie"
-                                                options={"categories"}
-                                                onReset={handleResourceOnReset}
-                                                placeholder={"Choisir une catégorie"}
-                                                
-                                            />
-                                            {/* ISSUE : ON RESET IT DOESN'T RESET STATE OF DATA SO IT'S NOT REFRESHING IN CASE WE DON'T WANT TO SEARCH FOR ALL RESOURCES   */}
-                                            <SelectField
-                                                name="resource"
-                                                awaiting={watch('category') === undefined &&  watch('site') === undefined}
-                                                label="Resources"
-                                                options={`resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE`}
-                                                isRequired={false}
-                                                onReset={handleResourceOnReset}
-                                                placeholder={"Toutes les ressources"}
-                                            />
-                                            <DateRangePickerCompatible name={"date"} alternative={true}/>
-
-
-                                            <div className="flex flex-col justify-center items-center">
-                                                <span
-                                                    className="text-xs text-neutral-800 dark:text-neutral-200">Récurrent</span>
-                                                <Switch
-                                                    size="sm"
-                                                    name="allday"
-                                                    id="allday"
-                                                    color="primary"
-                                                    className="mb-2"
-                                                    onClick={() => {
-                                                        setIsRecurrent(!isRecurrent)
-                                                    }}
+                        <>
+                            {isMobile ? (
+                                <>
+                                    <Button
+                                        isIconOnly
+                                        size="lg"
+                                        radius="full"
+                                        color={"default"}
+                                        onPress={() => setIsModalOpen(true)}
+                                        className="ml-6"
+                                        shadow="md"
+                                    >
+                                        <span className="flex justify-center items-center rounded-full">
+                                            <MagnifyingGlassIcon width="32" height="32" className="rounded-full"/>
+                                        </span>
+                                    </Button>
+                                    <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
+                                        <ModalContent>
+                                            <ModalHeader>Recherche de Réservation</ModalHeader>
+                                            <ModalBody>
+                                                <FormProvider {...methods}>
+                                                    <form onSubmit={methods.handleSubmit(onSubmit)}
+                                                          className="flex flex-col space-y-4">
+                                                        <SelectField
+                                                            name="site"
+                                                            label="Site"
+                                                            options={"domains"}
+                                                            placeholder={"Choisir un site"}
+                                                        />
+                                                        <SelectField
+                                                            name="category"
+                                                            label="Catégorie"
+                                                            options={"categories"}
+                                                            onReset={handleResourceOnReset}
+                                                            placeholder={"Choisir une catégorie"}
+                                                        />
+                                                        <SelectField
+                                                            name="resource"
+                                                            awaiting={watch('category') === undefined && watch('site') === undefined}
+                                                            label="Resources"
+                                                            options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE` : null}
+                                                            isRequired={false}
+                                                            onReset={handleResourceOnReset}
+                                                            placeholder={"Toutes les ressources"}
+                                                        />
+                                                        <DateRangePickerCompatible name={"date"} alternative={true}/>
+                                                        <div className="flex flex-col justify-center items-center">
+                                                            <span
+                                                                className="text-xs text-neutral-800 dark:text-neutral-200">Récurrent</span>
+                                                            <Switch
+                                                                size="sm"
+                                                                name="allday"
+                                                                id="allday"
+                                                                color="default"
+                                                                className="mb-2"
+                                                                isSelected={isRecurrent}
+                                                                onValueChange={(value) => {
+                                                                    setIsRecurrent(value);
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div
+                                                            className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                                                            <div className="flex flex-row space-x-2 w-full">
+                                                                <SelectField
+                                                                    name="recursive_unit"
+                                                                    label="Fréquence"
+                                                                    options={"recursive_units"}
+                                                                    disabled={!isRecurrent}
+                                                                    isRequired={false}
+                                                                    className="mb-2"
+                                                                />
+                                                                <DateRangePickerCompatible
+                                                                    name={"recursive_range"}
+                                                                    disabled={!isRecurrent}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <Button type="submit" color="primary" className="mt-4">
+                                                            Rechercher
+                                                        </Button>
+                                                    </form>
+                                                </FormProvider>
+                                            </ModalBody>
+                                        </ModalContent>
+                                    </Modal>
+                                </>
+                            ) : (
+                                <FormProvider {...methods}>
+                                    <form onSubmit={methods.handleSubmit(onSubmit)}
+                                          className={`bg-slate-50 dark:bg-neutral-800 ${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200 dark:border-neutral-700`}>
+                                        <div className="flex flex-row">
+                                            <div className="flex flex-col order-1 w-11/12">
+                                                <div className="flex flex-row space-x-2 w-full">
+                                                    <SelectField
+                                                        name="site"
+                                                        label="Site"
+                                                        options={"domains"}
+                                                        placeholder={"Choisir un site"}
+                                                    />
+                                                    <SelectField
+                                                        name="category"
+                                                        label="Catégorie"
+                                                        options={"categories"}
+                                                        onReset={handleResourceOnReset}
+                                                        placeholder={"Choisir une catégorie"}
+                                                    />
+                                                    <SelectField
+                                                        name="resource"
+                                                        awaiting={watch('category') === undefined && watch('site') === undefined}
+                                                        label="Resources"
+                                                        options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE` : null}
+                                                        isRequired={false}
+                                                        onReset={handleResourceOnReset}
+                                                        placeholder={"Toutes les ressources"}
+                                                    />
+                                                    <DateRangePickerCompatible name={"date"} alternative={true}/>
+                                                    <div className="flex flex-col justify-center items-center">
+                                                        <span
+                                                            className="text-xs text-neutral-800 dark:text-neutral-200">Récurrent</span>
+                                                        <Switch
+                                                            size="sm"
+                                                            name="allday"
+                                                            id="allday"
+                                                            color="default"
+                                                            className="mb-2"
+                                                            isSelected={isRecurrent}
+                                                            onValueChange={(value) => {
+                                                                setIsRecurrent(value);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                                                    <div className="flex flex-row space-x-2 w-full">
+                                                        <SelectField
+                                                            name="recursive_unit"
+                                                            label="Fréquence"
+                                                            options={"recursive_units"}
+                                                            disabled={!isRecurrent}
+                                                            isRequired={false}
+                                                            className="mb-2"
+                                                        />
+                                                        <DateRangePickerCompatible
+                                                            name={"recursive_range"}
+                                                            disabled={!isRecurrent}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="w-auto order-2 flex justify-center items-center">
+                                                <Button
+                                                    isIconOnly
+                                                    size="lg"
+                                                    radius="full"
+                                                    color={"default"}
+                                                    type="submit"
+                                                    className="ml-6"
+                                                    shadow="md"
+                                                    isLoading={isSubmitted}
                                                 >
-
-                                                </Switch>
+                                                    <span className="flex justify-center items-center rounded-full">
+                                                        <MagnifyingGlassIcon width="32" height="32"
+                                                                             className="rounded-full"/>
+                                                    </span>
+                                                </Button>
                                             </div>
                                         </div>
-                                        <div className={`flex flex-row space-x-2 w-full ${!isRecurrent && "hidden"}`}>
-                                            <SelectField
-                                                name="recursive_unit"
-                                                label="Fréquence"
-                                                options={"recursive_units"}
-                                                disabled={!isRecurrent}
-                                                isRequired={false}
-                                                className="mb-2"
-                                            />
-                                            <DateRangePickerCompatible name={"recursive_range"} disabled={!isRecurrent}/>
+                                    </form>
+                                    {!isSubmitted && !availableResources && (
+                                        <div className="w-full rounded-lg p-2 h-full space-y-11 flex flex-col">
+                                            <div
+                                                className="h-full flex justify-center items-center mt-5 text-xl dark:text-neutral-300 text-neutral-600 opacity-75 font-bold">
+                                                Pour commencer faites une recherche
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="w-auto order-2 flex justify-center items-center">
-                                        <Button
-                                            isIconOnly
-                                            size="lg"
-                                            radius="full"
-                                            color={theme ? "primary" : "default"}
-                                            type="submit"
-                                            className="ml-6"
-                                            shadow="lg"
-                                            isLoading={isSubmitted}
-                                            spinner={
-                                                <svg
-                                                    className="animate-spin h-7 w-7 text-current"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <circle
-                                                        className="opacity-25"
-                                                        cx="12"
-                                                        cy="12"
-                                                        r="10"
-                                                        stroke="currentColor"
-                                                        strokeWidth="4"
-                                                    />
-                                                    <path
-                                                        className="opacity-75"
-                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                                        fill="currentColor"
-                                                    />
-                                                </svg>
-                                            }
-                                        >
-                                            <span className="flex justify-center items-center rounded-full">
-                                                <MagnifyingGlassIcon width="32" height="32" className="rounded-full" color="white"/>
-                                            </span>
-                                        </Button>
-                                    </div>
-                                </div>
-                            </form>
-                            <div className="w-2/3 my-2">
-                                {/* USER TOAST */}
-                                {toast.title !== "" && (
-                                    <div className="flex items-center justify-center w-full mb-5">
-                                        <Alert description={toast.description} title={toast.title} color={toast.type} variant="faded" radius="md"  isClosable={true} onClose={()=>{setToast({title: "",description: "", type: ""})}}/>
-                                    </div>
-                                )}
-                            </div>
-
-                            {!isSubmitted && !availableResources && (
-                                <div className="w-full rounded-lg p-2 h-full space-y-11 flex flex-col">
-                                    <div
-                                        className="h-full flex justify-center items-center mt-5 text-xl dark:text-neutral-300 text-neutral-600 opacity-75">
-                                        Pour commencer faites une recherche
-                                    </div>
-                                </div>
+                                    )}
+                                </FormProvider>
                             )}
-                        </FormProvider>
+                        </>
                     )}
                     {searchMode === "search" && delayed === 0 &&  (
                         <div className="flex 2xl:w-2/3 xl:w-4/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
-
                                     {availableResources && (
                                         <MatchingEntriesTable
-                                            setData={setData}
                                             resources={availableResources}
                                             methods={methods}
-                                            data={data}
+                                            entry={data}
                                             session={session}
-                                            handleResetFetchedResources={()=>{setAvailableResources(null)}}
                                             handleRefresh={handleRefresh}
-                                            setToast={setToast}
                                         />
-                                    )
-                                    }
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -330,8 +382,4 @@ const ReservationSearch = () => {
     );
 };
 
-
-
 export {ReservationSearch};
-
-

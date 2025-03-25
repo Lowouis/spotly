@@ -4,12 +4,65 @@ import {Button} from '@nextui-org/button';
 import {addToast} from "@heroui/toast";
 import Image from 'next/image';
 import {Form} from "@nextui-org/form";
-import {Slider} from "@heroui/react";
-
+import {Slider, Alert} from "@heroui/react";
+import {set} from 'date-fns';
+import {useQuery, useMutation} from '@tanstack/react-query';
+import {Skeleton} from '@nextui-org/react';
 
 export const General = () => {
     const [uploadState, setUploadState] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    const {data: timeScheduleOptions, refetch, isLoading: isLoadingtimeScheduleOptions} = useQuery({
+        queryKey: ['timeScheduleOptions'],
+        queryFn: async () => {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/timeScheduleOptions`);
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des options de planification');
+            }
+            return response.json();
+        },
+    })
+    const mutation = useMutation({
+        mutationFn: async (newValue) => {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/timeScheduleOptions`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newValue),
+            });
+            if (!response.ok) {
+                throw new Error('Erreur lors de la mise à jour des options de planification');
+            }
+            return response.json();
+        },
+        onSuccess: () => {
+            addToast({
+                title: 'Mise à jour réussie',
+                description: 'Les options de planification ont été mises à jour avec succès',
+                color: 'success',
+                duration: 2000,
+                variant: "flat"
+            });
+            refetch();
+        },
+        onError: (error) => {
+            addToast({
+                title: 'Erreur de mise à jour',
+                description: error.message || 'Une erreur est survenue lors de la mise à jour',
+                color: 'danger',
+                duration: 2000,
+                variant: "flat"
+            });
+        }
+    });
+
+    const handleTimeScheduleChange = (newValue) => {
+        mutation.mutate(newValue);
+    };
+
+    
 
     const handleBannerUpload = (file) => {
         if (!file) return;
@@ -77,13 +130,15 @@ export const General = () => {
     return (
         <div className="flex flex-col gap-4 p-4 bg-white dark:bg-neutral-900 bg-opacity-100 h-full">
             <h3 className="text-xl font-semibold text-black dark:text-neutral-200 ">Bannière du profil</h3>
-            <div className="relative group w-full  rounded-lg overflow-hidden">
+            <div className="relative group rounded-lg overflow-hidden">
                 <Image
                     src="/banner.png"
-                    width={1920}
-                    height={1080}
+                    width={800}
+                    height={400}
                     alt="Bannière actuelle"
-                    className="object-cover w-full transition-opacity group-hover:opacity-75"
+                    className="object-cover transition-opacity group-hover:opacity-75"
+                    priority
+                    quality={85}
                 />
 
                 <div
@@ -91,6 +146,7 @@ export const General = () => {
                     <Button
                         variant="solid"
                         color="default"
+                        size="sm"
                         isLoading={isLoading}
                         className="opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all"
                         onPress={() => document.getElementById('bannerUpload')?.click()}
@@ -98,8 +154,8 @@ export const General = () => {
                     >
                         {!isLoading && (
                             <>
-                                <CiCamera size={24} className="mr-2" aria-hidden="true"/>
-                                Changer la bannière
+                                <CiCamera size={20} className="mr-1" aria-hidden="true"/>
+                                Changer
                             </>
                         )}
                     </Button>
@@ -136,32 +192,60 @@ export const General = () => {
             )}
             <h3 className="text-xl font-semibold text-black dark:text-neutral-200">Tolérance des horaires</h3>
 
-            <Form>
-                <Slider
-                    className="max-w-md"
-                    defaultValue={0}
-                    label="Récupération de la ressource"
-                    maxValue={30}
-                    minValue={-30}
-                    fillOffset={0}
-                    color="foreground"
-                    size="sm"
-                    formatOptions={{style: "unit", unit: "minute"}}
-                    step={5}
-                />
-                <Slider
-                    className="max-w-md"
-                    defaultValue={0}
-                    label="Récupération de la ressource"
-                    maxValue={30}
-                    minValue={-30}
-                    fillOffset={0}
-                    color="foreground"
-                    size="sm"
-                    formatOptions={{style: "unit", unit: "minute"}}
-                    step={5}
-                />
-            </Form>
+            <div className="w-full max-w-md">
+                {isLoadingtimeScheduleOptions ? (
+                    <div className="space-y-4">
+                        <Skeleton className="rounded-lg">
+                            <div className="h-8 rounded-lg bg-default-300"></div>
+                        </Skeleton>
+                        <Skeleton className="rounded-lg">
+                            <div className="h-8 rounded-lg bg-default-300"></div>
+                        </Skeleton>
+                    </div>
+                ) : (
+                    <Form>
+                        <div className="space-y-6">
+                            <Slider
+                                className="max-w-md"
+                                showSteps={true}
+                                defaultValue={timeScheduleOptions?.onPickup || 0}
+                                label={`Récupération : ${Math.abs(timeScheduleOptions?.onPickup || 0)} minutes ${(timeScheduleOptions?.onPickup || 0) > 0 ? "avant" : "après"} l'heure de début.`}
+                                maxValue={30}
+                                minValue={-30}
+                                onChange={(newValue) => {
+                                    handleTimeScheduleChange({
+                                        onPickup: newValue
+                                    });
+                                }}
+                                fillOffset={0}
+                                color="foreground"
+                                size="sm"
+                                step={5}
+                                hideValue={true}
+                            />
+                            <Slider
+                                className="max-w-md"
+                                showSteps={true}
+                                defaultValue={timeScheduleOptions?.onReturn || 0}
+                                label={`Restitution : ${Math.abs(timeScheduleOptions?.onReturn || 0)} minutes ${(timeScheduleOptions?.onReturn || 0) > 0 ? "après" : "avant"} l'heure de fin.`}
+                                maxValue={30}
+                                minValue={-30}
+                                onChange={(newValue) => {
+                                    handleTimeScheduleChange({
+                                        onReturn: newValue
+                                    });
+                                }}
+                                fillOffset={0}
+                                hideValue={true}
+                                color="foreground"
+                                size="sm"
+                                step={5}
+                            />
+                        </div>
+                    </Form>
+                )}
+            </div>
+            
 
         </div>
     );

@@ -22,7 +22,7 @@ const Domains = ({})=>{
     const DomainFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom' },
         { required: true, name: 'pickable', type: 'object', label: 'Niveau de protection', options : "pickables"},
-        { required: true, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables"},
+        {required: false, name: 'owner', type: 'object', label: 'Propriétaire', options: "ownerables"},
     ];
 
 

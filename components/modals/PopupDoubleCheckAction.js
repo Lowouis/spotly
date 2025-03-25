@@ -44,10 +44,10 @@ export default function PopupDoubleCheckAction({onConfirm, title, message, isOpe
                                 </p>
                             </ModalBody>
                             <ModalFooter>
-                                <Button color="danger" variant="light" onPress={onClose}>
+                                <Button color="default" variant="light" onPress={onClose}>
                                     Non
                                 </Button>
-                                <Button color="primary" onPress={()=>handleConfirm(onClose)}>
+                                <Button color="default" onPress={() => handleConfirm(onClose)}>
                                     Oui
                                 </Button>
                             </ModalFooter>

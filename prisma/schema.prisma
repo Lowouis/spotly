@@ -102,31 +102,35 @@ model domain {
 
 enum status {
   ACCEPTED
-  AVAILABLE
   USED
   REJECTED
-  LOCKED
   ENDED
   WAITING
 }
 
+enum resourceState {
+  AVAILABLE
+  UNAVAILABLE
+  LOCKED
+}
+
 model resource {
-  id          Int       @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   name        String
   description String?
   moderate    Boolean
   domainId    Int
-  options     option[]  @relation("resourceToOption")
+  options     option[]      @relation("resourceToOption")
   categoryId  Int
-  status      status    @default(AVAILABLE)
-  category    category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  domains     domain    @relation(fields: [domainId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  status      resourceState @default(AVAILABLE)
+  category    category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  domains     domain        @relation(fields: [domainId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   entry       entry[]
   ownerId     Int?
-  owner       User?     @relation("userToResource", fields: [ownerId], references: [id])
-  pickable    pickable? @relation(fields: [pickableId], references: [id])
+  owner       User?         @relation("userToResource", fields: [ownerId], references: [id])
+  pickable    pickable?     @relation(fields: [pickableId], references: [id])
   pickableId  Int?
 }
 
@@ -185,4 +189,12 @@ model LdapConfig {
   lastUpdated   DateTime @updatedAt
   updatedBy     String
   isActive      Boolean  @default(true)
+}
+
+model timeScheduleOptions {
+  id        Int      @id @default(autoincrement())
+  onPickup  Int
+  onReturn  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

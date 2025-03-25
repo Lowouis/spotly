@@ -54,13 +54,8 @@ export default function ReservationUserListing({entries, handleRefresh}) {
         })
         return entriesByStatus;
     }
-
-    const handleSectionChange = ()=>{
-
-    }
-
     return (
-        <div className="mx-2 my-1 lg:w-1/3 lg:flex lg:flex-col md:w-full lg:items-center lg:justify-center ">
+        <div className="mx-2 my-1 w-full flex flex-col items-center justify-center sm:w-full md:w-1/2 lg:w-1/3">
             {userAlert.title !== "" && (
                 <div className="flex items-center justify-center w-full">
                     <Alert
@@ -74,8 +69,7 @@ export default function ReservationUserListing({entries, handleRefresh}) {
             )}
             { entries && entries?.length > 0 ? (
                 <div className="w-full flex-col flex justify-between items-center">
-                    <Tabs color="default" variant="underlined" aria-label="entries_sort" default="all" fullWidth
-                          onSelectionChange={handleSectionChange}>
+                    <Tabs color="default" variant="underlined" aria-label="entries_sort" default="all" fullWidth>
                         <Tab key="all" title="Toutes" className="w-full">
                             {renderEntries(sortEntriesByStatus(entries), handleRefresh, true, setUserAlert)}
                         </Tab>
@@ -97,7 +91,8 @@ export default function ReservationUserListing({entries, handleRefresh}) {
                 </div>
             ) : (
                 <div className="flex justify-center items-center mt-4 p-3">
-                    <h1 className="text-xl text-center ">Aucune réservation</h1>
+                    <h1 className="text-lg opacity-75 dark:text-neutral-300 text-neutral-600 text-center font-bold">Aucune
+                        réservation</h1>
                 </div>
             )}
         </div>
@@ -122,7 +117,7 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                             <h2 className="text-sm font-semibold">{all === true && tagsGreatNames[key]}</h2>
                             {entries[tag].map((entry) => (
                                 <div key={entry.id}
-                                     className="w-full flex justify-between items-center py-3 p-1 rounded-lg mb-2 dark:bg-white dark:bg-opacity-10 bg-neutral-100 ">
+                                     className="w-full flex justify-between items-center py-3 p-1 rounded-lg mb-2 dark:bg-neutral-800 bg-neutral-100 ">
                                     <div className="flex flex-row space-x-6 mx-3 items-center">
                                         <div className="flex flex-col">
                                             <div className="text-xl font-bold">

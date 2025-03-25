@@ -4,24 +4,18 @@ import {createContext, useContext, useState, useEffect} from 'react';
 const ThemeContext = createContext();
 
 export function ThemeProvider({children}) {
-    // Détecter le thème initial (localStorage ou préférences système)
-    const getInitialTheme = () => {
-        if (typeof window !== 'undefined') {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) return savedTheme;
+    const [theme, setTheme] = useState('light');
 
-            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        return 'light';
-    };
-
-    const [theme, setTheme] = useState(getInitialTheme);
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme');
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        setTheme(savedTheme || systemTheme);
+    }, []);
 
     const toggleTheme = () => {
         setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
     };
 
-    // Appliquer le thème au document et sauvegarder
     useEffect(() => {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');

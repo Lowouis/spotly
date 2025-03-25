@@ -1,9 +1,9 @@
-import {getLocalTimeZone, parseZonedDateTime, today} from "@internationalized/date";
+import {getLocalTimeZone, today} from "@internationalized/date";
 import {DateRangePicker} from "@nextui-org/date-picker";
 import {useFormContext} from "react-hook-form";
 import {I18nProvider} from 'react-aria';
 import React from "react";
-import {useDisclosure} from "@nextui-org/react";
+
 
 export default function DateRangePickerCompatible({name, label, disabled=false, alternative=false}) {
     const {setValue, watch, register, formState: { errors } } = useFormContext();
@@ -17,23 +17,24 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
         <I18nProvider locale="fr-FR">
             {!alternative ? (
                 <DateRangePicker
-
-                visibleMonths={2}
-                size="lg"
-                id={name}
-                aria-label={label}
-                variant="bordered"
-                name={name}
-                isRequired
-                hideTimeZone
-                className="my-2 w-full"
-                minValue={today(getLocalTimeZone())}
-                color="primary"
-                isDisabled={disabled}
-                onChange={handleChange}
-                zone={getLocalTimeZone()}
-                radius="lg"
-                aria-labelledby={name}
+                    visibleMonths={2}
+                    size="lg"
+                    id={name}
+                    aria-label={label}
+                    variant="bordered"
+                    name={name}
+                    isRequired
+                    hideTimeZone
+                    className="my-2 w-full"
+                    minValue={today(getLocalTimeZone())}
+                    color="default"
+                    isDisabled={disabled}
+                    onChange={handleChange}
+                    zone={getLocalTimeZone()}
+                    radius="lg"
+                    aria-labelledby={name}
+                    value={value}
+                    errorMessage={errors[name]?.message}
                 />) : (
                 <DateRangePicker
                     onChange={handleChange}
@@ -45,7 +46,7 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
                     className="my-2 w-full"
                     aria-label={label}
                     labelPlacement="outside"
-                    color="primary"
+                    color="default"
                     size="lg"
                     hourCycle={24}
                     granularity="hour"
@@ -54,6 +55,9 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
                     isDisabled={false}
                     variant="bordered"
                     aria-labelledby={name}
+                    value={value}
+                    errorMessage={errors[name]?.message}
+                    placeholder="Sélectionnez une plage de dates"
                 />
             )}
 

@@ -78,7 +78,6 @@ export function ConnectionModal({}) {
                 setWrongCredentials(true);
             }
             if (response.ok) {
-                setWrongCredentials(false);
                 router.push('/');
             }
             setConnectionLoading(false);
@@ -175,7 +174,7 @@ export function ConnectionModal({}) {
         <div className="mx-auto mt-4">
             <Banner/>
             <div className="w-full flex justify-center items-center mt-5 flex-col">
-                <Card fullWidth className="max-w-full w-[400px]">
+                <Card fullWidth className="max-w-full w-[400px] border-2" shadow="none">
                     <CardBody className="overflow-hidden">
                         <Tabs
                             fullWidth
@@ -203,7 +202,8 @@ export function ConnectionModal({}) {
 
                                     <div className="">
                                         <p className="flex justify-center items-center m-1 p-2 text-sm">Vous n&#39;avez
-                                            pas de compte ?&nbsp; <Link size="sm" color="foreground" href="/register">Créer
+                                            pas de compte ?&nbsp; <Link underline="hover" size="sm" color="foreground"
+                                                                        href="/register">Créer
                                                 un compte</Link></p>
                                         <Button
                                             type={"submit"}
@@ -240,8 +240,12 @@ export function ConnectionModal({}) {
                                         </div>
                                         <div className="font-thin text-sm text-neutral-500 mt-2 ">
                                             <div className="flex justify-center items-center space-x-4">
-                                                Je n&apos;ai pas de réservation <Tooltip content="Pour réserver une ressource rendez-vous dans la section 'Se connecter'.">
-                                                <Button onPress={()=>{setSelected("login")}} isIconOnly size="sm" variant="flat" color="warning" className="ml-2"><span className="font-bold">?</span></Button>
+                                                Je n&apos;ai pas de réservation <Tooltip color="foreground" showArrow
+                                                                                         content="Pour réserver une ressource rendez-vous dans la section 'Se connecter'.">
+                                                <Button onPress={() => {
+                                                    setSelected("login")
+                                                }} isIconOnly size="sm" variant="flat" color="default" radius="full"
+                                                        className="ml-2"><span className="font-bold">?</span></Button>
                                                 </Tooltip>
                                             </div>
                                         </div>
@@ -357,7 +361,7 @@ export function ConnectionModal({}) {
                                         onPress={() => {
                                             setIfl({"username": "", "otp": ""});
                                             setUserAlert({"type": "", "message": ""});
-                                            queryClient.removeQueries(['lucky_entry']);
+                                            queryClient.invalidateQueries(['lucky_entry']);
                                             onClose();
                                         }}
                                 >

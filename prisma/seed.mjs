@@ -3,14 +3,20 @@ import bycrypt from "bcrypt";
 
 const prisma = new PrismaClient()
 
+const default_time_options = [{
+    id: 1,
+    onPickup: 0,
+    onReturn: 0
+}]
+
 const pickables = [
     {
         name: "FLUENT",
-        description: "Pickable pour les ressources de niveau de confiance élevé",
+        description: "Aucune action nécessaire de la part de l’utilisateur.",
     },
     {
         name: "HIGH_TRUST",
-        description: "Pickable pour les ressources de niveau de confiance élevé",
+        description: "L’utilisateur doit cliquer sur sa réservation, pour confirmer que la ressource est restitué.",
     },
     {
         name: "LOW_TRUST",
@@ -18,7 +24,7 @@ const pickables = [
     },
     {
         name: "DIGIT",
-        description: "Pickable pour les ressources de niveau de confiance nul",
+        description: "Récupération et restitution de la ressource par un code à 6 chiffres envoyé par mail.",
     },
     {
         name: "LOW_AUTH",
@@ -46,7 +52,6 @@ async function main() {
             }
         });
         console.log("Users created");
-
     } catch (e) {
         console.log("User already exists");
     }
@@ -59,6 +64,15 @@ async function main() {
 
     } catch (e) {
         console.log("Pickables already exists");
+    }
+
+    try {
+        await prisma.timeScheduleOptions.createMany({
+            data: default_time_options
+        })
+        console.log("Times schedules options created")
+    } catch (e) {
+        console.log("Times schedules options already created");
     }
 
 

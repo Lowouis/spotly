@@ -86,8 +86,8 @@ const LDAP = () => {
 
     return (
         <div
-            className="flex bg-neutral-200 dark:bg-neutral-900 flex-col p-6 rounded-lg shadow-sm h-full w-full space-y-2 justify-start items-start">
-            <h2 className="text-xl font-semibold p-4">Configuration LDAP</h2>
+            className="flex bg-white dark:bg-neutral-900 flex-col p-6 rounded-lg shadow-sm h-full w-full space-y-2 justify-start items-start">
+            <h2 className="text-xl font-semibold p-4 text-black dark:text-white">Configuration LDAP</h2>
             <form onSubmit={handleSubmit} className="flex flex-col w-full gap-4 p-4">
                 <div className="flex-1">
                     <Input
@@ -184,7 +184,8 @@ const LDAP = () => {
             <Spacer y={4}/>
 
             <div className="w-full mx-auto space-y-4">
-                <h2 className="text-xl font-semibold p-4">Configuration avancée des permissions LDAP</h2>
+                <h2 className="text-xl font-semibold p-4 text-black dark:text-white">Configuration avancée des
+                    permissions LDAP</h2>
 
                 <div className="mt-4 p-4 bg-content1 rounded-lg">
                     <p className="text-sm text-default-500">

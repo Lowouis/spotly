@@ -7,8 +7,18 @@ export default async function handler(req, res) {
     await runMiddleware(req, res);
     try {
         if(req.method === "GET"){
-            const { userId, startDate, endDate, siteId, categoryId, resourceId, moderate, returnedConfirmationCode, owned } = req.query;
-            console.log("owned : ", owned)
+            const {
+                userId,
+                startDate,
+                endDate,
+                siteId,
+                categoryId,
+                resourceId,
+                moderate,
+                returnedConfirmationCode,
+                owned,
+                status
+            } = req.query;
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"

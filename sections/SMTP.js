@@ -97,8 +97,8 @@ export default function SMTPSettings() {
     }
     return (
         <div
-            className="flex flex-col p-6 rounded-lg shadow-sm h-full w-full space-y-2 justify-start items-start bg-neutral-200 dark:bg-neutral-900">
-            <h2 className="text-xl font-semibold p-4">Configuration SMTP</h2>
+            className="flex flex-col p-6 rounded-lg shadow-sm h-full w-full space-y-2 justify-start items-start bg-white dark:bg-neutral-900">
+            <h2 className="text-xl font-semibold p-4 text-black dark:text-white">Configuration SMTP</h2>
             <form onSubmit={handleSubmit} className="flex flex-col w-full gap-4 p-4">
                 <div className="flex-1">
                     <Input
@@ -140,10 +140,11 @@ export default function SMTPSettings() {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700">Email expéditeur</label>
                     <Input
                         type="email"
                         color={"default"}
+                        label="Email expéditeur"
+                        labelPlacement='outside'
                         variant={'flat'}
                         placeholder="spotly@domain.fr"
                         value={smtpConfig.from}

@@ -75,7 +75,7 @@ export function RegisterModal({}) {
         <div className="mx-auto mt-4">
             <Banner/>
             <div className="w-full flex justify-center items-center mt-5 flex-col">
-                <Card fullWidth className="max-w-full w-[400px]">
+                <Card fullWidth className="max-w-full w-[400px] border-2" shadow="none">
                     <CardBody className="overflow-hidden">
                         <form className="flex flex-col justify-center space-y-4">
                             {creditentials.map((input, index) => (
@@ -94,7 +94,8 @@ export function RegisterModal({}) {
 
                             <div className="">
                                 <p className="flex justify-center items-center m-1 p-2 text-sm">Vous avez deja un compte
-                                    ? &nbsp;<Link size="sm" color="foreground" href="/login"> Se connecter</Link></p>
+                                    ? &nbsp;<Link underline="hover" size="sm" color="foreground" href="/login"> Se
+                                        connecter</Link></p>
                                 <Button
                                     type={"submit"}
                                     fullWidth
@@ -103,7 +104,6 @@ export function RegisterModal({}) {
                                         await handleSubmit().then(r => {
                                         });
                                     }}
-
                                     color="default"
                                     isLoading={connectionLoading}
                                     size="lg"

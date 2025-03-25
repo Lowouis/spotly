@@ -18,7 +18,7 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
             <div className="flex flex-row justify-start space-x-2">
             {actions.includes('edit') &&
                 <div className="flex justify-center items-center ">
-                    <Tooltip content="Modifier" color="default"  size={'sm'} showArrow>
+                    <Tooltip content="Modifier" color="foreground" size={'sm'} showArrow>
                         <Button
                             className="text-default-500 font-medium underline underline-offset-4"
                             size="sm"
@@ -35,7 +35,7 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
             }
             {actions.includes('delete') &&
                 <div className="flex justify-center items-center">
-                    <Tooltip content="Supprimer" color="default"  size={'sm'} showArrow>
+                    <Tooltip content="Supprimer" color="foreground" size={'sm'} showArrow>
                         <Button
                         className="text-default-500 font-medium underline underline-offset-4"
                         size="sm"
@@ -54,7 +54,7 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
             }
                 {actions.includes('reject') && actions.includes('confirm') &&
                 <div className="flex justify-center items-center">
-                    <Tooltip content="Decider" color="default" size={'sm'} showArrow>
+                    <Tooltip content="Decider" color="foreground" size={'sm'} showArrow>
                         <Button
                             className="text-default-500 font-medium underline underline-offset-4"
                             size="sm"

@@ -30,7 +30,7 @@ const SelectField = ({
             }
             return response.json();
         },
-        enabled: !awaiting,
+        enabled: !awaiting && options !== null,
     });
     const [watchedValue, setWatchedValue] = React.useState(null);
 
@@ -48,7 +48,6 @@ const SelectField = ({
         if (eyesOn !== null && (inheritanceDomain !== undefined || inheritanceCategory !== undefined)) {
             const domainName = inheritanceDomain?.[eyesOn]?.name;
             const categoryName = inheritanceCategory?.[eyesOn]?.name;
-            console.log(domainName, categoryName);
             setWatchedValue(domainName || categoryName);
         }
     }, [value, defaultValue, setValue, name, resolvedOptions, eyesOn, watchedValue, watch]);
@@ -83,14 +82,13 @@ const SelectField = ({
                     name={name}
                     label={
                     <span className="p-0.5">
-                        <span className="mr-2">{label}</span>
+                        <span className="mr-2 text-neutral-700 dark:text-neutral-300">{label}</span>
                         <Chip
                             radius={'full'}
                             variant={'flat'}
                             size="sm"
                             color={resolvedOptions && resolvedOptions?.length !== 0 ? "primary" : "danger"}
                         >{resolvedOptions?.length ? resolvedOptions.length : 0}</Chip>
-
                     </span>
                     }
                     variant={variant}
@@ -101,7 +99,13 @@ const SelectField = ({
                     hideEmptyContent={true}
                     onSelectionChange={(selected) => handleChange(selected)}
                     placeholder={eyesOn !== null && watchedValue !== undefined ?
-                        <span className="italic">{watchedValue} par héritage</span> : placeholder}
+                        <span
+                            className="italic text-neutral-500 dark:text-neutral-400">{watchedValue} par héritage</span> : resolvedOptions?.length ? placeholder : "Aucune donnée"}
+                    classNames={{
+                        label: "text-neutral-700 dark:text-neutral-300",
+                        value: "text-neutral-900 dark:text-neutral-100",
+                        description: "text-neutral-600 dark:text-neutral-400"
+                    }}
                 >
                     {(option) => {
                         return (

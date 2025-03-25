@@ -131,7 +131,7 @@ export default function Sidebar() {
 
                 <button
                     onClick={toggleSidebar}
-                    className="p-1 text-gray-500 rounded-md hover:bg-gray-200"
+                    className="p-1 text-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
                 >
                     <MdArrowForwardIos className={`${isOpen ? "rotate-180" : "rotate-0"} transition-all duration-400`} size={18} />
                 </button>
@@ -156,7 +156,19 @@ export default function Sidebar() {
                     </div>
                 ))}
             </nav>
-            <div className="mt-2 mb-3 ml-1 flex items-center justify-start text-gray-700 dark:text-gray-200 space-x-2">
+            <div className={`
+                px-4 py-2 transition-all duration-100 flex items-center
+                ${isOpen ? 'justify-between' : 'justify-center'}
+                border-t border-neutral-200 dark:border-gray-500
+            `}>
+                <span className={`
+                    text-sm text-gray-600 dark:text-gray-300
+                    transition-all duration-100
+                    ${isOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0'}
+                    overflow-hidden whitespace-nowrap
+                `}>
+                    Thème
+                </span>
                 <DarkModeSwitch size={'md'}/>
             </div>
             <div className="border-t border-neutral-200 dark:border-gray-500">
@@ -199,7 +211,7 @@ export default function Sidebar() {
                         <Skeleton className="rounded-lg bg-neutral-100 w-full"
                                   isLoaded={!!session}
                         >
-                            <p className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                            <p className="text-sm font-medium text-gray-900 whitespace-nowrap text-black dark:text-white">
                                 {session?.user.name} {session?.user.surname}
                             </p>
                             <p className="text-sm text-gray-500 whitespace-nowrap">

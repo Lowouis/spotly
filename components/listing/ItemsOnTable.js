@@ -16,10 +16,7 @@ import {
 import {Button} from "@nextui-org/button";
 import React, {useState} from "react";
 import {PlusCircleIcon, TrashIcon} from "@heroicons/react/24/solid";
-import * as yup from "yup";
-import {useForm} from "react-hook-form";
 import {
-    AdjustmentsHorizontalIcon,
     ArrowPathIcon,
     ArrowsUpDownIcon,
     MagnifyingGlassIcon
@@ -37,6 +34,7 @@ import {IoMdGlobe} from "react-icons/io";
 import {MdOutlineCategory} from "react-icons/md";
 import {truncateString} from "@/global";
 import ActionOnItem from "@/components/actions/ActionOnItem";
+import {BsQuestion} from "react-icons/bs";
 
 
 export const postItem = async ({data, model}) => {
@@ -103,21 +101,43 @@ export default function ItemsOnTable({
                                          name,
                                          isLoading,
                                          create_hidden = false,
-                                         selectionMode = true
+                                         selectionMode = true,
+                                         searchBy = {tag: "nom", attr: "name"}
                                      }) {
     const {isOpen: isOpenOnItem, onOpen: onOpenOnItem, onOpenChange: onOpenChangeOnItem} = useDisclosure();
     const [currentAction, setCurrentAction] = useState("create");
     const [currentItem, setCurrentItem] = useState();
-    const {refreshData} = useRefreshContext();
+    // Move searchValue state before items memo
+    const [searchValue, setSearchValue] = useState("");
     const [page, setPage] = React.useState(1);
     const rowsPerPage = 10;
     const pages = Math.ceil(items?.length / rowsPerPage);
+
     items = React.useMemo(() => {
+        let filteredItems = [...(items || [])];
+
+        if (searchValue.trim()) {
+            filteredItems = filteredItems.filter(item => {
+                const itemDTO = EntryDTO(item, filter);
+
+                // Debug logs
+                console.log('itemDTO:', itemDTO);
+                console.log('searchBy:', searchBy);
+                console.log('searching for:', searchValue);
+                console.log('value to search in:', itemDTO[searchBy.attr]);
+
+                const valueToSearch = itemDTO[searchBy.attr];
+
+                return String(valueToSearch || '')
+                    .toLowerCase()
+                    .includes(searchValue.toLowerCase());
+            });
+        }
+
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
-
-        return items?.slice(start, end);
-    }, [page, items]);
+        return filteredItems.slice(start, end);
+    }, [page, items, searchValue, searchBy]);
 
     const {
         isOpen: isOpenDeleteConfirm,
@@ -126,7 +146,8 @@ export default function ItemsOnTable({
     } = useDisclosure();
     const {data: session} = useSession();
     const [selectedItems, setSelectedItems] = useState(new Set());
-
+    const {isOpen: isOpenComments, onOpen: onOpenComments, onOpenChange: onOpenChangeComments} = useDisclosure();
+    const {refreshData} = useRefreshContext();
     const mutation = useMutation({
         mutationFn: deleteItems,
         onMutate: (variables) => {
@@ -181,26 +202,6 @@ export default function ItemsOnTable({
         }
     };
 
-    const dropdownitems = [
-        {
-            key: "new",
-            label: "New file",
-        },
-        {
-            key: "copy",
-            label: "Copy link",
-        },
-        {
-            key: "edit",
-            label: "Edit file",
-        },
-        {
-            key: "delete",
-            label: "Delete file",
-        },
-    ];
-
-
     return (
         <div className="mx-5 flex-1 relative">
             <div className="flex row justify-start items-center">
@@ -227,18 +228,25 @@ export default function ItemsOnTable({
                     <Input
                         isClearable
                         radius="lg"
-                        placeholder="Rechercher..."
-                        startContent={<MagnifyingGlassIcon width={24} height={24}/>}
+                        color="default"
+                        placeholder={"Rechercher par " + searchBy.tag}
+                        startContent={
+                            <MagnifyingGlassIcon
+                                width={24}
+                                height={24}
+                                className="text-neutral-500 dark:text-neutral-400"
+                            />
+                        }
+                        value={searchValue}
+                        onValueChange={setSearchValue}
+                        classNames={{
+                            input: "text-neutral-900 dark:text-neutral-200",
+                            inputWrapper: "border-neutral-300 dark:border-neutral-700",
+                        }}
                     />
-                    <TableDropDown
-                        icon={<AdjustmentsHorizontalIcon color="#444937" height={25} width={25}/>}
-                        items={dropdownitems}
-                    />
-                    <TableDropDown
-                        icon={<ArrowsUpDownIcon color="#444937" height={25} width={25}/>}
-                        items={dropdownitems}
-                    />
-                    <Tooltip content={"Rafraîchir les données"} color="primary" size="sm" showArrow placement="top-end">
+
+                    <Tooltip content={"Rafraîchir les données"} color="foreground" size="sm" showArrow
+                             placement="top-end">
                         <Button
                             isIconOnly={true}
                             variant="flat"
@@ -258,10 +266,10 @@ export default function ItemsOnTable({
                             variant="flat"
                             isLoading={isLoading}
                             radius="full"
-                            color="danger"
+                            color="default"
                             onPress={onOpenChangeDeleteConfirm}
                         >
-                            <TrashIcon width={20} color="red" height={20}/>
+                            <TrashIcon width={20} height={20}/>
                         </Button>
                     )}
                     <PopupDoubleCheckAction
@@ -274,7 +282,7 @@ export default function ItemsOnTable({
                         } élément ?`}
                     />
                     {selectionMode && (
-                        <div className="flex items-center text-xs uppercase w-full text-slate-500">
+                        <div className="flex items-center text-xs uppercase w-full text-black dark:text-white ">
                             {selectedItems.size <= 1
                                 ? selectedItems.size + " selectionné"
                                 : selectedItems.size + " selectionnés"}
@@ -282,11 +290,11 @@ export default function ItemsOnTable({
                     )}
                     {!create_hidden && (
                         <div className="flex items-end ml-auto">
-                            <Tooltip content={"Créer un nouvel élément"} color="primary" size="sm" showArrow>
+                            <Tooltip content={"Créer un nouvel élément"} color="foreground" size="sm" showArrow>
                                 <Button
                                     size="md"
                                     variant="flat"
-                                    color="primary"
+                                    color="default"
                                     onPress={() => {
                                         setCurrentAction("create");
                                         onOpenOnItem();
@@ -381,14 +389,15 @@ export default function ItemsOnTable({
                                                         key === "city"
                                                     ) {
                                                         return itemDTO[key];
-                                                    } else if (key === "phone" || key === "code" || key === "zip" || key === "returnedConfirmationCode") {
+                                                    } else if (key === "returnedConfirmationCode") {
                                                         return (
                                                             <Snippet
-                                                                size="md"
+                                                                size="sm"
                                                                 disableTooltip
-                                                                radius="md"
-                                                                symbol={""}
-                                                                color="primary"
+                                                                radius="sm"
+                                                                hideSymbol
+                                                                hideCopyButton
+                                                                color="default"
                                                             >
                                                                 {itemDTO[key]}
                                                             </Snippet>
@@ -403,16 +412,17 @@ export default function ItemsOnTable({
                                                                     </Chip>
                                                                     <Tooltip
                                                                         content={itemDTO[key].description}
-                                                                        color="default"
+                                                                        color="foreground"
                                                                         size="sm"
                                                                         showArrow
                                                                     >
-                                                                        <Chip color="default" size="sm" variant="flat"
-                                                                              className={"capitalize border-1 border-neutral-300"}>
-                                                                        <span
-                                                                            className="flex flex-row justify-center items-center">
-                                                                            ?
-                                                                        </span>
+                                                                        <Chip
+                                                                            color="default"
+                                                                            size="sm"
+                                                                            variant="flat"
+                                                                            className={"capitalize"}
+                                                                        >
+                                                                            <BsQuestion/>
                                                                         </Chip>
                                                                     </Tooltip>
                                                                 </div>
@@ -423,7 +433,7 @@ export default function ItemsOnTable({
                                                                     className="flex justify-start items-center w-full space-x-1">
                                                                     <Tooltip
                                                                         content="Hérite de sa catégorie"
-                                                                        color="default"
+                                                                        color="foreground"
                                                                         size="sm"
                                                                         showArrow
                                                                     >
@@ -438,7 +448,7 @@ export default function ItemsOnTable({
                                                                     </Tooltip>
                                                                     <Tooltip
                                                                         content={item.category.pickable.description}
-                                                                        color="default"
+                                                                        color="foreground"
                                                                         size="sm"
                                                                         showArrow
                                                                     >
@@ -456,7 +466,7 @@ export default function ItemsOnTable({
                                                                     className="flex justify-start items-center w-full space-x-1">
                                                                     <Tooltip
                                                                         content="Hérite de son site"
-                                                                        color="default"
+                                                                        color="foreground"
                                                                         size="sm"
                                                                         showArrow
                                                                     >
@@ -503,7 +513,7 @@ export default function ItemsOnTable({
                                                             <div className="flex justify-start items-center w-full">
                                                                 {item?.category?.owner?.name ? (
                                                                     <Tooltip content="Hérite de sa catégorie"
-                                                                             color="default" size="sm" showArrow>
+                                                                             color="foreground" size="sm" showArrow>
                                                                       <span className="flex items-center gap-1">
                                                                         {item?.category?.owner?.name} {item?.category?.owner?.surname}
                                                                           <MdOutlineCategory/>
@@ -511,7 +521,7 @@ export default function ItemsOnTable({
                                                                     </Tooltip>
                                                                 ) : item?.domains && item.domains?.owner?.name ? (
                                                                     <Tooltip content="Hérite de son site"
-                                                                             color="default" size="sm" showArrow>
+                                                                             color="foreground" size="sm" showArrow>
                                                                       <span className="flex items-center gap-1">
                                                                         {item.domains.owner.name} {item.domains.owner.surname}
                                                                           <IoMdGlobe/>
@@ -549,13 +559,14 @@ export default function ItemsOnTable({
                                                         key === "endDate"
                                                     ) {
                                                         return new Date(itemDTO[key]).toLocaleDateString("fr-FR", {
-                                                            year: "numeric",
-                                                            month: "short",
-                                                            day: "numeric",
+                                                            day: "2-digit",
+                                                            month: "2-digit",
+                                                            year: new Date(itemDTO[key]).getFullYear() === new Date().getFullYear() ? undefined : "2-digit",
                                                             hour: "2-digit",
                                                             minute: "2-digit",
                                                         });
-                                                    } else if (key === "description" || key === "adminNote" || key === "comment") {
+
+                                                    } else if (key === "description") {
                                                         return (
                                                             <span
                                                                 className="flex flex-row space-x-2 justify-start items-center">
@@ -563,10 +574,10 @@ export default function ItemsOnTable({
                                                                     showArrow
                                                                     size="sm"
                                                                     variant="flat"
-                                                                    color="default"
+                                                                    color="foreground"
                                                                     content={itemDTO[key]}
                                                                 >
-                                                                    {truncateString(itemDTO[key], 20)}
+                                                                    {truncateString(itemDTO[key], 15)}
                                                                 </Tooltip>
                                                             </span>
                                                         );
