@@ -135,7 +135,7 @@ export default function ItemsOnTable({
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
         return filteredItems.slice(start, end);
-    }, [page, items, searchValue, searchBy]);
+    }, [items, searchValue, page, filter, searchBy]);
 
     const {
         isOpen: isOpenDeleteConfirm,
