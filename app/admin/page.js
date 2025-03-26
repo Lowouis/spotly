@@ -1,6 +1,4 @@
 'use client'
-import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
 import Dashboard from "@/sections/Dashboard";
 import Domains from "@/sections/Domains";
 import {AdminProvider, useAdminContext} from "@/context/Admin";
@@ -9,7 +7,6 @@ import Resources from "@/sections/Resources";
 import Users from "@/sections/Users";
 import Entries from "@/sections/Entries";
 import LDAP from "@/sections/LDAP";
-import {ScrollShadow} from "@nextui-org/react";
 import {useEffect, useState} from "react";
 import {DataHandlerProvider} from "@/context/DataHandler";
 import Sidebar from "@/components/admin/Sidebar";
@@ -30,16 +27,14 @@ export default function Admin(){
 
         <AdminProvider>
             <DataHandlerProvider>
-            <div className={`flex flex-col ${GeistSans.variable} ${GeistMono.variable} antialiased h-full w-full`}>
-                <div className="flex flex-row h-screen">
-                    <Sidebar />
-                    <div className="flex-1 flex flex-col overflow-y-auto">
-                        <ScrollShadow className="h-screen" hideScrollBar size={25}>
+                <div className="flex h-screen overflow-hidden">
+                    <div className="flex flex-1">
+                        <Sidebar/>
+                        <main className="flex-1 overflow-y-auto">
                             <Content />
-                        </ScrollShadow>
+                        </main>
                     </div>
                 </div>
-            </div>
             </DataHandlerProvider>
         </AdminProvider>
     )

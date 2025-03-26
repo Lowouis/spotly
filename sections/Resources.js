@@ -72,7 +72,7 @@ const Resources = ({})=>{
     ]
 
     return (
-        <div className="flex flex-col gap-3 w-full mx-2">
+        <div className="flex flex-col gap-3 w-full">
             <ItemsOnTable
                 model="resources"
                 formFields={ResourcesFields}

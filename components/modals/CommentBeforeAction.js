@@ -14,6 +14,27 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                 size="md"
                 backdrop="opaque"
                 closeOnEsc
+                motionProps={{
+                    variants: {
+                        enter: {
+                            y: 0,
+                            opacity: 1,
+                            transition: {
+                                duration: 0.3,
+                                ease: "easeOut",
+                            },
+                        },
+                        exit: {
+                            y: -20,
+                            opacity: 0,
+                            transition: {
+                                duration: 0.2,
+                                ease: "easeIn",
+                            },
+                        },
+                    },
+                }}
+
 
             >
                 <ModalContent>
@@ -29,7 +50,7 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                             name="adminNote"
                                             rows={9}
                                             type="text"
-                                            variant="bordered"
+                                            variant="flat"
                                             className="form-input"
                                             placeholder="Fournir plus d'informations sur les raisons de votre decision"
                                             defaultValue={item.adminNote}
@@ -41,16 +62,16 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                 </form>
                             </ModalBody>
                             <ModalFooter>
-                                <Button color={"warning"} variant="flat" onPress={() => {
+                                <Button color="default" variant="flat" onPress={() => {
                                     updateEntryModerate(item, "REJECTED");
                                     onClose();
                                     addToast({
                                         title: "Réservation refusée",
                                         description: "La réservation a été refusée avec succès",
                                         timeout: 5000,
-                                        variant: "flat",
+                                        variant: "solid",
                                         radius: "sm",
-                                        color: "warning"
+                                        color: "default"
                                     });
                                 }}>
                                     Refuser
@@ -67,7 +88,7 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                             timeout: 5000,
                                             variant: "flat",
                                             radius: "sm",
-                                            color: "success"
+                                            color: "default"
                                         });
 
                                     }}

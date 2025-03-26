@@ -21,8 +21,8 @@ const Dashboard = ({})=>{
 
 
     return (
-        <div className="w-full">
-            <div className="flex flex-row space-x-2 w-full my-3 px-2 ">
+        <div className="h-full p-2 ">
+            <div className="flex flex-row gap-4 mb-6">
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.usersTotal} label="utilisateurs"      
                     logo={<UsersIcon color={"#374151"} width={48} height={48}/>}/>
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.entriesTotal} label="réservations"
@@ -38,23 +38,21 @@ const Dashboard = ({})=>{
                 <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.delayedResourcesTotal} label="en attentes"
                     logo={<ShieldExclamationIcon color={"#374151"} width={48} height={48}/>}/>
             </div>
-            <div>
-                <div>
-                    <ItemsOnTable items={waitingEntries}
-                                  filter={['adminNote', 'moderate', 'updatedAt', 'createdAt', 'returned', 'comment', 'lastUpdatedModerateStatus']}
-                                  isLoading={waitingEntriesLoading}
-                                  selectionMode={false}
-                                  name={"Réservations en attente"}
-                                  create_hidden={true}
-                                  setRefresh={refresh}
-                                  columnsGreatNames={columnsGreatNames}
-                                  actions={["view", "confirm", "reject"]}
+            <div className="h-[calc(100%-200px)]">
+                <ItemsOnTable
+                    items={waitingEntries}
+                    filter={['adminNote', 'moderate', 'updatedAt', 'createdAt', 'returned', 'comment', 'lastUpdatedModerateStatus']}
+                    isLoading={waitingEntriesLoading}
+                    selectionMode={false}
+                    name={"Réservations en attente"}
+                    create_hidden={true}
+                    setRefresh={refresh}
+                    columnsGreatNames={columnsGreatNames}
+                    actions={["view", "confirm", "reject"]}
+                    searchBy={{tag: "ressource", attr: "resource.name"}}
                     />
                 </div>
             </div>
-
-
-        </div>
     )
 }
 

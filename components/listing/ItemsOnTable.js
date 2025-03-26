@@ -16,11 +16,7 @@ import {
 import {Button} from "@nextui-org/button";
 import React, {useState} from "react";
 import {PlusCircleIcon, TrashIcon} from "@heroicons/react/24/solid";
-import {
-    ArrowPathIcon,
-    ArrowsUpDownIcon,
-    MagnifyingGlassIcon
-} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Input} from "@nextui-org/input";
 import {useMutation} from "@tanstack/react-query";
 import ActionMenuModerate from "@/components/actions/ActionMenu";
@@ -29,7 +25,6 @@ import EntryDTO from "@/components/utils/DTO";
 import PopupDoubleCheckAction from "@/components/modals/PopupDoubleCheckAction";
 import {addToast} from "@heroui/toast";
 import {useRefreshContext} from "@/context/RefreshContext";
-import TableDropDown from "@/components/actions/TableDropDown";
 import {IoMdGlobe} from "react-icons/io";
 import {MdOutlineCategory} from "react-icons/md";
 import {truncateString} from "@/global";
@@ -126,7 +121,10 @@ export default function ItemsOnTable({
                 console.log('searching for:', searchValue);
                 console.log('value to search in:', itemDTO[searchBy.attr]);
 
-                const valueToSearch = itemDTO[searchBy.attr];
+                // Handle nested properties in searchBy.attr
+                const valueToSearch = searchBy.attr.includes('.')
+                    ? itemDTO[searchBy.attr.split('.')[0]][searchBy.attr.split('.')[1]]
+                    : itemDTO[searchBy.attr];
 
                 return String(valueToSearch || '')
                     .toLowerCase()
@@ -351,7 +349,7 @@ export default function ItemsOnTable({
                         selectionBehavior="toggle"
                         shadow="none"
                         color="primary"
-                        className="mt-2 border border-neutral-200 dark:border-neutral-500 rounded-lg"
+                        className="dark:border-neutral-500 rounded-lg"
                         radius="md"
                     >
                         <TableHeader>

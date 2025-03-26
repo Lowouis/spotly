@@ -4,9 +4,8 @@ import {Button} from '@nextui-org/button';
 import {addToast} from "@heroui/toast";
 import Image from 'next/image';
 import {Form} from "@nextui-org/form";
-import {Slider, Alert} from "@heroui/react";
-import {set} from 'date-fns';
-import {useQuery, useMutation} from '@tanstack/react-query';
+import {Slider} from "@heroui/react";
+import {useMutation, useQuery} from '@tanstack/react-query';
 import {Skeleton} from '@nextui-org/react';
 
 export const General = () => {
@@ -48,6 +47,7 @@ export const General = () => {
             refetch();
         },
         onError: (error) => {
+            console.log(error);
             addToast({
                 title: 'Erreur de mise à jour',
                 description: error.message || 'Une erreur est survenue lors de la mise à jour',
@@ -133,16 +133,16 @@ export const General = () => {
             <div className="relative group rounded-lg overflow-hidden">
                 <Image
                     src="/banner.png"
-                    width={800}
-                    height={400}
+                    width={1920}
+                    height={1080}
                     alt="Bannière actuelle"
-                    className="object-cover transition-opacity group-hover:opacity-75"
+                    className="object-cover h-25 transition-opacity group-hover:opacity-75"
                     priority
                     quality={85}
                 />
 
                 <div
-                    className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 transition-all group-hover:bg-opacity-40">
+                    className="absolute inset-0 flex items-center justify-center bg-opacity-0 transition-all group-hover:bg-opacity-40">
                     <Button
                         variant="solid"
                         color="default"
@@ -199,7 +199,8 @@ export const General = () => {
                             <div className="h-8 rounded-lg bg-default-300"></div>
                         </Skeleton>
                         <Skeleton className="rounded-lg">
-                            <div className="h-8 rounded-lg bg-default-300"></div>
+
+                        <div className="h-8 rounded-lg bg-default-300"></div>
                         </Skeleton>
                     </div>
                 ) : (

@@ -24,13 +24,6 @@ export default async function handler(req, res) {
                     startDate: "asc"
                 },
                 where: {
-                    ...(owned && {resource: {
-                            OR: [
-                                { domains: { ownerId: parseInt(owned) } },
-                                { ownerId: parseInt(owned) },
-                                { category: { ownerId: parseInt(owned) } }
-                            ]
-                        }}),
                     ...(moderate && {moderate : moderate}),
                     ...(userId && {userId : parseInt(userId)}),
                     ...(resourceId && {
@@ -51,16 +44,25 @@ export default async function handler(req, res) {
 
 
                     }),
-                        ...(startDate  && {
-                            startDate: {
-                                lte: endDate
-                            },
-                        }),
-                        ...( endDate && {
-                            endDate: {
-                                gte: startDate
-                            }
-                        }),
+                    ...(startDate && {
+                        startDate: {
+                            lte: endDate
+                        },
+                    }),
+                    ...(endDate && {
+                        endDate: {
+                            gte: startDate
+                        }
+                    }),
+                    ...(owned && {
+                        resource: {
+                            OR: [
+                                {ownerId: parseInt(owned)},
+                                {category: {ownerId: parseInt(owned)}},
+                                {domains: {ownerId: parseInt(owned)}},
+                            ]
+                        }
+                    }),
                 },
                include: {
                     user : true,

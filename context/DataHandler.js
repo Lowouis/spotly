@@ -1,16 +1,23 @@
-import { createContext, useContext } from 'react';
+import {createContext, useContext} from 'react';
 import {useQuery} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
+import {addToast} from '@heroui/toast';
+
 const dataHandlerContext = createContext();
 
 export const DataHandlerProvider = ({ children }) => {
     const {data : session} = useSession();
-    console.log(session?.user.role);
     const fetchWaitingEntries = async () => {
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?moderate=WAITING${session?.user.role === "SUPERADMIN" ? "" : `&owned=${session?.user?.id}`}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?moderate=WAITING${session?.user.role !== "SUPERADMIN" ? `&owned=${session?.user?.id}` : ""}`);
         if (!response.ok) {
-            throw new Error('Échec de la récupération des entrées en attente');
+            addToast({
+                title: "Erreur",
+                description: "Erreur lors de la récupération des réservations en attente",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+            })
+            throw new Error('Échec de la récupération des réservations en attente');
         }
         const dtoArray = await response.json();
         return dtoArray.map(({ userId, resourceId, ...rest }) => rest);
@@ -31,6 +38,7 @@ export const DataHandlerProvider = ({ children }) => {
     } = useQuery({
         queryKey: ['waitingEntries'],
         queryFn: fetchWaitingEntries,
+        enabled: !!session?.user,
         staleTime: 5 * 60 * 1000, // 5 minutes
         cacheTime: 30 * 60 * 1000, // 30 minutes
     });

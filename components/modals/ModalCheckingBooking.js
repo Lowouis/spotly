@@ -5,6 +5,7 @@ import {
     ModalContent,
     ModalFooter,
     ModalHeader,
+    Spinner,
     Tooltip,
     useDisclosure
 } from "@nextui-org/react";
@@ -15,15 +16,8 @@ import {useMutation, useQuery} from "@tanstack/react-query";
 import {ArrowRightIcon, ChevronRightIcon, HandRaisedIcon} from "@heroicons/react/24/outline";
 import {getEmailTemplate} from "@/utils/mails/templates";
 import {useEmail} from "@/context/EmailContext";
-import {TrashIcon} from "@heroicons/react/24/solid";
 import {addToast} from "@heroui/toast";
-import {MdOutlineCancel} from "react-icons/md";
-import {
-    IoIosArrowUp,
-    IoIosArrowDown
-} from "react-icons/io";
 import EntryComments from "@/components/comments/EntryComments";
-import {Spinner} from "@nextui-org/react";
 
 
 export const formatDate = (date) => {
@@ -87,11 +81,11 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         }
     }
     const whichPickable = () => {
-        if(entry.resource.pickable !== null) {
+        if (entry.resource.pickable !== undefined) {
             return entry.resource.pickable;
-        } else if(entry.resource.category.pickable !== null) {
+        } else if (entry.resource.category.pickable !== undefined) {
             return entry.resource.category.pickable;
-        } else if (entry.resource.domains.pickable !== null) {
+        } else if (entry.resource.domains.pickable !== undefined) {
             return entry.resource.domains.pickable;
         }
         return "FLUENT";

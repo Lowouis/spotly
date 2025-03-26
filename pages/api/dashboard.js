@@ -7,6 +7,7 @@ export default async function handler(req, res) {
     await runMiddleware(req, res);
 
     if(req.method === "GET"){
+        const timeScheduleOptions = await prisma.timeScheduleOptions.findMany();
         const usersTotal = await prisma.user.count();
         const entriesTotal = await prisma.entry.count();
         const availableResourcesTotal = await prisma.resource.count(
@@ -23,11 +24,13 @@ export default async function handler(req, res) {
                 }
             }
         )
-        const delayedResourcesTotal = await prisma.resource.count(
+        const delayedResourcesTotal = await prisma.entry.count(
             {
-                where : {
-                    status: "ENDED",
-
+                where: {
+                    moderate: "USED",
+                    endDate: {
+                        lt: new Date(new Date().getTime() + timeScheduleOptions[0].onReturn * 60000)
+                    }
                 }
             }
         )

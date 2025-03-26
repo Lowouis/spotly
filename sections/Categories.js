@@ -3,8 +3,8 @@
 
 import ItemsOnTable from "@/components/listing/ItemsOnTable";
 import {useQuery} from "@tanstack/react-query";
-import {useEffect, useState} from "react";
 import {useRefreshContext} from "@/context/RefreshContext";
+
 const Categories = ({})=>{
 
     const { isRefreshing } = useRefreshContext();
@@ -49,7 +49,7 @@ const Categories = ({})=>{
     ]
 
     return (
-        <div className="flex flex-col gap-3 w-full mx-2">
+        <div className="flex flex-col gap-3 w-full">
             <ItemsOnTable
                 model="categories"
                 formFields={CategoryFields}

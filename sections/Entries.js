@@ -35,7 +35,7 @@ const Entries = ({})=>{
 
 
     return (
-        <div className="flex flex-col gap-3 w-full mx-2">
+        <div className="flex flex-col gap-3 w-full">
             <ItemsOnTable
                 create_hidden={true}
                 isLoading={isLoading}

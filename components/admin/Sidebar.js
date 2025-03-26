@@ -22,8 +22,10 @@ const sideItems = [
                 "title": "Tableau de bord",
                 "id" : "dashboard",
                 "icon": <MdOutlineSpaceDashboard />,
+                "permission": "ADMIN"
             },
-        ]
+        ],
+        "permission": "ADMIN"
     },
     {
         "title": "Global",
@@ -32,9 +34,11 @@ const sideItems = [
                 "id": "general",
                 "title": "Général",
                 "icon": <CiSettings/>,
+                "permission": "SUPERADMIN"
 
             }
-        ]
+        ],
+        "permission": "SUPERADMIN"
     },
     {
         "title": "Données",
@@ -43,19 +47,23 @@ const sideItems = [
                 "id" : "domains",
                 "title": "Sites",
                 "icon": <IoMdGlobe />,
+                "permission": "ADMIN"
             },
             {
                 "id" : "categories",
                 "title": "Catégories",
                 "icon": <MdOutlineCategory />,
+                "permission": "ADMIN"
 
             },
             {
                 "id" : "resources",
                 "title": "Ressources",
                 "icon": <GrResources />,
+                "permission": "ADMIN"
             }
-        ]
+        ],
+        "permission": "ADMIN"
     },
     {
         "title": "Utilisateurs",
@@ -64,14 +72,17 @@ const sideItems = [
                 "id" : "users",
                 "title": "Utilisateurs",
                 "icon": <FaRegUser />,
+                "permission": "SUPERADMIN"
 
             },
             {
                 "id" : "entries",
                 "title": "Réservations",
                 "icon": <MdBookmarkBorder />,
+                "permission": "ADMIN"
             }
-        ]
+        ],
+        "permission": "ADMIN"
     },
     {
         "title": "Mail",
@@ -81,9 +92,11 @@ const sideItems = [
                 "id" : "smtp",
                 "title": "SMTP",
                 "icon": <RiMailSettingsLine />,
+                "permission": "SUPERADMIN"
 
             },
-        ]
+        ],
+        "permission": "SUPERADMIN"
     },
     {
         "title": "LDAP",
@@ -92,9 +105,11 @@ const sideItems = [
                 "id" : "ldap",
                 "title": "Configuration",
                 "icon": <CiServer />,
+                "permission": "SUPERADMIN"
 
             }
-        ]
+        ],
+        "permission": "SUPERADMIN"
     },
 
 ];
@@ -137,24 +152,27 @@ export default function Sidebar() {
                 </button>
             </div>
             <nav className="flex-1 mt-4">
-                {sideItems.map((group, index)=> (
-                    <div className="space-y-4 mb-2" key={index}>
-                        <SectionTitle title={group.title} isOpen={isOpen} />
-                        <div className="space-y-2">
-                            {group.items.map((item, index)=>(
-                                <NavItem
-                                    key={index}
-                                    id={item.id}
-                                    icon={item.icon}
-                                    label={item.title}
-                                    isOpen={isOpen}
-                                    action={()=>setActiveSection(item.id)}
-                                />
-
-                            ))}
+                {session?.user && sideItems.map((group, index) => {
+                    return (session.user.role === group.permission || session.user.role === "SUPERADMIN") && (
+                        <div className="space-y-4 mb-2" key={index}>
+                            <SectionTitle title={group.title} isOpen={isOpen}/>
+                            <div className="space-y-2">
+                                {group.items.map((item, index) => {
+                                    return (session.user.role === item.permission || session.user.role === "SUPERADMIN") && (
+                                        <NavItem
+                                            key={index}
+                                            id={item.id}
+                                            icon={item.icon}
+                                            label={item.title}
+                                            isOpen={isOpen}
+                                            action={() => setActiveSection(item.id)}
+                                        />
+                                    )
+                                })}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
             </nav>
             <div className={`
                 px-4 py-2 transition-all duration-100 flex items-center
@@ -212,10 +230,10 @@ export default function Sidebar() {
                                   isLoaded={!!session}
                         >
                             <p className="text-sm font-medium text-gray-900 whitespace-nowrap text-black dark:text-white">
-                                {session?.user.name} {session?.user.surname}
+                                {session?.user?.name && `${session.user.name[0].toUpperCase()}${session.user.name.slice(1)} ${session.user.surname.toUpperCase()}`}
                             </p>
                             <p className="text-sm text-gray-500 whitespace-nowrap">
-                                {session?.user.role}
+                                {session?.user?.role === "SUPERADMIN" ? "Administrateur" : "Manager"}
                             </p>
                         </Skeleton>
                     </div>
