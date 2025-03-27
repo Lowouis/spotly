@@ -25,6 +25,23 @@ const wrapInHtmlTemplate = (body) => `
 `;
 
 const templates = {
+    rejected: (data) => `
+# Refus de la demande de réservation
+
+Bonjour **${data.name}**,
+
+Votre demande de réservation pour la ressource **${data.resource}** de **${data.domain}** à été refuser par ${data.owner}.
+ 
+### Détails de votre demande :
+- **Date de début** : ${data.startDate}
+- **Date de fin**   : ${data.endDate}
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources 
+
+`,
     test: () => `
 # Test d'email
 

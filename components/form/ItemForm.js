@@ -4,7 +4,7 @@ import React from "react";
 import InputField from "@/components/form/InputField";
 import BooleanInput from "@/components/form/BooleanInput";
 import SelectField from "@/components/form/SelectField";
-import {addToast, ToastProvider} from "@heroui/toast";
+import {addToast} from "@heroui/toast";
 
 
 export default function ItemForm({ onSubmit, onClose, action, fields, defaultValues }) {
@@ -69,6 +69,8 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             dependsOn={defaultValues && field?.dependsOn !== undefined ? defaultValues[field.dependsOn] : undefined}                                            register={methods.register(field.name, rules)}
                                             placeholder={field.placeholder}
                                             hidden={field?.hidden && field.hidden}
+                                            pattern={field?.pattern !== undefined ? field.pattern : null}
+                                            patternMessage={field?.patternMessage !== undefined ? field.patternMessage : null}
                                         />
                                     );
                                 case "number":

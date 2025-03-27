@@ -52,6 +52,9 @@ cron.schedule('* * * * *', async () => {
                 status: "UNAVAILABLE"
             },
             where: {
+                NOT: {
+                    status: "UNAVAILABLE"
+                },
                 entry: {
                     some: {
                         moderate: 'USED',
@@ -70,6 +73,9 @@ cron.schedule('* * * * *', async () => {
                 status: "AVAILABLE"
             },
             where: {
+                NOT: {
+                    status: "AVAILABLE"
+                },
                 entry: {
                     none: {
                         moderate: 'USED',
@@ -92,12 +98,9 @@ cron.schedule('* * * * *', async () => {
             where: {
                 resource: {
                     OR: [
-                        {pickable: {name: "FLUENT"}},
-                        {category: {pickable: {name: "FLUENT"}}},
-                        {domains: {pickable: {name: "FLUENT"}}},
-                        {pickable: {name: "HIGH_TRUST"}},
-                        {category: {pickable: {name: "HIGH_TRUST"}}},
-                        {domains: {pickable: {name: "HIGH_TRUST"}}}
+                        {pickable: {name: "FLUENT" || "HIGH_TRUST"}},
+                        {category: {pickable: {name: "FLUENT" || "HIGH_TRUST"}}},
+                        {domains: {pickable: {name: "FLUENT" || "HIGH_TRUST"}}},
                     ]
                 },
                 moderate: "ACCEPTED",
@@ -111,6 +114,23 @@ cron.schedule('* * * * *', async () => {
         });
 
         logToFile(`🔄 ${autoReservedEntries.count} ressources mis à jour en utilisées (USED)`);
+
+        // Mise a jour des réservations qui sont en retard
+        const lateEntries = await prisma.entry.updateMany({
+            data: {
+                moderate: "DELAYED"
+            },
+            where: {
+                moderate: "USED",
+                endDate: {
+                    lt: now
+                }
+            }
+        });
+
+        logToFile(`🔄 ${lateEntries.count} ressources mis à jour en retard (DELAYED)`);
+
+
 
         // Mise à jour des ressources qui sont dont la réservation et la restitution est automatisés
         const autoReturnedEntries = await prisma.entry.updateMany({
@@ -212,49 +232,34 @@ cron.schedule('* * * * *', async () => {
         logToFile(`📊 Nombre total de réservations active dans la base: ${allEntries.length}`);
 
 
+        // Vérification que les ressources modérable ont bien au moins un propriétaire par leur catégorie ou leur domaine
+        const resourcesWithNoOwner = await prisma.resource.updateMany({
+            data: {
+                moderate: false
+            },
+            where: {
+                NOT: {
+                    moderate: false
+                },
+                AND: [
+                    {
+                        category: {
+                            owner: null
+                        }
+                },
+                    {
+                        domains: {
+                            owner: null
+                        }
+                    },
+                    {
+                        owner: null
+                    }
+                ]
+            }
+        });
 
-    // Correction de la mise à jour des réservations en cours
-    for (const entry of onGoingEntries) {
-        console.log(entry)
-        if (entry.endDate <= now) {
-            await prisma.entry.update({
-                where: {
-                    id: entry.id
-                },
-                data: {
-                    moderate: 'ENDED',
-                    returned : entry.returned
-                },
-            });
-            logToFile(`🔄 Réservation ${entry.id} terminée`);
-        }
-    }
-
-    // Correction de la mise à jour des réservations à venir
-    for (const entry of upComingEntries) {
-        if (entry.startDate <= now && entry.endDate >= now) {
-            await prisma.entry.update({
-                where: {
-                    id: entry.id
-                },
-                data: {
-                    moderate: 'USED'
-                },
-            });
-            console.log(`🔄 Réservation ${entry.id} passée en USED`);
-        }
-        if (entry.endDate <= now) {
-            await prisma.entry.update({
-                where: {
-                    id: entry.id
-                },
-                data: {
-                    moderate: 'ENDED'
-                },
-            });
-            console.log(`🔄 Réservation ${entry.id} terminée`);
-        }
-    }
+        logToFile(`🔄 ${resourcesWithNoOwner.count} ressources mis à jour en non-modérable`);
     } catch (error) {
         logToFile(`❌ Erreur lors de la vérification: ${error.message}`);
         console.error(error);

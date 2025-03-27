@@ -3,7 +3,7 @@
 import Banner from "@/components/utils/banner";
 import React, {useEffect, useState} from "react";
 import {signIn} from "next-auth/react";
-import { useRouter} from 'next/navigation'
+import {useRouter} from 'next/navigation'
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
 import {
@@ -11,12 +11,15 @@ import {
     Card,
     CardBody,
     InputOtp,
-    Modal, ModalBody,
     Link,
-    ModalContent, ModalFooter,
+    Modal,
+    ModalBody,
+    ModalContent,
+    ModalFooter,
     ModalHeader,
     Tab,
-    Tabs, Tooltip,
+    Tabs,
+    Tooltip,
     useDisclosure
 } from "@nextui-org/react";
 import {ArrowRightCircleIcon} from "@heroicons/react/24/solid";
@@ -120,14 +123,20 @@ export function ConnectionModal({}) {
     });
 
     const fetchIP = async () => {
-        const res = await fetch(process.env.NEXT_PUBLIC_API_ENDPOINT+"/api/ip");
-        if (!res.ok) throw new Error("Erreur lors de la récupération de l'IP");
-        return res.json();
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            const data = await response.json();
+            return data.ip;
+        } catch (error) {
+            console.error('Error fetching IP:', error);
+            return null;
+        }
     }
 
-    const {data : clientIP } = useQuery({
+    const {data: clientIP} = useQuery({
         queryKey: ['clientIP'],
         queryFn: fetchIP,
+        staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     });
 
 
@@ -157,17 +166,56 @@ export function ConnectionModal({}) {
         });
     }
 
+    const [isActionLoading, setIsActionLoading] = useState(false);
+
     const handleIFLActions = async () => {
-        if(entry.moderate === "ACCEPTED"){
-            mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "USED"});
-            setUserAlert({"type" : "primary", "message" : "La prise de la ressource a bien été enregistrée. A la prochaine connexion sur cette inteface vous pourrez retourner votre ressource."
+        setIsActionLoading(true);
+        try {
+            // Check if client IP is authorized for HIGH_AUTH actions
+            if (lastestPickable(entry) === "HIGH_AUTH") {
+                const isAuthorizedIP = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/authorized-location/check/${clientIP}`);
+                if (!isAuthorizedIP.ok) {
+                    setUserAlert({
+                        "type": "danger",
+                        "message": "Cette action n'est pas autorisée depuis cet emplacement."
+                    });
+                    return;
+                }
+            }
+
+            if (entry.moderate === "ACCEPTED") {
+                mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "USED"});
+                setUserAlert({
+                    "type": "primary",
+                    "message": "La prise de la ressource a bien été enregistrée. A la prochaine connexion sur cette interface vous pourrez retourner votre ressource."
+                });
+            } else if (entry.moderate === "USED") {
+                mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "ENDED", returned: true});
+                setUserAlert({"type": "success", "message": "La ressource à bien été retourner."});
+            }
+            await refetch();
+        } catch (error) {
+            setUserAlert({
+                "type": "danger",
+                "message": "Une erreur est survenue"
             });
-        } else if (entry.moderate === "USED"){
-            mutation.mutate({setUserAlert: setUserAlert, id: entry.id, moderate: "ENDED", returned:true});
-            setUserAlert({"type" : "success", "message" : "La ressource à bien été retourner."});
+        } finally {
+            setIsActionLoading(false);
         }
-        await refetch();
     }
+
+    // Update the action button
+    <Button
+        fullWidth
+        color={entry?.moderate === "ACCEPTED" ? "primary" : "danger"}
+        variant="flat"
+        onPress={handleIFLActions}
+        isLoading={isActionLoading}
+    >
+        {entry?.moderate === "ACCEPTED" && "Récupérer"}
+        {entry?.moderate === "USED" && "Retourner"}
+    </Button>
+
 
     return (
 
@@ -359,9 +407,13 @@ export function ConnectionModal({}) {
                             <ModalFooter>
                                 <Button color="danger" variant="light"
                                         onPress={() => {
-                                            setIfl({"username": "", "otp": ""});
-                                            setUserAlert({"type": "", "message": ""});
-                                            queryClient.invalidateQueries(['lucky_entry']);
+                                            useEffect(() => {
+                                                return () => {
+                                                    setIfl({"username": "", "otp": ""});
+                                                    setUserAlert({"type": "", "message": ""});
+                                                    queryClient.invalidateQueries(['lucky_entry']);
+                                                };
+                                            }, []);
                                             onClose();
                                         }}
                                 >

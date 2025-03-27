@@ -212,7 +212,7 @@ export const General = () => {
                                 defaultValue={timeScheduleOptions?.onPickup || 0}
                                 label={`Récupération : ${Math.abs(timeScheduleOptions?.onPickup || 0)} minutes ${(timeScheduleOptions?.onPickup || 0) > 0 ? "avant" : "après"} l'heure de début.`}
                                 maxValue={30}
-                                minValue={-30}
+                                minValue={0}
                                 onChange={(newValue) => {
                                     handleTimeScheduleChange({
                                         onPickup: newValue
@@ -230,7 +230,7 @@ export const General = () => {
                                 defaultValue={timeScheduleOptions?.onReturn || 0}
                                 label={`Restitution : ${Math.abs(timeScheduleOptions?.onReturn || 0)} minutes ${(timeScheduleOptions?.onReturn || 0) > 0 ? "après" : "avant"} l'heure de fin.`}
                                 maxValue={30}
-                                minValue={-30}
+                                minValue={0}
                                 onChange={(newValue) => {
                                     handleTimeScheduleChange({
                                         onReturn: newValue
@@ -242,8 +242,27 @@ export const General = () => {
                                 size="sm"
                                 step={5}
                             />
+                            <Slider
+                                className="max-w-md"
+                                showSteps={true}
+                                defaultValue={timeScheduleOptions?.authorizedDelay || 0}
+                                label={`Tolérance du retard : ${timeScheduleOptions?.authorizedDelay} minutes.`}
+                                maxValue={30}
+                                minValue={0}
+                                onChange={(newValue) => {
+                                    handleTimeScheduleChange({
+                                        authorizedDelay: newValue
+                                    });
+                                }}
+                                fillOffset={0}
+                                color="foreground"
+                                size="sm"
+                                step={5}
+                                hideValue={true}
+                            />
                         </div>
                     </Form>
+
                 )}
             </div>
             

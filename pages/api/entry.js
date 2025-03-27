@@ -66,11 +66,13 @@ export default async function handler(req, res) {
                 },
                include: {
                     user : true,
-                    resource : {
+
+                   resource : {
                         include : {
-                           domains : {include: {owner : true}},
-                           category : {include: {owner : true}},
-                           owner : true
+                            domains: {include: {owner: true, pickable: true}},
+                            category: {include: {owner: true, pickable: true}},
+                            owner: true,
+                            pickable: true,
                         }
                     }
                }
@@ -120,6 +122,7 @@ export default async function handler(req, res) {
             res.status(201).json(entry);
         } else if(req.method === "DELETE"){
             const { ids } = req.query;
+
             const entry = await prisma.entry.deleteMany({
                 where: {
                     id: {

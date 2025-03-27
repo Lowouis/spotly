@@ -6,7 +6,8 @@ const prisma = new PrismaClient()
 const default_time_options = [{
     id: 1,
     onPickup: 0,
-    onReturn: 0
+    onReturn: 0,
+    authorizedDelay: 0
 }]
 
 const pickables = [

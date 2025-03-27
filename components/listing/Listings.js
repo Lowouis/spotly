@@ -3,7 +3,6 @@ import {Alert, Tab, Tabs} from "@nextui-org/react";
 import {useState} from "react";
 
 
-
 const handleStatus = (entry) => {
     if (entry.moderate === "REJECTED") {
         return "rejected";
@@ -117,7 +116,7 @@ export function renderEntries(entries, handleRefresh, all=false, setUserAlert){
                             <h2 className="text-sm font-semibold">{all === true && tagsGreatNames[key]}</h2>
                             {entries[tag].map((entry) => (
                                 <div key={entry.id}
-                                     className="w-full flex justify-between items-center py-3 p-1 rounded-lg mb-2 dark:bg-neutral-800 bg-neutral-100 ">
+                                     className="w-full flex justify-between items-center p-3 rounded-lg mb-2 dark:bg-neutral-800 bg-neutral-100 ">
                                     <div className="flex flex-row space-x-6 mx-3 items-center">
                                         <div className="flex flex-col">
                                             <div className="text-xl font-bold">

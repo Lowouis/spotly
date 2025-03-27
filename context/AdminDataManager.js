@@ -7,7 +7,6 @@ const AdminDataManagerContext = createContext();
 
 export const AdminDataManager = ({ children }) => {
     const queryClient = useQueryClient();
-    
     const mutation = useMutation({
         mutationFn: async ({entry, moderate}) => {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/${entry.id}`, {
@@ -38,6 +37,7 @@ export const AdminDataManager = ({ children }) => {
     const updateEntryModerate = (entry, moderate) => {
         mutation.mutate({entry, moderate}, {
             onSuccess: (data) => {
+
                 console.log("Mutation successful", data);
             },
             onError: (error) => {

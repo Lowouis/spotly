@@ -81,12 +81,13 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         }
     }
     const whichPickable = () => {
+        console.log(entry);
         if (entry.resource.pickable !== undefined) {
-            return entry.resource.pickable;
+            return entry.resource.pickable.name;
         } else if (entry.resource.category.pickable !== undefined) {
-            return entry.resource.category.pickable;
+            return entry.resource.category.pickable.name;
         } else if (entry.resource.domains.pickable !== undefined) {
-            return entry.resource.domains.pickable;
+            return entry.resource.domains.pickable.name;
         }
         return "FLUENT";
     }
@@ -325,7 +326,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         <>
             {adminMode ?
                 (
-                    <div className="flex justify-center items-center">
+                    <div className="flex justify-center items-center ">
                         <Tooltip content="Consulter" color="foreground" size={'sm'} showArrow>
                             <Button
                                 className="font-medium underline underline-offset-4"
@@ -345,22 +346,24 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                         </Tooltip>
                     </div>
                 ) : (
-                    <Button
-                        isIconOnly={true}
-                        className=""
-                        size="lg"
-                        color="default"
-                        variant={adminMode ? "ghost" : "flat"}
-                        onPress={onOpen}
-                    >
-                <span className="flex justify-center items-center">
-                    <ChevronRightIcon
-                        className="transform transition-transform group-hover:translate-x-1 font-bold "
-                        width="24"
-                        height="24"
-                    />
-                </span>
-            </Button>
+                    <Tooltip content={"Consulter"} color="foreground" showArrow>
+                        <Button
+                            isIconOnly={true}
+                            size="lg"
+                            color="default"
+                            variant={adminMode ? "ghost" : "flat"}
+                            onPress={onOpen}
+                        >
+                            <span className="flex justify-center items-center">
+                                <ChevronRightIcon
+                                    className="font-bold"
+                                    width="24"
+                                    height="24"
+                                />
+                            </span>
+                        </Button>
+                    </Tooltip>
+
                 )}
         <Modal
             isOpen={isOpen}
@@ -517,6 +520,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                             whichPickable() !== "FLUENT" &&
                                                             whichPickable() !== "HIGH_TRUST" &&
                                                             entry.moderate === "ACCEPTED" &&
+                                                            !adminMode && 
                                                             validDatesToPickup() && (
                                                                 <Button
                                                                     className="text-blue-500 font-bold ml-6"
@@ -548,7 +552,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                             <span>le {entry.returned ? formatDate(entry?.updatedAt) : formatDate(entry?.endDate)}</span>
                                                         </div>
                                                         <div className="ml-10 flex justify-center items-center ">
-                                                            {entry.moderate === "USED" &&
+                                                            {entry.moderate === "USED" && !adminMode &&
                                                                 <Button
                                                                     className="font-bold text-orange-700  underline-offset-4 ml-2"
                                                                     size="lg"

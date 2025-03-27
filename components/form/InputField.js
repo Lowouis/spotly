@@ -1,10 +1,20 @@
 import React from "react";
-import { Input } from "@nextui-org/input";
-import { useFormContext } from "react-hook-form";
+import {Input} from "@nextui-org/input";
+import {useFormContext} from "react-hook-form";
 import {IoEyeOffOutline, IoEyeOutline} from "react-icons/io5";
 import {Button} from "@nextui-org/button";
 
-export default function InputField({required, type, label, name, placeholder, dependsOn, hidden = false}) {
+export default function InputField({
+                                       required,
+                                       type,
+                                       label,
+                                       name,
+                                       placeholder,
+                                       dependsOn,
+                                       pattern,
+                                       patternMessage,
+                                       hidden = false
+                                   }) {
     const { register, formState: { errors } } = useFormContext();
     const [isVisible, setIsVisible] = React.useState(false);
     return (
@@ -20,7 +30,11 @@ export default function InputField({required, type, label, name, placeholder, de
                 isRequired={dependsOn !== undefined ? dependsOn : required}
                 errorMessage={errors[name]?.message}
                 {...register(name, {
-                    required: dependsOn !== undefined ? false : required
+                    required: dependsOn !== undefined ? false : required,
+                    pattern: pattern ? {
+                        value: new RegExp(pattern),
+                        message: patternMessage || 'Format invalide'
+                    } : undefined
                 })}
                 className={`form-input ${errors[name] ? 'input-error' : ''}`}
                 variant="bordered"
@@ -36,11 +50,7 @@ export default function InputField({required, type, label, name, placeholder, de
                     </Button>
                 }
             />
-            {errors[name] && (
-                <p className="text-red-500 error-message text-sm mx-2">
-                    {errors[name]?.message || 'Ce champ est requis'}
-                </p>
-            )}
+
         </div>
     );
 }

@@ -12,6 +12,7 @@ import {DataHandlerProvider} from "@/context/DataHandler";
 import Sidebar from "@/components/admin/Sidebar";
 import SMTPSettings from "@/sections/SMTP";
 import {General} from "@/sections/General";
+import Localisations from "@/sections/Localisations";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -63,6 +64,8 @@ const Content = () => {
             return <LDAP />;
         case 'smtp':
             return <SMTPSettings/>;
+        case 'locations':
+            return <Localisations/>;
         default:
             return <div>Section en cours de développement</div>;
     }

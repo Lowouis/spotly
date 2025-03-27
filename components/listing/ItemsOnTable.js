@@ -384,17 +384,16 @@ export default function ItemsOnTable({
                                                         key === "address" ||
                                                         key === "street_number" ||
                                                         key === "country" ||
+                                                        key === "libelle" ||
                                                         key === "city"
                                                     ) {
                                                         return itemDTO[key];
-                                                    } else if (key === "returnedConfirmationCode") {
+                                                    } else if (key === "returnedConfirmationCode" || key === "ip") {
                                                         return (
                                                             <Snippet
                                                                 size="sm"
-                                                                disableTooltip
                                                                 radius="sm"
                                                                 hideSymbol
-                                                                hideCopyButton
                                                                 color="default"
                                                             >
                                                                 {itemDTO[key]}

@@ -13,16 +13,18 @@ export default async function handler(req, res) {
             break;
 
         case 'PUT':
-            const {onPickup, onReturn} = req.body;
+            const {onPickup, onReturn, authorizedDelay} = req.body;
             const updatedOptions = await prisma.timeScheduleOptions.upsert({
                 where: {id: 1},
                 update: {
                     onPickup: onPickup !== undefined ? onPickup : undefined,
-                    onReturn: onReturn !== undefined ? onReturn : undefined
+                    onReturn: onReturn !== undefined ? onReturn : undefined,
+                    authorizedDelay: authorizedDelay !== undefined ? authorizedDelay : undefined
                 },
                 create: {
                     onPickup: onPickup || 0,
-                    onReturn: onReturn || 0
+                    onReturn: onReturn || 0,
+                    authorizedDelay: authorizedDelay || 0
                 },
             });
             res.json(updatedOptions);

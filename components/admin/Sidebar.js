@@ -5,7 +5,7 @@ import {useRouter} from "next/navigation";
 import {useAdminContext} from "@/context/Admin";
 import {Skeleton} from "@nextui-org/react";
 import {MdArrowForwardIos, MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from "react-icons/md";
-import {CiLogout, CiServer, CiSettings} from "react-icons/ci";
+import {CiLocationOn, CiLogout, CiServer, CiSettings} from "react-icons/ci";
 import UserInitialsIcon from "@/components/utils/UserInitialsIcon";
 import {addToast} from "@heroui/toast";
 import {IoMdGlobe} from "react-icons/io";
@@ -105,6 +105,19 @@ const sideItems = [
                 "id" : "ldap",
                 "title": "Configuration",
                 "icon": <CiServer />,
+                "permission": "SUPERADMIN"
+
+            }
+        ],
+        "permission": "SUPERADMIN"
+    },
+    {
+        "title": "Restriction",
+        "items": [
+            {
+                "id": "locations",
+                "title": "Localisations",
+                "icon": <CiLocationOn/>,
                 "permission": "SUPERADMIN"
 
             }

@@ -2,10 +2,13 @@ import {useAdminDataManagerContext} from "@/context/AdminDataManager";
 import {Button} from "@nextui-org/button";
 import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea} from "@nextui-org/react";
 import {addToast} from "@heroui/toast";
+import {useEmail} from "@/context/EmailContext";
+import {getEmailTemplate} from "@/utils/mails/templates";
 
 export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
     const {updateEntryModerate} = useAdminDataManagerContext()
-
+    const {mutate: sendEmail} = useEmail();
+    
     return (
         <>
             <Modal
@@ -67,12 +70,18 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                     onClose();
                                     addToast({
                                         title: "Réservation refusée",
-                                        description: "La réservation a été refusée avec succès",
+                                        description: "La réservation a été refusée avec succès.",
                                         timeout: 5000,
                                         variant: "solid",
                                         radius: "sm",
                                         color: "default"
                                     });
+                                    sendEmail({
+                                        to: item.user.email,
+                                        subject: "Votre réservation a été refusée.",
+                                        text: getEmailTemplate("rejected", item),
+                                    })
+                                    
                                 }}>
                                     Refuser
                                 </Button>
@@ -84,12 +93,18 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                         onClose();
                                         addToast({
                                             title: "Réservation acceptée",
-                                            description: "La réservation a été acceptée avec succès",
+                                            description: "La réservation a été acceptée avec succès.",
                                             timeout: 5000,
                                             variant: "flat",
                                             radius: "sm",
                                             color: "default"
                                         });
+                                        sendEmail({
+                                            to: item.user.email,
+                                            subject: "Votre réservation a été refusée.",
+                                            text: getEmailTemplate("reservationConfirmation", item),
+                                        })
+                                        
 
                                     }}
                                 >
