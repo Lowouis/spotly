@@ -298,6 +298,9 @@ export function ConnectionModal({}) {
                                             </div>
                                         </div>
                                     </div>
+                                    <div>
+                                        debug : {clientIP && clientIP}
+                                    </div>
                                     <div className="flex gap-2 items-end">
                                         <Button
                                             size="lg"
