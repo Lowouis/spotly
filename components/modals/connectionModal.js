@@ -125,9 +125,13 @@ export function ConnectionModal({}) {
 
     const fetchIP = async () => {
         try {
-            const response = await fetch('https://api.ipify.org?format=json');
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/client-ip`, {
+                headers: {
+                    'Accept': 'application/json',
+                },
+            });
             const data = await response.json();
-            return data.ip;
+            return data.ip; // This will be the private IP
         } catch (error) {
             console.error('Error fetching IP:', error);
             return null;
