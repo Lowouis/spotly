@@ -10,6 +10,7 @@ import {
     Alert,
     Card,
     CardBody,
+    Form,
     InputOtp,
     Link,
     Modal,
@@ -151,10 +152,13 @@ export function ConnectionModal({}) {
     const handleSubmitLuckyEntry = async () => {
         if(ifl.otp.length === 6){
             refetch();
-            //checker IP dans la plage autorisée si HIGH_AUTH
 
             return true; // Attend la fin de la requête
         }
+        setUserAlert({
+            "type": "danger",
+            "message": "Veuillez entrer un code de réservation valide."
+        });
         return false;
     }
     const handleChange = (e, index) => {
@@ -273,7 +277,16 @@ export function ConnectionModal({}) {
                                 </form>
                             </Tab>
                             <Tab key="sign-up" title="J'ai réservé">
-                                <form className="flex flex-col space-y-4 justify-between">
+                                <Form className="flex flex-col space-y-4 justify-between items-center"
+                                      onSubmit={(e) => {
+                                          e.preventDefault();
+                                          handleSubmitLuckyEntry().then(r => {
+                                              if (r) {
+                                                  onOpen();
+                                              }
+                                          });
+                                      }}
+                                >
                                     <div>
                                         <p className="text-small mb-2">Code de réservation</p>
                                         <div className="flex justify-center">
@@ -301,22 +314,18 @@ export function ConnectionModal({}) {
                                     <div>
                                         debug : {clientIP && clientIP}
                                     </div>
-                                    <div className="flex gap-2 items-end">
+                                    <div className="flex gap-2 items-end w-full">
                                         <Button
                                             size="lg"
                                             fullWidth
                                             type={"submit"}
                                             color="default"
-                                            onPress={() => {
-                                                handleSubmitLuckyEntry().then(r => {
-                                                    if(r){onOpen();}
-                                                });
-                                            }}
+
                                         >
                                             Confirmer
                                         </Button>
                                     </div>
-                                </form>
+                                </Form>
                             </Tab>
                         </Tabs>
                     </CardBody>
@@ -408,17 +417,10 @@ export function ConnectionModal({}) {
                             </ModalBody>
 
                             <ModalFooter>
-                                <Button color="danger" variant="light"
-                                        onPress={() => {
-                                            useEffect(() => {
-                                                return () => {
-                                                    setIfl({"username": "", "otp": ""});
-                                                    setUserAlert({"type": "", "message": ""});
-                                                    queryClient.invalidateQueries(['lucky_entry']);
-                                                };
-                                            }, []);
-                                            onClose();
-                                        }}
+                                <Button
+                                    color="danger"
+                                    variant="light"
+                                    onPress={handleCloseModal}
                                 >
                                     Fermer
                                 </Button>
