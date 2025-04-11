@@ -16,7 +16,6 @@ const SelectField = ({
                         defaultValue,
                          placeholder = "Aucun",
                          eyesOn = null
-
                      }) => {
     const { setValue, watch, formState: { errors }, register } = useFormContext();
     const value = watch(name);
@@ -110,7 +109,8 @@ const SelectField = ({
                     {(option) => {
                         return (
                             <SelectItem
-                                color="primary"
+                                variant='bordered'
+                                color="default"
                                 aria-label={option?.name || option}
                                 key={option?.id}
                                 value={value}

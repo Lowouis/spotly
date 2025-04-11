@@ -43,7 +43,8 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1">Modération de réservation</ModalHeader>
+                            <ModalHeader className="flex flex-col gap-1 text-neutral-700 dark:text-neutral-400">Modération
+                                de réservation</ModalHeader>
                             <ModalBody>
                                 <form>
                                     <div className="form-group">

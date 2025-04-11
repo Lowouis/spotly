@@ -21,7 +21,7 @@ import {Input} from "@nextui-org/input";
 import React, {useState} from "react";
 import {addToast} from "@heroui/toast";
 import {BsWrench} from "react-icons/bs";
-import {CiLogout, CiSettings} from "react-icons/ci";
+import {CiLogout, CiSettings, CiUser} from "react-icons/ci";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 import {User} from "@nextui-org/react";
 import {firstLetterUppercase} from "@/global";
@@ -72,7 +72,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                 <div className="flex items-center space-x-3">
                                     {userEntriesQuantity >= 0 &&
                                         <Badge className="border-none" size="sm"
-                                               content={userEntriesQuantity} color="warning" shape="circle"
+                                               content={userEntriesQuantity} color="default" shape="circle"
                                                variant="solid">
                                             <BookmarkIcon width="24" height="24"/>
                                         </Badge>
@@ -97,23 +97,52 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                         size="lg"
                         radius="lg"
                         backdrop="opaque"
-                        scrollBehavior="inside"
+                        motionProps={{
+                            variants: {
+                                enter: {
+                                    y: 0,
+                                    opacity: 1,
+                                    transition: {
+                                        duration: 0.15,
+                                        ease: "easeOut",
+                                    },
+                                },
+                                exit: {
+                                    y: -20,
+                                    opacity: 0,
+                                    transition: {
+                                        duration: 0.15,
+                                        ease: "easeIn",
+                                    },
+                                },
+                            },
+                        }}
                     >
                         <ModalContent>
                             {(onClose) => (
                                 <>
-                                    <ModalHeader className="flex flex-col gap-2 p-4 bg-opacity-10 bg-gray-100">
+                                    <ModalHeader className="flex flex-col gap-2 p-4 bg-opacity-10">
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center flex-1 gap-4">
                                                 <User
                                                     name={`${user?.name} ${user?.surname}`}
                                                     description={user?.email}
-                                                    color="foreground"
+                                                    color="default"
+                                                    classNames={{
+                                                        name: user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+                                                            ? 'text-orange-500'
+                                                            : 'text-neutral-800'
+                                                    }}
                                                     avatarProps={{
-                                                        name: firstLetterUppercase(user?.name[0]) + firstLetterUppercase(user?.surname[0]),
                                                         size: "lg",
-                                                        className: "text-xl font-bold",
-                                                        color: "gradient",
+                                                        className: `text-lg font-semibold text-neutral-800 ${
+                                                            user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+                                                                ? 'bg-orange-500'
+                                                                : 'bg-neutral-800'
+                                                        }`,
+                                                        radius: "lg",
+                                                        showFallback: true,
+                                                        fallback: <CiUser size={30}/>,
                                                     }}
                                                 />
                                                 <div className="flex flex-row gap-2 ml-auto mr-4">

@@ -32,11 +32,11 @@ function formatDuration(ms) {
 
 const lastestPickable = (entry) => {
     if(entry.resource.pickable !== null){
-        return entry.resource.pickable.name;
+        return entry.resource.pickable;
     } else if (entry.resource.category.pickable !== null){
-        return entry.resource.category.pickable.name;
+        return entry.resource.category.pickable;
     } else if (entry.resource.domains.pickable !== null){
-        return entry.resource.domains.pickable.name;
+        return entry.resource.domains.pickable;
     } else {
         return null;
     }

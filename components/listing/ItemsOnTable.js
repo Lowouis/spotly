@@ -66,6 +66,7 @@ const deleteItems = async ({selectedItems, model}) => {
     const data = {
         ids: Array.from(selectedItems),
     };
+    console.log("Deleting items with IDs:", data); // Log the data being sent to the server
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
             method: 'DELETE',
@@ -76,6 +77,7 @@ const deleteItems = async ({selectedItems, model}) => {
         });
 
         if (!response.ok) {
+            console.log("Response status:", response.status);
             const errorDetails = await response.json();
             console.error("Error details:", errorDetails);
         }
@@ -193,6 +195,7 @@ export default function ItemsOnTable({
         }
     });
     const handleDeleteItem = (item) => {
+        console.log("Deleting item(s):", item);
         if (!item) {
             mutation.mutate({selectedItems, model});
         } else {
@@ -450,7 +453,7 @@ export default function ItemsOnTable({
                                                                         showArrow
                                                                     >
                                                                         <Chip color="default" size="sm" variant="flat"
-                                                                              className={"capitalize border-1 border-neutral-300"}>
+                                                                              className={"capitalize"}>
                                                                         <span
                                                                             className="flex flex-row justify-center items-center">
                                                                             ?
@@ -478,12 +481,12 @@ export default function ItemsOnTable({
                                                                     </Tooltip>
                                                                     <Tooltip
                                                                         content={item.domains.pickable.description}
-                                                                        color="default"
+                                                                        color="foreground"
                                                                         size="sm"
-                                                                        showArrow
+
                                                                     >
                                                                         <Chip color="default" size="sm" variant="flat"
-                                                                              className={"capitalize border-1 border-neutral-300"}>
+                                                                              className={"capitalize"}>
                                                                         <span
                                                                             className="flex flex-row justify-center items-center">
                                                                             ?

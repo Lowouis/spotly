@@ -1,20 +1,89 @@
-const {heroui} = require('@heroui/theme');
-const {nextui} = require('@nextui-org/theme');
-/** @type {import('tailwindcss').Config} */
+const {heroui} = require("@heroui/react");
 
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}",
-    "./node_modules/@heroui/theme/dist/components/(toast|spinner).js"
+      "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
   ],
+    theme: {
+        extend: {},
+    },
     darkMode: "class",
-  plugins: [nextui({
-      "layout": {
-          "disabledOpacity": "0.5"
-      }
-    }),heroui()]}
-
-
+    plugins: [
+        heroui({
+            themes: {
+                light: {
+                    colors: {
+                        // Couleurs de base pour le thème clair
+                        background: "#FFFFFF",
+                        foreground: "#11181C",
+                        default: {
+                            100: "#f1f5f9", // Couleur de fond en mode hover
+                            200: "#e2e8f0", // Couleur de fond active
+                        },
+                        primary: {
+                            DEFAULT: "#4361EE",
+                            foreground: "#FFFFFF"
+                        },
+                        secondary: {
+                            DEFAULT: "#7209B7",
+                            foreground: "#FFFFFF"
+                        },
+                        success: {
+                            DEFAULT: "#2CB67D",
+                            foreground: "#FFFFFF"
+                        },
+                        warning: {
+                            DEFAULT: "#F9C74F",
+                            foreground: "#000000"
+                        },
+                        danger: {
+                            DEFAULT: "#E63946",
+                            foreground: "#FFFFFF"
+                        },
+                        // Couleurs de contenu
+                        content1: "#FFFFFF",
+                        content2: "#F5F5F5",
+                        content3: "#E5E5E5",
+                        content4: "#D4D4D8"
+                    }
+                },
+                dark: {
+                    colors: {
+                        // Couleurs de base pour le thème sombre
+                        background: "#121212",
+                        foreground: "#ECEDEE",
+                        primary: {
+                            DEFAULT: "#4CC2FF",
+                            foreground: "#000000"
+                        },
+                        secondary: {
+                            DEFAULT: "#BC8CF2",
+                            foreground: "#000000"
+                        },
+                        success: {
+                            DEFAULT: "#4ADE80",
+                            foreground: "#000000"
+                        },
+                        warning: {
+                            DEFAULT: "#FFD60A",
+                            foreground: "#000000"
+                        },
+                        danger: {
+                            DEFAULT: "#FF6B6B",
+                            foreground: "#000000"
+                        },
+                        // Couleurs de contenu
+                        content1: "#1E1E1E",
+                        content2: "#2D2D2D",
+                        content3: "#3E3E3E",
+                        content4: "#505050"
+                    }
+                }
+            },
+        })
+    ]
+}

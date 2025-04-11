@@ -50,8 +50,8 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             return {
                 onPickup: data.onPickup,
                 onReturn: data.onReturn,
-                ajustedStartDate: new Date(new Date(entry.startDate).getTime() - (data.onPickup || 0) * 60000),
-                ajustedEndDate: new Date(new Date(entry.endDate).getTime() + (data.onReturn || 0) * 60000)
+                ajustedStartDate: new Date(new Date(entry.startDate).getTime() - (data.onPickup || 0) * 60000).toISOString(),
+                ajustedEndDate: new Date(new Date(entry.endDate).getTime() + (data.onReturn || 0) * 60000).toISOString(),
             };
         },
     });
@@ -96,7 +96,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         if (isLoadingtimeScheduleOptions || !timeScheduleOptions) {
             return false;
         }
-        return timeScheduleOptions.ajustedStartDate <= new Date() && timeScheduleOptions.ajustedEndDate > new Date();
+        return timeScheduleOptions.ajustedStartDate <= new Date().toISOString();
     }
 
     const entryAction = ()=> {
@@ -403,10 +403,11 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                         ) : (
                             <>
                                 <ModalHeader
-                                    className="flex flex-col gap-1 text-neutral-900 dark:text-neutral-200">{entry?.resource?.name}</ModalHeader>
+                                    className="flex flex-col gap-1 text-neutral-900 dark:text-neutral-200">{entry?.resource?.name}
+                                </ModalHeader>
                                 {modalStepper === "delete" && (
                                     <ModalBody>
-                                        <div className="flex flex-col justify-center items-center">
+                                        <div className="flex flex-col justify-center">
                                             <h1 className="text-lg">Êtes-vous sûr de
                                                 vouloir {adminMode ? "supprimer" : "annuler"} cette réservation ?</h1>
                                             <div
@@ -422,50 +423,53 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                         </div>
                                     </ModalBody>
                                 )}
-                                {modalStepper === "return" && (
+
+                                {(modalStepper === "pickup" || modalStepper === "return") && (
                                     <ModalBody>
-                                        <div className="flex flex-col justify-center items-center">
+                                        <div className="flex flex-col justify-center items-center space-y-6 py-4">
                                             {error !== null && (
-                                                <div>
-                                                    <span className="text-red-500">{error}</span>
+                                                <div
+                                                    className="bg-red-100 dark:bg-red-900/20 p-3 rounded-lg w-full text-center">
+                                                    <span className="text-red-500 dark:text-red-400">{error}</span>
                                                 </div>
                                             )}
-                                            <InputOtp
-                                                onValueChange={setOtp}
-                                                value={otp}
-                                                variant="flat"
-                                                size="lg"
-                                                length={6}
-                                                name="confirmation_code"
-                                            />
-                                            <label className="text-slate-600">Nous vous avons envoyé un code à <span
-                                                className="font-semibold">{entry?.user.email}</span></label>
-                                        </div>
-                                        <Button size={"lg"} color="primary" variant="flat"
-                                                onPress={handleUpdateEntity}>Confirmer</Button>
-                                    </ModalBody>
-                                )}
-                                {modalStepper === "pickup" && (
-                                    <ModalBody>
-                                        <div className="flex flex-col justify-center items-center">
-                                            {error !== null && (
-                                                <div>
-                                                    <span className="text-red-500">{error}</span>
+                                            <div className="flex flex-col items-center space-y-4 w-full">
+                                                <label className="text-neutral-700 dark:text-neutral-300 text-sm">
+                                                    Saisissez le code à 6 chiffres envoyé à
+                                                    <span
+                                                        className="font-semibold ml-1 text-neutral-900 dark:text-neutral-100">
+                                                        {entry?.user.email}
+                                                    </span>
+                                                </label>
+                                                <div className="flex items-center space-x-4">
+                                                    <InputOtp
+                                                        onValueChange={setOtp}
+                                                        value={otp}
+                                                        variant="bordered"
+                                                        size="lg"
+                                                        length={6}
+                                                        name="confirmation_code"
+                                                        classNames={{
+                                                            input: "text-2xl",
+                                                            base: "gap-3"
+                                                        }}
+                                                    />
+                                                    <Button
+                                                        isIconOnly
+                                                        size="lg"
+                                                        color="primary"
+                                                        variant="flat"
+                                                        onPress={handleUpdateEntity}
+                                                        isDisabled={otp.length !== 6}
+                                                    >
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                             stroke="currentColor" strokeWidth="2">
+                                                            <path d="M20 6L9 17L4 12"/>
+                                                        </svg>
+                                                    </Button>
                                                 </div>
-                                            )}
-                                            <InputOtp
-                                                onValueChange={setOtp}
-                                                value={otp}
-                                                variant="flat"
-                                                size="lg"
-                                                length={6}
-                                                name="confirmation_code"
-                                            />
-                                            <label className="text-slate-600">Nous vous avons envoyé un code à <span
-                                                className="font-semibold">{entry?.user.email}</span></label>
+                                            </div>
                                         </div>
-                                        <Button size={"lg"} color="primary" variant="flat"
-                                                onPress={handleUpdateEntity}>Confirmer</Button>
                                     </ModalBody>
                                 )}
 
@@ -518,9 +522,9 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                         <span>à partir du {formatDate(entry.startDate)}</span>
                                                         {
                                                             whichPickable() !== "FLUENT" &&
-                                                            whichPickable() !== "HIGH_TRUST" &&
                                                             entry.moderate === "ACCEPTED" &&
-                                                            !adminMode && 
+                                                            !adminMode && entry?.endDate >= new Date().toISOString() &&
+                                                        
                                                             validDatesToPickup() && (
                                                                 <Button
                                                                     className="text-blue-500 font-bold ml-6"
@@ -582,13 +586,8 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                     </ModalBody>
                                 )}
                                 <ModalFooter className='flex flex-row justify-between'>
-                                    <Button size={"lg"} color="default" variant="flat" onPress={() => {
-                                        onClose();
-                                        setModalStepper("main")
-                                    }}>
-                                        Fermer
-                                    </Button>
-                                    {modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
+
+                                    {!adminMode && modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
                                         <Tooltip color="warning" content="Annuler définitivement la réservation."
                                                  showArrow placement="top-end">
                                             <Button
@@ -608,6 +607,12 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                                          onPress={() => setModalStepper("main")}>Retour</Button>)}
                                     {entry.moderate !== "ENDED" || entry.moderate === "ACCEPTED" &&
                                         <Button size={"lg"} color="default" onPress={onClose}>Modifier</Button>}
+                                    <Button size={"lg"} color="default" variant="flat" onPress={() => {
+                                        onClose();
+                                        setModalStepper("main")
+                                    }}>
+                                        Fermer
+                                    </Button>
 
                                 </ModalFooter>
                             </>

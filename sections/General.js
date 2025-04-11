@@ -207,7 +207,7 @@ export const General = () => {
                     <Form>
                         <div className="space-y-6">
                             <Slider
-                                className="max-w-md"
+                                className="max-w-md text-neutral-500 dark:text-neutral-200"
                                 showSteps={true}
                                 defaultValue={timeScheduleOptions?.onPickup || 0}
                                 label={`Récupération : ${Math.abs(timeScheduleOptions?.onPickup || 0)} minutes ${(timeScheduleOptions?.onPickup || 0) > 0 ? "avant" : "après"} l'heure de début.`}
@@ -225,7 +225,7 @@ export const General = () => {
                                 hideValue={true}
                             />
                             <Slider
-                                className="max-w-md"
+                                className="max-w-md text-neutral-500 dark:text-neutral-200"
                                 showSteps={true}
                                 defaultValue={timeScheduleOptions?.onReturn || 0}
                                 label={`Restitution : ${Math.abs(timeScheduleOptions?.onReturn || 0)} minutes ${(timeScheduleOptions?.onReturn || 0) > 0 ? "après" : "avant"} l'heure de fin.`}
@@ -241,24 +241,6 @@ export const General = () => {
                                 color="foreground"
                                 size="sm"
                                 step={5}
-                            />
-                            <Slider
-                                className="max-w-md"
-                                showSteps={true}
-                                defaultValue={timeScheduleOptions?.authorizedDelay || 0}
-                                label={`Tolérance du retard : ${timeScheduleOptions?.authorizedDelay} minutes.`}
-                                maxValue={30}
-                                minValue={0}
-                                onChange={(newValue) => {
-                                    handleTimeScheduleChange({
-                                        authorizedDelay: newValue
-                                    });
-                                }}
-                                fillOffset={0}
-                                color="foreground"
-                                size="sm"
-                                step={5}
-                                hideValue={true}
                             />
                         </div>
                     </Form>

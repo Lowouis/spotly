@@ -5,23 +5,13 @@ export async function middleware(req) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const response = NextResponse.next();
 
-    response.headers.set('Access-Control-Allow-Origin', '*');
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+    // Add CORS headers while keeping existing functionality
+    response.headers.set('Access-Control-Allow-Origin', 'http://intranet.fhm.local:3000, http://intranet:3000');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
 
-    if (req.method === "OPTIONS") {
-        return new Response(null, {
-            status: 204,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            },
-        });
-    }
-    // Vérifie si l'utilisateur est authentifié et a le rôle admin
     if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
-        // Redirect to homepage or login if trying to access admin routes
         const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
         if (isAdminRoute) {
             return NextResponse.redirect(new URL('/', req.url));
@@ -30,7 +20,6 @@ export async function middleware(req) {
     return response;
 }
 
-// Applique le middleware uniquement aux routes d'admin
 export const config = {
-    matcher: ["/admin/:path*", "/api/:path*"], // Protège toutes les routes sous /admin et /api
+    matcher: ["/admin/:path*", "/api/:path*"],
 };

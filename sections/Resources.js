@@ -37,7 +37,7 @@ const Resources = ({})=>{
             name: 'moderate',
             type: 'boolean',
             label: 'Confirmation de réservation',
-            dependsOn: ['domains', 'category']
+            dependsOn: ['domains', 'category', 'owner']
         },
         {
             required: false,

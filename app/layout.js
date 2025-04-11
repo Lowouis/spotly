@@ -16,7 +16,7 @@ const dmSans = DM_Sans({
 export default function RootLayout({ children }) {
 
     return (
-        <html lang="en" className={`${dmSans.variable} light`}>
+        <html lang="en" className={`${dmSans.variable} dark`}>
         <head>
             <script dangerouslySetInnerHTML={{
                 __html: `

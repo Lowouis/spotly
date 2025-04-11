@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     if (req.method === "PUT") {
         try {
             const {moderate, returned, adminNote} = req.body;
-            console.log(returned);
+
             const entry = await prisma.entry.update({
                 where: {
                     id: parseInt(id)
@@ -22,8 +22,22 @@ export default async function handler(req, res) {
                         returned: returned,
                         endDate: new Date()
                     })
+                },
+                include: {
+                    resource: true
                 }
             });
+
+            if (moderate === "USED" || moderate === "ENDED") {
+                await prisma.resource.update({
+                    where: {
+                        id: entry.resource.id
+                    },
+                    data: {
+                        status: moderate === "USED" ? "UNAVAILABLE" : "AVAILABLE"
+                    }
+                });
+            }
             
             return res.status(200).json(entry);
         } catch (error) {

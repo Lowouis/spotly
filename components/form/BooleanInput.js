@@ -10,7 +10,9 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
 
     const domainValue = watch(dependsOn[0]) !== undefined ? watch(dependsOn[0]) : null;
     const categoryValue = watch(dependsOn[1]) !== undefined ? watch(dependsOn[1]) : null;
-
+    const owner = watch(dependsOn[2]) !== undefined ? watch(dependsOn[2]) : null;
+    console.log("owner", watch("owner"));
+    // useEffect pour activer/désactiver le champ en fonction de dependsO
     useEffect(() => {
         // Si dependsOn est null, le champ est toujours activé
         if (dependsOn === null) {
@@ -18,8 +20,17 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
             return;
         }
 
-        // Vérifier si au moins un propriétaire existe
-        const hasOwner = (domainValue?.owner !== null && domainValue?.owner !== undefined) || categoryValue?.owner !== undefined && categoryValue?.owner !== null;
+        // Vérifier si au moins un propriétaire existe (domaine, catégorie ou ressource)
+        const hasOwner = (
+            (domainValue?.owner !== null && domainValue?.owner !== undefined) ||
+            (categoryValue?.owner !== null && categoryValue?.owner !== undefined) ||
+            (owner !== null && owner !== undefined)
+        );
+        console.log("hasOwner", hasOwner, {
+            domainOwner: domainValue?.owner,
+            categoryOwner: categoryValue?.owner,
+            resourceOwner: owner
+        });
         setDisabled(!hasOwner);
 
         if (!hasOwner) {
@@ -27,7 +38,7 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
             setValue(name, "0");
         }
 
-    }, [dependsOn, domainValue, categoryValue, setValue, name]);
+    }, [dependsOn, domainValue, categoryValue, setValue, name, owner]);
 
 
     return (

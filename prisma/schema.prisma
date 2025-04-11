@@ -138,6 +138,7 @@ model pickable {
   id          Int        @id @default(autoincrement())
   name        String     @unique
   description String
+  cgu         String     @db.Text
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   categories  category[]
@@ -192,10 +193,10 @@ model LdapConfig {
 }
 
 model timeScheduleOptions {
-  id        Int      @id @default(autoincrement())
-  onPickup  Int
-  onReturn  Int
-  authorizedDelay Int @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  onPickup        Int
+  onReturn        Int
+  authorizedDelay Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

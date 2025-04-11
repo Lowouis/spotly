@@ -5,7 +5,7 @@ import {I18nProvider} from 'react-aria';
 import React from "react";
 
 
-export default function DateRangePickerCompatible({name, label, disabled=false, alternative=false}) {
+export default function DateRangePickerCompatible({name, label, disabled = false}) {
     const {setValue, watch, register, formState: { errors } } = useFormContext();
     const value = watch(name);
     const handleChange = (value) => {
@@ -15,27 +15,6 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
 
     return (
         <I18nProvider locale="fr-FR">
-            {!alternative ? (
-                <DateRangePicker
-                    visibleMonths={2}
-                    size="lg"
-                    id={name}
-                    aria-label={label}
-                    variant="bordered"
-                    name={name}
-                    isRequired
-                    hideTimeZone
-                    className="my-2 w-full"
-                    minValue={today(getLocalTimeZone())}
-                    color="default"
-                    isDisabled={disabled}
-                    onChange={handleChange}
-                    zone={getLocalTimeZone()}
-                    radius="lg"
-                    aria-labelledby={name}
-                    value={value}
-                    errorMessage={errors[name]?.message}
-                />) : (
                 <DateRangePicker
                     onChange={handleChange}
                     zone={getLocalTimeZone()}
@@ -59,8 +38,6 @@ export default function DateRangePickerCompatible({name, label, disabled=false, 
                     errorMessage={errors[name]?.message}
                     placeholder="Sélectionnez une plage de dates"
                 />
-            )}
-
         </I18nProvider>
     )
 }

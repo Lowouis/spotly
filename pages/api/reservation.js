@@ -18,7 +18,6 @@ export default async function reservation(req, res) {
             const entries = await prisma.resource.findMany({
                 where: {
                     ...(resourceId && {id: parseInt(resourceId)}),
-                    status: "AVAILABLE",
                     ...(siteId && categoryId && {
                         domains: {id: parseInt(siteId)},
                         category: {id: parseInt(categoryId)},
@@ -57,8 +56,9 @@ export default async function reservation(req, res) {
                     ],
                 },
                 include: {
-                    domains: {include: {owner: true}},
-                    category: {include: {owner: true}},
+                    domains: {include: {owner: true, pickable: true}},
+                    category: {include: {owner: true, pickable: true}},
+                    pickable: true,
                     owner: true
                 }
             });

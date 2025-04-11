@@ -17,8 +17,8 @@ export default async function handler(req, res) {
                 moderate,
                 returnedConfirmationCode,
                 owned,
-                status
             } = req.query;
+
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"
@@ -122,13 +122,13 @@ export default async function handler(req, res) {
             res.status(201).json(entry);
         } else if(req.method === "DELETE"){
             const { ids } = req.query;
-
+            console.log(req.query);
             const entry = await prisma.entry.deleteMany({
                 where: {
                     id: {
-                        in: ids,
-                    },
-                },
+                        in: ids
+                    }
+                }
             });
 
             res.status(200).json(entry);
