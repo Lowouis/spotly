@@ -1,6 +1,6 @@
 'use server';
 import prisma from "@/prismaconf/init";
-import { runMiddleware } from "@/lib/core";
+import {runMiddleware} from "@/lib/core";
 
 export default async function handler(req, res) {
 
@@ -31,7 +31,6 @@ export default async function handler(req, res) {
     } else if (req.method === "PUT") {
 
         const {id, name, description, owner, pickable } = req.body;
-        console.log(req.body)
         const category = await prisma.category.update({
             where: {
                 id: id,

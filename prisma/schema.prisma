@@ -137,6 +137,7 @@ model resource {
 model pickable {
   id          Int        @id @default(autoincrement())
   name        String     @unique
+  distinguishedName String
   description String
   cgu         String     @db.Text
   createdAt   DateTime   @default(now())

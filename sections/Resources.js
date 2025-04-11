@@ -63,7 +63,7 @@ const Resources = ({})=>{
     const columnsGreatNames = [
         "Nom",
         "Description",
-        "Modérer",
+        "Confirmation",
         "Status",
         "Site",
         "Catégorie",

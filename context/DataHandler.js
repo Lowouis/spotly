@@ -25,6 +25,7 @@ export const DataHandlerProvider = ({ children }) => {
 
     const fetchActivitiesStats = async () => {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/dashboard`);
+        console.log(response); // Ajout de cette ligne pour déboguer dans la
         if (!response.ok) {
             throw new Error('Échec de la récupération des statistiques');
         }

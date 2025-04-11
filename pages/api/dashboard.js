@@ -34,9 +34,17 @@ export default async function handler(req, res) {
                 }
             }
         )
-        const ratio = 100 - (bookedResourcesTotal * 100) / availableResourcesTotal;
+        const ratio = Math.floor(100 - (bookedResourcesTotal * 100) / availableResourcesTotal);
         const test = await prisma.domain.findMany();
-        res.status(200).json({usersTotal,entriesTotal, availableResourcesTotal,bookedResourcesTotal, delayedResourcesTotal, ratio, test});
+        res.status(200).json({
+            usersTotal,
+            entriesTotal,
+            availableResourcesTotal,
+            bookedResourcesTotal,
+            delayedResourcesTotal,
+            ratio,
+            test
+        });
     }
 
 }

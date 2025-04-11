@@ -3,14 +3,13 @@ import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
-import {Alert, Switch, Modal, ModalBody, ModalContent, ModalHeader, Form} from "@nextui-org/react";
+import {Alert, Form, Modal, ModalBody, ModalContent, ModalHeader, Switch} from "@nextui-org/react";
 import DateRangePickerCompatible from "@/components/form/DateRangePickerCompatible";
 import {AlternativeMenu} from "@/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import ReservationUserListing from "@/components/listing/Listings";
-import {constructDate} from "@/global";
-import {dataTagErrorSymbol, useQuery, useQueryClient} from "@tanstack/react-query";
+import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
 import MatchingEntriesTable from "@/components/listing/MatchingEntriesTable";
 import {addToast} from "@heroui/toast";
@@ -277,7 +276,7 @@ const ReservationSearch = () => {
                             ) : (
                                 <FormProvider {...methods}>
                                     <Form onSubmit={methods.handleSubmit(onSubmit)}
-                                          className={`bg-slate-50 dark:bg-neutral-800 ${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out 2xl:w-1/3 xl:w-3/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200 dark:border-neutral-700`}>
+                                          className={`bg-slate-50 dark:bg-neutral-800 ${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-opacity ease-out xl:w-3/5 lg:w-full sm:w-full mx-2 p-3 shadow-lg rounded-xl border-1 border-neutral-200 dark:border-neutral-700`}>
                                         <div className="flex flex-row w-full">
                                             <div className="flex flex-col order-1 w-full">
                                                 <div className="flex flex-col w-full">
@@ -380,7 +379,7 @@ const ReservationSearch = () => {
                         </div>
                     )}
                     {searchMode === "search" && delayed === 0 &&  (
-                        <div className="flex xl:w-3/5 lg:w-full sm:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
+                        <div className="flex xl:w-3/5  lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                     {availableResources && (

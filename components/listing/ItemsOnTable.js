@@ -48,6 +48,7 @@ export const postItem = async ({data, model}) => {
 };
 
 export const updateItem = async ({data, model}) => {
+    console.log(model)
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
         method: 'PUT',
         headers: {
@@ -543,7 +544,20 @@ export default function ItemsOnTable({
                                                                   variant="flat">
                                                                 Non
                                                             </Chip>;
-                                                    } else if (key === "status" || key === "moderate" || key === "role") {
+                                                    } else if (key === "status") {
+                                                        return <Chip size="sm" variant="dot" color={
+                                                            itemDTO[key] === "AVAILABLE" ? "default" : "danger"
+                                                        }>
+                                                            {itemDTO[key] === "AVAILABLE" ? "Disponible" : "Indisponible"}
+                                                        </Chip>;
+                                                    } else if (key === "role") {
+                                                        return <Chip size="sm" variant="dot" color={
+                                                            itemDTO[key] === "USER" ? "success"
+                                                                : "warning"
+                                                        }>
+                                                            {itemDTO[key] === "USER" ? "Utilisateur" : "Administrateur"}
+                                                        </Chip>;
+                                                    } else if (key === "moderate") {
                                                         return <Chip size="sm" variant="dot" color={
                                                             itemDTO[key] === "AVAILABLE" || itemDTO[key] === "ACCEPTED" || itemDTO[key] === "USER" ? "success"
                                                                 : itemDTO[key] === "WAITING" || itemDTO[key] === "ADMIN" ? "warning" :
