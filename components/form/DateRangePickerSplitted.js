@@ -1,8 +1,7 @@
 'use client';
-import {DatePicker} from "@nextui-org/react";
+import {DatePicker, Input} from "@nextui-org/react";
 import TimeInput from '@/components/form/HourSelect';
-import {useState, useEffect} from 'react';
-import {Input} from "@nextui-org/react";
+import {useCallback, useEffect, useState} from 'react';
 import {addToast} from "@heroui/toast";
 import {getLocalTimeZone, today} from "@internationalized/date";
 
@@ -40,7 +39,7 @@ export default function DateRangePickerSplitted({setValue, name = "date"}) {
         setEndDate(date);
     };
 
-    const validateAndSetDates = () => {
+    const validateAndSetDates = useCallback(() => {
         if (startDate && endDate && startTime && endTime) {
             if (isSameDay(startDate, endDate)) {
                 const startHour = parseInt(startTime);
@@ -62,11 +61,11 @@ export default function DateRangePickerSplitted({setValue, name = "date"}) {
                 timeZone: getLocalTimeZone()
             });
         }
-    };
+    }, [startDate, endDate, startTime, endTime, name, setValue]);
 
     useEffect(() => {
         validateAndSetDates();
-    }, [startDate, endDate, startTime, endTime]);
+    }, [startDate, endDate, startTime, endTime, validateAndSetDates]);
 
     // Supprimer le second useEffect
 
