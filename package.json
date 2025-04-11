@@ -10,6 +10,7 @@
     "lint": "next lint",
     "update prisma": "prisma db push",
     "run cron": "node utils/cron.mjs",
+    "erased": "node utils/clean.mjs",
     "seed": "node prisma/seed.mjs",
     "seed:prod": "NODE_ENV=production node prisma/seed.mjs -- --confirm-production"
   },

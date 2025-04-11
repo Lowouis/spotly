@@ -116,7 +116,7 @@ cron.schedule('* * * * *', async () => {
             }
         })
         logToFile(`🔄 ${autoReturnedEntries.count} ressources mis à jour en terminé (ENDED)`);
-        
+
 
     } catch (error) {
         logToFile(`❌ Erreur lors de la vérification: ${error.message}`);
