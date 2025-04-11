@@ -1,6 +1,17 @@
-import { getToken } from "next-auth/jwt";
-import { NextResponse } from "next/server";
-
+import {getToken} from "next-auth/jwt";
+import {NextResponse} from "next/server";
+import Cors from 'cors';
+// Initializing the cors middleware
+// You can read more about the available options here: hors';
+// Initializing the cors middleware
+// You can read more about the available options here: URL_ADDRESS.com/expressjs/cors#configuration-options
+export const cors = Cors({
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    origin: ['http://intranet:3000', 'http://intranet.fhm.local:3000'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    exposedHeaders: ['Content-Length', 'X-Requested-With'],
+});
 export async function middleware(req) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const response = NextResponse.next();

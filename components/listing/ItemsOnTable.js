@@ -409,7 +409,7 @@ export default function ItemsOnTable({
                                                                     className="flex justify-start items-center w-full space-x-1">
                                                                     <Chip className="capitalize" color="warning"
                                                                           size="sm" variant="flat">
-                                                                        {itemDTO[key]?.name}
+                                                                        {itemDTO[key]?.distinguishedName}
                                                                     </Chip>
                                                                     <Tooltip
                                                                         content={itemDTO[key].description}
@@ -442,7 +442,7 @@ export default function ItemsOnTable({
                                                                               size="sm" variant="flat">
                                                                         <span
                                                                             className="flex flex-row justify-center items-center">
-                                                                            {item.category?.pickable.name}
+                                                                            {item.category?.pickable.distinguishedName}
                                                                             <MdOutlineCategory className='ml-2'/>
                                                                         </span>
                                                                         </Chip>
@@ -475,7 +475,7 @@ export default function ItemsOnTable({
                                                                               size="sm" variant="flat">
                                                                             <span
                                                                                 className="flex flex-row justify-center items-center space-x-2">
-                                                                                {item.domains.pickable.name}
+                                                                                {item.domains.pickable.distinguishedName}
                                                                                 <IoMdGlobe/>
                                                                             </span>
                                                                         </Chip>
