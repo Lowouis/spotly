@@ -31,11 +31,13 @@ function formatDuration(ms) {
 }
 
 const lastestPickable = (entry) => {
-    if(entry.resource.pickable !== null){
+    if (!entry?.resource) return null;
+
+    if (entry.resource?.pickable !== null) {
         return entry.resource.pickable;
-    } else if (entry.resource.category.pickable !== null){
+    } else if (entry.resource?.category?.pickable !== null) {
         return entry.resource.category.pickable;
-    } else if (entry.resource.domains.pickable !== null){
+    } else if (entry.resource?.domains?.pickable !== null) {
         return entry.resource.domains.pickable;
     } else {
         return null;
