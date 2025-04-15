@@ -81,12 +81,11 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         }
     }
     const whichPickable = () => {
-        console.log(entry);
-        if (entry.resource.pickable !== undefined) {
+        if (entry.resource.pickable !== undefined || entry.resource.pickable !== null) {
             return entry.resource.pickable.name;
-        } else if (entry.resource.category.pickable !== undefined) {
+        } else if (entry.resource.category.pickable !== undefined || entry.resource.category.pickable !== null) {
             return entry.resource.category.pickable.name;
-        } else if (entry.resource.domains.pickable !== undefined) {
+        } else if (entry.resource.domains.pickable !== undefined || entry.resource.domains.pickable !== null) {
             return entry.resource.domains.pickable.name;
         }
         return "FLUENT";

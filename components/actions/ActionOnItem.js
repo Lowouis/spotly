@@ -1,32 +1,69 @@
-import {
-    Modal,
-    ModalContent,
-    ModalHeader,
-} from "@nextui-org/react";
+import {Modal, ModalContent, ModalHeader,} from "@nextui-org/react";
 import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/components/form/ItemForm";
 import React from "react";
 import {useRefreshContext} from "@/context/RefreshContext";
 import {postItem, updateItem} from "@/components/listing/ItemsOnTable.js";
+import {addToast} from "@heroui/toast";
 
 export default function ActionOnItem({isOpen, onOpenChange, action, defaultValues, formFields, model}) {
     const { refreshData } = useRefreshContext();
-    const handleSuccess = (action) => {
-        return () => {
-            refreshData();
-        };
+    const handleSuccess = () => {
+        addToast({
+            title: `${action === "create" ? "Création" : "Modification"} d'un élément`,
+            description: `L'élément a été ${action === "create" ? "créé" : "modifié"} avec succès.`,
+            timeout: 5000,
+            variant: "solid",
+            radius: "sm",
+            color: "success"
+        });
+        refreshData();
     };
-
-
 
     const createMutation = useMutation({
         mutationFn: postItem,
-        onSuccess: handleSuccess("créé"),
+        onSuccess: handleSuccess,
+        onError: (error) => {
+            addToast({
+                title: `Erreur lors de la création de l'élément`,
+                description: error.message,
+                timeout: 5000,
+                variant: "solid",
+                radius: "sm",
+                color: "danger"
+            })
+        },
     });
 
     const updateMutation = useMutation({
         mutationFn: updateItem,
-        onSuccess: handleSuccess("modifié"),
+        onSuccess: handleSuccess,
+        onError: (error) => {
+            console.log("Error:", error);
+            if (error?.code === "MODERATED_RESOURCES_WITH_OWNER") {
+                const resourcesList = error.resources
+                    .map(resource => resource.name)
+                    .join(', ');
+                console.log("Resources list:", resourcesList);
+                addToast({
+                    title: "Action requise",
+                    description: `${error.message}\n\nVeuillez modifier la modération des ressources suivantes:\n${resourcesList}`,
+                    timeout: 10000,
+                    variant: "flat",
+                    radius: "sm",
+                    color: "danger"
+                });
+            } else {
+                addToast({
+                    title: "Erreur lors de la modification",
+                    description: "Une erreur est survenue",
+                    timeout: 5000,
+                    variant: "flat",
+                    radius: "sm",
+                    color: "danger"
+                });
+            }
+        },
     });
 
 

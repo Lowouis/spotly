@@ -26,14 +26,6 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
     const handleSubmit = async (data) => {
         try {
             await onSubmit(data);
-            addToast({
-                title: `${action === "create" ? "Création" : "Modification"} d'un élément`,
-                description: `L'élément a été ${action === "create" ? "créé" : "modifié"} avec succès.`,
-                timeout: 5000,
-                variant: "solid",
-                radius: "sm",
-                color: "success"
-            });
             onClose();
         } catch (error) {
             addToast({

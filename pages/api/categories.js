@@ -31,6 +31,29 @@ export default async function handler(req, res) {
     } else if (req.method === "PUT") {
 
         const {id, name, description, owner, pickable } = req.body;
+        // if owner is undefined, check if any resource with moderate to true who has this category has an owner or it domain has one
+        if (owner === undefined) {
+            const resources = await prisma.resource.findMany({
+                where: {
+                    categoryId: id,
+                    moderate: true,
+                    owner: null,
+                    domains: {
+                        owner: null
+                    }
+                },
+                include: {
+                    domains: {include: {owner: true}}
+                }
+            });
+            if (resources.length !== 0) {
+                return res.status(422).json({
+                    code: "MODERATED_RESOURCES_WITH_OWNER",
+                    message: "Impossible de supprimer le propriétaire, il existe encore des ressources modérer liée à cette catégorie.",
+                    resources: resources
+                });
+            }
+        }
         const category = await prisma.category.update({
             where: {
                 id: id,
@@ -40,8 +63,8 @@ export default async function handler(req, res) {
                 ...(description ? {
                     description
                 } : { description : null }),
-                ownerId: owner !== null && owner !== undefined ? owner.id : null,
-                pickableId: pickable !== null && pickable !== undefined ? pickable.id : null
+                ownerId: owner !== undefined && owner !== null ? owner.id : null,
+                pickableId: pickable !== undefined ? pickable.id : null
             }
         });
         res.status(200).json(category);

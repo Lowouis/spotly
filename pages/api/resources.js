@@ -88,6 +88,7 @@ export default async function handler(req, res) {
         return res.status(200).json(ressource);
     } else if (req.method === "PUT") {
         const {id, name, description, moderate, domains, category, owner, pickable } = req.body;
+
         const ressource = await prisma.resource.update({
             where: {
                 id: id,

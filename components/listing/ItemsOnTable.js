@@ -56,8 +56,10 @@ export const updateItem = async ({data, model}) => {
         },
         body: JSON.stringify(data),
     });
+
     if (!response.ok) {
-        throw new Error('Failed to create item');
+        const errorData = await response.json();
+        throw errorData;
     }
 
     return response.json();
@@ -546,7 +548,7 @@ export default function ItemsOnTable({
                                                             </Chip>;
                                                     } else if (key === "status") {
                                                         return <Chip size="sm" variant="dot" color={
-                                                            itemDTO[key] === "AVAILABLE" ? "default" : "danger"
+                                                            itemDTO[key] === "AVAILABLE" ? "success" : "danger"
                                                         }>
                                                             {itemDTO[key] === "AVAILABLE" ? "Disponible" : "Indisponible"}
                                                         </Chip>;

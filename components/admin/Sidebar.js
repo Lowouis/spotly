@@ -164,10 +164,10 @@ export default function Sidebar() {
                     <MdArrowForwardIos className={`${isOpen ? "rotate-180" : "rotate-0"} transition-all duration-400`} size={18} />
                 </button>
             </div>
-            <nav className="flex-1 mt-4">
+            <nav className="flex-1 mt-2 overflow-y-auto max-h-[calc(100vh-13rem)]">
                 {session?.user && sideItems.map((group, index) => {
                     return (session.user.role === group.permission || session.user.role === "SUPERADMIN") && (
-                        <div className="space-y-4 mb-2" key={index}>
+                        <div className="space-y-2 mb-2" key={index}>
                             <SectionTitle title={group.title} isOpen={isOpen}/>
                             <div className="space-y-2">
                                 {group.items.map((item, index) => {

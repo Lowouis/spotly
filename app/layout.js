@@ -3,9 +3,8 @@ import Providers from "@/providers/Providers";
 import React from "react";
 import Footer from "@/components/utils/Footer";
 import Dot from "@/components/animata/background/dot";
-import { DM_Sans } from 'next/font/google';
-import { metadata } from "@/app/metadata";
-import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
+import {DM_Sans} from 'next/font/google';
+import {metadata} from "@/app/metadata";
 
 const dmSans = DM_Sans({
     subsets: ['latin'],
@@ -16,7 +15,7 @@ const dmSans = DM_Sans({
 export default function RootLayout({ children }) {
 
     return (
-        <html lang="en" className={`${dmSans.variable} dark`}>
+        <html lang="en" className={`${dmSans.variable} light`}>
         <head>
             <script dangerouslySetInnerHTML={{
                 __html: `
