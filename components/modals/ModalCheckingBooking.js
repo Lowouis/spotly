@@ -81,14 +81,13 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         }
     }
     const whichPickable = () => {
-        if (entry.resource.pickable !== undefined || entry.resource.pickable !== null) {
+        console.log(entry);
+        if (entry.resource.pickable !== undefined && entry.resource.pickable !== null) {
             return entry.resource.pickable.name;
-        } else if (entry.resource.category.pickable !== undefined || entry.resource.category.pickable !== null) {
+        } else if (entry.resource.category.pickable !== undefined && entry.resource.category.pickable !== null) {
             return entry.resource.category.pickable.name;
-        } else if (entry.resource.domains.pickable !== undefined || entry.resource.domains.pickable !== null) {
-            return entry.resource.domains.pickable.name;
         }
-        return "FLUENT";
+        return entry.resource.domains.pickable.name;
     }
 
     const validDatesToPickup = () => {
@@ -481,8 +480,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                 content={
                                                     <div className="w-full flex flex-col">
                                                         <h1 className={"text-blue-900 dark:text-blue-300 text-lg"}>Création
-                                                            de
-                                                            la réservation</h1>
+                                                            de la réservation</h1>
                                                         <span>Confirmation par mail à <span
                                                             className="font-semibold">{entry?.user.email}</span></span>
                                                         <span>{formatDate(entry?.createdAt)}</span>
@@ -555,7 +553,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                             <span>le {entry.returned ? formatDate(entry?.updatedAt) : formatDate(entry?.endDate)}</span>
                                                         </div>
                                                         <div className="ml-10 flex justify-center items-center ">
-                                                            {entry.moderate === "USED" && !adminMode &&
+                                                            {entry.moderate === "USED" && whichPickable() !== "FLUENT" && !adminMode &&
                                                                 <Button
                                                                     className="font-bold text-orange-700  underline-offset-4 ml-2"
                                                                     size="lg"

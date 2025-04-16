@@ -18,7 +18,7 @@ export default async function handler(req, res) {
                 returnedConfirmationCode,
                 owned,
             } = req.query;
-
+            console.log(returnedConfirmationCode)
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"
@@ -77,6 +77,7 @@ export default async function handler(req, res) {
                     }
                }
             });
+            console.log(entries);
 
             res.status(200).json(entries);
         } else if (req.method === "POST") {

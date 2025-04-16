@@ -1,11 +1,10 @@
 'use client';
 
-import React, {useState, useEffect} from "react";
-import {Input, Button, Link} from "@nextui-org/react";
+import React, {useEffect, useState} from "react";
+import {Button, Form, Input, Link} from "@nextui-org/react";
 import {signIn} from "next-auth/react";
 import {useRouter} from 'next/navigation';
 import {addToast} from "@heroui/toast";
-import {Form} from "@nextui-org/react";
 
 export default function LoginTab() {
     const router = useRouter();
@@ -99,7 +98,7 @@ export default function LoginTab() {
                         });
                     }}
 
-                    color="default"
+                    color="success"
                     isLoading={connectionLoading}
                     size="lg"
                     radius="sm"
