@@ -225,6 +225,9 @@ export default function LuckyEntryTab({setSelected}) {
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
                             Entrez le code à 6 chiffres de votre réservation
                         </p>
+                        <p>
+                            IP |{clientIP}
+                        </p>
                     </div>
 
                     <div className="flex flex-col items-center space-y-6">
