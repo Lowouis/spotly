@@ -178,7 +178,7 @@ export default function LuckyEntryTab({setSelected}) {
                             } else {
                                 addToast({
                                     title: "Accès refusé",
-                                    description: "Cette action n'est pas autorisée depuis cet appareil.",
+                                    description: "Cette action n&apos;est pas autorisée depuis cet appareil.",
                                     timeout: 5000,
                                     variant: "solid",
                                     radius: "sm",
