@@ -190,7 +190,7 @@ export default function LuckyEntryTab({setSelected}) {
                         Récupérer la ressource
                     </Button>
                     <p className="text-xs text-neutral-500 text-center">
-                        Cette action nécessite une autorisation spéciale de l'appareil
+                        Cette action nécessite une autorisation spéciale de l&apos;appareil
                     </p>
                 </div>
             ) : (
