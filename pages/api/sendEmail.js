@@ -29,7 +29,8 @@ export default async function handler(req, res) {
             from: process.env.NEXT_PUBLIC_EMAIL_USER,
             to  ,
             subject,
-            text,
+            text: text,
+            html: text,
 
         });
 
