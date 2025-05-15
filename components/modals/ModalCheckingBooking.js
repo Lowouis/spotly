@@ -82,7 +82,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         }
     }
     const whichPickable = () => {
-        console.log(entry);
+
         if (entry.resource.pickable !== undefined && entry.resource.pickable !== null) {
             return entry.resource.pickable.name;
         } else if (entry.resource.category.pickable !== undefined && entry.resource.category.pickable !== null) {
@@ -646,7 +646,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                                             variant="flat"
                                                                             onPress={() => handlePickUp(onClose)}
                                                                         >
-                                                                            Prendre
+                                                                            Récupèrer
                                                                             <HandRaisedIcon width={24} height={24}
                                                                                             className="font-bold transform transition-transform group-hover:translate-x-2"/>
                                                                         </Button>
@@ -655,7 +655,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                             </div>
                                                         }
                                                         done={entry?.startDate <= new Date().toISOString() && entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
-                                                        failed={timeScheduleOptions?.ajustedEndDate <= new Date().toISOString() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") || entry.moderate === "REJECTED"}
+                                                        failed={(new Date(timeScheduleOptions?.ajustedEndDate).getTime() >= Date.now() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING")) || entry.moderate === "REJECTED"}
                                                         adminMode={adminMode}
 
                                                     />

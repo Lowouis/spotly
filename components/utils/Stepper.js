@@ -26,9 +26,11 @@ export default function Stepper({step, done=false, last=false, content, handleRe
                         </h2>
                     )}
                     {failed && (
-                        <h2 className="text-2xl font-bold text-white">
-                            ✕
-                        </h2>
+                        <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" fill="#EF4444"/>
+                            <path d="M15 9L9 15M9 9l6 6" stroke="#fff" strokeWidth="2" strokeLinecap="round"
+                                  strokeLinejoin="round"/>
+                        </svg>
                     )}
                 </div>
                 {!last && (
