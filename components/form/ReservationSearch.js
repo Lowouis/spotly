@@ -255,7 +255,7 @@ const ReservationSearch = () => {
                                                             name="resource"
                                                             awaiting={watch('category') === undefined && watch('site') === undefined}
                                                             label="Resources"
-                                                            options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE` : null}
+                                                            options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}` : null}
                                                             isRequired={false}
                                                             onReset={handleResourceOnReset}
                                                             placeholder={"Toutes les ressources"}
