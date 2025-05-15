@@ -1,5 +1,5 @@
 import {getServerSession} from "next-auth/next";
-import {authOptions} from "../../auth/[...nextauth]";
+import {authConfig} from "../../auth/[...nextauth]";
 import prisma from "@/prismaconf/init";
 import {runMiddleware} from "@/lib/core";
 
@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     try {
         await runMiddleware(req, res);
 
-        const session = await getServerSession(req, res, authOptions);
+        const session = await getServerSession(req, res, authConfig);
         console.log("Session:", session);
 
         if (!session) {
