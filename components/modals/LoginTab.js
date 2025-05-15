@@ -98,7 +98,7 @@ export default function LoginTab() {
                         });
                     }}
 
-                    color="success"
+                    color="default"
                     isLoading={connectionLoading}
                     size="lg"
                     radius="sm"

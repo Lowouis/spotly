@@ -6,12 +6,13 @@ import {PencilIcon} from "@heroicons/react/24/outline";
 import {CommentBeforeAction} from "@/components/modals/CommentBeforeAction";
 import {IoHammerOutline} from "react-icons/io5";
 
-export default function ActionMenuModerate({actions, entry, onActionDelete, onActionEdit}) {
+export default function ActionMenuModerate({actions, entry, onActionDelete, onActionEdit, handleRefresh}) {
     const {
         isOpen: isOpenCommentBeforeAction,
         onOpen: onOpenCommentBeforeAction,
         onOpenChange: onOpenChangeCommentBeforeAction
     } = useDisclosure();
+
 
     return (
         <>
@@ -76,7 +77,7 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
                 </div>
             }
             {actions.includes('view') && (
-                <ModalCheckingBooking entry={entry} adminMode={true} />
+                <ModalCheckingBooking entry={entry} adminMode={true} handleRefresh={handleRefresh}/>
             )}
 
             </div>

@@ -40,11 +40,12 @@ function Placeholder() {
 
 export default function Dot({
                                 size = 1,
-                                spacing = 10,
+                                spacing = 5,
                                 children,
                                 className,
                                 style = {
                                     backgroundColor: "white",
+                                    opacity: 0.8,
                                 },
                             }: DotProps) {
 

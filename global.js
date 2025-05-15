@@ -73,14 +73,16 @@ export function isValidDateTimeFormat(dateTimeString) {
     return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(dateTimeString);
 }
 
+
 const pickablesDescriptions = {
     "FLUENT": "Aucun contrôle si le pickup et le retour de la ressource.",
-    "HIGH_TRUST": "Récupération de la ressource sans contrôle, mais restitution à confirmer par click.",
-    "LOW_TRUST": "Récupération et restitution de la ressource avec un click.",
+    "HIGH_TRUST": "Récupération de la ressource sans contrôle, mais restitution à confirmer par clic.",
+    "LOW_TRUST": "Récupération et restitution de la ressource avec un clic.",
     "DIGIT": "Récupération et restitution de la ressource avec un code à 6 chiffres.",
     "LOW_AUTH": "Récupération et restitution de la ressource avec un code à 6 chiffres, en étant authentifié ou non.",
     "HIGH_AUTH": "Récupération et restitution de la ressource avec un code à 6 chiffres, en étant authentifié avec un restriction de localisation.",
 }
+
 
 export {
     constructDate,
@@ -90,7 +92,7 @@ export {
     formatDuration,
     firstLetterUppercase,
     truncateString,
-    pickablesDescriptions
+    pickablesDescriptions,
 };
 
 

@@ -32,9 +32,10 @@ export default function HourSelect({label, defaultValue, name, onChange, isDisab
             disabledKeys={disabledKeys}
             onChange={onChange}
             classNames={{
-                value: "dark:text-white text-black font-medium", // Rendre le texte plus foncé et plus gras
-                trigger: "bg-transparent", // S'assurer que l'arrière-plan est blanc
-                listbox: "text-black dark:text-white", // Assurer que le texte dans la liste déroulante est noir
+                value: "text-content-primary dark:text-dark-content-primary font-medium",
+                trigger: "bg-transparent text-content-primary dark:text-dark-content-primary",
+                listbox: "text-content-primary dark:text-dark-content-primary",
+                placeholder: "text-content-secondary dark:text-dark-content-secondary"
             }}
         >
             {(hour) => (

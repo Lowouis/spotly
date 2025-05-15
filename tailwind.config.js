@@ -9,7 +9,23 @@ module.exports = {
       "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
   ],
     theme: {
-        extend: {},
+        extend: {
+            textColor: {
+                // Couleurs de texte améliorées pour une meilleure lisibilité
+                'content': {
+                    primary: '#1a1a1a', // Plus foncé pour le texte principal en mode clair
+                    secondary: '#404040', // Plus foncé pour le texte secondaire en mode clair
+                    tertiary: '#666666', // Plus foncé pour le texte tertiaire en mode clair
+                    muted: '#737373', // Plus foncé pour le texte atténué en mode clair
+                },
+                'dark-content': {
+                    primary: '#f5f5f5', // Texte principal en mode sombre
+                    secondary: '#e5e5e5', // Texte secondaire en mode sombre
+                    tertiary: '#d4d4d4', // Texte tertiaire en mode sombre
+                    muted: '#a3a3a3', // Texte atténué en mode sombre
+                }
+            }
+        },
     },
     darkMode: "class",
     plugins: [
@@ -21,8 +37,8 @@ module.exports = {
                         background: "#FFFFFF",
                         foreground: "#11181C",
                         default: {
-                            100: "#f1f5f9", // Couleur de fond en mode hover
-                            200: "#e2e8f0", // Couleur de fond active
+                            100: "#f1f5f9",
+                            200: "#e2e8f0",
                         },
                         primary: {
                             DEFAULT: "#4361EE",
@@ -44,7 +60,7 @@ module.exports = {
                             DEFAULT: "#E63946",
                             foreground: "#FFFFFF"
                         },
-                        // Couleurs de contenu
+                        // Couleurs de contenu améliorées
                         content1: "#FFFFFF",
                         content2: "#F5F5F5",
                         content3: "#E5E5E5",

@@ -11,9 +11,9 @@ import {
 } from "@nextui-org/react";
 import {Button} from "@nextui-org/button";
 import Stepper from "@/components/utils/Stepper";
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useMutation, useQuery} from "@tanstack/react-query";
-import {ArrowRightIcon, ChevronRightIcon, HandRaisedIcon} from "@heroicons/react/24/outline";
+import {ArrowRightIcon, ChevronRightIcon, HandRaisedIcon, ShieldExclamationIcon} from "@heroicons/react/24/outline";
 import {getEmailTemplate} from "@/utils/mails/templates";
 import {useEmail} from "@/context/EmailContext";
 import {addToast} from "@heroui/toast";
@@ -34,6 +34,7 @@ export const formatDate = (date) => {
 export default function ModalCheckingBooking({entry, adminMode = false, handleRefresh}) {
     const [otp, setOtp] = useState("");
     const [error, setError] = useState(null);
+    const [resendTimer, setResendTimer] = useState(0);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const [modalStepper, setModalStepper] = useState("main");
 
@@ -202,25 +203,6 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             timeout: 5000,
             shouldShowTimeoutProgess: true,
             variant : "solid",
-            radius : "sm",
-            classNames: {
-                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
-            },
-            closeIcon: (
-                <svg
-                    fill="none"
-                    height="32"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    width="32"
-                >
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                </svg>
-            ),
             color : "success"
         });
         updateEntry({
@@ -320,6 +302,51 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                 return null;
             }
     }
+
+    // Fonction pour gérer le renvoi du code
+    const handleResendCode = () => {
+        if (resendTimer > 0) return;
+
+        // Réinitialiser le timer à 30 secondes
+        setResendTimer(30);
+
+
+        sendEmail({
+            "to": entry.user.email,
+            "subject": "Code de réservation pour : " + entry.resource.name,
+            "text": getEmailTemplate("resentCode", {
+                user: entry.user.name + " " + entry.user.surname,
+                resource: entry.resource.name,
+                startDate: new Date(entry.startDate).toLocaleString("FR-fr", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric"
+                }),
+                endDate: new Date(entry.endDate).toLocaleString("FR-fr", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric"
+                }),
+            })
+        });
+
+    };
+
+    useEffect(() => {
+        if (resendTimer > 0) {
+            const timer = setTimeout(() => {
+                setResendTimer(prev => prev - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [resendTimer]);
+
     return (
         <>
             {adminMode ?
@@ -401,22 +428,86 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                         ) : (
                             <>
                                 <ModalHeader
-                                    className="flex flex-col gap-1 text-neutral-900 dark:text-neutral-200">{entry?.resource?.name}
+                                    className="flex flex-col gap-1 text-neutral-900 dark:text-neutral-200">
+                                    {entry?.resource?.name}
                                 </ModalHeader>
                                 {modalStepper === "delete" && (
                                     <ModalBody>
-                                        <div className="flex flex-col justify-center">
-                                            <h1 className="text-lg">Êtes-vous sûr de
-                                                vouloir {adminMode ? "supprimer" : "annuler"} cette réservation ?</h1>
-                                            <div
-                                                className="flex flex-row m-1 space-x-4 justify-center w-full items-center">
-                                                <Button size={"lg"} color="default"
-                                                        variant="flat"
-                                                        onPress={() => setModalStepper("main")}>Non</Button>
-                                                <Button size={"lg"} variant="flat" color="danger" onPress={() => {
-                                                    handleDeleteEntry();
-                                                    onClose();
-                                                }}>Oui</Button>
+                                        <div className="flex flex-col space-y-6">
+                                            <div className="flex flex-col items-center text-center space-y-2">
+                                                <div className="p-3 rounded-full bg-danger-50 dark:bg-danger-950/30">
+                                                    <ShieldExclamationIcon className="w-8 h-8 text-danger-500"/>
+                                                </div>
+                                                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                                    Confirmer l&apos;annulation
+                                                </h2>
+                                                <p className="text-sm text-neutral-600 dark:text-neutral-400 max-w-sm">
+                                                    Êtes-vous sûr de vouloir {adminMode ? "supprimer" : "annuler"} cette
+                                                    réservation ?
+                                                    Cette action est irréversible.
+                                                </p>
+                                            </div>
+
+                                            {entry && (
+                                                <div
+                                                    className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span
+                                                            className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                            Ressource
+                                                        </span>
+                                                        <span
+                                                            className="text-sm text-neutral-900 dark:text-neutral-100">
+                                                            {entry.resource?.name}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span
+                                                            className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                            Date
+                                                        </span>
+                                                        <span
+                                                            className="text-sm text-neutral-900 dark:text-neutral-100">
+                                                            {new Date(entry.startDate).toLocaleDateString("fr-FR", {
+                                                                weekday: 'long',
+                                                                day: 'numeric',
+                                                                month: 'long',
+                                                                year: 'numeric'
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <span
+                                                            className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                            Horaires
+                                                        </span>
+                                                        <span
+                                                            className="text-sm text-neutral-900 dark:text-neutral-100">
+                                                            {new Date(entry.startDate).toLocaleTimeString("fr-FR", {
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })} - {new Date(entry.endDate).toLocaleTimeString("fr-FR", {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="flex flex-row justify-end pt-2">
+                                                <Button
+                                                    size="lg"
+                                                    color="danger"
+                                                    variant="flat"
+                                                    onPress={() => {
+                                                        handleDeleteEntry();
+                                                        onClose();
+                                                    }}
+                                                    className="font-medium"
+                                                >
+                                                    Confirmer l&apos;annulation
+                                                </Button>
                                             </div>
                                         </div>
                                     </ModalBody>
@@ -432,39 +523,63 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                 </div>
                                             )}
                                             <div className="flex flex-col items-center space-y-4 w-full">
-                                                <label className="text-neutral-700 dark:text-neutral-300 text-sm">
-                                                    Saisissez le code à 6 chiffres envoyé à
-                                                    <span
-                                                        className="font-semibold ml-1 text-neutral-900 dark:text-neutral-100">
-                                                        {entry?.user.email}
-                                                    </span>
-                                                </label>
-                                                <div className="flex items-center space-x-4">
-                                                    <InputOtp
-                                                        onValueChange={setOtp}
-                                                        value={otp}
-                                                        variant="bordered"
-                                                        size="lg"
-                                                        length={6}
-                                                        name="confirmation_code"
-                                                        classNames={{
-                                                            input: "text-2xl",
-                                                            base: "gap-3"
-                                                        }}
-                                                    />
-                                                    <Button
-                                                        isIconOnly
-                                                        size="lg"
-                                                        color="primary"
-                                                        variant="flat"
-                                                        onPress={handleUpdateEntity}
-                                                        isDisabled={otp.length !== 6}
-                                                    >
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                                             stroke="currentColor" strokeWidth="2">
-                                                            <path d="M20 6L9 17L4 12"/>
-                                                        </svg>
-                                                    </Button>
+                                                <div className="text-center space-y-2">
+                                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                                                        {modalStepper === "pickup" ? "Confirmation de récupération" : "Confirmation de restitution"}
+                                                    </h3>
+                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                        Saisissez le code à 6 chiffres envoyé à
+                                                        <span
+                                                            className="font-semibold ml-1 text-neutral-900 dark:text-neutral-100">
+                                                            {entry?.user.email}
+                                                        </span>
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex flex-col items-center space-y-4 w-full max-w-md">
+                                                    <div className="flex items-center space-x-4">
+                                                        <InputOtp
+                                                            onValueChange={setOtp}
+                                                            value={otp}
+                                                            variant="bordered"
+                                                            size="lg"
+                                                            length={6}
+                                                            name="confirmation_code"
+                                                            classNames={{
+                                                                input: "text-2xl",
+                                                                base: "gap-3"
+                                                            }}
+                                                        />
+                                                        <Button
+                                                            isIconOnly
+                                                            size="lg"
+                                                            color="primary"
+                                                            variant="flat"
+                                                            onPress={handleUpdateEntity}
+                                                            isDisabled={otp.length !== 6}
+                                                        >
+                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                                 stroke="currentColor" strokeWidth="2">
+                                                                <path d="M20 6L9 17L4 12"/>
+                                                            </svg>
+                                                        </Button>
+                                                    </div>
+
+                                                    <div className="flex flex-col items-center space-y-2 w-full">
+                                                        <Button
+                                                            size="sm"
+                                                            color="primary"
+                                                            variant="light"
+                                                            onPress={handleResendCode}
+                                                            isDisabled={resendTimer > 0}
+                                                            className="text-sm"
+                                                        >
+                                                            {resendTimer > 0
+                                                                ? `Renvoyer le code dans ${resendTimer}s`
+                                                                : "Renvoyer le code"}
+                                                        </Button>
+
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -509,74 +624,96 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                 adminMode={adminMode}
                                                 entry={entry}
                                             />
-                                            <Stepper
-                                                step={3}
-                                                content={
-                                                    <div className="w-full">
-                                                        <h1 className={"text-blue-900 dark:text-blue-300  text-lg"}>
-                                                            <span>{entry.moderate === "USED" ? "En cours d'utilisation" : "Réservation"}</span>
-                                                        </h1>
-                                                        <span>à partir du {formatDate(entry.startDate)}</span>
-                                                        {
-                                                            whichPickable() !== "FLUENT" &&
-                                                            entry.moderate === "ACCEPTED" &&
-                                                            !adminMode && entry?.endDate >= new Date().toISOString() &&
-                                                        
-                                                            validDatesToPickup() && (
-                                                                <Button
-                                                                    className="text-blue-500 font-bold ml-6"
-                                                                    size="lg"
-                                                                    variant="flat"
-                                                                    onPress={() => handlePickUp(onClose)}
-                                                                >
-                                                                    Prendre
-                                                                    <HandRaisedIcon width={24} height={24}
-                                                                                    className="font-bold transform transition-transform group-hover:translate-x-2"/>
-                                                                </Button>
-                                                            )
+                                            {entry.moderate !== "BLOCKED" ? (
+                                                <>
+                                                    <Stepper
+                                                        step={3}
+                                                        content={
+                                                            <div className="w-full">
+                                                                <h1 className={"text-blue-900 dark:text-blue-300  text-lg"}>
+                                                                    <span>{entry.moderate === "USED" ? "En cours d'utilisation" : "Réservation"}</span>
+                                                                </h1>
+                                                                <span>à partir du {formatDate(entry.startDate)}</span>
+                                                                {
+                                                                    whichPickable() !== "FLUENT" &&
+                                                                    entry.moderate === "ACCEPTED" &&
+                                                                    entry?.endDate >= new Date().toISOString() &&
+
+                                                                    validDatesToPickup() && (
+                                                                        <Button
+                                                                            className="text-blue-500 font-bold ml-6"
+                                                                            size="lg"
+                                                                            variant="flat"
+                                                                            onPress={() => handlePickUp(onClose)}
+                                                                        >
+                                                                            Prendre
+                                                                            <HandRaisedIcon width={24} height={24}
+                                                                                            className="font-bold transform transition-transform group-hover:translate-x-2"/>
+                                                                        </Button>
+                                                                    )
+                                                                }
+                                                            </div>
                                                         }
-                                                    </div>
-                                                }
-                                                done={entry?.startDate <= new Date().toISOString() && entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
-                                                failed={timeScheduleOptions?.ajustedEndDate <= new Date().toISOString() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") || entry.moderate === "REJECTED"}
-                                                adminMode={adminMode}
+                                                        done={entry?.startDate <= new Date().toISOString() && entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
+                                                        failed={timeScheduleOptions?.ajustedEndDate <= new Date().toISOString() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") || entry.moderate === "REJECTED"}
+                                                        adminMode={adminMode}
 
-                                            />
-                                            <Stepper
-                                                step={4}
-                                                content={
-                                                    <div className="flex flex-row">
-                                                        <div className="w-full flex flex-col">
-                                                            <h1 className={"text-blue-900 dark:text-blue-300 text-lg"}>
-                                                                {entry.returned ? "Restitué" : "Restitution"}
-                                                            </h1>
-                                                            <span>le {entry.returned ? formatDate(entry?.updatedAt) : formatDate(entry?.endDate)}</span>
-                                                        </div>
-                                                        <div className="ml-10 flex justify-center items-center ">
-                                                            {entry.moderate === "USED" && whichPickable() !== "FLUENT" && !adminMode &&
-                                                                <Button
-                                                                    className="font-bold text-orange-700  underline-offset-4 ml-2"
-                                                                    size="lg"
-                                                                    variant="light"
-                                                                    onPress={handleReturn}
-                                                                >
-                                                                    Retourner
-                                                                    <ArrowRightIcon
-                                                                        width={24}
-                                                                        height={24}
-                                                                        className="font-bold transform transition-transform group-hover:translate-x-2"
-                                                                    />
-                                                                </Button>
-                                                            }
-                                                        </div>
-                                                    </div>
+                                                    />
+                                                    <Stepper
+                                                        step={4}
+                                                        content={
+                                                            <div className="flex flex-row">
+                                                                <div className="w-full flex flex-col">
+                                                                    <h1 className={"text-blue-900 dark:text-blue-300 text-lg"}>
+                                                                        {entry.returned ? "Restitué" : "Restitution"}
+                                                                    </h1>
+                                                                    <span>le {entry.returned ? formatDate(entry?.updatedAt) : formatDate(entry?.endDate)}</span>
+                                                                </div>
+                                                                <div
+                                                                    className="ml-10 flex justify-center items-center ">
+                                                                    {entry.moderate === "USED" && whichPickable() !== "FLUENT" &&
+                                                                        <Button
+                                                                            className="font-bold text-orange-700  underline-offset-4 ml-2"
+                                                                            size="lg"
+                                                                            variant="light"
+                                                                            onPress={handleReturn}
+                                                                        >
+                                                                            Retourner
+                                                                            <ArrowRightIcon
+                                                                                width={24}
+                                                                                height={24}
+                                                                                className="font-bold transform transition-transform group-hover:translate-x-2"
+                                                                            />
+                                                                        </Button>
+                                                                    }
+                                                                </div>
+                                                            </div>
 
-                                                }
-                                                adminMode={adminMode}
-                                                done={entry.moderate === "ENDED" && entry.returned}
-                                                failed={entry?.returned === false && entry.endDate <= new Date().toISOString() && entry.moderate === "USED" || entry.moderate === "REJECTED"}
-                                                last={true}
-                                            />
+                                                        }
+                                                        adminMode={adminMode}
+                                                        done={entry.moderate === "ENDED" && entry.returned}
+                                                        failed={entry?.returned === false && entry.endDate <= new Date().toISOString() && entry.moderate === "USED" || entry.moderate === "REJECTED"}
+                                                        last={true}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <Stepper
+                                                    step={3}
+                                                    content={
+                                                        <div
+                                                            className="w-full p-3 my-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                                            <p className="text-sm text-red-600 dark:text-red-400 ">
+                                                                Cette ressource est bloquée
+                                                                jusqu&apos;au {formatDate(entry.endDate)}
+                                                            </p>
+                                                        </div>
+                                                    }
+                                                    last={true}
+                                                    done={true}
+                                                >
+
+                                                </Stepper>
+                                            )}
                                         </div>
 
                                         <EntryComments entry={entry} adminMode={adminMode}/>
@@ -586,7 +723,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
 
                                     {!adminMode && modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
                                         <Tooltip color="warning" content="Annuler définitivement la réservation."
-                                                 showArrow placement="top-end">
+                                                 showArrow placement="right">
                                             <Button
                                                 size={"lg"}
                                                 color="warning"

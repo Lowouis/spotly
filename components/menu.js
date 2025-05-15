@@ -2,273 +2,453 @@
 
 import {
     Badge,
-    Divider,
+    Button,
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownTrigger,
+    Form,
+    Input,
+    Link,
     Modal,
     ModalBody,
     ModalContent,
     ModalHeader,
-    Link,
     Tab,
     Tabs,
     Tooltip,
     useDisclosure,
+    User
 } from "@nextui-org/react";
-import {Button} from "@nextui-org/button";
 import {ArrowPathIcon, BookmarkIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
 import {signOut} from "next-auth/react";
-import {Form} from "@nextui-org/form";
-import {Input} from "@nextui-org/input";
 import React, {useState} from "react";
 import {addToast} from "@heroui/toast";
 import {BsWrench} from "react-icons/bs";
-import {CiLogout, CiSettings, CiUser} from "react-icons/ci";
+import {CiLogout, CiMenuFries, CiSettings, CiUser} from "react-icons/ci";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
-import {User} from "@nextui-org/react";
-import {firstLetterUppercase} from "@/global";
 import {useMediaQuery} from 'react-responsive';
 
 export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, handleRefresh}) {
     const {isOpen, onOpen, onClose} = useDisclosure();
     const [selectedTab, setSelectedTab] = useState("search");
     const isMobile = useMediaQuery({query: '(max-width: 768px)'});
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleTabChange = (key) => {
         setSelectedTab(key);
         handleSearchMode(key);
         handleRefresh();
+        if (isMobile) {
+            setIsMenuOpen(false);
+        }
     };
 
-    return (
-        <div className="w-full">
-            <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} w-full p-2 items-center justify-between`}>
+    const menuItems = [
+        {
+            key: "search",
+            icon: <MagnifyingGlassCircleIcon className="w-5 h-5"/>,
+            label: "Chercher",
+            badge: null,
+            badgeColor: "primary"
+        },
+        {
+            key: "bookings",
+            icon: <BookmarkIcon className="w-5 h-5"/>,
+            label: "Réservations",
+            badge: userEntriesQuantity.total > 0 ? userEntriesQuantity.total : null,
+            badgeColor: userEntriesQuantity.delayed ? "danger" : "primary"
+        }
+    ];
+
+    const renderMobileMenu = () => (
+        <div className="fixed inset-0 z-50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm"
+             style={{display: isMenuOpen ? 'block' : 'none'}}>
+            <div className="flex flex-col h-full">
                 <div
-                    className={`flex items-center ${isMobile ? 'w-full justify-center' : 'w-1/3 justify-start'} px-3 text-3xl cursor-pointer`}>
-                    <div className="text-neutral-900 dark:text-neutral-200">
+                    className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
+                    <div
+                        className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
                         Spotly
                     </div>
-                </div>
-                <div
-                    className={`flex ${isMobile ? 'flex-row justify-center w-full mt-2' : 'flex-col w-1/3 space-y-2 justify-center items-center'}`}>
-                    <Tabs
-                        size="lg"
-                        aria-label="Options"
-                        color="default"
-                        variant="underlined"
-                        selectedKey={selectedTab}
-                        onSelectionChange={handleTabChange}
+                    <Button
+                        isIconOnly
+                        variant="light"
+                        onPress={() => setIsMenuOpen(false)}
+                        className="text-neutral-600 dark:text-neutral-400"
                     >
-                        <Tab
-                            key="search"
-                            title={
-                                <div className="flex items-center space-x-3">
-                                    <MagnifyingGlassCircleIcon width="24" height="24"/>
-                                    <span>Chercher</span>
-                                </div>
-                            }
-                        />
-                        <Tab
-                            key="bookings"
-                            title={
-                                <div className="flex items-center space-x-3">
-                                    {userEntriesQuantity >= 0 &&
-                                        <Badge className="border-none" size="sm"
-                                               content={userEntriesQuantity} color="default" shape="circle"
-                                               variant="solid">
-                                            <BookmarkIcon width="24" height="24"/>
-                                        </Badge>
-                                    }
-                                    <span>Réservations</span>
-                                </div>
-                            }
-                        />
-                    </Tabs>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </Button>
                 </div>
-                <div
-                    className={`flex ${isMobile ? 'flex-row justify-center w-full mt-2' : 'w-1/3 justify-end items-center'}`}>
-                    <div className="flex items-center space-x-4">
-                        <DarkModeSwitch/>
-                        <Button size="lg" onPress={onOpen} variant="flat" isIconOnly={true} radius="full">
-                            <CiSettings size={25}/>
-                        </Button>
+                <div className="flex-1 overflow-y-auto p-4">
+                    <div className="space-y-2">
+                        {menuItems.map((item) => (
+                            <Button
+                                key={item.key}
+                                className={`w-full justify-start px-4 py-3 text-lg font-medium rounded-xl transition-all duration-200 overflow-visible ${
+                                    selectedTab === item.key
+                                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                                        : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                                }`}
+                                onPress={() => handleTabChange(item.key)}
+                            >
+                                <div className="flex items-center space-x-2 gap-3 overflow-visible">
+                                    {item.icon}
+                                    <span>{item.label}</span>
+                                    {item.badge && (
+                                        <Badge
+                                            content={item.badge}
+                                            color={item.badgeColor}
+                                            variant="shadow"
+                                            size="sm"
+                                            className="ml-2"
+                                        />
+                                    )}
+                                </div>
+                            </Button>
+                        ))}
                     </div>
-                    <Modal
-                        isOpen={isOpen}
-                        onClose={onClose}
-                        size="lg"
-                        radius="lg"
-                        backdrop="opaque"
-                        motionProps={{
-                            variants: {
-                                enter: {
-                                    y: 0,
-                                    opacity: 1,
-                                    transition: {
-                                        duration: 0.15,
-                                        ease: "easeOut",
-                                    },
-                                },
-                                exit: {
-                                    y: -20,
-                                    opacity: 0,
-                                    transition: {
-                                        duration: 0.15,
-                                        ease: "easeIn",
-                                    },
-                                },
-                            },
-                        }}
-                    >
-                        <ModalContent>
-                            {(onClose) => (
-                                <>
-                                    <ModalHeader className="flex flex-col gap-2 p-4 bg-opacity-10">
-                                        <div className="flex items-center justify-between gap-4">
-                                            <div className="flex items-center flex-1 gap-4">
-                                                <User
-                                                    name={`${user?.name} ${user?.surname}`}
-                                                    description={user?.email}
-                                                    color="default"
-                                                    classNames={{
-                                                        name: user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
-                                                            ? 'text-orange-500'
-                                                            : 'text-neutral-800'
-                                                    }}
-                                                    avatarProps={{
-                                                        size: "lg",
-                                                        className: `text-lg font-semibold text-neutral-800 ${
-                                                            user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
-                                                                ? 'bg-orange-500'
-                                                                : 'bg-neutral-800'
-                                                        }`,
-                                                        radius: "lg",
-                                                        showFallback: true,
-                                                        fallback: <CiUser size={30}/>,
-                                                    }}
-                                                />
-                                                <div className="flex flex-row gap-2 ml-auto mr-4">
-                                                    {user.role !== 'USER' && (
-                                                        <Tooltip content={"Administration"} showArrow
-                                                                 color="foreground">
-                                                            <Button
-                                                                as={Link}
-                                                                variant="flat"
-                                                                color="default"
-                                                                href="/admin"
-                                                                className="flex flex-col items-center justify-center px-2 py-1 text-xs uppercase"
-                                                                aria-label="Accéder à l'administration"
-                                                            >
-                                                                <BsWrench size={20} aria-hidden="true"/>
-                                                            </Button>
-                                                        </Tooltip>
-                                                    )}
-                                                    <Tooltip content={"Se déconnecter"} showArrow color="foreground">
-                                                        <Button
-                                                            variant="flat"
-                                                            color="default"
-                                                            onPress={() => signOut().then(() => {
-                                                                addToast({
-                                                                    title: 'Déconnexion',
-                                                                    message: 'Vous avez été déconnecté',
-                                                                    type: 'success',
-                                                                    duration: 5000,
-                                                                });
-                                                            })}
-                                                            className="flex flex-col items-center justify-center px-2 py-1 text-xs uppercase"
-                                                            aria-label="Se déconnecter"
-                                                        >
-                                                            <CiLogout size={20} aria-hidden="true"/>
-                                                        </Button>
-                                                    </Tooltip>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </ModalHeader>
-                                    <ModalBody>
-                                        <div className="flex flex-col space-y-2 h-full">
-                                            {!user?.external && (
-                                                <Form className="w-full " validationBehavior="native"
-                                                      onSubmit={onOpen}>
-                                                    <div className="flex flex-row justify-between items-end w-full">
-                                                        <div className="w-full">
-                                                            <Input
-                                                                label="Email"
-                                                                size="sm"
-                                                                value={user?.email}
-                                                                labelPlacement="outside"
-                                                                name="email"
-                                                                placeholder="Enter your email"
-                                                                type="email"
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-end ml-2">
-                                                            <Tooltip content={"Changer l'email"}
-                                                                     showArrow
-                                                                     placement="top-end"
-                                                                     color="foreground"
-                                                            >
-                                                                <Button
-                                                                    onPress={() => console.log("refresh mail")}
-                                                                    color="default"
-                                                                    type="submit"
-                                                                    variant="flat"
-                                                                    isIconOnly
-                                                                    size="sm"
-                                                                >
-                                                                    <ArrowPathIcon
-                                                                        width="20"
-                                                                        height="20"
-                                                                        className={''}
-                                                                    />
-                                                                </Button>
-                                                            </Tooltip>
-                                                        </div>
-                                                    </div>
-                                                    <div
-                                                        className="flex flex-row justify-center items-end my-3  w-full">
-                                                        <div className="w-full">
-                                                            <Input
-                                                                label="Mot de passe"
-                                                                size="sm"
-                                                                value=""
-                                                                labelPlacement="outside"
-                                                                name="email"
-                                                                placeholder="Entrer un nouveau mot de passe"
-                                                                type="password"
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-end ml-2">
-                                                            <Tooltip content={"Changer le mot de passe"}
-                                                                     showArrow placement="top-end"
-                                                                     color="foreground">
-                                                                <Button
-                                                                    onPress={() => console.log("refresh password")}
-                                                                    color="default"
-                                                                    type="submit"
-                                                                    variant="flat"
-                                                                    isIconOnly
-                                                                    size="sm"
-                                                                    disabled={user?.external}
-                                                                >
-                                                                    <ArrowPathIcon
-                                                                        width="20"
-                                                                        height="20"
-                                                                        className={''}
-                                                                    />
-                                                                </Button>
-                                                            </Tooltip>
-                                                        </div>
-                                                    </div>
-                                                </Form>
-                                            )}
-                                        </div>
-                                    </ModalBody>
-                                </>
-                            )}
-                        </ModalContent>
-                    </Modal>
+                </div>
+                <div className="p-4 border-t border-neutral-200 dark:border-neutral-800">
+                    <div className="flex items-center justify-end">
+                        <Dropdown placement="top-end">
+                            <DropdownTrigger>
+                                <Button
+                                    variant="flat"
+                                    className="bg-neutral-100 dark:bg-neutral-800"
+                                    isIconOnly
+                                >
+                                    <CiSettings className="w-5 h-5"/>
+                                </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Paramètres utilisateur"
+                                          className="text-content-primary dark:text-dark-content-primary">
+                                <DropdownItem
+                                    key="profile"
+                                    startContent={<CiUser className="w-4 h-4"/>}
+                                    onPress={onOpen}
+                                    className="text-content-primary dark:text-dark-content-primary"
+                                >
+                                    Profil
+                                </DropdownItem>
+                                {user.role !== 'USER' && (
+                                    <DropdownItem
+                                        key="admin"
+                                        startContent={<BsWrench className="w-4 h-4"/>}
+                                        as={Link}
+                                        href="/admin"
+                                        className="text-content-primary dark:text-dark-content-primary"
+                                    >
+                                        Administration
+                                    </DropdownItem>
+                                )}
+                                <DropdownItem
+                                    key="theme"
+                                    className="flex items-center justify-between text-content-primary dark:text-dark-content-primary"
+                                    endContent={<DarkModeSwitch/>}
+                                >
+                                    <span>Thème</span>
+                                </DropdownItem>
+                                <DropdownItem
+                                    key="logout"
+                                    className="text-danger"
+                                    color="danger"
+                                    startContent={<CiLogout className="w-4 h-4"/>}
+                                    onPress={() => signOut().then(() => {
+                                        addToast({
+                                            title: 'Déconnexion',
+                                            message: 'Vous avez été déconnecté',
+                                            type: 'success',
+                                            duration: 5000,
+                                        });
+                                    })}
+                                >
+                                    Se déconnecter
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    </div>
                 </div>
             </div>
         </div>
+    );
+
+    const renderDesktopMenu = () => (
+        <div
+            className="w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 mb-2">
+            <div className="max-w-7xl mx-auto px-4">
+                <div className="flex items-center justify-between h-14">
+                    <div className="flex items-center">
+                        <div className="relative group">
+                            <div
+                                className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent transition-all duration-500 cursor-pointer relative z-10 ">
+                                Spotly
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="hidden md:flex items-center">
+                        <Tabs
+                            selectedKey={selectedTab}
+                            onSelectionChange={handleTabChange}
+                            color="primary"
+                            variant="underlined"
+                            classNames={{
+                                base: "overflow-visible",
+                                tabList: "gap-8 h-14 overflow-visible",
+                                cursor: "w-full bg-primary-500",
+                                tab: "max-w-fit px-0 h-14 overflow-visible",
+                                tabContent: "group-data-[selected=true]:text-primary-500 text-sm whitespace-nowrap"
+                            }}
+                        >
+                            {menuItems.map((item) => (
+                                <Tab
+                                    key={item.key}
+                                    title={
+                                        <div className="flex items-center space-x-3 group overflow-visible">
+                                            {item.icon}
+                                            <span className="">{item.label}</span>
+                                            {item.badge && (
+                                                <Badge
+                                                    showOutline={false}
+                                                    content={item.badge}
+                                                    color={item.badgeColor}
+                                                    variant="flat"
+                                                    size="sm"
+                                                    className="ml-3"
+                                                />
+                                            )}
+                                        </div>
+                                    }
+                                />
+                            ))}
+                        </Tabs>
+                    </div>
+
+                    <div className="flex items-center space-x-3">
+                        <Dropdown
+                            size="lg"
+                            placement="bottom-end"
+                        >
+                            <DropdownTrigger size="lg">
+                                <Button
+                                    variant="flat"
+                                    size="sm"
+                                    className="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                                    isIconOnly
+                                >
+                                    <CiSettings className="w-4 h-4"/>
+                                </Button>
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label="Paramètres utilisateur"
+                                          className="text-content-primary dark:text-dark-content-primary">
+                                <DropdownItem
+                                    size="lg"
+                                    key="profile"
+                                    startContent={<CiUser className="w-4 h-4"/>}
+                                    onPress={onOpen}
+                                    className="text-content-primary dark:text-dark-content-primary"
+                                >
+                                    Profil
+                                </DropdownItem>
+                                {user.role !== 'USER' && (
+                                    <DropdownItem
+                                        size="lg"
+                                        key="admin"
+                                        startContent={<BsWrench className="w-4 h-4"/>}
+                                        as={Link}
+                                        href="/admin"
+                                        className="text-content-primary dark:text-dark-content-primary"
+                                    >
+                                        Administration
+                                    </DropdownItem>
+                                )}
+
+                                <DropdownItem
+                                    size="lg"
+                                    showDivider
+                                    key="logout"
+                                    className="text-danger"
+                                    color="danger"
+                                    startContent={<CiLogout className="w-4 h-4"/>}
+                                    onPress={() => signOut().then(() => {
+                                        addToast({
+                                            title: 'Déconnexion',
+                                            message: 'Vous avez été déconnecté',
+                                            type: 'success',
+                                            duration: 5000,
+                                        });
+                                    })}
+                                >
+                                    Se déconnecter
+                                </DropdownItem>
+                                <DropdownItem
+                                    size="lg"
+                                    key="theme"
+                                    className="flex items-center justify-between text-content-primary dark:text-dark-content-primary"
+                                    endContent={<DarkModeSwitch size="sm"/>}
+                                    closeOnSelect={false} // Empêche la fermeture pour le switch
+                                >
+                                    <span>Thème</span>
+                                </DropdownItem>
+                            </DropdownMenu>
+
+                        </Dropdown>
+                        {isMobile && (
+                            <Button
+                                isIconOnly
+                                size="sm"
+                                variant="light"
+                                onPress={() => setIsMenuOpen(true)}
+                            >
+                                <CiMenuFries className="w-5 h-5"/>
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <>
+            {renderDesktopMenu()}
+            {isMobile && renderMobileMenu()}
+
+            <Modal
+                isOpen={isOpen}
+                onClose={onClose}
+                size="lg"
+                radius="lg"
+                backdrop="blur"
+                classNames={{
+                    base: "bg-white dark:bg-neutral-900",
+                    header: "border-b border-neutral-200 dark:border-neutral-800",
+                    body: "py-6",
+                    footer: "border-t border-neutral-200 dark:border-neutral-800",
+                    closeButton: "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                }}
+                motionProps={{
+                    variants: {
+                        enter: {
+                            y: 0,
+                            opacity: 1,
+                            transition: {
+                                duration: 0.2,
+                                ease: "easeOut",
+                            },
+                        },
+                        exit: {
+                            y: -20,
+                            opacity: 0,
+                            transition: {
+                                duration: 0.2,
+                                ease: "easeIn",
+                            },
+                        },
+                    },
+                }}
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader className="flex flex-col gap-2 p-4">
+                                <div className="flex items-center justify-between gap-4">
+                                    <User
+                                        name={`${user?.name} ${user?.surname}`}
+                                        description={user?.email}
+                                        color="default"
+                                        classNames={{
+                                            name: user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+                                                ? 'text-orange-500 font-semibold'
+                                                : 'text-neutral-800 dark:text-neutral-100 font-semibold',
+                                            description: 'text-neutral-500 dark:text-neutral-400'
+                                        }}
+                                        avatarProps={{
+                                            size: "lg",
+                                            className: `text-lg font-semibold text-white transition-transform duration-200 hover:scale-105 ${
+                                                user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+                                                    ? 'bg-orange-500'
+                                                    : 'bg-primary-500'
+                                            }`,
+                                            radius: "lg",
+                                            showFallback: true,
+                                            fallback: <CiUser className="w-6 h-6"/>,
+                                        }}
+                                    />
+                                </div>
+                            </ModalHeader>
+                            <ModalBody>
+                                {!user?.external && (
+                                    <Form className="w-full space-y-4" validationBehavior="native">
+                                        <div className="flex flex-row justify-between items-end w-full gap-3">
+                                            <Input
+                                                label="Email"
+                                                size="sm"
+                                                value={user?.email}
+                                                labelPlacement="outside"
+                                                name="email"
+                                                placeholder="Votre email"
+                                                type="email"
+                                                variant="bordered"
+                                                classNames={{
+                                                    label: "text-neutral-700 dark:text-neutral-300",
+                                                    input: "text-sm"
+                                                }}
+                                            />
+                                            <Tooltip content="Changer l'email" showArrow placement="top-end">
+                                                <Button
+                                                    onPress={() => console.log("refresh mail")}
+                                                    color="primary"
+                                                    variant="flat"
+                                                    isIconOnly
+                                                    size="sm"
+                                                    className="mb-1"
+                                                >
+                                                    <ArrowPathIcon className="w-4 h-4"/>
+                                                </Button>
+                                            </Tooltip>
+                                        </div>
+                                        <div className="flex flex-row justify-between items-end w-full gap-3">
+                                            <Input
+                                                label="Mot de passe"
+                                                size="sm"
+                                                value=""
+                                                labelPlacement="outside"
+                                                name="password"
+                                                placeholder="Nouveau mot de passe"
+                                                type="password"
+                                                variant="bordered"
+                                                classNames={{
+                                                    label: "text-neutral-700 dark:text-neutral-300",
+                                                    input: "text-sm"
+                                                }}
+                                            />
+                                            <Tooltip content="Changer le mot de passe" showArrow placement="top-end">
+                                                <Button
+                                                    onPress={() => console.log("refresh password")}
+                                                    color="primary"
+                                                    variant="flat"
+                                                    isIconOnly
+                                                    size="sm"
+                                                    disabled={user?.external}
+                                                    className="mb-1"
+                                                >
+                                                    <ArrowPathIcon className="w-4 h-4"/>
+                                                </Button>
+                                            </Tooltip>
+                                        </div>
+                                    </Form>
+                                )}
+                            </ModalBody>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
+        </>
     );
 }
 

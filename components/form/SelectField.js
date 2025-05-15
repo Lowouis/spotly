@@ -1,9 +1,10 @@
 import React, {useEffect} from 'react';
-import { useFormContext } from 'react-hook-form';
-import { useQuery } from "@tanstack/react-query";
-import { Select, SelectItem } from "@nextui-org/select";
+import {useFormContext} from 'react-hook-form';
+import {useQuery} from "@tanstack/react-query";
+import {Select, SelectItem} from "@nextui-org/select";
 import {firstLetterUppercase} from "@/global";
 import {Chip} from "@nextui-org/react";
+
 const SelectField = ({
                         name,
                         label,
@@ -14,6 +15,7 @@ const SelectField = ({
                         isRequired = true,
                         onReset = () => {},
                         defaultValue,
+                         validates,
                          placeholder = "Aucun",
                          eyesOn = null
                      }) => {
@@ -42,18 +44,42 @@ const SelectField = ({
                 setValue(name, defaultValue);
             }
         }
-        const inheritanceDomain = watch('domains');
-        const inheritanceCategory = watch('category');
-        if (eyesOn !== null && (inheritanceDomain !== undefined || inheritanceCategory !== undefined)) {
-            const domainName = inheritanceDomain?.[eyesOn]?.name;
-            const categoryName = inheritanceCategory?.[eyesOn]?.name;
-            setWatchedValue(domainName || categoryName);
+
+        // Si la valeur est nulle, on réinitialise aussi le watchedValue
+        if (value === null) {
+            setWatchedValue(null);
         }
-    }, [value, defaultValue, setValue, name, resolvedOptions, eyesOn, watchedValue, watch]);
+
+        const updateInheritance = () => {
+            const inheritanceDomain = watch('domains');
+            const inheritanceCategory = watch('category');
+            if (eyesOn !== null && (inheritanceDomain !== undefined || inheritanceCategory !== undefined)) {
+                const domainName = inheritanceDomain?.[eyesOn]?.name;
+                const categoryName = inheritanceCategory?.[eyesOn]?.name;
+                const newValue = domainName || categoryName;
+                setWatchedValue(newValue);
+            }
+        };
+
+        updateInheritance();
+        const subscription = watch((value, {name: fieldName}) => {
+            if (fieldName === 'domains' || fieldName === 'category') {
+                updateInheritance();
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [value, defaultValue, setValue, name, resolvedOptions, eyesOn, watch]);
+    console.log(validates)
     const handleChange = (selectedValue) => {
         const selectedId = Array.from(selectedValue)[0];
         const selectedOption = resolvedOptions.find(option => option.id.toString() === selectedId);
-        selectedOption?.id !== value?.id ? setValue(name, selectedOption) : onReset();
+        if (selectedOption?.id !== value?.id) {
+            setValue(name, selectedOption);
+        } else {
+            onReset();
+            setWatchedValue(null); // Réinitialisation du placeholder
+        }
         setSelectedKey(selectedId);
     };
 
@@ -81,7 +107,7 @@ const SelectField = ({
                     name={name}
                     label={
                     <span className="p-0.5">
-                        <span className="mr-2 text-neutral-700 dark:text-neutral-300">{label}</span>
+                        <span className="mr-2 text-content-primary dark:text-dark-content-primary">{label}</span>
                         <Chip
                             radius={'full'}
                             variant={'flat'}
@@ -99,12 +125,16 @@ const SelectField = ({
                     onSelectionChange={(selected) => handleChange(selected)}
                     placeholder={eyesOn !== null && watchedValue !== undefined ?
                         <span
-                            className="italic text-neutral-500 dark:text-neutral-400">{watchedValue} par héritage</span> : resolvedOptions?.length ? placeholder : "Aucune donnée"}
+                            className="italic text-content-secondary dark:text-dark-content-secondary">{watchedValue} par héritage</span> : resolvedOptions?.length ? placeholder : "Aucune donnée"}
                     classNames={{
-                        label: "text-neutral-700 dark:text-neutral-300",
-                        value: "text-neutral-900 dark:text-neutral-100",
-                        description: "text-neutral-600 dark:text-neutral-400"
+                        label: "text-content-primary dark:text-dark-content-primary",
+                        value: "text-content-primary dark:text-dark-content-primary",
+                        description: "text-content-secondary dark:text-dark-content-secondary",
+                        trigger: "text-content-primary dark:text-dark-content-primary",
+                        placeholder: "text-content-secondary dark:text-dark-content-secondary",
+                        listbox: "text-content-primary dark:text-dark-content-primary"
                     }}
+                    disabledKeys={validates ? Object.keys(validates).filter(key => !validates[key]) : []}
                 >
                     {(option) => {
                         return (

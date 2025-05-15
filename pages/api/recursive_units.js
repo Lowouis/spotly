@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     const recursiveUnits = [
         {id: 0, name: "jour"},
         {id: 1, name: "hebdomadaire"},
-        {id: 2, name: "mensuel"},
     ];
 
     return res.status(200).json(recursiveUnits);

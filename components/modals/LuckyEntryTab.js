@@ -17,7 +17,7 @@ import {ArrowLeftCircleIcon, ArrowRightCircleIcon, ClockIcon} from "@heroicons/r
 import {useQuery} from "@tanstack/react-query";
 import {lastestPickable} from "@/global";
 import {addToast} from "@heroui/toast";
-import {fetchIP} from '@/utils/api';
+import {fetchIP, checkIPAuthorization} from '@/utils/api';
 
 export default function LuckyEntryTab({setSelected}) {
     const [ifl, setIfl] = useState({"username": "", "otp": ""});
@@ -131,45 +131,12 @@ export default function LuckyEntryTab({setSelected}) {
     };
 
 
-    // Add this function near the top with other functions
-    const checkIPAuthorization = async (ip) => {
-        try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/authorized-location/check/${ip}`);
-            if (response.status === 401) {
-                addToast({
-                    title: "Accès refusé",
-                    description: "Cet appareil n'est pas autorisé à effectuer cette action.",
-                    timeout: 5000,
-                    variant: "solid",
-                    radius: "sm",
-                    color: "danger"
-                });
-                return false;
-            }
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return true;
-        } catch (error) {
-            addToast({
-                title: "Erreur",
-                description: "Une erreur est survenue lors de la vérification de l'appareil.",
-                timeout: 5000,
-                variant: "solid",
-                radius: "sm",
-                color: "danger"
-            });
-            return false;
-        }
-    };
-
-    // Modify the conditional rendering of the buttons
     {
         entry && entry.moderate === "ACCEPTED" && (
             lastestPickable(entry)?.name === "HIGH_AUTH" ? (
                 <div className="space-y-4">
                     <Button
-                        color="primary"
+                        color="default"
                         className="w-full font-medium"
                         size="lg"
                         onPress={async () => {
@@ -247,7 +214,7 @@ export default function LuckyEntryTab({setSelected}) {
                             size="md"
                             fullWidth
                             type="submit"
-                            color="primary"
+                            color="default"
                             className="font-medium"
                             isLoading={isLoading}
                             isDisabled={ifl.otp.length !== 6}
@@ -361,7 +328,7 @@ export default function LuckyEntryTab({setSelected}) {
                                         )}
                                         {entry.moderate === "ACCEPTED" && new Date(entry.endDate) > new Date() && (
                                             <Button
-                                                color="primary"
+                                                color="default"
                                                 className="w-full font-medium bg-gradient-to-r from-blue-500 to-blue-600"
                                                 size="lg"
                                                 isLoading={isActionLoading}

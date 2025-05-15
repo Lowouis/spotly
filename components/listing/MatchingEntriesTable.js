@@ -1,13 +1,29 @@
-import { Tooltip, useDisclosure } from "@nextui-org/react";
-import { Button } from "@nextui-org/button";
-import { ShieldExclamationIcon } from "@heroicons/react/24/solid";
+import {Tooltip, useDisclosure} from "@nextui-org/react";
+import {Button} from "@nextui-org/button";
 import ModalValidBooking from "@/components/modals/ModalValidBooking";
 import React, {useState} from "react";
 import BlinkingDotText from "@/components/utils/BlinkingDotText";
 
 export default function MatchingEntriesTable({resources, entry, session, handleRefresh}) {
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const [currentResource, setCurrentResource] = useState(null); 
+    console.log(resources);
+    const calculateResourceAvailability = (resource) => {
+        const availableSlots = resource.availability?.filter(slot => slot.available).length || 0;
+        const totalSlots = resource.availability?.length || 0;
+        return {
+            available: availableSlots,
+            total: totalSlots
+        };
+    };
+
+    const [currentResource, setCurrentResource] = useState(null);
+    const disponibility = resources?.reduce((acc, resource) => {
+        const resourceAvailability = calculateResourceAvailability(resource);
+        return {
+            available: acc.available + resourceAvailability.available,
+            total: acc.total + resourceAvailability.total
+        };
+    }, {available: 0, total: 0});
 
     return (
         <div className="w-full flex flex-col items-center space-y-4">
@@ -20,6 +36,33 @@ export default function MatchingEntriesTable({resources, entry, session, handleR
                                 className="text-xl font-medium w-full sm:w-1/3 text-center sm:text-left text-neutral-700 dark:text-neutral-200">
                                 <BlinkingDotText content={resource.name}/>
                             </div>
+                            <div>
+                                {/* <div className="flex justify-center sm:justify-start items-center gap-2">
+                                    <div className="text-sm text-neutral-500 dark:text-neutral-400 mr-2">
+                                        Disponibilité
+                                    </div>
+                                    <div 
+                                        className={`
+                                            relative w-10 h-10 rounded-full flex items-center justify-center 
+                                            font-medium border-2 transition-colors duration-200
+                                            ${(() => {
+                                                const availability = calculateResourceAvailability(resource);
+                                                const ratio = availability.available / availability.total;
+                                                if (ratio >= 0.7) return 'border-success-500 bg-success-500/10 text-success-500 dark:border-success-400 dark:bg-success-400/10 dark:text-success-400';
+                                                if (ratio >= 0.4) return 'border-warning-500 bg-warning-500/10 text-warning-500 dark:border-warning-400 dark:bg-warning-400/10 dark:text-warning-400';
+                                                return 'border-danger-500 bg-danger-500/10 text-danger-500 dark:border-danger-400 dark:bg-danger-400/10 dark:text-danger-400';
+                                            })()}
+                                        `}
+                                    >
+                                        <div className="text-sm">
+                                            {(() => {
+                                                const availability = calculateResourceAvailability(resource);
+                                                return `${availability.available}/${availability.total}`;
+                                            })()}
+                                        </div>
+                                    </div>
+                                </div> */}
+                            </div>
                             <div className="flex justify-center sm:justify-end items-center w-full sm:w-1/3">
                                 <Tooltip
                                     delay={25}
@@ -29,6 +72,7 @@ export default function MatchingEntriesTable({resources, entry, session, handleR
                                     content={resource.moderate ? "Un administrateur doit valider la réservation" : "Réserver cette ressource"}
                                     className="text-sm"
                                     color="foreground"
+                                    placement="top-end"
                                     showArrow={true}
                                 >
                                     <Button

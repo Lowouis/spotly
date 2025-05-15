@@ -1,7 +1,7 @@
 'use client';
 import {DatePicker, Input} from "@nextui-org/react";
 import TimeInput from '@/components/form/HourSelect';
-import {useCallback, useEffect, useState} from 'react';
+import {useState} from 'react';
 import {addToast} from "@heroui/toast";
 import {getLocalTimeZone, today} from "@internationalized/date";
 
@@ -12,19 +12,20 @@ export default function DateRangePickerSplitted({setValue, name = "date"}) {
     const [endTime, setEndTime] = useState(null);
     const [dateError, setDateError] = useState(null);
 
-    const handleStartDateChange = (date) => {
-        setStartDate(date);
-        if (endDate && new Date(date) > new Date(endDate)) {
-            setEndDate(date);
-        }
-    };
-
     const isSameDay = (date1, date2) => {
         if (!date1 || !date2) return false;
         return date1.day === date2.day &&
             date1.month === date2.month &&
             date1.year === date2.year;
     }
+
+    const handleStartDateChange = (date) => {
+        setStartDate(date);
+        if (endDate && new Date(date) > new Date(endDate)) {
+            setEndDate(date);
+        }
+        updateValue(date, endDate, startTime, endTime);
+    };
 
     const handleEndDateChange = (date) => {
         if (startDate && new Date(date) < new Date(startDate)) {
@@ -37,37 +38,44 @@ export default function DateRangePickerSplitted({setValue, name = "date"}) {
             return;
         }
         setEndDate(date);
+        updateValue(startDate, date, startTime, endTime);
     };
 
-    const validateAndSetDates = useCallback(() => {
-        if (startDate && endDate && startTime && endTime) {
-            if (isSameDay(startDate, endDate)) {
-                const startHour = parseInt(startTime);
-                const endHour = parseInt(endTime);
+    const handleStartTimeChange = (time) => {
+        setStartTime(time.target.value);
+        updateValue(startDate, endDate, time.target.value, endTime);
+    };
 
-                if (startHour > endHour) {
-                    setDateError("L'heure de début ne peut pas être après l'heure de fin");
-                    return;
-                }
-            }
-            setDateError(null);
+    const handleEndTimeChange = (time) => {
+        setEndTime(time.target.value);
+        updateValue(startDate, endDate, startTime, time.target.value);
+    };
 
-            const start = new Date(startDate.year, startDate.month - 1, startDate.day, parseInt(startTime));
-            const end = new Date(endDate.year, endDate.month - 1, endDate.day, parseInt(endTime));
-
-            setValue(name, {
-                start: start,
-                end: end,
-                timeZone: getLocalTimeZone()
-            });
+    const updateValue = (start, end, startT, endT) => {
+        if (!start || !end || !startT || !endT) {
+            return;
         }
-    }, [startDate, endDate, startTime, endTime, name, setValue]);
 
-    useEffect(() => {
-        validateAndSetDates();
-    }, [startDate, endDate, startTime, endTime, validateAndSetDates]);
+        if (isSameDay(start, end)) {
+            const startHour = parseInt(startT);
+            const endHour = parseInt(endT);
 
-    // Supprimer le second useEffect
+            if (startHour > endHour) {
+                setDateError("L'heure de début ne peut pas être après l'heure de fin");
+                return;
+            }
+        }
+
+        setDateError(null);
+        const startDate = new Date(start.year, start.month - 1, start.day, parseInt(startT));
+        const endDate = new Date(end.year, end.month - 1, end.day, parseInt(endT));
+
+        setValue(name, {
+            start: startDate,
+            end: endDate,
+            timeZone: getLocalTimeZone()
+        });
+    };
 
     return (
         <div className="flex-grow flex flex-col gap-2">
@@ -109,12 +117,10 @@ export default function DateRangePickerSplitted({setValue, name = "date"}) {
                     <TimeInput
                         name={"startTime"}
                         label="Heure de début"
-                        onChange={(time) => setStartTime(time.target.value)}
+                        onChange={handleStartTimeChange}
                         value={startTime}
                         isInvalid={!!dateError}
-                        // Si même jour, l'heure max est l'heure de fin
                         maxValue={isSameDay(startDate, endDate) ? endTime : null}
-
                     />
                 </div>
                 <div className="flex flex-1 flex-row gap-2">
@@ -154,11 +160,10 @@ export default function DateRangePickerSplitted({setValue, name = "date"}) {
                     <TimeInput
                         name={"endTime"}
                         label="Heure de fin"
-                        onChange={(time) => setEndTime(time.target.value)}
+                        onChange={handleEndTimeChange}
                         value={endTime}
                         isDisabled={!startDate || !endDate}
                         isInvalid={!!dateError}
-                        // Si même jour, l'heure min est l'heure de début
                         minValue={isSameDay(startDate, endDate) ? startTime : null}
                     />
                 </div>

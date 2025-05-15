@@ -24,6 +24,10 @@ export default async function handler(req, res) {
 
         const { email, name, surname, username, password, role } = req.body;
 
+        if (!username) {
+            return res.status(400).json({error: "Username is required"});
+        }
+
         const existingUser = await prisma.user.findUnique({
             where: { username }
         });
@@ -41,11 +45,10 @@ export default async function handler(req, res) {
                 surname,
                 username,
                 password: hashedPassword,
-                role: role.name || "USER",
+                role: role?.name || "USER",
                 external: false
             }
         });
-
 
         const { password: _, ...userWithoutPassword } = user;
         return res.status(201).json(userWithoutPassword);

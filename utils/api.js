@@ -57,3 +57,44 @@ export const updateEntry = async ({id, moderate, returned = false}) => {
     }
     return response.json();
 }
+
+
+// fait une request get sur /api/users pour récupérer tous les utilisateurs
+export const getAllUsers = async () => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch users');
+    }
+    return response.json();
+}
+
+export const checkIPAuthorization = async (ip) => {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/authorized-location/check/${ip}`);
+        if (response.status === 401) {
+            addToast({
+                title: "Accès refusé",
+                description: "Cet appareil n'est pas autorisé à effectuer cette action.",
+                timeout: 5000,
+                variant: "solid",
+                radius: "sm",
+                color: "danger"
+            });
+            return false;
+        }
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return true;
+    } catch (error) {
+        addToast({
+            title: "Erreur",
+            description: "Une erreur est survenue lors de la vérification de l'appareil.",
+            timeout: 5000,
+            variant: "solid",
+            radius: "sm",
+            color: "danger"
+        });
+        return false;
+    }
+};

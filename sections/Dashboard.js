@@ -48,7 +48,7 @@ const Dashboard = ({})=>{
             <div className="h-[calc(100%-200px)]">
                 <ItemsOnTable
                     items={waitingEntries}
-                    filter={['adminNote', 'moderate', 'updatedAt', 'createdAt', 'returned', 'comment', 'lastUpdatedModerateStatus']}
+                    filter={['adminNote', 'moderate', 'updatedAt', 'createdAt', 'returned', 'comment', 'lastUpdatedModerateStatus', 'system', 'recurringGroupId']}
                     isLoading={waitingEntriesLoading}
                     selectionMode={false}
                     name={"Réservations en attente"}

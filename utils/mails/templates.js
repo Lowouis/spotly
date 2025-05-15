@@ -148,8 +148,7 @@ La ressource de votre réservation a été restitué avec succès.
 ---
 Cordialement,  
 Votre système de gestion des ressources.
-    `,
-    reservationDelayedAlert: (data) => `
+    `, reservationDelayedAlert: (data) => `
 # Vous avez une réservation en retard 
 
 La ressource de votre réservation à été restitué avec succès. 
@@ -161,6 +160,164 @@ Retard : ${formatDuration(new Date(data.endDate - new Date()))}
 Cordialement,  
 Votre système de gestion des ressources.
     `,
+    resentCode: (data) => `
+# Code de réservation
+
+Bonjour **${data.user}**,
+
+Suite à votre demande, voici le code de réservation pour la ressource **${data.name}**.
+
+### Détails de la réservation :
+- **Date** : ${new Date(data.startDate).toLocaleString("FR-fr", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    })}
+- **Horaires** : ${new Date(data.startDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })} - ${new Date(data.endDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })}
+- **Code de réservation** : ${data.key}
+
+⚠️ **Conservez ce code précieusement**, il peut vous être demandé pour :
+- Accéder à la ressource lors de la récupération
+- Confirmer la restitution de la ressource
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources 
+`,
+    groupReservationAccepted: (data) => `
+# Confirmation de réservation de groupe
+
+Bonjour **${data.user}**,
+
+Nous vous confirmons que votre réservation de groupe pour la ressource **${data.resource}** a bien été acceptée.
+
+### Détails de votre réservation :
+${data.entries.map((entry, index) => `
+#### Réservation n°${index + 1} :
+- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    })}
+- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })}
+- **Code de réservation** : ${entry.returnedConfirmationCode}
+`).join('\n')}
+
+⚠️ **Conservez ces codes précieusement**, ils vous seront demandés pour accéder à la ressource ou pour sa restitution.
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources 
+`,
+
+    groupReservationWaiting: (data) => `
+# Demande de réservation de groupe en attente
+
+Bonjour **${data.user}**,
+
+Votre demande de réservation de groupe pour la ressource **${data.resource}** a bien été soumise.
+Lorsque votre demande sera approuvée, vous recevrez un email de confirmation avec les codes de réservation.
+
+### Détails de votre demande :
+${data.entries.map((entry, index) => `
+#### Réservation ${index + 1} :
+- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    })}
+- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })}
+`).join('\n')}
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources 
+`,
+
+    groupReservationCancelled: (data) => `
+# Annulation de réservation de groupe
+
+Bonjour **${data.user}**,
+
+Nous vous confirmons l'annulation de votre réservation de groupe pour la ressource **${data.resource}**.
+
+### Détails des réservations annulées :
+${data.entries.map((entry, index) => `
+#### Réservation ${index + 1} :
+- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    })}
+- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })}
+`).join('\n')}
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources 
+`,
+
+    groupReservationRequestOwner: (data) => `
+# Nouvelle demande de réservation de groupe en attente
+
+Une nouvelle demande de réservation de groupe a été soumise par **${data.user}** pour la ressource **${data.resource}**.
+
+### Détails de la demande :
+${data.entries.map((entry, index) => `
+#### Réservation ${index + 1} :
+- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    })}
+- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
+        hour: "2-digit",
+        minute: "2-digit"
+    })}
+`).join('\n')}
+
+Merci de valider ou rejeter cette demande de réservation de groupe dans les plus brefs délais dans la section administrateur de votre application Spotly.
+
+---
+Cordialement,  
+Votre système de gestion des ressources.
+`,
 
 };
 

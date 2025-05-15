@@ -27,30 +27,30 @@ const pickables = [
         name: "LOW_TRUST",
         distinguishedName: "PAR CLIQUE",
         description: "Pickable pour les ressources de niveau de confiance bas",
-        cgu: "En utilisant cette ressource à niveau de confiance bas, vous acceptez d'être soumis à des vérifications supplémentaires. Tout manquement aux règles d'utilisation pourra entraîner une suspension temporaire de vos droits de réservation."
+        cgu: "En utilisant cette ressource, vous acceptez de récupèrer et restituer la ressource en cliquant sur le bouton 'Récupérer' ou 'Restituer' dans l'interface de l'application. Tout manquement pourra entraîner une suspension temporaire de vos droits de réservation."
     },
     {
         name: "DIGIT",
         distinguishedName: "PAR CODE",
         description: "Récupération et restitution de la ressource par un code à 6 chiffres envoyé par mail.",
-        cgu: "En utilisant cette ressource, vous vous engagez à utiliser le code à 6 chiffres qui vous sera envoyé par email pour confirmer la prise et le retour de la ressource. Sans la saisie de ce code, la ressource sera considérée comme non-restituée."
+        cgu: "En utilisant cette ressource, vous vous engagez à utiliser le code à 6 chiffres qui vous sera envoyé par email pour confirmer la récupération et le réstitution de la ressource dans la section Réservations de l'application."
     },
     {
         name: "LOW_AUTH",
         distinguishedName: "SANS CONNEXION",
         description: "Pickable pour les ressources de niveau de confiance bas",
-        cgu: "En utilisant cette ressource à authentification simple, vous acceptez de suivre les procédures de base de vérification. Toute utilisation non conforme sera signalée et pourra entraîner des restrictions d'accès."
+        cgu: "En utilisant cette ressource, vous vous engagez à utiliser le code à 6 chiffres qui vous sera envoyé par email pour confirmer la récupération et le réstitution de la ressource dans la section Réservations de l'application ou sans connexion à l'application via l'onglet J'ai deja réservé."
     },
     {
         name: "HIGH_AUTH",
         distinguishedName: "RESTRICTION PAR IP",
         description: "Pickable pour les ressources de niveau de confiance élevé",
-        cgu: "En utilisant cette ressource à authentification renforcée, vous acceptez de vous soumettre à des procédures de vérification strictes. Le non-respect des procédures d'authentification entraînera un refus immédiat d'accès à la ressource."
+        cgu: "En utilisant cette ressource, vous acceptez qu'elle doit être récupérée et restituée uniquement depuis des machines spécifiques. vous vous engagez à utiliser le code à 6 chiffres qui vous sera envoyé par email pour confirmer la récupération et le réstitution de la ressource dans la section Réservations de l'application ou sans connexion à l'application via l'onglet J'ai deja réservé."
     }
 ];
 
 async function main() {
-    // First check if admin user exists
+
     const existingUser = await prisma.user.findUnique({
         where: {
             email: "admin@spotly.fr"
@@ -80,15 +80,14 @@ async function main() {
     }
 
     try {
-        // First delete existing pickables
-        await prisma.pickable.deleteMany({});
-        console.log("Existing pickables deleted");
-
-        // Then create new pickables with CGU
-        await prisma.pickable.createMany({
-            data: pickables
-        });
-        console.log("New pickables created");
+        for (const pickable of pickables) {
+            await prisma.pickable.upsert({
+                where: {name: pickable.name},
+                update: pickable,
+                create: pickable,
+            });
+        }
+        console.log("Pickables upserted (créés ou mis à jour)");
     } catch (e) {
         console.error("Error managing pickables:", e);
     }
