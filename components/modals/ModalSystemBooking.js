@@ -21,6 +21,8 @@ export default function ModalSystemBooking({entry, isOpen, onOpenChange}) {
                 body: "py-6",
                 footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4",
                 closeButton: "hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full p-3 text-xl"
+
             }}
             motionProps={{
                 variants: {
@@ -41,7 +43,9 @@ export default function ModalSystemBooking({entry, isOpen, onOpenChange}) {
                         },
                     },
                 },
-            }}
+            }
+            }
+            
         >
             <ModalContent>
                 {(onClose) => (

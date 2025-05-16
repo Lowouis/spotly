@@ -5,10 +5,9 @@ import {addToast} from "@heroui/toast";
 
 export default function ModalCancelGroup({isOpen, onOpenChange, entries, handleRefresh}) {
     const queryClient = useQueryClient();
-
     const mutation = useMutation({
         mutationFn: async () => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/group/${entries[0].reccurringGroupId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/group/${entries[0].recurringGroupId}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {

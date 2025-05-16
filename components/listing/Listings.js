@@ -2,7 +2,7 @@ import ModalCheckingBooking from "@/components/modals/ModalCheckingBooking";
 import ModalCancelGroup from "@/components/modals/ModalCancelGroup";
 import ModalSystemBooking from "@/components/modals/ModalSystemBooking";
 import {formatDuration} from "@/global";
-import {Alert, Tab, Tabs, Accordion, AccordionItem, Button} from "@nextui-org/react";
+import {Alert, Button} from "@nextui-org/react";
 import {useState} from "react";
 import {TrashIcon} from "@heroicons/react/24/outline";
 import {Tooltip} from "@heroui/react";
@@ -104,7 +104,7 @@ const StatusIndicator = ({status}) => {
 };
 
 // Composant pour un groupe de réservations récurrentes
-const RecurringGroup = ({entries, handleRefresh, setUserAlert}) => {
+const RecurringGroup = ({entries, handleRefresh, setUserAlert, currentTab = "all"}) => {
     const [isOpen, setIsOpen] = useState(true);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
@@ -126,7 +126,7 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert}) => {
     }, 0);
 
     // Vérifier si toutes les réservations peuvent être annulées
-    const canCancelGroup = sortedEntries.every(entry => {
+    const canCancelGroup = currentTab === "all" && sortedEntries.every(entry => {
         const status = getEntryStatus(entry);
         return !["delayed", "ongoing"].includes(status);
     });
@@ -175,24 +175,26 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert}) => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Tooltip
-                                content={canCancelGroup ? "Annuler toutes les réservations du groupe" : "Impossible d'annuler le groupe, une réservation est en cours en retard"}
-                                placement="top"
-                                showArrow={true}
-
-                            >
-                                <Button
-                                    isIconOnly
-                                    isDisabled={!canCancelGroup}
-                                    color="danger"
-                                    variant="light"
-                                    size="sm"
-                                    onPress={() => setIsCancelModalOpen(true)}
-                                    className="mr-2"
+                            {currentTab === "all" && (
+                                <Tooltip
+                                    content={canCancelGroup ? "Annuler toutes les réservations du groupe" : "Impossible d'annuler le groupe, une réservation est en cours ou en retard"}
+                                    placement="top"
+                                    color="foreground"
+                                    showArrow={true}
                                 >
-                                    <TrashIcon className="w-5 h-5"/>
-                                </Button>
-                            </Tooltip>
+                                    <Button
+                                        isIconOnly
+                                        isDisabled={!canCancelGroup}
+                                        color="danger"
+                                        variant="light"
+                                        size="sm"
+                                        onPress={() => setIsCancelModalOpen(true)}
+                                        className="mr-2"
+                                    >
+                                        <TrashIcon className="w-5 h-5"/>
+                                    </Button>
+                                </Tooltip>
+                            )}
 
 
                             <svg
@@ -480,6 +482,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
                                     entries={groupEntries}
                                     handleRefresh={handleRefresh}
                                     setUserAlert={setUserAlert}
+                                    currentTab={selectedTab}
                                 />
                             ))}
                         </div>
@@ -529,7 +532,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
     ];
 
     return (
-        <div className="mx-2 my-1 w-full flex flex-col items-center justify-center sm:w-full sm:mx-5 sm:p-3 lg:w-3/5">
+        <div className="mx-auto w-[90%] max-w-[1089px]">
             {userAlert.title && (
                 <div className="flex items-center justify-center w-full mb-4">
                     <Alert
@@ -546,12 +549,12 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
                 <div className="w-full flex-col flex justify-between items-center">
                     <div className="w-full mb-4 flex justify-center">
                         <div
-                            className="flex space-x-2 border-b border-neutral-200 dark:border-neutral-700 max-w-2xl mx-auto">
+                            className="flex space-x-2 border-b border-neutral-200 dark:border-neutral-700 w-full overflow-x-auto">
                             {tabs.map(tab => (
                                 <button
                                     key={tab.key}
                                     onClick={() => setSelectedTab(tab.key)}
-                                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center ${
+                                    className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors duration-200 flex items-center whitespace-nowrap ${
                                         selectedTab === tab.key
                                             ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border-b-2 border-neutral-900 dark:border-neutral-100"
                                             : "text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
@@ -567,7 +570,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
                 </div>
             ) : (
                 <div className="flex justify-center items-center mt-4 p-3">
-                    <h1 className="text-lg opacity-75 dark:text-neutral-300 text-neutral-600 text-center font-bold">
+                    <h1 className="text-lg opacity-75 dark:text-neutral-300 text-neutral-600 text-center font-medium">
                         Aucune réservation
                     </h1>
                 </div>

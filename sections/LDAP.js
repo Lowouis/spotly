@@ -1,10 +1,10 @@
 'use client';
 
-import {Alert, Spacer, Spinner} from "@nextui-org/react";
-import { Input } from "@nextui-org/input";
-import { Button } from "@nextui-org/button";
-import React, { useState, useEffect } from "react";
-import {ArrowPathIcon, EyeIcon, EyeSlashIcon, CheckIcon} from "@heroicons/react/24/outline";
+import {Spacer} from "@nextui-org/react";
+import {Input} from "@nextui-org/input";
+import {Button} from "@nextui-org/button";
+import React, {useEffect, useState} from "react";
+import {ArrowPathIcon, EyeIcon, EyeSlashIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
 
 const LDAP = () => {
@@ -64,7 +64,6 @@ const LDAP = () => {
                     description: 'Erreur lors de la sauvegarde',
                     color: 'danger',
                     duration: 5000,
-                    variant: "flat"
                 })
                 throw new Error(result.message || 'Erreur lors de la sauvegarde');
             }
@@ -73,7 +72,6 @@ const LDAP = () => {
                 description: 'Configuration sauvegardée avec succès',
                 color: 'success',
                 duration: 5000,
-                variant: "flat"
             })
 
         } catch (error) {

@@ -12,17 +12,19 @@ import {
     ModalHeader,
     Skeleton,
     Spinner,
-    Textarea
+    Textarea,
+    Tooltip
 } from "@nextui-org/react";
 import {formatDate} from "@/components/modals/ModalCheckingBooking";
 import {formatDuration, lastestPickable, whoIsOwner} from "@/global";
-import {ArrowRightCircleIcon} from "@heroicons/react/24/solid";
+import {ArrowLeftIcon, ArrowRightCircleIcon} from "@heroicons/react/24/solid";
 import React, {useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useEmail} from "@/context/EmailContext";
 import {getEmailTemplate} from "@/utils/mails/templates";
 import {addToast} from "@heroui/toast";
 import {getAllUsers} from "@/utils/api"
+
 
 export default function ModalValidBooking({entry, isOpen, onOpenChange, session, handleRefresh}) {
     const [submitted, setSubmitted] = useState(false);
@@ -42,7 +44,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
 
     const { mutate: sendEmail } = useEmail();
     const queryClient = useQueryClient();
-    console.log(formData);
+
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         setFormData(prevState => ({
@@ -172,7 +174,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
     });
 
     const handleSubmission = (onClose) => {
-        if (formData.cgu) {
+        if (formData.cgu || formData.makeUnavailable) {
             mutation.mutate({
                 availabilities: entry.resource.availability,
                 resourceId: entry.resource.id,
@@ -192,7 +194,6 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
         <Modal
             scrollBehavior="inside"
             isDismissable={true}
-            hideCloseButton={false}
             isOpen={isOpen}
             onOpenChange={onOpenChange}
             placement="center"
@@ -203,8 +204,8 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                 header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
                 body: "py-6",
                 footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4 sticky bottom-0 bg-white dark:bg-neutral-900 rounded-b-lg",
-                closeButton: "hover:bg-neutral-100 dark:hover:bg-neutral-800",
-                wrapper: "overflow-hidden rounded-lg"
+                wrapper: "overflow-hidden rounded-lg",
+                closeButton: "hidden"
             }}
             motionProps={{
                 variants: {
@@ -237,20 +238,38 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                             }} className="flex flex-col h-full">
                                 <Skeleton isLoaded={entry.resource}>
                                     <ModalHeader className="flex flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-                                                {entry && entry.resource ? entry.resource.name : <Spinner size="sm"/>}
-                                            </h2>
-                                            {entry?.resource?.moderate && (
-                                                <span
-                                                    className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                                                    Modération requise
-                                                </span>
-                                            )}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <Tooltip content="Retour" color="foreground" showArrow>
+                                                    <Button
+                                                        isIconOnly
+                                                        size="sm"
+                                                        variant="light"
+                                                        onPress={onClose}
+                                                        className="text-neutral-600 dark:text-neutral-400 -ml-2"
+                                                    >
+                                                        <ArrowLeftIcon className="w-5 h-5"/>
+                                                    </Button>
+                                                </Tooltip>
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                                            {entry && entry.resource ? entry.resource.name :
+                                                                <Spinner size="sm"/>}
+                                                        </h2>
+                                                        {entry?.resource?.moderate && (
+                                                            <span
+                                                                className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                                                                Modération requise
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                        {entry?.resource?.domains?.name}
+                                                    </p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                            {entry?.resource?.domains?.name}
-                                        </p>
                                     </ModalHeader>
                                 </Skeleton>
 
@@ -408,7 +427,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                             </div>
 
                                             {/* Section Options Admin */}
-                                            {session.user.role === "SUPERADMIN" && (
+                                            {session?.user?.role === "SUPERADMIN" && (
                                                 <>
                                                     <div className="space-y-4">
                                                         <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -490,8 +509,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                     <Divider className="bg-neutral-200 dark:bg-neutral-700"/>
                                                 </>
                                             )}
-
-                                            {/* Section CGU */}
+                                            {!formData.makeUnavailable && 
                                             <div className="space-y-4">
                                                 <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                                                     Conditions d&apos;utilisation
@@ -516,7 +534,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                         J&apos;accepte les conditions d&apos;utilisation
                                                     </Checkbox>
                                                 </div>
-                                            </div>
+                                            </div>}
                                         </div>
                                     </ModalBody>
                                 </Skeleton>
@@ -525,21 +543,12 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                     <Skeleton isLoaded={entry.resource}>
                                         <div className="flex flex-row gap-2">
                                             <Button
-                                                color="default"
-                                                variant="light"
-                                                size="lg"
-                                                onPress={onClose}
-                                                className="font-medium"
-                                            >
-                                                Annuler
-                                            </Button>
-                                            <Button
                                                 color="primary"
                                                 variant="flat"
                                                 type="submit"
                                                 size="lg"
                                                 className="font-medium"
-                                                isDisabled={!formData.cgu}
+                                                isDisabled={!formData.cgu && !formData.makeUnavailable}
                                             >
                                                 {!formData.makeUnavailable ? !entry.resource.moderate ? "Réserver" : "Demander" : "Bloquer"}
                                             </Button>

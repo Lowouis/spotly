@@ -59,8 +59,6 @@ export default function LoginTab() {
                 title: "Erreur d'authentification",
                 description: "Nom d'utilisateur ou mot de passe incorrect",
                 timeout: 5000,
-                variant: "solid",
-                radius: "sm",
                 color: "danger"
             });
             setWrongCredentials(false);

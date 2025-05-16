@@ -17,7 +17,7 @@ import {ArrowLeftCircleIcon, ArrowRightCircleIcon, ClockIcon} from "@heroicons/r
 import {useQuery} from "@tanstack/react-query";
 import {lastestPickable} from "@/global";
 import {addToast} from "@heroui/toast";
-import {fetchIP, checkIPAuthorization} from '@/utils/api';
+import {checkIPAuthorization, fetchIP} from '@/utils/api';
 
 export default function LuckyEntryTab({setSelected}) {
     const [ifl, setIfl] = useState({"username": "", "otp": ""});
@@ -60,8 +60,6 @@ export default function LuckyEntryTab({setSelected}) {
                     title: "Erreur",
                     description: "Une erreur est survenue lors de l'action",
                     timeout: 5000,
-                    variant: "solid",
-                    radius: "sm",
                     color: "danger"
                 })
                 throw new Error('Failed to update entry');
@@ -73,8 +71,6 @@ export default function LuckyEntryTab({setSelected}) {
                     "La ressource a bien été retournée",
                 description: "Vous pouvez la retrouver dans la section 'Mes réservations'",
                 timeout: 5000,
-                variant: "solid",
-                radius: "sm",
                 color: "success"
             });
 
@@ -84,8 +80,6 @@ export default function LuckyEntryTab({setSelected}) {
                 title: "Erreur",
                 description: "Une erreur est survenue lors de l'action",
                 timeout: 5000,
-                variant: "solid",
-                radius: "sm",
                 color: "danger"
             });
         } finally {
@@ -111,8 +105,6 @@ export default function LuckyEntryTab({setSelected}) {
                     title: "Erreur d'authentification",
                     description: "Code de réservation invalide.",
                     timeout: 5000,
-                    variant: "solid",
-                    radius: "sm",
                     color: "danger"
                 });
             }
@@ -121,8 +113,6 @@ export default function LuckyEntryTab({setSelected}) {
                 title: "Erreur d'authentification",
                 description: "Une erreur à eu lieu lors de récupération de votre réservation.",
                 timeout: 5000,
-                variant: "solid",
-                radius: "sm",
                 color: "danger"
             });
         } finally {
@@ -147,8 +137,6 @@ export default function LuckyEntryTab({setSelected}) {
                                     title: "Accès refusé",
                                     description: "Cette action n&apos;est pas autorisée depuis cet appareil.",
                                     timeout: 5000,
-                                    variant: "solid",
-                                    radius: "sm",
                                     color: "danger"
                                 });
                             }

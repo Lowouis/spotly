@@ -76,7 +76,6 @@ export const checkIPAuthorization = async (ip) => {
                 title: "Accès refusé",
                 description: "Cet appareil n'est pas autorisé à effectuer cette action.",
                 timeout: 5000,
-                variant: "solid",
                 radius: "sm",
                 color: "danger"
             });
@@ -91,8 +90,6 @@ export const checkIPAuthorization = async (ip) => {
             title: "Erreur",
             description: "Une erreur est survenue lors de la vérification de l'appareil.",
             timeout: 5000,
-            variant: "solid",
-            radius: "sm",
             color: "danger"
         });
         return false;

@@ -32,8 +32,6 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                 title: `Erreur lors de la ${action === "create" ? "création" : "modification"} de l'élément`,
                 description: error.message,
                 timeout: 5000,
-                variant: "solid",
-                radius: "sm",
                 color: "danger"
             })
         }

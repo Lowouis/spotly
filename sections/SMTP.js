@@ -35,7 +35,6 @@ export default function SMTPSettings() {
             description: 'Configuration sauvegardée avec succès',
             color: 'success',
             duration: 5000,
-            variant: "flat"
         });
     };
     const testConnection = async () => {
@@ -56,7 +55,6 @@ export default function SMTPSettings() {
                     description: 'La connexion au serveur SMTP a réussi!',
                     color: 'success',
                     duration: 5000,
-                    variant: "flat"
                 });
             } else {
                 addToast({
@@ -64,7 +62,6 @@ export default function SMTPSettings() {
                     description: 'Impossible de se connecter au serveur SMTP',
                     color: 'danger',
                     duration: 5000,
-                    variant: "flat"
                 });
             }
         } catch (error) {
@@ -73,7 +70,6 @@ export default function SMTPSettings() {
                 description: 'Une erreur s\'est produite lors du test de connexion',
                 color: 'danger',
                 duration: 5000,
-                variant: "flat"
             });
         } finally {
             setIsTesting(false);
@@ -92,7 +88,6 @@ export default function SMTPSettings() {
             description: 'Un email de test a été envoyé à ' + testEmail,
             color: 'success',
             duration: 5000,
-            variant: "flat"
         })
     }
     return (

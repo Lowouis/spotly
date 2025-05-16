@@ -21,19 +21,40 @@ import {
     User
 } from "@nextui-org/react";
 import {ArrowPathIcon, BookmarkIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
-import {signOut} from "next-auth/react";
-import React, {useState} from "react";
+import {signOut, useSession} from "next-auth/react";
+import React, {useEffect, useState} from "react";
 import {addToast} from "@heroui/toast";
 import {BsWrench} from "react-icons/bs";
 import {CiLogout, CiMenuFries, CiSettings, CiUser} from "react-icons/ci";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 import {useMediaQuery} from 'react-responsive';
+import {useRouter} from "next/navigation";
+import Image from "next/image";
 
 export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, handleRefresh}) {
     const {isOpen, onOpen, onClose} = useDisclosure();
     const [selectedTab, setSelectedTab] = useState("search");
     const isMobile = useMediaQuery({query: '(max-width: 768px)'});
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const router = useRouter();
+    const {data: session, status} = useSession();
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+            addToast({
+                title: 'Session expirée',
+                message: 'Veuillez vous reconnecter',
+                type: 'warning',
+                duration: 5000,
+            });
+        }
+    }, [status, router]);
+
+    // Si la session n'est pas chargée ou l'utilisateur n'est pas défini, on ne rend rien
+    if (status === "loading" || !user) {
+        return null;
+    }
 
     const handleTabChange = (key) => {
         setSelectedTab(key);
@@ -64,7 +85,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
     const renderMobileMenu = () => (
         <div className="fixed inset-0 z-50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm"
              style={{display: isMenuOpen ? 'block' : 'none'}}>
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full bg-red-500">
                 <div
                     className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
                     <div
@@ -178,29 +199,35 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
 
     const renderDesktopMenu = () => (
         <div
-            className="w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 mb-2">
+            className="w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 mb-2 bg-green-500">
             <div className="max-w-7xl mx-auto px-4">
-                <div className="flex items-center justify-between h-14">
-                    <div className="flex items-center">
-                        <div className="relative group">
-                            <div
-                                className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent transition-all duration-500 cursor-pointer relative z-10 ">
-                                Spotly
+                <div className="flex items-center justify-between h-16">
+                    <div className="flex items-center h-full">
+                        <div className="relative group h-full flex items-center">
+                            <div className="relative z-10 cursor-pointer flex items-center">
+                                <Image
+                                    src="/spotly_logo.png"
+                                    alt="Spotly Logo"
+                                    width={100}
+                                    height={50}
+                                    className="transition-all duration-500"
+                                    priority
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <div className="hidden md:flex items-center">
+                    <div className="hidden md:flex items-center h-full">
                         <Tabs
                             selectedKey={selectedTab}
                             onSelectionChange={handleTabChange}
                             color="primary"
                             variant="underlined"
                             classNames={{
-                                base: "overflow-visible",
-                                tabList: "gap-8 h-14 overflow-visible",
+                                base: "overflow-visible h-full flex items-center",
+                                tabList: "gap-8 h-full overflow-visible",
                                 cursor: "w-full bg-primary-500",
-                                tab: "max-w-fit px-0 h-14 overflow-visible",
+                                tab: "max-w-fit px-0 h-full flex items-center overflow-visible",
                                 tabContent: "group-data-[selected=true]:text-primary-500 text-sm whitespace-nowrap"
                             }}
                         >
@@ -228,7 +255,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                         </Tabs>
                     </div>
 
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 h-full ">
                         <Dropdown
                             size="lg"
                             placement="bottom-end"

@@ -95,8 +95,6 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                             title: "Réservation refusée",
                                             description: "La réservation a été refusée avec succès.",
                                             timeout: 5000,
-                                            variant: "solid",
-                                            radius: "sm",
                                             color: "danger"
                                         });
                                         sendEmail({
@@ -123,8 +121,6 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                             title: "Réservation acceptée",
                                             description: "La réservation a été acceptée avec succès.",
                                             timeout: 5000,
-                                            variant: "solid",
-                                            radius: "sm",
                                             color: "success"
                                         });
                                         sendEmail({

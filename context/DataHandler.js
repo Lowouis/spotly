@@ -15,7 +15,6 @@ export const DataHandlerProvider = ({ children }) => {
                 description: "Erreur lors de la récupération des réservations en attente",
                 status: "error",
                 duration: 5000,
-                isClosable: true,
             })
             throw new Error('Échec de la récupération des réservations en attente');
         }

@@ -6,7 +6,7 @@ import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
 import {Alert, Form, Modal, ModalBody, ModalContent, ModalHeader, Switch} from "@nextui-org/react";
 import {AlternativeMenu} from "@/components/menu";
-import {MagnifyingGlassCircleIcon, MagnifyingGlassIcon} from "@heroicons/react/24/outline";
+import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@nextui-org/button";
 import ReservationUserListing from "@/components/listing/Listings";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
@@ -17,6 +17,10 @@ import {useMediaQuery} from 'react-responsive';
 import DateRangePickerSplitted from '@/components/form/DateRangePickerSplitted';
 import {DatePicker} from "@nextui-org/date-picker";
 import {Tooltip} from '@heroui/react';
+import {IoEarthOutline} from "react-icons/io5";
+import {BiCategory} from "react-icons/bi";
+import {CiCalendarDate, CiSearch} from "react-icons/ci";
+import {AnimatePresence, motion} from "framer-motion";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.object().required('Vous devez choisir un site'),
@@ -80,7 +84,6 @@ const ReservationSearch = () => {
                 title: 'Ressources disponibles récupérées avec succès',
                 color: 'success',
                 duration: 5000,
-                variant: "flat",
             });
             return await response.json();
         } else if (response.status === 404) {
@@ -89,14 +92,12 @@ const ReservationSearch = () => {
                 description: "Essayer un autre intervalle de date ou d'autres critères.",
                 color: 'warning',
                 duration: 5000,
-                variant: "flat",
             });
         } else {
             addToast({
                 title: 'Une erreur est survenue',
                 color: 'danger',
                 duration: 5000,
-                variant: "flat",
             });
         }
         ;
@@ -119,6 +120,7 @@ const ReservationSearch = () => {
     });
 
     const [delayed, setDelayed] = useState(0);
+    const [resetKeytResetKey] = useState(0);
 
     useEffect(() => {
         if (userEntries) {
@@ -169,8 +171,8 @@ const ReservationSearch = () => {
         const endDate = new Date(watch('date')?.end);
         const diffInMilliseconds = endDate.getTime() - startDate.getTime();
         const diff = diffInMilliseconds / (1000 * 60 * 60);
-        console.log("Différence en heures :", diff);
-        if (unit === "jour" && diff < 24) {
+
+        if (unit === "jour" && startDate.getDay() === endDate.getDay()) {
             return true;
         } else if (unit === "hebdomadaire" && diff < 24 * 7) {
             return true;
@@ -186,7 +188,35 @@ const ReservationSearch = () => {
             delayed: delayedEntries?.length > 0,
         };
     }
-    
+
+    const site = watch('site');
+    const category = watch('category');
+    const date = watch('date');
+
+    let step = 1;
+    if (site) step = 2;
+    if (site && category) step = 3;
+    if (site && category && date && date.start && date.end) step = 4;
+
+    const stepConfig = [
+        {
+            icon: <IoEarthOutline size={50} color="blue"/>,
+            text: "Commencez par choisir un site"
+        },
+        {
+            icon: <BiCategory size={50} color="purple"/>,
+            text: "Choisissez une catégorie"
+        },
+        {
+            icon: <CiCalendarDate size={50} color="orange"/>,
+            text: "Choisissez une date"
+        },
+        {
+            icon: <CiSearch size={50} color="blue"/>,
+            text: "Vous pouvez commencer votre recherche"
+        }
+    ];
+
     return (
         <div>
             <AlternativeMenu
@@ -215,315 +245,342 @@ const ReservationSearch = () => {
                         </div>
                     )}
                     {searchMode === "search" && delayed === 0 &&  (
-                        <div className='h-full w-full flex items-center flex-col'>
-                            {isMobile ? (
-                                <>
-                                    <Button
-                                        isIconOnly
-                                        size="lg"
-                                        radius="full"
-                                        color={"default"}
-                                        onPress={() => setIsModalOpen(true)}
-                                        className="ml-6"
-                                        shadow="md"
-                                    >
-                                        <span className="flex justify-center items-center rounded-full">
-                                            <MagnifyingGlassIcon width="32" height="32" className="rounded-full"/>
-                                        </span>
-                                    </Button>
-                                    <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-                                        <ModalContent>
-                                            <ModalHeader>Recherche de Réservation</ModalHeader>
-                                            <ModalBody>
-                                                <FormProvider {...methods}>
-                                                    <form onSubmit={methods.handleSubmit(onSubmit)}
-                                                          className="flex flex-col space-y-4">
-                                                        <SelectField
-                                                            name="site"
-                                                            label="Site"
-                                                            options={"domains"}
-                                                            placeholder={"Choisir un site"}
-                                                        />
-                                                        <SelectField
-                                                            name="category"
-                                                            label="Catégorie"
-                                                            options={"categories"}
-                                                            onReset={handleResourceOnReset}
-                                                            placeholder={"Choisir une catégorie"}
-                                                        />
-                                                        <SelectField
-                                                            name="resource"
-                                                            awaiting={watch('category') === undefined && watch('site') === undefined}
-                                                            label="Resources"
-                                                            options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}` : null}
-                                                            isRequired={false}
-                                                            onReset={handleResourceOnReset}
-                                                            placeholder={"Toutes les ressources"}
-                                                        />
-                                                        <DateRangePickerSplitted
-                                                            setValue={setValue}/>
-                                                        
-                                                        <div className="flex flex-col justify-center items-center">
-                                                            <span
-                                                                className="text-xs text-neutral-800 dark:text-neutral-200">Récurrent</span>
-                                                            <Switch
-                                                                size="sm"
-                                                                name="allday"
-                                                                id="allday"
-                                                                color={isRecurrentValid("hebdomadaire") ? "primary" : "default"}
-                                                                className="mb-2"
-                                                                isSelected={isRecurrentValid("hebdomadaire") && isRecurrent}
-                                                                onValueChange={(value) => {
-                                                                    if (isRecurrentValid("hebdomadaire")) {
-                                                                        setIsRecurrent(value);
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <div
-                                                            className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-                                                            <div className="flex flex-row space-x-2 w-full">
+                        <div
+                            className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full">
+                            <div className="h-full w-full space-y-5 p-2 rounded-lg">
+                                <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
+                                    {isMobile ? (
+                                        <>
+                                            <Button
+                                                isIconOnly
+                                                size="lg"
+                                                radius="full"
+                                                color={"default"}
+                                                onPress={() => setIsModalOpen(true)}
+                                                className="ml-6"
+                                                shadow="md"
+                                            >
+                                                <span className="flex justify-center items-center rounded-full">
+                                                    <MagnifyingGlassIcon width="32" height="32"
+                                                                         className="rounded-full"/>
+                                                </span>
+                                            </Button>
+                                            <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
+                                                <ModalContent>
+                                                    <ModalHeader>Recherche de Réservation</ModalHeader>
+                                                    <ModalBody>
+                                                        <FormProvider {...methods}>
+                                                            <form onSubmit={methods.handleSubmit(onSubmit)}
+                                                                  className="flex flex-col space-y-4">
                                                                 <SelectField
-                                                                    name="recursive_unit"
-                                                                    label="Fréquence"
-                                                                    options={"recursive_units"}
-                                                                    disabled={!isRecurrent}
+                                                                    name="site"
+                                                                    label="Site"
+                                                                    options={"domains"}
+                                                                    placeholder={"Choisir un site"}
+                                                                />
+                                                                <SelectField
+                                                                    name="category"
+                                                                    label="Catégorie"
+                                                                    options={"categories"}
+                                                                    onReset={handleResourceOnReset}
+                                                                    placeholder={"Choisir une catégorie"}
+                                                                />
+                                                                <SelectField
+                                                                    name="resource"
+                                                                    awaiting={watch('category') === undefined && watch('site') === undefined}
+                                                                    label="Ressources"
+                                                                    options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}` : null}
                                                                     isRequired={false}
-                                                                    className="mb-2"
+                                                                    onReset={handleResourceOnReset}
+                                                                    placeholder={"Toutes les ressources"}
+                                                                />
+                                                                <DateRangePickerSplitted
+                                                                    setValue={setValue}/>
+
+                                                                <div
+                                                                    className="flex flex-col justify-center items-center">
+                                                                    <span
+                                                                        className="text-xs text-neutral-800 dark:text-neutral-200">Récurrent</span>
+                                                                    <Switch
+                                                                        size="sm"
+                                                                        name="allday"
+                                                                        id="allday"
+                                                                        color={isRecurrentValid("hebdomadaire") ? "primary" : "default"}
+                                                                        className="mb-2"
+                                                                        isSelected={isRecurrentValid("hebdomadaire") && isRecurrent}
+                                                                        onValueChange={(value) => {
+                                                                            if (isRecurrentValid("hebdomadaire")) {
+                                                                                setIsRecurrent(value);
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div
+                                                                    className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                                                                    <div className="flex flex-row space-x-2 w-full">
+                                                                        <SelectField
+                                                                            name="recursive_unit"
+                                                                            label="Fréquence"
+                                                                            options={"recursive_units"}
+                                                                            disabled={!isRecurrent}
+                                                                            isRequired={false}
+                                                                            className="mb-2"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <Button type="submit" color="primary" className="mt-4">
+                                                                    Rechercher
+                                                                </Button>
+                                                            </form>
+                                                        </FormProvider>
+                                                    </ModalBody>
+                                                </ModalContent>
+                                            </Modal>
+                                        </>
+                                    ) : (
+                                        <FormProvider {...methods}>
+                                            <Form onSubmit={methods.handleSubmit(onSubmit)}
+                                                  className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm mx-auto w-[90%] max-w-[1089px] p-4 shadow-lg rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50">
+                                                <div className="flex flex-row w-full">
+                                                    <div className="flex flex-col order-1 w-full">
+                                                        <div className="flex flex-col w-full">
+                                                            <div className='grid grid-cols-3 w-full gap-3'>
+                                                                <SelectField
+                                                                    onReset={handleResourceOnReset}
+                                                                    name="site"
+                                                                    label="Site"
+                                                                    options={"domains"}
+                                                                    placeholder={"Choisir un site"}
+                                                                    classNames={{
+                                                                        label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                        trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
+                                                                        value: "text-neutral-800 dark:text-neutral-200",
+                                                                        placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                    }}
+                                                                />
+                                                                <SelectField
+                                                                    name="category"
+                                                                    label="Catégorie"
+                                                                    options={"categories"}
+                                                                    onReset={handleResourceOnReset}
+                                                                    placeholder={"Choisir une catégorie"}
+                                                                    classNames={{
+                                                                        label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                        trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
+                                                                        value: "text-neutral-800 dark:text-neutral-200",
+                                                                        placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                    }}
+                                                                />
+                                                                <SelectField
+                                                                    name="resource"
+                                                                    awaiting={watch('category') === undefined && watch('site') === undefined}
+                                                                    label="Ressources"
+                                                                    options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}` : null}
+                                                                    isRequired={false}
+                                                                    onReset={handleResourceOnReset}
+                                                                    placeholder={"Toutes les ressources"}
+                                                                    classNames={{
+                                                                        label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                        trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
+                                                                        value: "text-neutral-800 dark:text-neutral-200",
+                                                                        placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                    }}
                                                                 />
                                                             </div>
+                                                            <div className='flex w-full items-center gap-3 mt-3'>
+                                                                <div className="flex-1">
+                                                                    <DateRangePickerSplitted
+                                                                        setValue={setValue}
+                                                                        classNames={{
+                                                                            label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                            input: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
+                                                                            value: "text-neutral-800 dark:text-neutral-200",
+                                                                            placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div
+                                                                    className="flex items-center gap-2 bg-neutral-50/50 dark:bg-neutral-800/20 px-3 py-2 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
+                                                                    <span
+                                                                        className="text-sm font-medium text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
+                                                                        Récurrent
+                                                                    </span>
+                                                                    <Tooltip
+                                                                        content={isRecurrentValid("hebdomadaire") ? "Cette option permet de faire plusieurs réservation de façon récurrente." : "Pour activer cette option, choisisez une période d'une semaine maximum."}
+                                                                        color="foreground"
+                                                                        showArrow
+                                                                        placement="left"
+
+                                                                    >
+                                                                        <Switch
+                                                                            size="sm"
+                                                                            name="allday"
+                                                                            id="allday"
+                                                                            isReadOnly={!isRecurrentValid("hebdomadaire")}
+                                                                            color={"primary"}
+                                                                            isSelected={isRecurrentValid("hebdomadaire") && isRecurrent}
+                                                                            onValueChange={(value) => {
+                                                                                setIsRecurrent(value);
+                                                                            }}
+                                                                            classNames={{
+                                                                                wrapper: "bg-neutral-200/50 dark:bg-neutral-700/50",
+                                                                                thumb: "bg-white dark:bg-neutral-200"
+                                                                            }}
+                                                                        />
+                                                                    </Tooltip>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <Button type="submit" color="primary" className="mt-4">
-                                                            Rechercher
-                                                        </Button>
-                                                    </form>
-                                                </FormProvider>
-                                            </ModalBody>
-                                        </ModalContent>
-                                    </Modal>
-                                </>
-                            ) : (
-                                <FormProvider {...methods}>
-                                    <Form onSubmit={methods.handleSubmit(onSubmit)}
-                                          className={`bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm ${searchMode ? 'opacity-100' : 'opacity-0'} duration-500 opacity-100 transition-all ease-out xl:w-3/5 lg:w-full sm:w-full mx-2 p-4 shadow-lg rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50`}>
-                                        <div className="flex flex-row w-full">
-                                            <div className="flex flex-col order-1 w-full">
-                                                <div className="flex flex-col w-full">
-                                                    <div className='grid grid-cols-3 w-full gap-3'>
-                                                        <SelectField
-                                                            name="site"
-                                                            label="Site"
-                                                            options={"domains"}
-                                                            placeholder={"Choisir un site"}
-                                                            classNames={{
-                                                                label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                                trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
-                                                                value: "text-neutral-800 dark:text-neutral-200",
-                                                                placeholder: "text-neutral-500 dark:text-neutral-400"
-                                                            }}
-                                                        />
-                                                        <SelectField
-                                                            name="category"
-                                                            label="Catégorie"
-                                                            options={"categories"}
-                                                            onReset={handleResourceOnReset}
-                                                            placeholder={"Choisir une catégorie"}
-                                                            classNames={{
-                                                                label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                                trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
-                                                                value: "text-neutral-800 dark:text-neutral-200",
-                                                                placeholder: "text-neutral-500 dark:text-neutral-400"
-                                                            }}
-                                                        />
-                                                        <SelectField
-                                                            name="resource"
-                                                            awaiting={watch('category') === undefined && watch('site') === undefined}
-                                                            label="Resources"
-                                                            options={watch('category') && watch('site') ? `resources/?categoryId=${watch('category')?.id}&domainId=${watch('site')?.id}&status=AVAILABLE` : null}
-                                                            isRequired={false}
-                                                            onReset={handleResourceOnReset}
-                                                            placeholder={"Toutes les ressources"}
-                                                            classNames={{
-                                                                label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                                trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
-                                                                value: "text-neutral-800 dark:text-neutral-200",
-                                                                placeholder: "text-neutral-500 dark:text-neutral-400"
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className='flex w-full items-center gap-3 mt-3'>
-                                                        <div className="flex-1">
-                                                            <DateRangePickerSplitted
-                                                                setValue={setValue}
-                                                                classNames={{
-                                                                    label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                                    input: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors",
-                                                                    value: "text-neutral-800 dark:text-neutral-200",
-                                                                    placeholder: "text-neutral-500 dark:text-neutral-400"
-                                                                }}
-                                                            />
-                                                        </div>
+
                                                         <div
-                                                            className="flex items-center gap-2 bg-neutral-50/50 dark:bg-neutral-800/20 px-3 py-2 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
-                                                            <span
-                                                                className="text-sm font-medium text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
-                                                                Récurrent
-                                                            </span>
-                                                            <Tooltip
-                                                                content={isRecurrentValid("hebdomadaire") ? "Cette option permet de faire plusieurs réservation de façon récurrente." : "Pour activer cette option, choisisez une période d'une semaine maximum."}
-                                                                color="default"
-                                                                placement="left"
-                                                                showArrow
-                                                            >
-                                                                <Switch
-                                                                    size="sm"
-                                                                    name="allday"
-                                                                    id="allday"
-                                                                    isReadOnly={!isRecurrentValid("hebdomadaire")}
-                                                                    color={"primary"}
-                                                                    isSelected={isRecurrentValid("hebdomadaire") && isRecurrent}
-                                                                    onValueChange={(value) => {
-                                                                        setIsRecurrent(value);
-                                                                    }}
-                                                                    classNames={{
-                                                                        wrapper: "bg-neutral-200/50 dark:bg-neutral-700/50",
-                                                                        thumb: "bg-white dark:bg-neutral-200"
-                                                                    }}
-                                                                />
-                                                            </Tooltip>
+                                                            className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-24 mt-3' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                                                            <div
+                                                                className="flex gap-3 w-full bg-neutral-50/50 dark:bg-neutral-800/20 p-3 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
+                                                                <div className="w-1/2">
+                                                                    <SelectField
+                                                                        onReset={handleResourceOnReset}
+                                                                        name="recursive_unit"
+                                                                        label="Fréquence"
+                                                                        options={"recursive_units"}
+                                                                        disabled={!isRecurrent}
+                                                                        isRequired={isRecurrent}
+                                                                        validates={{
+                                                                            "0": isRecurrentValid("jour"),
+                                                                            "1": isRecurrentValid("hebdomadaire"),
+                                                                        }}
+                                                                        classNames={{
+                                                                            label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                            trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors h-10",
+                                                                            value: "text-neutral-800 dark:text-neutral-200",
+                                                                            placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div className="w-1/2">
+                                                                    <DatePicker
+                                                                        isRequired={isRecurrent}
+                                                                        disabled={!isRecurrent}
+                                                                        label="Jusqu'au"
+                                                                        variant='bordered'
+                                                                        size="sm"
+                                                                        color="default"
+                                                                        name="recursive_limit"
+                                                                        value={data?.recursive_limit ? parseDate(data.recursive_limit) : undefined}
+                                                                        onChange={(value) => {
+                                                                            const test = new Date();
+                                                                            test.setFullYear(value.year, value.month - 1, value.day);
+                                                                            setValue('recursive_limit', value.toString());
+                                                                        }}
+                                                                        className='justify-center items-center'
+                                                                        classNames={{
+                                                                            label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                            input: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors h-10",
+                                                                            value: "text-neutral-800 dark:text-neutral-200",
+                                                                            placeholder: "text-neutral-500 dark:text-neutral-400",
+                                                                            base: "h-full"
+                                                                        }}
+                                                                        calendarProps={{
+                                                                            classNames: {
+                                                                                base: "bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm border border-neutral-200/50 dark:border-neutral-700/50",
+                                                                                headerWrapper: "pt-4",
+                                                                                prevButton: "hover:bg-neutral-100 dark:hover:bg-neutral-700",
+                                                                                nextButton: "hover:bg-neutral-100 dark:hover:bg-neutral-700",
+                                                                                gridHeader: "border-b border-neutral-200/50 dark:border-neutral-700/50",
+                                                                                cellButton: [
+                                                                                    "data-[today=true]:text-primary",
+                                                                                    "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
+                                                                                    "hover:bg-neutral-100 dark:hover:bg-neutral-700",
+                                                                                    "rounded-md transition-colors",
+                                                                                    "data-[today=true]:font-semibold",
+                                                                                    "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
+                                                                                    "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
+                                                                                    "data-[in-range=true]:bg-primary/20",
+                                                                                ],
+                                                                            },
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-
-                                                <div
-                                                    className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-24 mt-3' : 'opacity-0 max-h-0 overflow-hidden'}`}>
                                                     <div
-                                                        className="flex gap-3 w-full bg-neutral-50/50 dark:bg-neutral-800/20 p-3 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
-                                                        <div className="w-1/2">
-                                                            <SelectField
-                                                                name="recursive_unit"
-                                                                label="Fréquence"
-                                                                options={"recursive_units"}
-                                                                disabled={!isRecurrent}
-                                                                isRequired={isRecurrent}
-                                                                validates={{
-                                                                    "0": isRecurrentValid("jour"),
-                                                                    "1": isRecurrentValid("hebdomadaire"),
-                                                                }}
-                                                                classNames={{
-                                                                    label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                                    trigger: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors h-10",
-                                                                    value: "text-neutral-800 dark:text-neutral-200",
-                                                                    placeholder: "text-neutral-500 dark:text-neutral-400"
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <div className="w-1/2">
-                                                            <DatePicker
-                                                                isRequired={isRecurrent}
-                                                                disabled={!isRecurrent}
-                                                                label="Jusqu'au"
-
-                                                                variant='bordered'
-                                                                size="sm"
-                                                                color="default"
-                                                                name="recursive_limit"
-                                                                value={data?.recursive_limit ? parseDate(data.recursive_limit) : undefined}
-                                                                onChange={(value) => {
-                                                                    const test = new Date();
-                                                                    test.setFullYear(value.year, value.month - 1, value.day);
-                                                                    setValue('recursive_limit', value.toString());
-                                                                }}
-                                                                className='justify-center items-center'
-                                                                classNames={{
-                                                                    label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                                    input: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors h-10",
-                                                                    value: "text-neutral-800 dark:text-neutral-200",
-                                                                    placeholder: "text-neutral-500 dark:text-neutral-400",
-                                                                    base: "h-full"
-                                                                }}
-                                                                calendarProps={{
-                                                                    classNames: {
-                                                                        base: "bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm border border-neutral-200/50 dark:border-neutral-700/50",
-                                                                        headerWrapper: "pt-4",
-                                                                        prevButton: "hover:bg-neutral-100 dark:hover:bg-neutral-700",
-                                                                        nextButton: "hover:bg-neutral-100 dark:hover:bg-neutral-700",
-                                                                        gridHeader: "border-b border-neutral-200/50 dark:border-neutral-700/50",
-                                                                        cellButton: [
-                                                                            "data-[today=true]:text-primary",
-                                                                            "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
-                                                                            "hover:bg-neutral-100 dark:hover:bg-neutral-700",
-                                                                            "rounded-md transition-colors",
-                                                                            "data-[today=true]:font-semibold",
-                                                                            "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
-                                                                            "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
-                                                                            "data-[in-range=true]:bg-primary/20",
-                                                                        ],
-                                                                    },
-                                                                }}
-                                                            />
+                                                        className="w-auto order-2 flex justify-center items-center ml-4">
+                                                        <Button
+                                                            isIconOnly
+                                                            size="lg"
+                                                            radius="full"
+                                                            color="primary"
+                                                            type="submit"
+                                                            className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                                            isLoading={isSubmitted}
+                                                        >
+                                                            <span
+                                                                className="flex justify-center items-center rounded-full">
+                                                                <MagnifyingGlassIcon width="28" height="28"
+                                                                             className="text-white"/>
+                                                            </span>
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </Form>
+                                        </FormProvider>
+                                    )}
+                                    {!isSubmitted && !availableResources && !isMobile && (
+                                        <div
+                                            className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full">
+                                            <div className="h-full w-full space-y-5 p-2 rounded-lg">
+                                                <div
+                                                    className={`rounded-lg flex justify-center items-center flex-col w-full`}>
+                                                    <AnimatePresence mode="wait" initial={false}>
+                                                        <motion.div
+                                                            key={step}
+                                                            initial={{opacity: 0, y: 40}}
+                                                            animate={{opacity: 1, y: 0}}
+                                                            exit={{opacity: 0, y: -40}}
+                                                            transition={{duration: 0.4, type: "spring"}}
+                                                            className="flex flex-col items-center space-y-8 text-center max-w-md"
+                                                        >
+                                                            <div
+                                                                className="w-16 h-16 rounded-full bg-primary-50/50 dark:bg-primary-900/10 flex items-center justify-center backdrop-blur-sm border border-primary-100 dark:border-primary-800/20">
+                                                                {stepConfig[step - 1].icon}
+                                                            </div>
+                                                            <div className="space-y-3">
+                                                                <h3 className="text-2xl font-semibold bg-gradient-to-r from-neutral-800 to-neutral-600 dark:from-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
+                                                                    {stepConfig[step - 1].text}
+                                                                </h3>
+                                                            </div>
+                                                        </motion.div>
+                                                    </AnimatePresence>
+                                                    <div
+                                                        className="w-full rounded-lg p-4 h-full flex flex-col items-center justify-center mt-8">
+                                                        <div
+                                                            className="flex flex-col items-center space-y-8 text-center max-w-md">
+                                                            <div
+                                                                className="flex flex-col items-center space-y-4 text-sm text-neutral-500 dark:text-neutral-500 bg-neutral-50/50 dark:bg-neutral-800/20 p-4 rounded-xl backdrop-blur-sm border border-neutral-100 dark:border-neutral-700/20">
+                                                                <div className="flex items-center space-x-3">
+                                                                    <div
+                                                                        className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
+                                                                    <span>Choisissez une ressource</span>
+                                                                </div>
+                                                                <div className="flex items-center space-x-3">
+                                                                    <div
+                                                                        className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
+                                                                    <span>Définissez une date</span>
+                                                                </div>
+                                                                <div className="flex items-center space-x-3">
+                                                                    <div
+                                                                        className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
+                                                                    <span>Vérifiez les disponibilités</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="w-auto order-2 flex justify-center items-center ml-4">
-                                                <Button
-                                                    isIconOnly
-                                                    size="lg"
-                                                    radius="full"
-                                                    color="primary"
-                                                    type="submit"
-                                                    className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                                                    isLoading={isSubmitted}
-                                                >
-                                                    <span className="flex justify-center items-center rounded-full">
-                                                        <MagnifyingGlassIcon width="28" height="28"
-                                                                             className="text-white"/>
-                                                    </span>
-                                                </Button>
-                                            </div>
                                         </div>
-                                    </Form>
-                                </FormProvider>
-                            )}
-                            {!isSubmitted && !availableResources && (
-                                <div
-                                    className="w-full rounded-lg p-4 h-full flex flex-col items-center justify-center mt-8">
-                                    <div className="flex flex-col items-center space-y-8 text-center max-w-md">
-                                        <div
-                                            className="w-20 h-20 rounded-full bg-primary-50/50 dark:bg-primary-900/10 flex items-center justify-center backdrop-blur-sm border border-primary-100 dark:border-primary-800/20">
-                                            <MagnifyingGlassCircleIcon
-                                                className="w-20 h-20 text-primary-400/80 dark:text-primary-400/60"/>
-                                        </div>
-                                        <div className="space-y-3">
-                                            <h3 className="text-2xl font-semibold bg-gradient-to-r from-neutral-800 to-neutral-600 dark:from-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
-                                                Commencez votre recherche
-                                            </h3>
-                                            <p className="text-base text-neutral-600 dark:text-neutral-400 max-w-sm">
-                                                Sélectionnez une ressource et une date pour voir les disponibilités
-                                            </p>
-                                        </div>
-                                        <div
-                                            className="flex flex-col items-center space-y-4 text-sm text-neutral-500 dark:text-neutral-500 bg-neutral-50/50 dark:bg-neutral-800/20 p-4 rounded-xl backdrop-blur-sm border border-neutral-100 dark:border-neutral-700/20">
-                                            <div className="flex items-center space-x-3">
-                                                <div
-                                                    className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
-                                                <span>Choisissez une ressource</span>
-                                            </div>
-                                            <div className="flex items-center space-x-3">
-                                                <div
-                                                    className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
-                                                <span>Définissez une date</span>
-                                            </div>
-                                            <div className="flex items-center space-x-3">
-                                                <div
-                                                    className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
-                                                <span>Vérifiez les disponibilités</span>
-                                            </div>
-                                        </div>
-                                            </div>
-                                        </div>
-                            )}
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     )}
                     {searchMode === "search" && delayed === 0 &&  (

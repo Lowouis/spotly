@@ -12,9 +12,6 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
         addToast({
             title: `${action === "create" ? "Création" : "Modification"} d'un élément`,
             description: `L'élément a été ${action === "create" ? "créé" : "modifié"} avec succès.`,
-            timeout: 5000,
-            variant: "solid",
-            radius: "sm",
             color: "success"
         });
         refreshData();
@@ -28,8 +25,6 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
                 title: `Erreur lors de la création de l'élément`,
                 description: error.message,
                 timeout: 5000,
-                variant: "solid",
-                radius: "sm",
                 color: "danger"
             })
         },
@@ -48,18 +43,12 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
                 addToast({
                     title: "Action requise",
                     description: `${error.message}\n\nVeuillez modifier la modération des ressources suivantes:\n${resourcesList}`,
-                    timeout: 10000,
-                    variant: "flat",
-                    radius: "sm",
                     color: "danger"
                 });
             } else {
                 addToast({
                     title: "Erreur lors de la modification",
                     description: "Une erreur est survenue",
-                    timeout: 5000,
-                    variant: "flat",
-                    radius: "sm",
                     color: "danger"
                 });
             }

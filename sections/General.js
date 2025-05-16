@@ -42,7 +42,6 @@ export const General = () => {
                 description: 'Les options de planification ont été mises à jour avec succès',
                 color: 'success',
                 duration: 2000,
-                variant: "flat"
             });
             refetch();
         },
@@ -53,7 +52,6 @@ export const General = () => {
                 description: error.message || 'Une erreur est survenue lors de la mise à jour',
                 color: 'danger',
                 duration: 2000,
-                variant: "flat"
             });
         }
     });
@@ -103,7 +101,6 @@ export const General = () => {
                         description: error.message || 'Une erreur est survenue lors du téléchargement',
                         color: 'danger',
                         duration: 5000,
-                        variant: "flat"
                     });
                     throw new Error(error.message || 'Erreur de téléchargement');
                 }

@@ -1,4 +1,5 @@
 import {
+    Button,
     InputOtp,
     Modal,
     ModalBody,
@@ -9,11 +10,16 @@ import {
     Tooltip,
     useDisclosure
 } from "@nextui-org/react";
-import {Button} from "@nextui-org/button";
+import {
+    ArrowLeftIcon,
+    ArrowUturnLeftIcon,
+    ChevronRightIcon,
+    HandRaisedIcon,
+    ShieldExclamationIcon
+} from "@heroicons/react/24/outline";
 import Stepper from "@/components/utils/Stepper";
 import React, {useEffect, useState} from "react";
 import {useMutation, useQuery} from "@tanstack/react-query";
-import {ArrowRightIcon, ChevronRightIcon, HandRaisedIcon, ShieldExclamationIcon} from "@heroicons/react/24/outline";
 import {getEmailTemplate} from "@/utils/mails/templates";
 import {useEmail} from "@/context/EmailContext";
 import {addToast} from "@heroui/toast";
@@ -31,6 +37,47 @@ export const formatDate = (date) => {
         hour12: false
     }).replace(':', 'h')
 }
+
+// Composant de décompte
+const CountdownTimer = ({targetDate, textBefore = ""}) => {
+    const [timeLeft, setTimeLeft] = useState({
+        days: 0,
+        hours: 0,
+        minutes: 0
+    });
+
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const difference = new Date(targetDate) - new Date();
+            if (difference > 0) {
+                setTimeLeft({
+                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                    minutes: Math.floor((difference / 1000 / 60) % 60)
+                });
+            }
+        };
+
+        calculateTimeLeft();
+        const timer = setInterval(calculateTimeLeft, 60000); // Mise à jour toutes les minutes
+
+        return () => clearInterval(timer);
+    }, [targetDate]);
+
+    if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0) {
+        return null;
+    }
+
+    return (
+        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+            <span>{textBefore}</span>
+            {timeLeft.days > 0 && <span className="font-semibold">{timeLeft.days}j</span>}
+            {timeLeft.hours > 0 && <span className="font-semibold">{timeLeft.hours}h</span>}
+            <span className="font-semibold">{timeLeft.minutes}m</span>
+        </div>
+    );
+};
+
 export default function ModalCheckingBooking({entry, adminMode = false, handleRefresh}) {
     const [otp, setOtp] = useState("");
     const [error, setError] = useState(null);
@@ -131,27 +178,6 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                 title: "Erreur",
                 description : "La ressource n'as pas pu être modifié. Si le problème persiste contacter un administrateur.",
                 timeout: 5000,
-                shouldShowTimeoutProgess: true,
-                variant : "solid",
-                radius : "sm",
-                classNames: {
-                    closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
-                },
-                closeIcon: (
-                    <svg
-                        fill="none"
-                        height="32"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        viewBox="0 0 24 24"
-                        width="32"
-                    >
-                        <path d="M18 6 6 18" />
-                        <path d="m6 6 12 12" />
-                    </svg>
-                ),
                 color : "danger"
             });
         }
@@ -162,27 +188,6 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             title: "Pick-up",
             description : "La récupèration de la ressource à bien été prise en compte.",
             timeout: 5000,
-            shouldShowTimeoutProgess: true,
-            variant : "solid",
-            radius : "sm",
-            classNames: {
-                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
-            },
-            closeIcon: (
-                <svg
-                    fill="none"
-                    height="32"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    width="32"
-                >
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                </svg>
-            ),
             color : "primary"
         });
 
@@ -201,8 +206,6 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             title: "Restitution",
             description : "La ressource à bien été retournée.",
             timeout: 5000,
-            shouldShowTimeoutProgess: true,
-            variant : "solid",
             color : "success"
         });
         updateEntry({
@@ -259,27 +262,6 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             title: "Annulation de réservation",
             description : "Votre réservation à bien été "+(adminMode ? "supprimer" : "annuler")+" avec succès.", status: "success",
             timeout: 5000,
-            shouldShowTimeoutProgess: true,
-            variant : "solid",
-            radius : "sm",
-            classNames: {
-                closeButton: "opacity-100 absolute right-4 top-1/2 -translate-y-1/2",
-            },
-            closeIcon: (
-                <svg
-                    fill="none"
-                    height="32"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                    width="32"
-                >
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                </svg>
-            ),
             color : "success"
         });
     }
@@ -338,6 +320,10 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
 
     };
 
+    const isAbleToPickUp = () => {
+        return whichPickable() !== "FLUENT" || entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && validDatesToPickup();
+    }
+
     useEffect(() => {
         if (resendTimer > 0) {
             const timer = setTimeout(() => {
@@ -395,6 +381,10 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             onOpenChange={onOpenChange}
             backdrop="blur"
             size="2xl"
+            onClose={() => {
+                setModalStepper("main");
+                setOtp("");
+            }}
             motionProps={{
                 variants: {
                     enter: {
@@ -415,6 +405,9 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                     },
                 },
             }}
+            classNames={{
+                closeButton: "text-blue-500 hover:bg-gray-200 rounded-full p-3 text-xl"
+            }}
         >
             <ModalContent>
                 {(onClose) => (
@@ -427,8 +420,22 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                             </ModalBody>
                         ) : (
                             <>
+
                                 <ModalHeader
-                                    className="flex flex-col gap-1 text-neutral-900 dark:text-neutral-200">
+                                    className="flex flex-row items-center gap-3 text-neutral-900 dark:text-neutral-200">
+                                    {modalStepper !== "main" && (
+                                        <Tooltip content="Retour" color="foreground" showArrow>
+                                            <Button
+                                                isIconOnly
+                                                size="sm"
+                                                variant="light"
+                                                onPress={() => setModalStepper("main")}
+                                                className="text-neutral-600 dark:text-neutral-400"
+                                            >
+                                                <ArrowLeftIcon className="w-5 h-5"/>
+                                            </Button>
+                                        </Tooltip>
+                                    )}
                                     {entry?.resource?.name}
                                 </ModalHeader>
                                 {modalStepper === "delete" && (
@@ -624,71 +631,101 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                 adminMode={adminMode}
                                                 entry={entry}
                                             />
+
                                             {entry.moderate !== "BLOCKED" ? (
                                                 <>
                                                     <Stepper
                                                         step={3}
                                                         content={
-                                                            <div className="w-full">
-                                                                <h1 className={"text-blue-900 dark:text-blue-300  text-lg"}>
-                                                                    <span>{entry.moderate === "USED" ? "En cours d'utilisation" : "Réservation"}</span>
-                                                                </h1>
-                                                                <span>à partir du {formatDate(entry.startDate)}</span>
-                                                                {
-                                                                    whichPickable() !== "FLUENT" &&
-                                                                    entry.moderate === "ACCEPTED" &&
-                                                                    entry?.endDate >= new Date().toISOString() &&
+                                                            <div className="w-full space-y-2 ">
+                                                                <div className="flex items-center justify-between">
+                                                                    <h1 className="text-blue-900 dark:text-blue-300 text-lg">
+                                                                        <span>{entry.moderate === "USED" ? "En cours d'utilisation" : "Réservation"}</span>
+                                                                    </h1>
+                                                                </div>
 
-                                                                    validDatesToPickup() && (
+                                                                <div
+                                                                    className="flex flex-row justify-between items-center space-x-3">
+
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span
+                                                                            className="text-neutral-600 dark:text-neutral-400">
+                                                                            À partir du {formatDate(entry.startDate)}
+                                                                        </span>
+                                                                    </div>
+                                                                    {entry.moderate !== "ENDED" && entry.moderate !== "REJECTED" && entry.moderate !== "USED" &&
                                                                         <Button
-                                                                            className="text-blue-500 font-bold ml-6"
+                                                                            isDisabled={!isAbleToPickUp()}
                                                                             size="lg"
+                                                                            className="text-neutral-600 dark:text-neutral-400"
                                                                             variant="flat"
                                                                             onPress={() => handlePickUp(onClose)}
+                                                                            startContent={<HandRaisedIcon
+                                                                                className="w-5 h-5"/>}
                                                                         >
-                                                                            Récupèrer
-                                                                            <HandRaisedIcon width={24} height={24}
-                                                                                            className="font-bold transform transition-transform group-hover:translate-x-2"/>
-                                                                        </Button>
-                                                                    )
-                                                                }
+                                                                            {isAbleToPickUp() ? "Récupérer" :
+                                                                                <CountdownTimer
+                                                                                    targetDate={entry.startDate}
+                                                                                    textBefore={"dans :"}/>}
+                                                                        </Button>}
+                                                                </div>
+
+                                                                <CountdownTimer targetDate={entry.startDate}
+                                                                                textBefore={"dans :"}/>
+
+                                                                    
                                                             </div>
                                                         }
                                                         done={entry?.startDate <= new Date().toISOString() && entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
-                                                        failed={(new Date(timeScheduleOptions?.ajustedEndDate).getTime() >= Date.now() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING")) || entry.moderate === "REJECTED"}
+                                                        failed={entry.moderate === "REJECTED" || (new Date(entry.endDate) < new Date() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING"))}
                                                         adminMode={adminMode}
-
                                                     />
                                                     <Stepper
                                                         step={4}
                                                         content={
-                                                            <div className="flex flex-row">
-                                                                <div className="w-full flex flex-col">
-                                                                    <h1 className={"text-blue-900 dark:text-blue-300 text-lg"}>
+                                                            <div className="w-full space-y-2">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <h1 className="text-blue-900 dark:text-blue-300 text-lg">
                                                                         {entry.returned ? "Restitué" : "Restitution"}
                                                                     </h1>
-                                                                    <span>le {entry.returned ? formatDate(entry?.updatedAt) : formatDate(entry?.endDate)}</span>
+                                                                    {entry.moderate === "USED" && new Date(entry?.endDate) < new Date() && (
+                                                                        <span
+                                                                            className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-sm">
+                                                                            En retard
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                                 <div
-                                                                    className="ml-10 flex justify-center items-center ">
-                                                                    {entry.moderate === "USED" && whichPickable() !== "FLUENT" &&
-                                                                        <Button
-                                                                            className="font-bold text-orange-700  underline-offset-4 ml-2"
-                                                                            size="lg"
-                                                                            variant="light"
-                                                                            onPress={handleReturn}
-                                                                        >
-                                                                            Retourner
-                                                                            <ArrowRightIcon
-                                                                                width={24}
-                                                                                height={24}
-                                                                                className="font-bold transform transition-transform group-hover:translate-x-2"
-                                                                            />
-                                                                        </Button>
-                                                                    }
-                                                                </div>
-                                                            </div>
+                                                                    className="flex flex-row justify-between items-center space-x-3">
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <span
+                                                                            className="text-neutral-600 dark:text-neutral-400">
+                                                                            {entry.returned
+                                                                                ? `Restitué le ${formatDate(entry?.updatedAt)}`
+                                                                                : `Le ${formatDate(entry?.endDate)}`
+                                                                            }
+                                                                        </span>
 
+                                                                        {entry.moderate === "USED" && new Date(entry?.endDate) > new Date() && (
+                                                                            <CountdownTimer targetDate={entry.endDate}
+                                                                                            textBefore={"dans :"}/>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {entry.moderate === "USED" && whichPickable() !== "FLUENT" && (
+                                                                        <Button
+                                                                            size="lg"
+                                                                            variant="flat"
+                                                                            onPress={handleReturn}
+                                                                            startContent={<ArrowUturnLeftIcon
+                                                                                className="w-5 h-5"/>}
+                                                                        >
+                                                                            Restituer
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+
+                                                            </div>
                                                         }
                                                         adminMode={adminMode}
                                                         done={entry.moderate === "ENDED" && entry.returned}
@@ -720,34 +757,23 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                     </ModalBody>
                                 )}
                                 <ModalFooter className='flex flex-row justify-between'>
-
                                     {!adminMode && modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
-                                        <Tooltip color="warning" content="Annuler définitivement la réservation."
+                                        <Tooltip color="danger" content="Annuler définitivement la réservation."
                                                  showArrow placement="right">
                                             <Button
                                                 size={"lg"}
-                                                color="warning"
+                                                color="danger"
                                                 variant="light"
                                                 onPress={() => {
                                                     setModalStepper("delete")
                                                 }}
                                             >
                                                 Annuler
-
                                             </Button>
                                         </Tooltip>
                                     )}
-                                    {modalStepper !== "main" && (<Button size={"lg"} color="default" variant="flat"
-                                                                         onPress={() => setModalStepper("main")}>Retour</Button>)}
                                     {entry.moderate !== "ENDED" || entry.moderate === "ACCEPTED" &&
                                         <Button size={"lg"} color="default" onPress={onClose}>Modifier</Button>}
-                                    <Button size={"lg"} color="default" variant="flat" onPress={() => {
-                                        onClose();
-                                        setModalStepper("main")
-                                    }}>
-                                        Fermer
-                                    </Button>
-
                                 </ModalFooter>
                             </>
                         )}
