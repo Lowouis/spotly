@@ -148,7 +148,7 @@ export default function Sidebar() {
     }, [status, router]);
 
     // Si la session n'est pas chargée ou l'utilisateur n'est pas défini, on ne rend rien
-    if (status === "loading" || !user) {
+    if (status === "loading" || !session?.user) {
         return <></>;
     }
 
