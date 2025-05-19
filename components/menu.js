@@ -24,16 +24,15 @@ import {ArrowPathIcon, BookmarkIcon, MagnifyingGlassCircleIcon} from "@heroicons
 import {signOut, useSession} from "next-auth/react";
 import React, {useEffect, useState} from "react";
 import {addToast} from "@heroui/toast";
-import {BsWrench} from "react-icons/bs";
-import {CiLogout, CiMenuFries, CiSettings, CiUser} from "react-icons/ci";
+import {CiLogout, CiMenuBurger, CiMenuFries, CiSettings, CiUser} from "react-icons/ci";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 import {useMediaQuery} from 'react-responsive';
 import {useRouter} from "next/navigation";
 import Image from "next/image";
+import {BsWrench} from "react-icons/bs";
 
-export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, handleRefresh}) {
+export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, handleRefresh, selectedTab}) {
     const {isOpen, onOpen, onClose} = useDisclosure();
-    const [selectedTab, setSelectedTab] = useState("search");
     const isMobile = useMediaQuery({query: '(max-width: 768px)'});
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const router = useRouter();
@@ -53,11 +52,10 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
 
     // Si la session n'est pas chargée ou l'utilisateur n'est pas défini, on ne rend rien
     if (status === "loading" || !user) {
-        return null;
+        return <></>;
     }
 
     const handleTabChange = (key) => {
-        setSelectedTab(key);
         handleSearchMode(key);
         handleRefresh();
         if (isMobile) {
@@ -262,12 +260,12 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                         >
                             <DropdownTrigger size="lg">
                                 <Button
-                                    variant="flat"
-                                    size="sm"
+                                    variant="solid"
+                                    size="lg"
                                     className="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
                                     isIconOnly
                                 >
-                                    <CiSettings className="w-4 h-4"/>
+                                    <CiMenuBurger className="w-5 h-5"/>
                                 </Button>
                             </DropdownTrigger>
                             <DropdownMenu aria-label="Paramètres utilisateur"
@@ -356,7 +354,8 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                     header: "border-b border-neutral-200 dark:border-neutral-800",
                     body: "py-6",
                     footer: "border-t border-neutral-200 dark:border-neutral-800",
-                    closeButton: "hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    closeButton: "hover:bg-neutral-100 dark:hover:bg-neutral-800",
+                    closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full p-3 text-xl"
                 }}
                 motionProps={{
                     variants: {

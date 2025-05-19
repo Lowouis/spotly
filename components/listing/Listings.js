@@ -385,6 +385,7 @@ const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLas
                         entry={entry}
                         isOpen={isModalOpen}
                         onOpenChange={setIsModalOpen}
+                        handleRefresh={handleRefresh}
                     />
                 ) : (
                     <ModalCheckingBooking

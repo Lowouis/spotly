@@ -1,6 +1,5 @@
 'use client';
 
-import {ConnectionModal} from "@/components/modals/connectionModal";
 import {useRouter} from 'next/navigation';
 import {useSession} from 'next-auth/react';
 import React, {useEffect} from 'react';

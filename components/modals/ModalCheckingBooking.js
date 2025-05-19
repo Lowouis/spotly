@@ -321,7 +321,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
     };
 
     const isAbleToPickUp = () => {
-        return whichPickable() !== "FLUENT" || entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && validDatesToPickup();
+        return (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && new Date(entry?.endDate) > new Date() && validDatesToPickup();
     }
 
     useEffect(() => {
@@ -640,7 +640,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                             <div className="w-full space-y-2 ">
                                                                 <div className="flex items-center justify-between">
                                                                     <h1 className="text-blue-900 dark:text-blue-300 text-lg">
-                                                                        <span>{entry.moderate === "USED" ? "En cours d'utilisation" : "Réservation"}</span>
+                                                                        <span>{entry.moderate === "USED" ? "En cours d'utilisation" : entry.moderate === "ACCEPTED" && new Date(entry?.endDate) < new Date() ? "Réservation expirée" : "Réservation"}</span>
                                                                     </h1>
                                                                 </div>
 
@@ -653,7 +653,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                                             À partir du {formatDate(entry.startDate)}
                                                                         </span>
                                                                     </div>
-                                                                    {entry.moderate !== "ENDED" && entry.moderate !== "REJECTED" && entry.moderate !== "USED" &&
+                                                                    {whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && new Date(entry?.startDate) < new Date() &&
                                                                         <Button
                                                                             isDisabled={!isAbleToPickUp()}
                                                                             size="lg"

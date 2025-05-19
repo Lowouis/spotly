@@ -5,7 +5,7 @@ import {useState} from 'react';
 import {addToast} from "@heroui/toast";
 import {getLocalTimeZone, today} from "@internationalized/date";
 
-export default function DateRangePickerSplitted({setValue, name = "date"}) {
+export default function DateRangePickerSplitted({setValue, name = "date", onChangeCheck}) {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [startTime, setStartTime] = useState(null);
@@ -52,6 +52,7 @@ export default function DateRangePickerSplitted({setValue, name = "date"}) {
     };
 
     const updateValue = (start, end, startT, endT) => {
+        onChangeCheck();
         if (!start || !end || !startT || !endT) {
             return;
         }

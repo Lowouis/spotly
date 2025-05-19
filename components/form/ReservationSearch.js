@@ -51,13 +51,20 @@ const ReservationSearch = () => {
     }
 
     const handleRefresh = ()=>{
-
         handleResetAllFilters();
         userEntriesRefetch();
         setIsSubmitted(false);
         setData(null);
 
+        setIsRecurrent(false);
+
     }
+
+    const handleRefreshOnCreateEntry = () => {
+        handleRefresh();
+        setSearchMode("bookings");
+    }
+
     const isAvailable = async ({queryKey}) => {
         const [_, data] = queryKey;
 
@@ -181,7 +188,7 @@ const ReservationSearch = () => {
     }
 
     const getOngoingAndDelayedEntries = () => {
-        const ongoingEntries = userEntries?.filter((entry) => entry.moderate === "USED" || entry.moderate === "ACCEPTED");
+        const ongoingEntries = userEntries?.filter((entry) => entry.moderate === "USED" || entry.moderate === "ACCEPTED" || entry.moderate === "WAITING");
         const delayedEntries = ongoingEntries?.filter((entry) => new Date(entry.endDate) < new Date());
         return {
             total: ongoingEntries?.length + delayedEntries?.length,
@@ -224,6 +231,7 @@ const ReservationSearch = () => {
                 handleSearchMode={handleSearchMode}
                 userEntriesQuantity={getOngoingAndDelayedEntries()}
                 handleRefresh={handleRefresh}
+                selectedTab={searchMode}
             />
             <div className="flex flex-col md:w-full h-full">
                 <div className="flex flex-col justify-center items-center h-full">
@@ -390,6 +398,11 @@ const ReservationSearch = () => {
                                                             <div className='flex w-full items-center gap-3 mt-3'>
                                                                 <div className="flex-1">
                                                                     <DateRangePickerSplitted
+                                                                        onChangeCheck={() => {
+                                                                            if (!isRecurrentValid("hebdomadaire") || !setIsRecurrent("jour")) {
+                                                                                setIsRecurrent(false);
+                                                                            }
+                                                                        }}
                                                                         setValue={setValue}
                                                                         classNames={{
                                                                             label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
@@ -594,7 +607,7 @@ const ReservationSearch = () => {
                                             methods={methods}
                                             entry={data}
                                             session={session}
-                                            handleRefresh={handleRefresh}
+                                            handleRefresh={handleRefreshOnCreateEntry}
                                         />
                                     )}
                                 </div>
