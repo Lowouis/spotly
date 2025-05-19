@@ -8,9 +8,6 @@ import {useMutation} from "@tanstack/react-query";
 export default function ModalSystemBooking({entry, isOpen, onOpenChange, handleRefresh}) {
     const {isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose} = useDisclosure();
     const [isDeleting, setIsDeleting] = useState(false);
-
-    if (!entry) return null;
-
     const startDate = new Date(entry.startDate);
     const endDate = new Date(entry.endDate);
     const duration = endDate - startDate;
@@ -47,11 +44,12 @@ export default function ModalSystemBooking({entry, isOpen, onOpenChange, handleR
             handleRefresh();
         }
     });
-
     const handleDelete = () => {
         setIsDeleting(true);
         deleteMutation.mutate(entry.id);
     };
+
+    if (!entry) return null;
 
     return (
         <>
@@ -65,7 +63,6 @@ export default function ModalSystemBooking({entry, isOpen, onOpenChange, handleR
                     header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
                     body: "py-6",
                     footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4",
-                    closeButton: "hover:bg-neutral-100 dark:hover:bg-neutral-800",
                     closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full p-3 text-xl"
                 }}
                 motionProps={{
