@@ -104,6 +104,7 @@ const CodeCell = ({value}) => (
 );
 
 const PickableCell = ({item, itemDTO}) => {
+    console.log("Rendering PickableCell with item:", item);
     if (itemDTO.pickable) {
         return (
             <div className="flex justify-start items-center w-full space-x-1">
@@ -119,6 +120,22 @@ const PickableCell = ({item, itemDTO}) => {
         );
     }
 
+    // Pour les catégories et les domaines (sites), vérifier directement la propriété pickable
+    if (item?.pickable) {
+        return (
+            <div className="flex justify-start items-center w-full space-x-1">
+                <Chip className="capitalize" color="warning" size="sm" variant="flat">
+                    {item.pickable.distinguishedName}
+                </Chip>
+                <Tooltip content={item.pickable.description} color="foreground" size="sm" showArrow>
+                    <Chip color="default" size="sm" variant="flat" className="capitalize">
+                        <BsQuestion/>
+                    </Chip>
+                </Tooltip>
+            </div>
+        );
+    }
+    
     if (item?.category?.pickable) {
         return (
             <div className="flex justify-start items-center w-full space-x-1">
@@ -217,15 +234,20 @@ const StatusCell = ({value}) => (
     </Chip>
 );
 
-const RoleCell = ({value}) => (
-    <Chip
+const RoleCell = ({value}) => {
+    const translations = {
+        "USER": "Utilisateur",
+        "ADMIN": "Manager",
+        "SUPERADMIN": "Administrateur",
+    };
+    return (<Chip
         size="sm"
         variant="dot"
-        color={value === "USER" ? "success" : "warning"}
+        color={value === "USER" ? "success" : value === "ADMIN" ? "warning" : "danger"}
     >
-        {value === "USER" ? "Utilisateur" : "Administrateur"}
-    </Chip>
-);
+        {translations[value]}
+    </Chip>)
+};
 
 const ModerateCell = ({value}) => {
     const getColor = (status) => {
@@ -277,6 +299,7 @@ const DescriptionCell = ({value}) => (
 );
 
 const ObjectCell = ({value, item}) => {
+    console.log("Rendering ObjectCell with value:", value);
     if (!value || typeof value !== 'object') return <EmptyCell/>;
 
     // Si l'objet a une propriété name, on l'affiche
@@ -325,7 +348,7 @@ const renderCell = (key, itemDTO, item, model) => {
     const codeKeys = ["returnedConfirmationCode", "ip"];
 
     // Liste des clés qui doivent afficher un propriétaire
-    const ownerKeys = ["owner", "category", "domains", "user", "resource"];
+    const ownerKeys = ["owner", "user", "resource"];
 
     // Liste des clés qui doivent afficher une date
     const dateKeys = ["createdAt", "updatedAt", "lastUpdatedModerateStatus", "startDate", "endDate"];
@@ -335,11 +358,7 @@ const renderCell = (key, itemDTO, item, model) => {
         return <EmptyCell/>;
     }
 
-    // Cas où la valeur est un objet
-    if (itemDTO[key] && typeof itemDTO[key] === 'object' && !Array.isArray(itemDTO[key])) {
-        return <ObjectCell value={itemDTO[key]} item={item}/>;
-    }
-
+    // Vérifier d'abord les composants spécialisés
     // Mapping des types de cellules
     const cellTypes = {
         text: textKeys.includes(key) && <TextCell value={itemDTO[key]}/>,
@@ -355,8 +374,19 @@ const renderCell = (key, itemDTO, item, model) => {
         description: key === "description" && <DescriptionCell value={itemDTO[key]}/>
     };
 
-    // Retourne le premier type de cellule non-null trouvé
-    return Object.values(cellTypes).find(cell => cell) || <EmptyCell/>;
+    // Vérifier si un composant spécialisé est disponible
+    const specializedCell = Object.values(cellTypes).find(cell => cell);
+    if (specializedCell) {
+        return specializedCell;
+    }
+
+    // Cas où la valeur est un objet (seulement si aucun composant spécialisé n'est trouvé)
+    if (itemDTO[key] && typeof itemDTO[key] === 'object' && !Array.isArray(itemDTO[key])) {
+        return <ObjectCell value={itemDTO[key]} item={item}/>;
+    }
+
+    // Si aucun cas ne correspond
+    return <EmptyCell/>;
 };
 
 const statusMapping = {

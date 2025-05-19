@@ -54,6 +54,7 @@ export default async function handler(req, res) {
                 });
             }
         }
+        console.log(pickable);
         const category = await prisma.category.update({
             where: {
                 id: id,
@@ -64,7 +65,7 @@ export default async function handler(req, res) {
                     description
                 } : { description : null }),
                 ownerId: owner !== undefined && owner !== null ? owner.id : null,
-                pickableId: pickable !== null ? pickable.id : null
+                pickableId: pickable !== undefined && pickable !== null ? pickable.id : null
             }
         });
         res.status(200).json(category);

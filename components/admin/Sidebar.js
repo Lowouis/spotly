@@ -1,3 +1,4 @@
+'use client'
 import React, {useState} from 'react'
 import {FiGrid,} from 'react-icons/fi'
 import {signOut, useSession} from "next-auth/react";
@@ -129,10 +130,29 @@ const sideItems = [
 
 export default function Sidebar() {
     const [isOpen, setIsOpen] = useState(true)
-    const {data : session} = useSession();
+    const {data: session, status} = useSession();
     const router = useRouter();
     const {setActiveSection} = useAdminContext();
     const toggleSidebar = () => setIsOpen(!isOpen)
+
+    useEffect(() => {
+        if (status === "unauthenticated") {
+            router.push("/login");
+            addToast({
+                title: 'Session expirée',
+                message: 'Veuillez vous reconnecter',
+                type: 'warning',
+                duration: 5000,
+            });
+        }
+    }, [status, router]);
+
+    // Si la session n'est pas chargée ou l'utilisateur n'est pas défini, on ne rend rien
+    if (status === "loading" || !user) {
+        return <></>;
+    }
+
+
 
     return (
         <div

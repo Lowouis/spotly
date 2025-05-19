@@ -3,7 +3,10 @@
 const allowedOrigins = [
     'http://intranet:3000',
     'http://intranet.fhm.local:3000',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://spotly.fhm.local',
+    'http://spotly.fhm.local:3000',
+    'http://sso.intranet.fhm.local/spotly',
 ];
 
 /** @type {import('next').NextConfig} */
