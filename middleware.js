@@ -33,15 +33,48 @@ export async function middleware(req) {
         });
     }
 
+    // Vérifier si l'URL contient déjà le basePath
+    const hasBasePath = req.nextUrl.pathname.startsWith('/spotly');
+    
     if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
-        const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
+        const isAdminRoute = hasBasePath
+            ? req.nextUrl.pathname.startsWith('/spotly/admin')
+            : req.nextUrl.pathname.startsWith('/admin');
+            
         if (isAdminRoute) {
-            return NextResponse.redirect(new URL(req.url));
+            const redirectUrl = new URL(hasBasePath ? '/spotly' : '/spotly', req.url);
+            const redirectResponse = NextResponse.redirect(redirectUrl);
+
+            // Copier les en-têtes CORS dans la réponse de redirection
+            response.headers.forEach((value, key) => {
+                redirectResponse.headers.set(key, value);
+            });
+
+            return redirectResponse;
         }
     }
+
+    // Si l'URL ne contient pas le basePath, rediriger vers la version avec basePath
+    if (!hasBasePath && (req.nextUrl.pathname.startsWith('/api') || req.nextUrl.pathname.startsWith('/admin'))) {
+        const redirectUrl = new URL(`/spotly${req.nextUrl.pathname}`, req.url);
+        const redirectResponse = NextResponse.redirect(redirectUrl);
+
+        // Copier les en-têtes CORS dans la réponse de redirection
+        response.headers.forEach((value, key) => {
+            redirectResponse.headers.set(key, value);
+        });
+
+        return redirectResponse;
+    }
+
     return response;
 }
 
 export const config = {
-    matcher: ["/admin/:path*", "/api/:path*"],
+    matcher: [
+        "/api/:path*",
+        "/admin/:path*",
+        "/spotly/api/:path*",
+        "/spotly/admin/:path*"
+    ],
 };
