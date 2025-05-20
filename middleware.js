@@ -16,7 +16,15 @@ export async function middleware(req) {
     // Gestion spéciale pour les requêtes OPTIONS (preflight)
     if (req.method === 'OPTIONS') {
         console.log('🛑 Requête OPTIONS détectée');
-        return new Response(null, {status: 204});
+        const response = new Response(null, {status: 204});
+
+        // Ajout des en-têtes CORS
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        response.headers.set('Access-Control-Max-Age', '86400'); // 24 heures
+
+        return response;
     }
 
     if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
@@ -28,6 +36,11 @@ export async function middleware(req) {
     }
 
     const response = NextResponse.next();
+
+    // Ajout des en-têtes CORS pour toutes les réponses
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     // Log des en-têtes de réponse
     console.log('📤 En-têtes de réponse:', {
