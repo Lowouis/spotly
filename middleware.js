@@ -33,15 +33,26 @@ export async function middleware(req) {
         });
     }
 
-    if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
+    // Si pas de token, on redirige vers la page de connexion
+    if (!token) {
+        return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    // Si l'utilisateur n'a pas les droits d'admin
+    if (token.role !== "ADMIN" && token.role !== "SUPERADMIN") {
         const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
         if (isAdminRoute) {
             return NextResponse.redirect(new URL('/', req.url));
         }
     }
+
     return response;
 }
 
 export const config = {
-    matcher: ["/admin/:path*", "/api/:path*"],
+    matcher: [
+        '/admin/:path*',
+        '/api/:path*',
+        '/((?!_next/static|_next/image|favicon.ico).*)',
+    ],
 };

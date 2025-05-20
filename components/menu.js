@@ -9,7 +9,6 @@ import {
     DropdownTrigger,
     Form,
     Input,
-    Link,
     Modal,
     ModalBody,
     ModalContent,
@@ -31,7 +30,7 @@ import {useRouter} from "next/navigation";
 import Image from "next/image";
 import {BsWrench} from "react-icons/bs";
 
-export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, handleRefresh, selectedTab}) {
+export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRefresh, selectedTab}) {
     const {isOpen, onOpen, onClose} = useDisclosure();
     const isMobile = useMediaQuery({query: '(max-width: 768px)'});
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,10 +47,10 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                 duration: 5000,
             });
         }
-    }, [status, router]);
+    }, [status, router, session]);
 
-    // Si la session n'est pas chargée ou l'utilisateur n'est pas défini, on ne rend rien
-    if (status === "loading" || !user) {
+    // Si la session n'est pas chargée, on ne rend rien
+    if (status === "loading" || !session?.user) {
         return <></>;
     }
 
@@ -147,18 +146,19 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                           className="text-content-primary dark:text-dark-content-primary">
                                 <DropdownItem
                                     key="profile"
+                                    textValue="Profil"
                                     startContent={<CiUser className="w-4 h-4"/>}
                                     onPress={onOpen}
                                     className="text-content-primary dark:text-dark-content-primary"
                                 >
                                     Profil
                                 </DropdownItem>
-                                {user.role !== 'USER' && (
+                                {session.user.role !== 'USER' && (
                                     <DropdownItem
                                         key="admin"
+                                        textValue="Administration"
                                         startContent={<BsWrench className="w-4 h-4"/>}
-                                        as={Link}
-                                        href="/admin"
+                                        onPress={() => router.push('/admin')}
                                         className="text-content-primary dark:text-dark-content-primary"
                                     >
                                         Administration
@@ -175,6 +175,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                     key="logout"
                                     className="text-danger"
                                     color="danger"
+                                    textValue="Se déconnecter"
                                     startContent={<CiLogout className="w-4 h-4"/>}
                                     onPress={() => signOut().then(() => {
                                         addToast({
@@ -197,7 +198,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
 
     const renderDesktopMenu = () => (
         <div
-            className="w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 mb-2 bg-green-500">
+            className="w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 mb-2">
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center h-full">
@@ -273,29 +274,30 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                 <DropdownItem
                                     size="lg"
                                     key="profile"
+                                    textValue="Profil"
                                     startContent={<CiUser className="w-4 h-4"/>}
                                     onPress={onOpen}
                                     className="text-content-primary dark:text-dark-content-primary"
                                 >
                                     Profil
                                 </DropdownItem>
-                                {user.role !== 'USER' && (
+                                {session.user.role !== 'USER' && (
                                     <DropdownItem
                                         size="lg"
                                         key="admin"
+                                        textValue="Administration"
                                         startContent={<BsWrench className="w-4 h-4"/>}
-                                        as={Link}
-                                        href="/admin"
+                                        onPress={() => router.push('/admin')}
                                         className="text-content-primary dark:text-dark-content-primary"
                                     >
                                         Administration
                                     </DropdownItem>
                                 )}
-
                                 <DropdownItem
                                     size="lg"
                                     showDivider
                                     key="logout"
+                                    textValue="Se déconnecter"
                                     className="text-danger"
                                     color="danger"
                                     startContent={<CiLogout className="w-4 h-4"/>}
@@ -313,14 +315,14 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                 <DropdownItem
                                     size="lg"
                                     key="theme"
+                                    textValue="Thème"
                                     className="flex items-center justify-between text-content-primary dark:text-dark-content-primary"
                                     endContent={<DarkModeSwitch size="sm"/>}
-                                    closeOnSelect={false} // Empêche la fermeture pour le switch
+                                    closeOnSelect={false}
                                 >
                                     <span>Thème</span>
                                 </DropdownItem>
                             </DropdownMenu>
-
                         </Dropdown>
                         {isMobile && (
                             <Button
@@ -354,7 +356,6 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                     header: "border-b border-neutral-200 dark:border-neutral-800",
                     body: "py-6",
                     footer: "border-t border-neutral-200 dark:border-neutral-800",
-                    closeButton: "hover:bg-neutral-100 dark:hover:bg-neutral-800",
                     closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full p-3 text-xl"
                 }}
                 motionProps={{
@@ -384,11 +385,11 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                             <ModalHeader className="flex flex-col gap-2 p-4">
                                 <div className="flex items-center justify-between gap-4">
                                     <User
-                                        name={`${user?.name} ${user?.surname}`}
-                                        description={user?.email}
+                                        name={`${session.user?.name} ${session.user?.surname}`}
+                                        description={session.user?.email}
                                         color="default"
                                         classNames={{
-                                            name: user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+                                            name: session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
                                                 ? 'text-orange-500 font-semibold'
                                                 : 'text-neutral-800 dark:text-neutral-100 font-semibold',
                                             description: 'text-neutral-500 dark:text-neutral-400'
@@ -396,7 +397,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                         avatarProps={{
                                             size: "lg",
                                             className: `text-lg font-semibold text-white transition-transform duration-200 hover:scale-105 ${
-                                                user?.role === 'ADMIN' || user?.role === 'SUPERADMIN'
+                                                session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
                                                     ? 'bg-orange-500'
                                                     : 'bg-primary-500'
                                             }`,
@@ -408,13 +409,13 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                 </div>
                             </ModalHeader>
                             <ModalBody>
-                                {!user?.external && (
+                                {!session.user?.external && (
                                     <Form className="w-full space-y-4" validationBehavior="native">
                                         <div className="flex flex-row justify-between items-end w-full gap-3">
                                             <Input
                                                 label="Email"
                                                 size="sm"
-                                                value={user?.email}
+                                                value={session.user?.email}
                                                 labelPlacement="outside"
                                                 name="email"
                                                 placeholder="Votre email"
@@ -460,7 +461,7 @@ export function AlternativeMenu({user, handleSearchMode, userEntriesQuantity, ha
                                                     variant="flat"
                                                     isIconOnly
                                                     size="sm"
-                                                    disabled={user?.external}
+                                                    disabled={session.user?.external}
                                                     className="mb-1"
                                                 >
                                                     <ArrowPathIcon className="w-4 h-4"/>

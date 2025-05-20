@@ -173,19 +173,35 @@ const ReservationSearch = () => {
 
 
     const isRecurrentValid = (unit) => {
+        const startDate = watch('date')?.start;
+        const endDate = watch('date')?.end;
 
-        const startDate = new Date(watch('date')?.start);
-        const endDate = new Date(watch('date')?.end);
-        const diffInMilliseconds = endDate.getTime() - startDate.getTime();
-        const diff = diffInMilliseconds / (1000 * 60 * 60);
+        if (!startDate || !endDate) return false;
 
-        if (unit === "jour" && startDate.getDay() === endDate.getDay()) {
-            return true;
-        } else if (unit === "hebdomadaire" && diff < 24 * 7) {
-            return true;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        // Vérifier que la date de fin est après la date de début
+        if (end <= start) return false;
+
+        const diffInMilliseconds = end.getTime() - start.getTime();
+        const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+
+        switch (unit) {
+            case "jour":
+                // Pour une récurrence journalière, vérifier que c'est le même jour
+                return start.getDate() === end.getDate() &&
+                    start.getMonth() === end.getMonth() &&
+                    start.getFullYear() === end.getFullYear();
+
+            case "hebdomadaire":
+                // Pour une récurrence hebdomadaire, vérifier que c'est moins d'une semaine
+                return diffInHours <= 24 * 7;
+
+            default:
+                return false;
         }
-        return false;
-    }
+    };
 
     const getOngoingAndDelayedEntries = () => {
         const ongoingEntries = userEntries?.filter((entry) => entry.moderate === "USED" || entry.moderate === "ACCEPTED" || entry.moderate === "WAITING");
@@ -478,10 +494,10 @@ const ReservationSearch = () => {
                                                                         size="sm"
                                                                         color="default"
                                                                         name="recursive_limit"
+                                                                        isDisabled={watch('date')?.start === undefined}
+                                                                        minValue={watch('date')?.end ? parseDate(watch('date').end.toISOString().split('T')[0]) : undefined}
                                                                         value={data?.recursive_limit ? parseDate(data.recursive_limit) : undefined}
                                                                         onChange={(value) => {
-                                                                            const test = new Date();
-                                                                            test.setFullYear(value.year, value.month - 1, value.day);
                                                                             setValue('recursive_limit', value.toString());
                                                                         }}
                                                                         className='justify-center items-center'

@@ -70,31 +70,49 @@ const SelectField = ({
 
         return () => subscription.unsubscribe();
     }, [value, defaultValue, setValue, name, resolvedOptions, eyesOn, watch]);
-    console.log(validates)
     const handleChange = (selectedValue) => {
+        if (!selectedValue || selectedValue.size === 0) {
+            onReset();
+            setWatchedValue(null);
+            setSelectedKey(null);
+            setValue(name, null);
+            return;
+        }
+
         const selectedId = Array.from(selectedValue)[0];
-        const selectedOption = resolvedOptions.find(option => option.id.toString() === selectedId);
-        if (selectedOption?.id !== value?.id) {
+        const selectedOption = resolvedOptions?.find(option => option.id.toString() === selectedId);
+
+        if (selectedOption) {
             setValue(name, selectedOption);
+            setSelectedKey(selectedId);
         } else {
             onReset();
-            setWatchedValue(null); // Réinitialisation du placeholder
+            setWatchedValue(null);
+            setSelectedKey(null);
+            setValue(name, null);
         }
-        setSelectedKey(selectedId);
     };
 
     const findMissingId = (options, value) => {
-        return options && options?.find(option => option.name === value).id.toString();
+        if (!options || !value) return null;
+        const option = options.find(opt => opt.name === value);
+        return option?.id?.toString();
     };
+
     useEffect(() => {
-        if (defaultValue && !isLoading) {
+        if (defaultValue && !isLoading && resolvedOptions) {
             const newKey = typeof defaultValue === "string"
                 ? findMissingId(resolvedOptions, defaultValue)
                 : defaultValue?.id?.toString();
-            setSelectedKey(newKey);
+            if (newKey) {
+                setSelectedKey(newKey);
+                const option = resolvedOptions.find(opt => opt.id.toString() === newKey);
+                if (option) {
+                    setValue(name, option);
+                }
+            }
         }
-    }, [defaultValue, resolvedOptions, isLoading]);
-
+    }, [defaultValue, resolvedOptions, isLoading, name, setValue]);
 
     return (
         <div className="my-2 w-full">
@@ -119,10 +137,10 @@ const SelectField = ({
                     variant={variant}
                     labelPlacement={labelPlacement}
                     items={resolvedOptions || []}
-                    selectedKeys={[selectedKey]}
+                    selectedKeys={selectedKey ? new Set([selectedKey]) : new Set([])}
                     isLoading={isLoading}
                     hideEmptyContent={true}
-                    onSelectionChange={(selected) => handleChange(selected)}
+                    onSelectionChange={handleChange}
                     placeholder={eyesOn !== null && watchedValue !== undefined ?
                         <span
                             className="italic text-content-secondary dark:text-dark-content-secondary">{watchedValue} par héritage</span> : resolvedOptions?.length ? placeholder : "Aucune donnée"}
@@ -136,26 +154,22 @@ const SelectField = ({
                     }}
                     disabledKeys={validates ? Object.keys(validates).filter(key => !validates[key]) : []}
                 >
-                    {(option) => {
-                        return (
-                            <SelectItem
-                                variant='bordered'
-                                color="default"
-                                aria-label={option?.name || option}
-                                key={option?.id}
-                                value={value}
-                                textValue={option?.name || option}
-                                description={option?.description && option?.description}
-                            >
-                                {option?.name && firstLetterUppercase(option.name) || option}
-                                {" "}
-                                {option?.surname && firstLetterUppercase(option.surname)}
-                            </SelectItem>
-                        )
-                    }
-                    }
-
-            </Select>
+                    {(option) => (
+                        <SelectItem
+                            variant='bordered'
+                            color="default"
+                            aria-label={option?.name || option}
+                            key={option?.id}
+                            value={option?.id?.toString()}
+                            textValue={option?.name || option}
+                            description={option?.description && option?.description}
+                        >
+                            {option?.name && firstLetterUppercase(option.name) || option}
+                            {" "}
+                            {option?.surname && firstLetterUppercase(option.surname)}
+                        </SelectItem>
+                    )}
+                </Select>
             {errors[name] && <p className="error-message text-red-600 mt-2">{errors[name].message}</p>}
         </div>
     );
