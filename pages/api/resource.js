@@ -5,7 +5,7 @@ import {runMiddleware} from "@/lib/core";
 export default async function handler(req, res) {
     await runMiddleware(req, res);
     if(req.method === "GET"){
-        const {id } = req.query;
+        const {id} = req.query;
         const resources = await prisma.resource.findUnique({
             where: {
                 id : id,
