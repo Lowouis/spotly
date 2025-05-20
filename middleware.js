@@ -34,14 +34,14 @@ export async function middleware(req) {
     }
 
     if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
-        const isAdminRoute = req.nextUrl.pathname.startsWith('/spotly/admin');
+        const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
         if (isAdminRoute) {
-            return NextResponse.redirect(new URL('/spotly', req.url));
+            return NextResponse.redirect(new URL(req.url));
         }
     }
     return response;
 }
 
 export const config = {
-    matcher: ["/spotly/admin/:path*", "/spotly/api/:path*"],
+    matcher: ["/admin/:path*", "/api/:path*"],
 };

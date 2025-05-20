@@ -1,11 +1,13 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import {PrismaAdapter} from '@next-auth/prisma-adapter';
 import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
-import { authenticate } from 'ldap-authentication';
+import {authenticate} from 'ldap-authentication';
+import nextConfig from '../../../next.config.mjs';
 
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
+const basePath = nextConfig.basePath || '';
 
 export const authConfig = {
     adapter: PrismaAdapter(prisma),
@@ -96,7 +98,6 @@ export const authConfig = {
         maxAge: SESSION_EXPIRATION_TIME,
     },
     callbacks: {
-
         jwt: async ({ token, user }) => {
             return {...token, ...user};
         },
@@ -105,17 +106,30 @@ export const authConfig = {
             return session;
         },
         redirect: async ({ url, baseUrl }) => {
-            if (url === '/api/auth/signout') {
-                return baseUrl;
+            console.log('URL:', url);
+            console.log('BaseURL:', baseUrl);
+            console.log('BasePath:', basePath);
+
+            // Si l'URL est relative, ajouter le basePath
+            if (url.startsWith('/')) {
+                return `${baseUrl}${basePath}${url}`;
+            }
+            // Si l'URL est absolue et contient le domaine de base, ajouter le basePath
+            if (url.startsWith(baseUrl)) {
+                return `${baseUrl}${basePath}${url.slice(baseUrl.length)}`;
             }
             return url;
         },
     },
-    options : {
-        debug : false
+    pages: {
+        signIn: `${basePath}/login`,
+        signOut: basePath,
+        error: `${basePath}/error`,
+    },
+    options: {
+        debug: false
     }
 };
-
 
 
 export default NextAuth(authConfig);

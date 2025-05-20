@@ -23,6 +23,6 @@ const nextConfig = {
             }
         ]
     },
-    basePath: '/spotly',
+    //basePath: '/spotly',
 }
 export default nextConfig;
