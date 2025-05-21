@@ -30,7 +30,7 @@ export default function SSOLoadingModal({debugInfo}) {
                     <Spinner size="lg" color="primary"/>
                     <p className="mt-4 text-lg">Authentification SSO en cours...</p>
                     <p className="mt-2 text-sm text-gray-500">
-                        Temps d'attente: {loadingTime} secondes
+                        Temps d attente: {loadingTime} secondes
                     </p>
 
                     {loadingTime > 5 && (
@@ -44,7 +44,7 @@ export default function SSOLoadingModal({debugInfo}) {
 
                     {showDebug && debugInfo && (
                         <div className="mt-4 p-4 bg-gray-100 rounded-lg w-full max-h-60 overflow-auto">
-                            <h4 className="text-sm font-semibold mb-2">État de l'authentification SSO</h4>
+                            <h4 className="text-sm font-semibold mb-2">État de l authentification SSO</h4>
                             <pre className="text-xs">
                                 {JSON.stringify(debugInfo, null, 2)}
                             </pre>
@@ -54,7 +54,7 @@ export default function SSOLoadingModal({debugInfo}) {
                     {loadingTime > 10 && (
                         <p className="mt-2 text-sm text-yellow-600">
                             Le chargement prend plus de temps que prévu.
-                            Vérifiez la console du navigateur pour plus d'informations.
+                            Vérifiez la console du navigateur pour plus d informations.
                         </p>
                     )}
                 </ModalBody>
