@@ -57,10 +57,12 @@ const nextConfig = {
             {
                 source: '/api/entry',
                 destination: '/api/entry',
+                permanent: false
             },
             {
                 source: '/api/entry/:path*',
                 destination: '/api/entry/:path*',
+                permanent: false
             }
         ]
     },
