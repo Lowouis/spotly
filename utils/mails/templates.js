@@ -64,9 +64,6 @@ Nous vous confirmons que votre réservation pour la ressource **${data.resource}
 ### Détails de votre réservation :
 - **Date de début** : ${data.startDate}
 - **Date de fin**   : ${data.endDate}
-- **Code de réservation** : ${data.key}
-
-⚠️ **Conservez ce code précieusement**, il pourra vous être demandé pour accéder à la ressource ou pour sa restitution.
 
 
 ---
@@ -165,28 +162,13 @@ Votre système de gestion des ressources.
 
 Bonjour **${data.user}**,
 
-Suite à votre demande, voici le code de réservation pour la ressource **${data.name}**.
+Suite à votre demande, voici le code de réservation pour la ressource **${data.resource}**.
 
 ### Détails de la réservation :
-- **Date** : ${new Date(data.startDate).toLocaleString("FR-fr", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-    })}
-- **Horaires** : ${new Date(data.startDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })} - ${new Date(data.endDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })}
-- **Code de réservation** : ${data.key}
+- **Date de début** : ${startDate}
+- **Date de fin** : ${endDate}
 
-⚠️ **Conservez ce code précieusement**, il peut vous être demandé pour :
-- Accéder à la ressource lors de la récupération
-- Confirmer la restitution de la ressource
-
+- **Code de réservation** : <div style="text-align: center; font-size: 24px; font-weight: bold; margin: 15px 0; padding: 10px; background-color: #f5f5f5; border-radius: 5px;">${data.key}</div>
 ---
 
 Cordialement,  
@@ -215,10 +197,9 @@ ${data.entries.map((entry, index) => `
         hour: "2-digit",
         minute: "2-digit"
     })}
-- **Code de réservation** : ${entry.returnedConfirmationCode}
+
 `).join('\n')}
 
-⚠️ **Conservez ces codes précieusement**, ils vous seront demandés pour accéder à la ressource ou pour sa restitution.
 
 ---
 
@@ -336,3 +317,4 @@ export const getEmailTemplate = (templateName, data) => {
     const htmlBody = marked(markdown);
     return wrapInHtmlTemplate(htmlBody);
 };
+

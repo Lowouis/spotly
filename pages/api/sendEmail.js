@@ -2,6 +2,7 @@
 
 import nodemailer from 'nodemailer';
 import {runMiddleware} from "@/lib/core";
+import {marked} from 'marked'; // Ajoutez cette importation
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -9,6 +10,9 @@ export default async function handler(req, res) {
         return res.status(405).json({ message: 'Method not allowed' });
     }
     const { to, subject, text } = req.body;
+
+    // Convertir le Markdown en HTML
+    const htmlContent = marked(text);
 
     const transporter = nodemailer.createTransport({
         host: process.env.NEXT_PUBLIC_SMTP_HOST || 'bluemind',
@@ -27,10 +31,10 @@ export default async function handler(req, res) {
                 'Content-Type': 'text/html; charset=utf-8',
             },
             from: process.env.NEXT_PUBLIC_EMAIL_USER,
-            to  ,
+            to,
             subject,
-            text: text,
-            html: text,
+            text: text, // Version texte brut (Markdown)
+            html: htmlContent, // Version HTML convertie
 
         });
 
