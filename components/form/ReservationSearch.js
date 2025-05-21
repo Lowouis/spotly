@@ -73,17 +73,16 @@ const ReservationSearch = () => {
 
 
         const limit = new Date(watch('recursive_limit'));
-        console.log(limit);
-        const reccurent = isRecurrent ? `&recurrent_limit=${limit ?? limit}&recurrent_unit=${watch('recursive_unit')?.name}` : undefined;
-        console.log("------- DATA BLOCKED 1 -------");
+        const reccurent = isRecurrent
+            ? `recurrent_limit=${limit ?? limit}&recurrent_unit=${watch('recursive_unit')?.name}&`
+            : '';
 
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/reservation/?${reccurent && reccurent}&siteId=${data.site.id}&categoryId=${data.category.id}&domainId=${data.site.id}&startDate=${startDate}&endDate=${endDate}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
+            `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/reservation?${reccurent}siteId=${data.site.id}&categoryId=${data.category.id}&domainId=${data.site.id}&startDate=${startDate}&endDate=${endDate}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
         ).catch((error) => {
             console.error('Error fetching data:', error);
             throw error;
         })
-        console.log("------- DATA BLOCKED 2 -------");
         
         setIsSubmitted(false);
         if (response.status === 200) {
