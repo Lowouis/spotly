@@ -21,24 +21,32 @@ export const authConfig = {
                 ticket: {label: "Kerberos Ticket", type: "text"}
             },
             async authorize(credentials) {
+                console.log('Kerberos authorize called with credentials:', credentials ? 'Present' : 'Missing');
+                
                 if (!credentials?.ticket) {
+                    console.log('No Kerberos ticket provided');
                     return null;
                 }
 
+                console.log('Validating Kerberos ticket...');
                 const result = await validateKerberosTicket(credentials.ticket);
+                console.log('Kerberos ticket validation result:', result);
+
                 if (!result.success) {
+                    console.log('Kerberos ticket validation failed');
                     return null;
                 }
 
-                // Recherche de l'utilisateur dans la base de données
+                console.log('Searching for user in database:', result.username);
                 let user = await prisma.user.findUnique({
                     where: {
                         username: result.username
                     }
                 });
+                console.log('Database user search result:', user ? 'Found' : 'Not found');
 
-                // Si l'utilisateur n'existe pas, on le crée avec les données de LDAP (nécessaire pour récupérer le mail, le nom et prenom)
                 if (!user) {
+                    console.log('User not found in database, attempting LDAP lookup...');
                     const ldapUser = await authenticate({
                         ldapOpts: {
                             url: process.env.NEXT_PUBLIC_LDAP_DOMAIN,
@@ -55,6 +63,7 @@ export const authConfig = {
                     });
 
                     if (ldapUser) {
+                        console.log('LDAP user found, creating user in database...');
                         user = await prisma.user.create({
                             data: {
                                 email: ldapUser.mail,
@@ -65,6 +74,9 @@ export const authConfig = {
                                 password: null,
                             }
                         });
+                        console.log('User created in database:', user);
+                    } else {
+                        console.log('LDAP user not found');
                     }
                 }
 
@@ -185,7 +197,7 @@ export const authConfig = {
         error: `${basePath}/error`,
     },
     options: {
-        debug: false
+        debug: true
     }
 };
 

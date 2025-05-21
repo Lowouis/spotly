@@ -28,8 +28,12 @@ export async function middleware(req) {
 
     // Gestion de l'authentification Kerberos
     const authHeader = req.headers.get('authorization');
+    console.log('Auth header present:', !!authHeader);
+    
     if (authHeader?.startsWith('Negotiate ')) {
+        console.log('Kerberos ticket detected in header');
         const ticket = authHeader.substring('Negotiate '.length);
+        console.log('Redirecting to Kerberos callback...');
         // Rediriger vers l'API d'authentification Kerberos
         return NextResponse.redirect(new URL('/api/auth/callback/kerberos', req.url));
     }

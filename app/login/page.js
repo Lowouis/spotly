@@ -3,48 +3,100 @@
 import {ConnectionModal} from "@/components/modals/connectionModal";
 import {useRouter} from 'next/navigation';
 import {useSession} from 'next-auth/react';
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
 
 const checkSSOStatus = async () => {
-    const response = await fetch('/api/auth/check-sso', {
-        method: 'GET',
-        credentials: 'include',
-    });
-    if (!response.ok) {
-        throw new Error('Erreur lors de la vérification SSO');
+    console.log('Checking SSO status...');
+    try {
+        const response = await fetch('/api/auth/check-sso', {
+            method: 'GET',
+            credentials: 'include',
+        });
+        console.log('SSO check response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`Erreur lors de la vérification SSO: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json();
+        console.log('SSO check response data:', data);
+
+        // Vérification plus détaillée de l'état SSO
+        if (data.status === 'not_authenticated') {
+            console.log('SSO non authentifié - détails:', data.debug);
+            return {...data, isSSO: false};
+        }
+
+        if (data.status === 'pending' && !data.debug.auth.ticketPresent) {
+            console.log('SSO en attente mais pas de ticket - détails:', data.debug);
+            return {...data, isSSO: false};
+        }
+
+        return data;
+    } catch (error) {
+        console.error('SSO check error:', error);
+        throw error;
     }
-    return response.json();
 };
 
 function LoginContent() {
     const router = useRouter();
     const { status } = useSession();
-    const {data: ssoData, isLoading: isSSOChecking} = useQuery({
+    const [debugInfo, setDebugInfo] = useState(null);
+    const [ssoError, setSsoError] = useState(null);
+
+    const {data: ssoData, isLoading: isSSOChecking, error: queryError} = useQuery({
         queryKey: ['ssoStatus'],
         queryFn: checkSSOStatus,
         retry: false,
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        onSuccess: (data) => {
+            console.log('SSO check successful:', data);
+            setDebugInfo(data.debug);
+            if (data.status === 'not_authenticated') {
+                setSsoError('Pas d\'authentification SSO détectée');
+            } else if (data.status === 'pending' && !data.debug.auth.ticketPresent) {
+                setSsoError('Ticket SSO manquant ou invalide');
+            }
+        },
+        onError: (error) => {
+            console.error('SSO check failed:', error);
+            setDebugInfo({error: error.message});
+            setSsoError(error.message);
+        }
     });
 
-    React.useEffect(() => {
+    useEffect(() => {
+        console.log('Session status:', status);
         if (status === 'authenticated') {
             router.push('/');
         }
     }, [status, router]);
 
     if (isSSOChecking) {
-        return <SSOLoadingModal/>;
+        return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
     }
 
     if (ssoData?.isSSO) {
-        return <SSOLoadingModal/>;
+        return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
     }
 
     return (
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center">
             <ConnectionModal/>
+            {debugInfo && (
+                <div className="mt-4 p-4 bg-gray-100 rounded-lg max-w-lg w-full">
+                    <h3 className="text-lg font-semibold mb-2">Informations de débogage SSO</h3>
+                    {ssoError && (
+                        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
+                            {ssoError}
+                        </div>
+                    )}
+                    <pre className="text-sm overflow-auto">
+                        {JSON.stringify(debugInfo, null, 2)}
+                    </pre>
+                </div>
+            )}
         </div>
     );
 }
