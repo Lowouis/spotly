@@ -165,8 +165,8 @@ Bonjour **${data.user}**,
 Suite à votre demande, voici le code de réservation pour la ressource **${data.resource}**.
 
 ### Détails de la réservation :
-- **Date de début** : ${startDate}
-- **Date de fin** : ${endDate}
+- **Date de début** : ${data.startDate}
+- **Date de fin** : ${data.endDate}
 
 - **Code de réservation** : <div style="text-align: center; font-size: 24px; font-weight: bold; margin: 15px 0; padding: 10px; background-color: #f5f5f5; border-radius: 5px;">${data.key}</div>
 ---
