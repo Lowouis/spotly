@@ -16,6 +16,7 @@ export async function middleware(req) {
     console.log('Middleware appelé pour:', req.nextUrl.pathname);
     console.log('Origin:', req.headers.get('origin'));
     console.log('Method:', req.method);
+    console.log('URL complète:', req.url);
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const origin = req.headers.get('origin');
@@ -30,11 +31,13 @@ export async function middleware(req) {
         const response = new Response(null, {status: 204});
 
         // Ajout des en-têtes CORS
-        response.headers.set('Access-Control-Allow-Origin', isAllowedOrigin ? origin : allowedOrigins[0]);
+        response.headers.set('Access-Control-Allow-Origin', origin || '*');
         response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
         response.headers.set('Access-Control-Max-Age', '86400'); // 24 heures
+        response.headers.set('Access-Control-Allow-Credentials', 'true');
 
+        console.log('En-têtes CORS OPTIONS:', Object.fromEntries(response.headers.entries()));
         return response;
     }
 
@@ -48,21 +51,18 @@ export async function middleware(req) {
     const response = NextResponse.next();
 
     // Ajout des en-têtes CORS pour toutes les réponses
-    response.headers.set('Access-Control-Allow-Origin', isAllowedOrigin ? origin : allowedOrigins[0]);
+    response.headers.set('Access-Control-Allow-Origin', origin || '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
 
+    console.log('En-têtes CORS réponse:', Object.fromEntries(response.headers.entries()));
     return response;
 }
 
 export const config = {
     matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         */
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        '/api/:path*',
+        '/admin/:path*',
     ],
 };

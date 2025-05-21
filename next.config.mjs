@@ -19,50 +19,14 @@ const nextConfig = {
                         value: "Content-Type, Authorization, X-Requested-With"
                     },
                     {
+                        key: "Access-Control-Allow-Credentials",
+                        value: "true"
+                    },
+                    {
                         key: "Access-Control-Expose-Headers",
                         value: "Location"
                     }
                 ]
-            }
-        ]
-    },
-    async redirects() {
-        return [
-            {
-                source: '/api/:path*',
-                has: [
-                    {
-                        type: 'query',
-                        key: 'userId',
-                    },
-                ],
-                permanent: false,
-                destination: '/api/:path*',
-            },
-            {
-                source: '/api/:path*',
-                has: [
-                    {
-                        type: 'query',
-                        key: 'categoryId',
-                    },
-                    {
-                        type: 'query',
-                        key: 'domainId',
-                    },
-                ],
-                permanent: false,
-                destination: '/api/:path*',
-            },
-            {
-                source: '/api/entry',
-                destination: '/api/entry',
-                permanent: false
-            },
-            {
-                source: '/api/entry/:path*',
-                destination: '/api/entry/:path*',
-                permanent: false
             }
         ]
     },
