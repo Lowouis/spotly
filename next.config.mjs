@@ -15,8 +15,7 @@ const nextConfig = {
     async headers() {
         return [
             {
-                // Appliquer à toutes les routes API
-                source: "/api/:path*",
+                source: "/:path*",
                 headers: [
                     {
                         key: "Access-Control-Allow-Origin",
@@ -35,27 +34,40 @@ const nextConfig = {
                         value: "Location"
                     }
                 ]
+            }
+        ]
+    },
+    async redirects() {
+        return [
+            {
+                source: '/api/:path*',
+                has: [
+                    {
+                        type: 'query',
+                        key: 'userId',
+                    },
+                ],
+                permanent: false,
+                destination: '/api/:path*',
             },
             {
-                // Appliquer à toutes les routes admin
-                source: "/admin/:path*",
-                headers: [
+                source: '/api/:path*',
+                has: [
                     {
-                        key: "Access-Control-Allow-Origin",
-                        value: "*"
+                        type: 'query',
+                        key: 'categoryId',
                     },
                     {
-                        key: "Access-Control-Allow-Methods",
-                        value: "GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS"
+                        type: 'query',
+                        key: 'domainId',
                     },
-                    {
-                        key: "Access-Control-Allow-Headers",
-                        value: "Content-Type, Authorization, X-Requested-With"
-                    }
-                ]
-            }
+                ],
+                permanent: false,
+                destination: '/api/:path*',
+            },
         ]
     },
     //basePath: '/spotly',
 }
+
 export default nextConfig;
