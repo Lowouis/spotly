@@ -15,6 +15,7 @@ const allowedOrigins = [
 export async function middleware(req) {
     console.log('Middleware appelé pour:', req.nextUrl.pathname);
     console.log('Origin:', req.headers.get('origin'));
+    console.log('Referer:', req.headers.get('referer'));
     console.log('Method:', req.method);
     console.log('URL complète:', req.url);
 
@@ -36,6 +37,7 @@ export async function middleware(req) {
         response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
         response.headers.set('Access-Control-Max-Age', '86400'); // 24 heures
         response.headers.set('Access-Control-Allow-Credentials', 'true');
+        response.headers.set('Access-Control-Expose-Headers', 'Location');
 
         console.log('En-têtes CORS OPTIONS:', Object.fromEntries(response.headers.entries()));
         return response;
@@ -55,6 +57,7 @@ export async function middleware(req) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Expose-Headers', 'Location');
 
     console.log('En-têtes CORS réponse:', Object.fromEntries(response.headers.entries()));
     return response;
