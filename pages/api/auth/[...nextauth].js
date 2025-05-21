@@ -5,6 +5,7 @@ import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
 import {authenticate} from 'ldap-authentication';
 import nextConfig from '../../../next.config.mjs';
+import {validateKerberosTicket} from '@/lib/kerberos-auth';
 
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
 const basePath = nextConfig.basePath || '';
@@ -13,6 +14,63 @@ export const authConfig = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.AUTH_SECRET,
     providers: [
+        CredentialsProvider({
+            id: 'kerberos',
+            name: 'Kerberos',
+            credentials: {
+                ticket: {label: "Kerberos Ticket", type: "text"}
+            },
+            async authorize(credentials) {
+                if (!credentials?.ticket) {
+                    return null;
+                }
+
+                const result = await validateKerberosTicket(credentials.ticket);
+                if (!result.success) {
+                    return null;
+                }
+
+                // Recherche de l'utilisateur dans la base de données
+                let user = await prisma.user.findUnique({
+                    where: {
+                        username: result.username
+                    }
+                });
+
+                // Si l'utilisateur n'existe pas, on le crée avec les données de LDAP (nécessaire pour récupérer le mail, le nom et prenom)
+                if (!user) {
+                    const ldapUser = await authenticate({
+                        ldapOpts: {
+                            url: process.env.NEXT_PUBLIC_LDAP_DOMAIN,
+                        },
+                        adminDn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN,
+                        adminPassword: process.env.NEXT_PUBLIC_LDAP_ADMIN_PASSWORD,
+                        userSearchBase: process.env.NEXT_PUBLIC_LDAP_BASEDN,
+                        usernameAttribute: 'cn',
+                        username: result.username,
+                        attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
+                    }).catch(e => {
+                        console.error("LDAP user search failed:", e);
+                        return null;
+                    });
+
+                    if (ldapUser) {
+                        user = await prisma.user.create({
+                            data: {
+                                email: ldapUser.mail,
+                                name: ldapUser.givenName,
+                                surname: ldapUser.sn,
+                                username: ldapUser.sAMAccountName,
+                                external: true,
+                                password: null,
+                            }
+                        });
+                    }
+                }
+
+                return user;
+            }
+        }),
         CredentialsProvider({
             name : "credentials",
             credentials : {

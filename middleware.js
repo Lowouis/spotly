@@ -26,6 +26,14 @@ export async function middleware(req) {
     const isAllowedOrigin = origin ? allowedOrigins.includes(origin) : true;
     console.log('Origine autorisée:', isAllowedOrigin, 'Origine:', origin);
 
+    // Gestion de l'authentification Kerberos
+    const authHeader = req.headers.get('authorization');
+    if (authHeader?.startsWith('Negotiate ')) {
+        const ticket = authHeader.substring('Negotiate '.length);
+        // Rediriger vers l'API d'authentification Kerberos
+        return NextResponse.redirect(new URL('/api/auth/callback/kerberos', req.url));
+    }
+
     // Gestion spéciale pour les requêtes OPTIONS (preflight)
     if (req.method === 'OPTIONS') {
         console.log('Traitement requête OPTIONS');
