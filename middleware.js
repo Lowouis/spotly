@@ -19,11 +19,11 @@ export async function middleware(req) {
     console.log('URL complète:', req.url);
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    const origin = req.headers.get('origin');
+    const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
 
     // Vérification de l'origine
-    const isAllowedOrigin = allowedOrigins.includes(origin);
-    console.log('Origine autorisée:', isAllowedOrigin);
+    const isAllowedOrigin = origin ? allowedOrigins.includes(origin) : true;
+    console.log('Origine autorisée:', isAllowedOrigin, 'Origine:', origin);
 
     // Gestion spéciale pour les requêtes OPTIONS (preflight)
     if (req.method === 'OPTIONS') {
