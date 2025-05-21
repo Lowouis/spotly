@@ -118,7 +118,7 @@ const ReservationSearch = () => {
         queryKey: ['userEntries', session?.user?.id],
         queryFn: async ({ queryKey }) => {
             const userId = queryKey[1];
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/?userId=${userId}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?userId=${userId}`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Origin': window.location.origin
