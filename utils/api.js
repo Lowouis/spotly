@@ -5,8 +5,8 @@ const API_ENDPOINT = process.env.NEXT_PUBLIC_API_ENDPOINT;
 export function getURL(url) {
     return `${API_ENDPOINT}${url}`;
 }
-export async function fetchAPI(path, urlParamsObject = {}, options = {}) {
 
+export async function fetchAPI(path, urlParamsObject = {}, options = {}) {
     const mergedOptions = {
         headers: {
             "Content-Type": "application/json",
@@ -58,8 +58,6 @@ export const updateEntry = async ({id, moderate, returned = false}) => {
     return response.json();
 }
 
-
-// fait une request get sur /api/users pour récupérer tous les utilisateurs
 export const getAllUsers = async () => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`);
     if (!response.ok) {

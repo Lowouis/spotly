@@ -1,6 +1,8 @@
 import {getToken} from "next-auth/jwt";
 import {NextResponse} from "next/server";
+import nextConfig from './next.config.mjs';
 
+const basePath = nextConfig.basePath || '';
 const allowedOrigins = [
     'http://intranet:3000',
     'http://intranet.fhm.local:3000',
@@ -16,15 +18,12 @@ const allowedOrigins = [
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export async function middleware(req) {
-
-
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
 
     // Vérification de l'origine
     const isAllowedOrigin = origin ? allowedOrigins.includes(origin) : true;
     console.log('Origine autorisée:', isAllowedOrigin, 'Origine:', origin);
-
 
     // Gestion de l'authentification Kerberos
     const authHeader = req.headers.get('authorization');
@@ -35,7 +34,7 @@ export async function middleware(req) {
         const ticket = authHeader.substring('Negotiate '.length);
         console.log('Ticket length:', ticket.length);
         console.log('Redirecting to Kerberos callback...');
-        return NextResponse.redirect(new URL('/api/auth/callback/kerberos', req.url));
+        return NextResponse.redirect(new URL(`${basePath}/api/auth/callback/kerberos`, req.url));
     }
 
     // Gestion spéciale pour les requêtes OPTIONS (preflight)
@@ -58,7 +57,7 @@ export async function middleware(req) {
     if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
         const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
         if (isAdminRoute) {
-            return NextResponse.redirect(new URL('/', req.url));
+            return NextResponse.redirect(new URL(`${basePath}/`, req.url));
         }
     }
 
