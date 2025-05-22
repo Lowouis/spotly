@@ -33,11 +33,17 @@ export async function middleware(req) {
 
     // Si on est sur la page de login, on redirige vers le serveur SSO
     if (req.nextUrl.pathname === '/login') {
-        console.log('Redirection vers le serveur SSO');
-        const ssoUrl = new URL('http://sso.intranet.fhm.local/');
-        const redirectUrl = new URL('/login', 'http://spotly.fhm.local');
-        ssoUrl.searchParams.set('redirect', redirectUrl.toString());
-        return NextResponse.redirect(ssoUrl);
+        // Vérifier si la requête provient déjà du SSO
+        const referer = req.headers.get('referer');
+        if (!referer?.includes('sso.intranet.fhm.local')) {
+            console.log('Redirection vers le serveur SSO');
+            const ssoUrl = new URL('http://sso.intranet.fhm.local/');
+            const redirectUrl = new URL('/login', 'http://spotly.fhm.local');
+            ssoUrl.searchParams.set('redirect', redirectUrl.toString());
+            return NextResponse.redirect(ssoUrl);
+        }
+        // Si on vient du SSO, on laisse passer la requête
+        console.log('Requête provenant du SSO, pas de redirection');
     }
 
     // Gestion de l'authentification Kerberos
