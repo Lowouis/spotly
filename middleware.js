@@ -35,8 +35,7 @@ export async function middleware(req) {
     if (req.nextUrl.pathname === '/login') {
         console.log('Redirection vers le serveur SSO');
         const ssoUrl = new URL('http://sso.intranet.fhm.local/');
-        const redirectUrl = new URL(req.url);
-        redirectUrl.host = 'spotly.fhm.local';
+        const redirectUrl = new URL('/login', 'http://spotly.fhm.local');
         ssoUrl.searchParams.set('redirect', redirectUrl.toString());
         return NextResponse.redirect(ssoUrl);
     }
