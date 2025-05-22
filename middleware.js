@@ -31,19 +31,19 @@ export async function middleware(req) {
     const isAllowedOrigin = origin ? allowedOrigins.includes(origin) : true;
     console.log('Origine autorisée:', isAllowedOrigin, 'Origine:', origin);
 
-    // Si on est sur la page de login, on redirige vers le serveur SSO
+    // Si on est sur la page de login, on redirige vers le serveur SSO via le proxy
     if (req.nextUrl.pathname === '/login') {
-        // Vérifier si la requête provient déjà du SSO
         const referer = req.headers.get('referer');
-        if (!referer?.includes('sso.intranet.fhm.local')) {
-            console.log('Redirection vers le serveur SSO');
-            const ssoUrl = new URL('http://sso.intranet.fhm.local/');
+        // Vérifie si on vient déjà du SSO ou si on a un token valide
+        if (!referer?.includes('sso.intranet.fhm.local') && !token) {
+            console.log('Redirection vers le serveur SSO via proxy');
+            // Utilisation du chemin proxy /sso/ au lieu de l'URL directe
+            const ssoUrl = new URL('/sso/', req.url);
             const redirectUrl = new URL('/login', 'http://spotly.fhm.local');
             ssoUrl.searchParams.set('redirect', redirectUrl.toString());
             return NextResponse.redirect(ssoUrl);
         }
-        // Si on vient du SSO, on laisse passer la requête
-        console.log('Requête provenant du SSO, pas de redirection');
+        console.log('Pas de redirection nécessaire - déjà authentifié ou venant du SSO');
     }
 
     // Gestion de l'authentification Kerberos
