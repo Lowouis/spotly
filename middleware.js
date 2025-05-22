@@ -7,17 +7,22 @@ const allowedOrigins = [
     'http://localhost:3000',
     'http://spotly.fhm.local',
     'http://spotly.fhm.local:3000',
-    'http://sso.intranet.fhm.local/spotly',
+    'http://sso.intranet.fhm.local',
     "http://127.0.0.1:3000",
     "http://spotly"
 ];
 
 export async function middleware(req) {
+    console.log('=== MIDDLEWARE DEBUG ===');
     console.log('Middleware appelé pour:', req.nextUrl.pathname);
     console.log('Origin:', req.headers.get('origin'));
     console.log('Referer:', req.headers.get('referer'));
     console.log('Method:', req.method);
     console.log('URL complète:', req.url);
+
+    // Log de tous les headers pour debug
+    const allHeaders = Object.fromEntries(req.headers.entries());
+    console.log('Tous les headers:', JSON.stringify(allHeaders, null, 2));
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
@@ -26,15 +31,23 @@ export async function middleware(req) {
     const isAllowedOrigin = origin ? allowedOrigins.includes(origin) : true;
     console.log('Origine autorisée:', isAllowedOrigin, 'Origine:', origin);
 
+    // Si on est sur la page de login, on redirige vers le serveur SSO
+    if (req.nextUrl.pathname === '/login') {
+        console.log('Redirection vers le serveur SSO');
+        const ssoUrl = new URL('http://sso.intranet.fhm.local/');
+        ssoUrl.searchParams.set('redirect', req.url);
+        return NextResponse.redirect(ssoUrl);
+    }
+
     // Gestion de l'authentification Kerberos
     const authHeader = req.headers.get('authorization');
-    console.log('Auth header present:', !!authHeader);
+    console.log('Auth header complet:', authHeader);
     
     if (authHeader?.startsWith('Negotiate ')) {
         console.log('Kerberos ticket detected in header');
         const ticket = authHeader.substring('Negotiate '.length);
+        console.log('Ticket length:', ticket.length);
         console.log('Redirecting to Kerberos callback...');
-        // Rediriger vers l'API d'authentification Kerberos
         return NextResponse.redirect(new URL('/api/auth/callback/kerberos', req.url));
     }
 
@@ -47,9 +60,9 @@ export async function middleware(req) {
         response.headers.set('Access-Control-Allow-Origin', origin || '*');
         response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
         response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-        response.headers.set('Access-Control-Max-Age', '86400'); // 24 heures
+        response.headers.set('Access-Control-Max-Age', '86400');
         response.headers.set('Access-Control-Allow-Credentials', 'true');
-        response.headers.set('Access-Control-Expose-Headers', 'Location');
+        response.headers.set('Access-Control-Expose-Headers', 'Location, WWW-Authenticate');
 
         console.log('En-têtes CORS OPTIONS:', Object.fromEntries(response.headers.entries()));
         return response;
@@ -69,7 +82,7 @@ export async function middleware(req) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
-    response.headers.set('Access-Control-Expose-Headers', 'Location');
+    response.headers.set('Access-Control-Expose-Headers', 'Location, WWW-Authenticate');
 
     console.log('En-têtes CORS réponse:', Object.fromEntries(response.headers.entries()));
     return response;
@@ -79,5 +92,6 @@ export const config = {
     matcher: [
         '/api/:path*',
         '/admin/:path*',
+        '/login'
     ],
 };
