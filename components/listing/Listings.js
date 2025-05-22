@@ -137,66 +137,43 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, currentTab = "all
                 className="w-full border border-neutral-200 dark:border-neutral-700 rounded-lg mb-4 overflow-hidden bg-white dark:bg-neutral-900 shadow-sm">
                 <div
                     className="flex items-center justify-between px-4 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="flex-1 flex justify-between items-center"
-                        aria-expanded={isOpen}
-                    >
-                        <div className="flex flex-col items-start space-y-1">
-                            <div className="flex items-center space-x-2">
-                                <span className="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
-                                    Réservations groupées
-                                </span>
-                                <span
-                                    className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                    {sortedEntries.length} réservation{sortedEntries.length > 1 ? 's' : ''}
-                                </span>
+                    <div className="flex-1 flex justify-between items-center">
+                        <div onClick={() => setIsOpen(!isOpen)}
+                             className="flex-1 flex justify-between items-center cursor-pointer"
+                             aria-expanded={isOpen}
+                        >
+                            <div className="flex flex-col items-start space-y-1">
+                                <div className="flex items-center space-x-2">
+                                    <span className="font-semibold text-lg text-neutral-900 dark:text-neutral-100">
+                                        Réservations groupées
+                                    </span>
+                                    <span
+                                        className="px-2 py-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                        {sortedEntries.length} réservation{sortedEntries.length > 1 ? 's' : ''}
+                                    </span>
+                                </div>
+                                <div
+                                    className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-content-secondary dark:text-dark-content-secondary">
+                                    <span className="flex items-center">
+                                        <svg
+                                            className="w-4 h-4 mr-1.5 text-content-tertiary dark:text-dark-content-tertiary"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                        </svg>
+                                        Du {new Date(firstEntry.startDate).toLocaleDateString("fr-FR")} au {new Date(lastEntry.endDate).toLocaleDateString("fr-FR")}
+                                    </span>
+                                    <span className="flex items-center">
+                                        <svg
+                                            className="w-4 h-4 mr-1.5 text-content-tertiary dark:text-dark-content-tertiary"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        Durée totale : {formatDuration(totalDuration)}
+                                    </span>
+                                </div>
                             </div>
-                            <div
-                                className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-content-secondary dark:text-dark-content-secondary">
-                                <span className="flex items-center">
-                                    <svg
-                                        className="w-4 h-4 mr-1.5 text-content-tertiary dark:text-dark-content-tertiary"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                    </svg>
-                                    Du {new Date(firstEntry.startDate).toLocaleDateString("fr-FR")} au {new Date(lastEntry.endDate).toLocaleDateString("fr-FR")}
-                                </span>
-                                <span className="flex items-center">
-                                    <svg
-                                        className="w-4 h-4 mr-1.5 text-content-tertiary dark:text-dark-content-tertiary"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                    Durée totale : {formatDuration(totalDuration)}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {currentTab === "all" && (
-                                <Tooltip
-                                    content={canCancelGroup ? "Annuler toutes les réservations du groupe" : "Impossible d'annuler le groupe, une réservation est en cours ou en retard"}
-                                    placement="top"
-                                    color="foreground"
-                                    showArrow={true}
-                                >
-                                    <Button
-                                        isIconOnly
-                                        isDisabled={!canCancelGroup}
-                                        color="danger"
-                                        variant="light"
-                                        size="sm"
-                                        onPress={() => setIsCancelModalOpen(true)}
-                                        className="mr-2"
-                                    >
-                                        <TrashIcon className="w-5 h-5"/>
-                                    </Button>
-                                </Tooltip>
-                            )}
-
-
                             <svg
                                 className={`w-6 h-6 transform transition-transform duration-200 text-neutral-500 dark:text-neutral-400 ${isOpen ? 'rotate-180' : ''}`}
                                 fill="none"
@@ -206,7 +183,27 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, currentTab = "all
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
                             </svg>
                         </div>
-                    </button>
+                        {currentTab === "all" && (
+                            <Tooltip
+                                content={canCancelGroup ? "Annuler toutes les réservations du groupe" : "Impossible d'annuler le groupe, une réservation est en cours ou en retard"}
+                                placement="top"
+                                color="foreground"
+                                showArrow={true}
+                            >
+                                <Button
+                                    isIconOnly
+                                    isDisabled={!canCancelGroup}
+                                    color="danger"
+                                    variant="light"
+                                    size="sm"
+                                    onPress={() => setIsCancelModalOpen(true)}
+                                    className="ml-2"
+                                >
+                                    <TrashIcon className="w-5 h-5"/>
+                                </Button>
+                            </Tooltip>
+                        )}
+                    </div>
                 </div>
 
                 {isOpen && (

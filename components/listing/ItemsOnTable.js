@@ -50,7 +50,6 @@ export const postItem = async ({data, model}) => {
 };
 
 export const updateItem = async ({data, model}) => {
-    console.log(model)
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
         method: 'PUT',
         headers: {
@@ -71,7 +70,6 @@ const deleteItems = async ({selectedItems, model}) => {
     const data = {
         ids: Array.from(selectedItems),
     };
-    console.log("Deleting items with IDs:", data); // Log the data being sent to the server
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
             method: 'DELETE',
@@ -82,9 +80,7 @@ const deleteItems = async ({selectedItems, model}) => {
         });
 
         if (!response.ok) {
-            console.log("Response status:", response.status);
             const errorDetails = await response.json();
-            console.error("Error details:", errorDetails);
         }
         return await response.json();
     } catch (error) {
@@ -104,7 +100,6 @@ const CodeCell = ({value}) => (
 );
 
 const PickableCell = ({item, itemDTO}) => {
-    console.log("Rendering PickableCell with item:", item);
     if (itemDTO.pickable) {
         return (
             <div className="flex justify-start items-center w-full space-x-1">
@@ -299,7 +294,6 @@ const DescriptionCell = ({value}) => (
 );
 
 const ObjectCell = ({value, item}) => {
-    console.log("Rendering ObjectCell with value:", value);
     if (!value || typeof value !== 'object') return <EmptyCell/>;
 
     // Si l'objet a une propriété name, on l'affiche
@@ -477,7 +471,6 @@ export default function ItemsOnTable({
     const mutation = useMutation({
         mutationFn: deleteItems,
         onMutate: (variables) => {
-            console.log("Mutation variables:", variables);
         },
         onError: () => {
             addToast({
@@ -498,7 +491,6 @@ export default function ItemsOnTable({
         }
     });
     const handleDeleteItem = (item) => {
-        console.log("Deleting item(s):", item);
         if (!item) {
             mutation.mutate({selectedItems, model});
         } else {

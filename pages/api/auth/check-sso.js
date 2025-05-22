@@ -16,45 +16,35 @@ export default async function handler(req, res) {
 
     const authHeader = req.headers.authorization;
     console.log('Authorization header:', authHeader ? 'Present' : 'Missing');
-    
-    const isSSO = authHeader?.startsWith('Negotiate ');
-    console.log('Is SSO:', isSSO);
-
-    // Vérification plus détaillée de l'en-tête d'autorisation
-    let authDetails = {
-        hasHeader: false,
-        headerType: null,
-        isValidFormat: false,
-        ticketPresent: false
-    };
-
-    if (authHeader) {
-        authDetails.hasHeader = true;
-        const [type, ticket] = authHeader.split(' ');
-        authDetails.headerType = type;
-        authDetails.isValidFormat = type === 'Negotiate';
-        authDetails.ticketPresent = !!ticket;
+    if (!authHeader) {
+        return res.status(401).json({
+            message: 'Authorization header missing',
+            status: 'not_authenticated'
+        });
     }
 
-    // Vérification des cookies de session
-    const sessionCookie = req.cookies['next-auth.session-token'];
-    console.log('Session cookie present:', !!sessionCookie);
+    const [type, ticket] = authHeader.split(' ');
+    if (type !== 'Negotiate' || !ticket) {
+        return res.status(401).json({
+            message: 'Invalid authorization header format',
+            status: 'not_authenticated'
+        });
+    }
 
-    // Vérification de l'origine de la requête
-    const origin = req.headers.origin || req.headers.referer;
-    console.log('Request origin:', origin);
+    // Ici, tu pourrais vérifier la validité du ticket si besoin
 
+    // Si tout est bon, on considère que l'utilisateur est authentifié via SSO
     return res.status(200).json({
-        isSSO,
-        status: isSSO ? 'pending' : 'not_authenticated',
+        isSSO: true,
+        status: 'pending',
         debug: {
-            auth: authDetails,
-            session: {
-                cookiePresent: !!sessionCookie,
-                cookieName: sessionCookie ? 'next-auth.session-token' : null
+            auth: {
+                hasHeader: true,
+                headerType: type,
+                isValidFormat: true,
+                ticketPresent: true
             },
             request: {
-                origin,
                 method: req.method,
                 headers: Object.keys(req.headers),
                 timestamp: new Date().toISOString()

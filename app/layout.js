@@ -15,18 +15,8 @@ const dmSans = DM_Sans({
 export default function RootLayout({ children }) {
 
     return (
-        <html lang="en" className={`${dmSans.variable} light`}>
+        <html lang="en" className={`${dmSans.variable}`}>
         <head>
-            <script dangerouslySetInnerHTML={{
-                __html: `
-                    try {
-                        const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                        document.documentElement.classList.add(theme);
-                    } catch (e) {
-                        document.documentElement.classList.add('light');
-                    }
-                `
-            }}/>
             <title>{metadata.title}</title>
             <meta name="description" content={metadata.description} />
         </head>

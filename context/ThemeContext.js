@@ -1,15 +1,17 @@
-import {createContext, useContext, useState, useEffect} from 'react';
+import {createContext, useContext, useEffect, useState} from 'react';
 
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({children}) {
     const [theme, setTheme] = useState('light');
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme');
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         setTheme(savedTheme || systemTheme);
+        setMounted(true);
     }, []);
 
     const toggleTheme = () => {
@@ -17,11 +19,17 @@ export function ThemeProvider({children}) {
     };
 
     useEffect(() => {
+        if (!mounted) return;
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
         localStorage.setItem('theme', theme);
-    }, [theme]);
+    }, [theme, mounted]);
+
+    if (!mounted) {
+        // Optionnel : afficher un loader ou rien
+        return null;
+    }
 
     return (
         <ThemeContext.Provider value={{theme, toggleTheme}}>

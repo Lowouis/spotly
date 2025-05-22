@@ -12,17 +12,11 @@ const allowedOrigins = [
     "http://spotly"
 ];
 
-export async function middleware(req) {
-    console.log('=== MIDDLEWARE DEBUG ===');
-    console.log('Middleware appelé pour:', req.nextUrl.pathname);
-    console.log('Origin:', req.headers.get('origin'));
-    console.log('Referer:', req.headers.get('referer'));
-    console.log('Method:', req.method);
-    console.log('URL complète:', req.url);
+// Vérification de l'environnement
+const isDevelopment = process.env.NODE_ENV === 'development';
 
-    // Log de tous les headers pour debug
-    const allHeaders = Object.fromEntries(req.headers.entries());
-    console.log('Tous les headers:', JSON.stringify(allHeaders, null, 2));
+export async function middleware(req) {
+
 
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/').slice(0, 3).join('/');
@@ -31,20 +25,6 @@ export async function middleware(req) {
     const isAllowedOrigin = origin ? allowedOrigins.includes(origin) : true;
     console.log('Origine autorisée:', isAllowedOrigin, 'Origine:', origin);
 
-    // Si on est sur la page de login, on redirige vers le serveur SSO via le proxy
-    if (req.nextUrl.pathname === '/login') {
-        const referer = req.headers.get('referer');
-        // Vérifie si on vient déjà du SSO ou si on a un token valide
-        if (!referer?.includes('sso.intranet.fhm.local') && !token) {
-            console.log('Redirection vers le serveur SSO via proxy');
-            // Utilisation du chemin proxy /sso/ au lieu de l'URL directe
-            const ssoUrl = new URL('/sso/', req.url);
-            const redirectUrl = new URL('/login', 'http://spotly.fhm.local');
-            ssoUrl.searchParams.set('redirect', redirectUrl.toString());
-            return NextResponse.redirect(ssoUrl);
-        }
-        console.log('Pas de redirection nécessaire - déjà authentifié ou venant du SSO');
-    }
 
     // Gestion de l'authentification Kerberos
     const authHeader = req.headers.get('authorization');
