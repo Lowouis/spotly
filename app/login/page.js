@@ -3,21 +3,36 @@
 import {ConnectionModal} from "@/components/modals/connectionModal";
 import {useRouter} from 'next/navigation';
 import {useSession} from 'next-auth/react';
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
+import nextConfig from '../../next.config.mjs';
+
+const basePath = nextConfig.basePath || '';
 
 const checkSSOStatus = async () => {
     console.log('Checking SSO status...');
     try {
-        const response = await fetch('/api/auth/check-sso', {
+        const response = await fetch(`${basePath}/api/auth/check-sso`, {
             method: 'GET',
             credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
         });
         console.log('SSO check response status:', response.status);
+
         if (!response.ok) {
-            throw new Error(`Erreur lors de la vérification SSO: ${response.status} ${response.statusText}`);
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const errorData = await response.json();
+                throw new Error(`Erreur lors de la vérification SSO: ${errorData.message || response.statusText}`);
+            } else {
+                throw new Error(`Erreur lors de la vérification SSO: ${response.status} ${response.statusText}`);
+            }
         }
+
         const data = await response.json();
         console.log('SSO check response data:', data);
 
@@ -35,7 +50,11 @@ const checkSSOStatus = async () => {
         return data;
     } catch (error) {
         console.error('SSO check error:', error);
-        throw error;
+        return {
+            status: 'error',
+            isSSO: false,
+            error: error.message
+        };
     }
 };
 
@@ -65,13 +84,6 @@ function LoginContent() {
             setSsoError(error.message);
         }
     });
-
-    useEffect(() => {
-        console.log('Session status:', status);
-        if (status === 'authenticated') {
-            router.push('/');
-        }
-    }, [status, router]);
 
     if (isSSOChecking) {
         return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;

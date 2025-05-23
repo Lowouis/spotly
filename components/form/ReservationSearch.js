@@ -228,19 +228,19 @@ const ReservationSearch = () => {
 
     const stepConfig = [
         {
-            icon: <IoEarthOutline size={50} color="blue"/>,
+            icon: <IoEarthOutline size={50} color="#2563eb"/>,
             text: "Commencez par choisir un site"
         },
         {
-            icon: <BiCategory size={50} color="purple"/>,
+            icon: <BiCategory size={50} color="#935df0"/>,
             text: "Choisissez une catégorie"
         },
         {
-            icon: <CiCalendarDate size={50} color="orange"/>,
+            icon: <CiCalendarDate size={50} color="#f97316"/>,
             text: "Choisissez une date"
         },
         {
-            icon: <CiSearch size={50} color="blue"/>,
+            icon: <CiSearch size={50} color="#0ea5e9"/>,
             text: "Vous pouvez commencer votre recherche"
         }
     ];
@@ -275,7 +275,8 @@ const ReservationSearch = () => {
                     )}
                     {searchMode === "search" && delayed === 0 &&  (
                         <div
-                            className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full">
+                            className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full"
+                            role="search">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                     {isMobile ? (
@@ -288,6 +289,7 @@ const ReservationSearch = () => {
                                                 onPress={() => setIsModalOpen(true)}
                                                 className="ml-6"
                                                 shadow="md"
+                                                aria-label="Rechercher"
                                             >
                                                 <span className="flex justify-center items-center rounded-full">
                                                     <MagnifyingGlassIcon width="32" height="32"

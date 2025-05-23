@@ -1,13 +1,16 @@
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
-import { NextUIProvider } from "@nextui-org/react";
+import {SessionProvider} from 'next-auth/react';
+import {NextUIProvider} from "@nextui-org/react";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {EmailProvider} from "@/context/EmailContext";
 import {AdminDataManager} from "@/context/AdminDataManager";
-import { ToastProvider } from '@heroui/toast';
+import {ToastProvider} from '@heroui/toast';
 import {RefreshProvider} from "@/context/RefreshContext";
 import {ThemeProvider} from "@/context/ThemeContext";
+import nextConfig from '../next.config.mjs';
+
+const basePath = nextConfig.basePath || '';
 
 export default function Providers({children}) {
     const queryClient = new QueryClient();
@@ -23,7 +26,7 @@ export default function Providers({children}) {
                                     maxVisibleToasts={5}
                                     toastOffset={16}
                                 />
-                                <SessionProvider>
+                                <SessionProvider basePath={`${basePath}/api/auth`}>
                                     {children}
                                 </SessionProvider>
                             </NextUIProvider>
@@ -32,6 +35,5 @@ export default function Providers({children}) {
                 </AdminDataManager>
             </ThemeProvider>
         </QueryClientProvider>
-
     );
 }

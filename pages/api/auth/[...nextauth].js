@@ -4,15 +4,17 @@ import {PrismaAdapter} from '@next-auth/prisma-adapter';
 import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
 import {authenticate} from 'ldap-authentication';
-import nextConfig from '../../../next.config.mjs';
 import {validateKerberosTicket} from '@/lib/kerberos-auth';
+import nextConfig from '../../../next.config.mjs';
 
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
+
 const basePath = nextConfig.basePath || '';
 
 export const authConfig = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.AUTH_SECRET,
+    debug: true,
     providers: [
         CredentialsProvider({
             id: 'kerberos',
@@ -102,7 +104,6 @@ export const authConfig = {
                     const ldapUser = await authenticate({
                         ldapOpts: {
                             url: process.env.NEXT_PUBLIC_LDAP_DOMAIN,
-                            //tlsOptions : {rejectUnauthorized: false}
                         },
                         adminDn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN,
                         adminPassword: process.env.NEXT_PUBLIC_LDAP_ADMIN_PASSWORD,
@@ -115,7 +116,6 @@ export const authConfig = {
                         throw new Error("LDAP user search failed / rejected : " + e);
                     });
 
-                    //Creer mettre a jour user dans prisma
                     try {
                            if(!user){
                                return await prisma.user.create({
@@ -144,19 +144,13 @@ export const authConfig = {
                     } catch (error) {
                         throw new Error("Prisma user creation/update failed: " + error.message);
                     }
-
                 }
 
-
                 const isValidPassword = await bycrypt.compare(credentials.password, user.password);
-
-
 
                 if(!isValidPassword){
                     throw new Error("Invalid password");
                 }
-
-
 
                 delete user.password;
                 return user;
@@ -169,37 +163,58 @@ export const authConfig = {
     },
     callbacks: {
         jwt: async ({ token, user }) => {
+            console.log('JWT Callback - Token:', token);
+            console.log('JWT Callback - User:', user);
             return {...token, ...user};
         },
         session: async ({ session, token }) => {
+            console.log('Session Callback - Session:', session);
+            console.log('Session Callback - Token:', token);
             session.user = token;
             return session;
         },
         redirect: async ({ url, baseUrl }) => {
-            console.log('URL:', url);
-            console.log('BaseURL:', baseUrl);
-            console.log('BasePath:', basePath);
+            console.log('Redirect Callback - URL:', url);
+            console.log('Redirect Callback - BaseURL:', baseUrl);
 
-            // Si l'URL est relative, ajouter le basePath
+            // Si l'URL est relative, utiliser le baseUrl
             if (url.startsWith('/')) {
-                return `${baseUrl}${basePath}${url}`;
+                return `${baseUrl}${url}`;
             }
-            // Si l'URL est absolue et contient le domaine de base, ajouter le basePath
+            // Si l'URL est absolue et contient le domaine de base, l'utiliser telle quelle
             if (url.startsWith(baseUrl)) {
-                return `${baseUrl}${basePath}${url.slice(baseUrl.length)}`;
+                return url;
             }
             return url;
         },
     },
     pages: {
         signIn: `${basePath}/login`,
-        signOut: basePath,
+        signOut: `${basePath}`,
         error: `${basePath}/error`,
     },
-    options: {
-        debug: true
-    }
+    events: {
+        async signIn(message) {
+            console.log('SignIn Event:', message);
+        },
+        async signOut(message) {
+            console.log('SignOut Event:', message);
+        },
+        async error(message) {
+            console.log('Error Event:', message);
+        },
+    },
+    logger: {
+        error(code, metadata) {
+            console.error('NextAuth Error:', code, metadata);
+        },
+        warn(code) {
+            console.warn('NextAuth Warning:', code);
+        },
+        debug(code, metadata) {
+            console.log('NextAuth Debug:', code, metadata);
+        },
+    },
 };
-
 
 export default NextAuth(authConfig);

@@ -208,7 +208,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                     src="/spotly_logo.png"
                                     alt="Spotly Logo"
                                     width={100}
-                                    height={50}
+                                    height={40}
+                                    style={{width: 'auto', height: 'auto'}}
                                     className="transition-all duration-500"
                                     priority
                                 />
