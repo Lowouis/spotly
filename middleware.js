@@ -29,6 +29,10 @@ export async function middleware(req) {
         '/login',
         '/api/auth',
         '/api/check-sso',
+        '/_next',
+        '/favicon.ico',
+        '/spotly_logo.png',
+        '/banner.png'
     ];
 
     // Vérifier si la route actuelle est publique en retirant le basePath
@@ -41,8 +45,10 @@ export async function middleware(req) {
     }
 
     // Vérifier l'accès aux routes admin
-    if (pathWithoutBasePath === '/admin' && (!isAuth || !token.role === "USER")) {
-        return NextResponse.redirect(new URL(`${basePath}/login`, req.url));
+    if (pathWithoutBasePath.startsWith('/admin')) {
+        if (!isAuth || token.role !== "ADMIN") {
+            return NextResponse.redirect(new URL(`${basePath}/login`, req.url));
+        }
     }
 
     // Rediriger vers la page de connexion si non authentifié
@@ -55,6 +61,7 @@ export async function middleware(req) {
 
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+        // Exclure toutes les ressources statiques
+        '/((?!_next/static|_next/image|favicon.ico|public/|spotly_logo.png|banner.png).*)',
     ],
 };

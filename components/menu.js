@@ -29,6 +29,9 @@ import {useMediaQuery} from 'react-responsive';
 import {useRouter} from "next/navigation";
 import Image from "next/image";
 import {BsWrench} from "react-icons/bs";
+import nextConfig from '../next.config.mjs';
+
+const basePath = nextConfig.basePath || '';
 
 export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRefresh, selectedTab}) {
     const {isOpen, onOpen, onClose} = useDisclosure();
@@ -205,7 +208,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                         <div className="relative group h-full flex items-center">
                             <div className="relative z-10 cursor-pointer flex items-center">
                                 <Image
-                                    src="/spotly_logo.png"
+                                    src={`${basePath}/spotly_logo.png`}
                                     alt="Spotly Logo"
                                     width={100}
                                     height={40}

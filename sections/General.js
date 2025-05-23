@@ -7,6 +7,9 @@ import {Form} from "@nextui-org/form";
 import {Slider} from "@heroui/react";
 import {useMutation, useQuery} from '@tanstack/react-query';
 import {Skeleton} from '@nextui-org/react';
+import nextConfig from '../next.config.mjs';
+
+const basePath = nextConfig.basePath || '';
 
 export const General = () => {
     const [uploadState, setUploadState] = useState(null);
@@ -129,7 +132,7 @@ export const General = () => {
             <h3 className="text-xl font-semibold text-black dark:text-neutral-200 ">Bannière du profil</h3>
             <div className="relative group rounded-lg overflow-hidden">
                 <Image
-                    src="/banner.png"
+                    src={`${basePath}/banner.png`}
                     width={1920}
                     height={1080}
                     alt="Bannière actuelle"
