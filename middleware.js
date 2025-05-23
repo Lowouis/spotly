@@ -2,7 +2,6 @@ import {NextResponse} from 'next/server';
 import {getToken} from 'next-auth/jwt';
 import nextConfig from './next.config.mjs';
 
-
 const basePath = nextConfig.basePath || '';
 
 export async function middleware(req) {
@@ -27,12 +26,14 @@ export async function middleware(req) {
 
     // Routes publiques qui ne nécessitent pas d'authentification
     const publicRoutes = [
-        `${basePath}/login`,
-        `${basePath}/api/auth`,
-        `${basePath}/api/check-sso`,
+        '/login',
+        '/api/auth',
+        '/api/check-sso',
     ];
 
-    const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+    // Vérifier si la route actuelle est publique en retirant le basePath
+    const pathWithoutBasePath = pathname.replace(basePath, '');
+    const isPublicRoute = publicRoutes.some(route => pathWithoutBasePath.startsWith(route));
 
     // Si la route est publique, permettre l'accès
     if (isPublicRoute) {
@@ -40,7 +41,7 @@ export async function middleware(req) {
     }
 
     // Vérifier l'accès aux routes admin
-    if (pathname.startsWith(`${basePath}/admin`) && (!isAuth || !token.isAdmin)) {
+    if (pathWithoutBasePath === '/admin' && (!isAuth || !token.role === "USER")) {
         return NextResponse.redirect(new URL(`${basePath}/login`, req.url));
     }
 
