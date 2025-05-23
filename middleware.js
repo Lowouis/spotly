@@ -9,16 +9,16 @@ export async function middleware(req) {
     const origin = req.headers.get('origin') || '';
 
     // Gérer les requêtes CORS
-    if (req.method === 'OPTIONS') {
-        return new NextResponse(null, {
-            status: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            },
-        });
-    }
+    // if (req.method === 'OPTIONS') {
+    //     return new NextResponse(null, {
+    //         status: 200, 
+    //         headers: {
+    //             'Access-Control-Allow-Origin': '*',
+    //             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    //             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    //         },
+    //     });
+    // }
 
     // Vérifier l'authentification pour les routes protégées
     const token = await getToken({req});
@@ -27,8 +27,7 @@ export async function middleware(req) {
     // Routes publiques qui ne nécessitent pas d'authentification
     const publicRoutes = [
         '/login',
-        '/api/auth',
-        '/api/check-sso',
+        '/api/*',
         '/_next',
         '/favicon.ico',
         '/spotly_logo.png',
@@ -46,15 +45,15 @@ export async function middleware(req) {
 
     // Vérifier l'accès aux routes admin
     if (pathWithoutBasePath.startsWith('/admin')) {
-        if (!isAuth || token.role !== "ADMIN") {
+        if (token.role !== "USER") {
             return NextResponse.redirect(new URL(`${basePath}/login`, req.url));
         }
     }
 
-    // Rediriger vers la page de connexion si non authentifié
     if (!isAuth) {
         return NextResponse.redirect(new URL(`${basePath}/login`, req.url));
     }
+
 
     return NextResponse.next();
 }
