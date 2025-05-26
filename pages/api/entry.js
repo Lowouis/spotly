@@ -148,6 +148,8 @@ export default async function handler(req, res) {
                 ? (maxReccurringGroupId[0]._max.recurringGroupId || 0) + 1
                 : 1;
 
+            console.log("CURRENT ID-->  :", maxReccurringGroupId);
+            console.log("NEXT ID-->  :", nextReccurringGroupId);
 
             try {
                 for (const availabilityEntry of validAvailabilities) {

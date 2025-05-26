@@ -1,7 +1,7 @@
+import {runMiddleware} from "@/lib/core";
+
 export default async function handler(req, res) {
-    console.log('Check-SSO endpoint called');
-    console.log('Request headers:', JSON.stringify(req.headers, null, 2));
-    console.log('Request method:', req.method);
+    await runMiddleware(req, res);
 
     if (req.method !== 'GET') {
         console.log('Invalid method:', req.method);
@@ -31,9 +31,6 @@ export default async function handler(req, res) {
         });
     }
 
-    // Ici, tu pourrais vérifier la validité du ticket si besoin
-
-    // Si tout est bon, on considère que l'utilisateur est authentifié via SSO
     return res.status(200).json({
         isSSO: true,
         status: 'pending',

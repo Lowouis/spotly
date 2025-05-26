@@ -189,9 +189,9 @@ export const authConfig = {
         },
     },
     pages: {
-        signIn: `${basePath}/login`,
-        signOut: `${basePath}`,
-        error: `${basePath}/error`,
+        signIn: `$/login`,
+        signOut: `/`,
+        error: `/error`,
     },
     events: {
         async signIn(message) {

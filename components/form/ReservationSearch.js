@@ -27,6 +27,11 @@ const schemaFirstPart = yup.object().shape({
     category: yup.object().required('Vous devez choisir une ressource'),
     resource: yup.object().optional().default(null).nullable(),
     date: yup.object().required('Vous devez choisir une date'),
+    recursive_limit: yup.string().when('isRecurrent', {
+        is: true,
+        then: (schema) => schema.required('Vous devez choisir une date de fin'),
+        otherwise: (schema) => schema.optional()
+    })
 });
 
 const ReservationSearch = () => {
@@ -44,7 +49,7 @@ const ReservationSearch = () => {
         mode: 'onSubmit',
     });
 
-    const { watch, setValue} = methods;
+    const {watch, setValue, formState: {errors}} = methods;
 
     const handleSearchMode = (current) => {
         setSearchMode(current);
@@ -92,7 +97,7 @@ const ReservationSearch = () => {
                 duration: 5000,
             });
             return await response.json();
-        } else if (response.status === 404) {
+        } else if (response.status === 204) {
             addToast({
                 title: 'Aucune ressource disponible',
                 description: "Essayer un autre intervalle de date ou d'autres critères.",
@@ -168,8 +173,34 @@ const ReservationSearch = () => {
         setIsRecurrent(false);
     }
 
-    const onSubmit = (data) => {
-        setData(data);
+    const onSubmit = async (formData) => {
+        // Vérifier si le formulaire est valide
+        const isValid = await methods.trigger();
+
+        if (!isValid) {
+            addToast({
+                title: 'Formulaire invalide',
+                message: 'Veuillez remplir tous les champs requis',
+                type: 'warning',
+                duration: 5000,
+            });
+            return;
+        }
+
+        // Si isRecurrent est true, vérifier que les champs récurrents sont remplis
+        if (isRecurrent) {
+            if (!formData.recursive_unit || !formData.recursive_limit) {
+                addToast({
+                    title: 'Champs manquants',
+                    message: 'Veuillez remplir la fréquence et la date de fin pour la récurrence',
+                    color: 'warning',
+                    duration: 5000,
+                });
+                return;
+            }
+        }
+
+        setData(formData);
         setIsSubmitted(true);
         if (isMobile) {
             setIsModalOpen(false);
@@ -507,6 +538,8 @@ const ReservationSearch = () => {
                                                                         onChange={(value) => {
                                                                             setValue('recursive_limit', value.toString());
                                                                         }}
+                                                                        isInvalid={!!errors.recursive_limit}
+                                                                        errorMessage={errors.recursive_limit?.message}
                                                                         className='justify-center items-center'
                                                                         classNames={{
                                                                             label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",

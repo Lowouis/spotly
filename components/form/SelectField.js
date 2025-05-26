@@ -1,9 +1,8 @@
 import React, {useEffect} from 'react';
 import {useFormContext} from 'react-hook-form';
 import {useQuery} from "@tanstack/react-query";
-import {Select, SelectItem} from "@nextui-org/select";
+import {Chip, Select, SelectItem} from "@nextui-org/react";
 import {firstLetterUppercase} from "@/global";
-import {Chip} from "@nextui-org/react";
 
 const SelectField = ({
                         name,
@@ -117,7 +116,6 @@ const SelectField = ({
     return (
         <div className="my-2 w-full">
                 <Select
-                    errorMessage={"Ce champs est obligatoire."}
                     size="sm"
                     isDisabled={awaiting}
                     isRequired={isRequired}
@@ -125,7 +123,6 @@ const SelectField = ({
                     name={name}
                     aria-label={label}
                     role="combobox"
-                    aria-expanded={false}
                     aria-controls={`${name}-listbox`}
                     aria-haspopup="listbox"
                     label={

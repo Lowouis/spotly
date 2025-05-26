@@ -6,7 +6,7 @@ export default async function reservation(req, res) {
     try {
         if (req.method === "GET") {
             const {startDate, endDate, siteId, categoryId, resourceId, recurrent_unit, recurrent_limit} = req.query;
-            console.log(req.query);
+
             // Controller la cohérence de recurrence
             if (recurrent_unit === "jour") {
                 const startDateTime = new Date(startDate);
@@ -112,7 +112,7 @@ export default async function reservation(req, res) {
             });
 
             if (resources.length === 0) {
-                res.status(404).json({message: "No resources available for these dates"});
+                res.status(204).json({message: "No resources available for these dates"});
             } else {
                 // Optimisation : Regrouper toutes les ressources en une seule requête
                 const allConflictingEntries = await prisma.entry.findMany({
@@ -183,7 +183,7 @@ export default async function reservation(req, res) {
                 );
 
                 if (availableResources.length === 0) {
-                    res.status(404).json({message: "No resources available for these dates"});
+                    res.status(200).json({message: "No resources available for these dates"});
                 } else {
                     res.status(200).json(availableResources);
                 }

@@ -1,5 +1,5 @@
 'use client'
-import React, {useEffect, useState} from 'react'
+import React, {useState} from 'react'
 import {FiGrid,} from 'react-icons/fi'
 import {signOut, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
@@ -14,6 +14,8 @@ import {GrResources} from "react-icons/gr";
 import {RiApps2Line, RiMailSettingsLine} from "react-icons/ri";
 import {FaRegUser} from "react-icons/fa";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
+import {TbCertificate} from "react-icons/tb";
+
 
 const sideItems = [
     {
@@ -100,12 +102,19 @@ const sideItems = [
         "permission": "SUPERADMIN"
     },
     {
-        "title": "LDAP",
+        "title": "Authentification",
         "items": [
             {
                 "id" : "ldap",
-                "title": "Configuration",
+                "title": "LDAP",
                 "icon": <CiServer />,
+                "permission": "SUPERADMIN"
+
+            },
+            {
+                "id": "sso",
+                "title": "SSO",
+                "icon": <TbCertificate/>,
                 "permission": "SUPERADMIN"
 
             }
@@ -134,18 +143,6 @@ export default function Sidebar() {
     const router = useRouter();
     const {setActiveSection} = useAdminContext();
     const toggleSidebar = () => setIsOpen(!isOpen)
-
-    useEffect(() => {
-        if (status === "unauthenticated") {
-            router.push("/login");
-            addToast({
-                title: 'Session expirée',
-                message: 'Veuillez vous reconnecter',
-                type: 'warning',
-                duration: 5000,
-            });
-        }
-    }, [status, router]);
 
     // Si la session n'est pas chargée ou l'utilisateur n'est pas défini, on ne rend rien
     if (status === "loading" || !session?.user) {

@@ -13,9 +13,11 @@ import Sidebar from "@/components/admin/Sidebar";
 import SMTPSettings from "@/sections/SMTP";
 import {General} from "@/sections/General";
 import Localisations from "@/sections/Localisations";
+import {useAuth} from "@/context/AuthContext";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
+    useAuth(); 
 
     useEffect(() => {
         setIsClient(true);
@@ -25,7 +27,6 @@ export default function Admin(){
         return null; // or a loading spinner
     }
     return (
-
         <AdminProvider>
             <DataHandlerProvider>
                 <div className="flex h-screen overflow-hidden">

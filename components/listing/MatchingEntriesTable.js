@@ -6,25 +6,7 @@ import BlinkingDotText from "@/components/utils/BlinkingDotText";
 
 export default function MatchingEntriesTable({resources, entry, session, handleRefresh}) {
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    console.log(resources);
-    const calculateResourceAvailability = (resource) => {
-        const availableSlots = resource.availability?.filter(slot => slot.available).length || 0;
-        const totalSlots = resource.availability?.length || 0;
-        return {
-            available: availableSlots,
-            total: totalSlots
-        };
-    };
-
     const [currentResource, setCurrentResource] = useState(null);
-    const disponibility = resources?.reduce((acc, resource) => {
-        const resourceAvailability = calculateResourceAvailability(resource);
-        return {
-            available: acc.available + resourceAvailability.available,
-            total: acc.total + resourceAvailability.total
-        };
-    }, {available: 0, total: 0});
-
     return (
         <div className="mx-auto w-[90%]">
             <div className="w-full flex flex-col space-y-3">

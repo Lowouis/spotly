@@ -8,6 +8,7 @@ import {AdminDataManager} from "@/context/AdminDataManager";
 import {ToastProvider} from '@heroui/toast';
 import {RefreshProvider} from "@/context/RefreshContext";
 import {ThemeProvider} from "@/context/ThemeContext";
+import {AuthProvider} from "@/context/AuthContext";
 import nextConfig from '../next.config.mjs';
 
 const basePath = nextConfig.basePath || '';
@@ -27,7 +28,9 @@ export default function Providers({children}) {
                                     toastOffset={16}
                                 />
                                 <SessionProvider basePath={`${basePath}/api/auth`}>
-                                    {children}
+                                    <AuthProvider>
+                                        {children}
+                                    </AuthProvider>
                                 </SessionProvider>
                             </NextUIProvider>
                         </RefreshProvider>

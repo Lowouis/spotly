@@ -24,9 +24,14 @@ export async function middleware(req) {
     const token = await getToken({req});
     const isAuth = !!token;
 
+    console.log('Middleware - Path:', pathname);
+    console.log('Middleware - Token:', token);
+    console.log('Middleware - BasePath:', basePath);
+
     // Routes publiques qui ne nécessitent pas d'authentification
     const publicRoutes = [
         '/login',
+        '/api/auth',
         '/api/*',
         '/_next',
         '/favicon.ico',
@@ -36,7 +41,17 @@ export async function middleware(req) {
 
     // Vérifier si la route actuelle est publique en retirant le basePath
     const pathWithoutBasePath = pathname.replace(basePath, '');
-    const isPublicRoute = publicRoutes.some(route => pathWithoutBasePath.startsWith(route));
+    console.log('Middleware - Path without basePath:', pathWithoutBasePath);
+
+    const isPublicRoute = publicRoutes.some(route => {
+        if (route.endsWith('*')) {
+            const baseRoute = route.slice(0, -1);
+            return pathWithoutBasePath.startsWith(baseRoute);
+        }
+        return pathWithoutBasePath === route;
+    });
+
+    console.log('Middleware - Is public route:', isPublicRoute);
 
     // Si la route est publique, permettre l'accès
     if (isPublicRoute) {
@@ -45,15 +60,20 @@ export async function middleware(req) {
 
     // Vérifier l'accès aux routes admin
     if (pathWithoutBasePath.startsWith('/admin')) {
-        if (token.role !== "USER") {
-            return NextResponse.redirect(new URL(`${basePath}/login`, req.url));
+        if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
+            const loginUrl = new URL(`${basePath}/login`, req.url);
+            loginUrl.searchParams.set('callbackUrl', req.url);
+            console.log('Middleware - Redirecting to login (admin):', loginUrl.toString());
+            return NextResponse.redirect(loginUrl);
         }
     }
 
     if (!isAuth) {
-        return NextResponse.redirect(new URL(`${basePath}/login`, req.url));
+        const loginUrl = new URL(`${basePath}/login`, req.url);
+        loginUrl.searchParams.set('callbackUrl', req.url);
+        console.log('Middleware - Redirecting to login (auth):', loginUrl.toString());
+        return NextResponse.redirect(loginUrl);
     }
-
 
     return NextResponse.next();
 }

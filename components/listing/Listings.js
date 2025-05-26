@@ -407,10 +407,10 @@ const organizeEntriesByGroup = (entries) => {
 
     entries.forEach(entry => {
         if (!entry) return;
-
         if (entry.recurringGroupId === 0) {
             grouped.independent.push(entry);
         } else {
+            console.log(entry.recurringGroupId);
             if (!grouped.recurring[entry.recurringGroupId]) {
                 grouped.recurring[entry.recurringGroupId] = [];
             }
