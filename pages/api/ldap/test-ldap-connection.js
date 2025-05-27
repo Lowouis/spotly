@@ -8,8 +8,8 @@ export default async function handler(req, res) {
         return res.status(405).json({message: 'Method not allowed'});
     }
 
-    const {serverUrl, bindDn, adminCn, adminPassword} = req.body;
-    if (!serverUrl || !bindDn || !adminCn || !adminPassword) {
+    const {serverUrl, bindDn, adminCn, adminDn, adminPassword} = req.body;
+    if (!serverUrl || !bindDn || !adminCn || !adminDn || !adminPassword) {
         return res.status(400).json({message: 'Tous les champs sont requis'});
     }
 
@@ -19,6 +19,7 @@ export default async function handler(req, res) {
             bindDN: bindDn,
             bindCredentials: adminPassword,
             adminCn: adminCn,
+            adminDn: adminDn,
             username: adminCn // Pour le test, on utilise le même utilisateur
         };
 

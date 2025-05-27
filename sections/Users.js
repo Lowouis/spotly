@@ -12,11 +12,24 @@ const Users = ({})=>{
     const { data: items, refetch ,isLoading, isError, error } = useQuery({
         queryKey: ['users'],
         queryFn: async () => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`);
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const text = await response.text(); // D'abord récupérer le texte brut
+                console.log('Réponse brute du serveur:', text); // Log pour déboguer
+                try {
+                    return JSON.parse(text); // Puis essayer de parser le JSON
+                } catch (e) {
+                    console.error('Erreur de parsing JSON:', e);
+                    console.error('Contenu reçu:', text);
+                    throw new Error('Réponse invalide du serveur');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la récupération des utilisateurs:', error);
+                throw error;
             }
-            return response.json();
         },
         enabled : !isRefreshing
     });

@@ -10,8 +10,8 @@ export default async function handler(req, res) {
     }
 
     // Validation des données
-    const {serverUrl, bindDn, adminCn, adminPassword} = req.body;
-    if (!serverUrl || !bindDn || !adminCn || !adminPassword) {
+    const {serverUrl, bindDn, adminCn, adminDn, adminPassword} = req.body;
+    if (!serverUrl || !bindDn || !adminCn || !adminDn || !adminPassword) {
         return res.status(400).json({message: 'Tous les champs sont requis'});
     }
 
@@ -21,7 +21,8 @@ export default async function handler(req, res) {
             url: serverUrl,
             bindDN: bindDn,
             bindCredentials: adminPassword,
-            adminCn: adminCn
+            adminCn: adminCn,
+            adminDn: adminDn
         };
         console.log(ldapConfig);
 
@@ -39,6 +40,7 @@ export default async function handler(req, res) {
             serverUrl: encrypt(serverUrl),
             bindDn: encrypt(bindDn),
             adminCn: encrypt(adminCn),
+            adminDn: encrypt(adminDn),
             adminPassword: encrypt(adminPassword)
         };
 

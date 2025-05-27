@@ -152,6 +152,7 @@ model LdapConfig {
   serverUrl     String   @db.Text
   bindDn        String   @db.Text
   adminCn       String   @db.Text
+  adminDn       String   @db.Text
   adminPassword String   @db.Text
   lastUpdated   DateTime @updatedAt
   updatedBy     String

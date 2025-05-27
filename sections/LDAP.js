@@ -1,10 +1,10 @@
 'use client';
 
-import {Spacer, Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
+import {Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
 import React, {useEffect, useState} from "react";
-import {ArrowPathIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, CheckCircleIcon, EyeIcon, EyeSlashIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
 
 const LDAP = () => {
@@ -19,6 +19,7 @@ const LDAP = () => {
         serverUrl: "",
         bindDn: "",
         adminCn: "",
+        adminDn: "",
         adminPassword: "",
     });
 
@@ -39,6 +40,7 @@ const LDAP = () => {
                         serverUrl: data.serverUrl || "",
                         bindDn: data.bindDn || "",
                         adminCn: data.adminCn || "",
+                        adminDn: data.adminDn || "",
                         adminPassword: "", // Ne pas pré-remplir le mot de passe
                     }));
                 } else {
@@ -74,7 +76,7 @@ const LDAP = () => {
     };
 
     const validateForm = () => {
-        if (!formData.serverUrl || !formData.bindDn || !formData.adminCn || !formData.adminPassword) {
+        if (!formData.serverUrl || !formData.bindDn || !formData.adminCn || !formData.adminDn || !formData.adminPassword) {
             setErrorMessage("Tous les champs sont obligatoires");
             return false;
         }
@@ -87,7 +89,7 @@ const LDAP = () => {
         setIsTesting(true);
         setConnectionStatus(null);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/test-ldap-connection`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/ldap/test-ldap-connection`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
@@ -205,6 +207,19 @@ const LDAP = () => {
                             onChange={handleInputChange}
                             isInvalid={!!errorMessage && !formData.adminCn}
                             errorMessage={errorMessage && !formData.adminCn ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
+
+                        <Input
+                            required
+                            name="adminDn"
+                            label="DN de l'administrateur"
+                            labelPlacement="outside"
+                            placeholder="cn=admin,dc=example,dc=com"
+                            value={formData.adminDn}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.adminDn}
+                            errorMessage={errorMessage && !formData.adminDn ? "Ce champ est requis" : ""}
                             isDisabled={isLoadingConfig}
                         />
 
