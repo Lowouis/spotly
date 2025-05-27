@@ -40,8 +40,6 @@ export default async function handler(req, res) {
                                 categoryId: parseInt(categoryId),
                             })
                         },
-
-
                     }),
                     ...(startDate && {
                         startDate: {
@@ -63,22 +61,65 @@ export default async function handler(req, res) {
                         }
                     }),
                 },
-               include: {
-                    user : true,
-
-                   resource : {
-                        include : {
-                            domains: {include: {owner: true, pickable: true}},
-                            category: {include: {owner: true, pickable: true}},
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            surname: true,
+                            email: true,
+                            role: true
+                        }
+                    },
+                    resource: {
+                        include: {
+                            domains: {
+                                include: {
+                                    owner: true,
+                                    pickable: true
+                                }
+                            },
+                            category: {
+                                include: {
+                                    owner: true,
+                                    pickable: true
+                                }
+                            },
                             owner: true,
-                            pickable: true,
+                            pickable: true
                         }
                     }
-               }
+                }
             });
-            console.log(entries);
 
-            res.status(200).json(entries);
+            // Restructurer les données pour s'assurer que les relations sont correctement formatées
+            const formattedEntries = entries.map(entry => ({
+                ...entry,
+                user: entry.user ? {
+                    id: entry.user.id,
+                    name: entry.user.name,
+                    surname: entry.user.surname,
+                    email: entry.user.email,
+                    role: entry.user.role
+                } : null,
+                resource: entry.resource ? {
+                    ...entry.resource,
+                    domains: entry.resource.domains ? {
+                        ...entry.resource.domains,
+                        owner: entry.resource.domains.owner,
+                        pickable: entry.resource.domains.pickable
+                    } : null,
+                    category: entry.resource.category ? {
+                        ...entry.resource.category,
+                        owner: entry.resource.category.owner,
+                        pickable: entry.resource.category.pickable
+                    } : null,
+                    owner: entry.resource.owner,
+                    pickable: entry.resource.pickable
+                } : null
+            }));
+
+            res.status(200).json(formattedEntries);
         } else if (req.method === "POST") {
             const {
                 userId,
@@ -196,17 +237,47 @@ export default async function handler(req, res) {
                 });
             }
         } else if(req.method === "DELETE"){
-            const { ids } = req.query;
-            console.log(req.query);
-            const entry = await prisma.entry.deleteMany({
-                where: {
-                    id: {
-                        in: ids
-                    }
-                }
-            });
+            const {ids} = req.body;
+            console.log("-------------------------")
+            console.log("IDS", req.body)
+            console.log("-------------------------")
 
-            res.status(200).json(entry);
+            if (!ids || !Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({
+                    error: "Données invalides",
+                    details: "Un tableau d'IDs valide est requis pour la suppression"
+                });
+            }
+
+            try {
+                const parsedIds = ids.map(id => parseInt(id)).filter(id => !isNaN(id));
+
+                if (parsedIds.length === 0) {
+                    return res.status(400).json({
+                        error: "Données invalides",
+                        details: "Aucun ID valide trouvé dans la liste fournie"
+                    });
+                }
+
+                const deletedEntries = await prisma.entry.deleteMany({
+                    where: {
+                        id: {
+                            in: parsedIds
+                        }
+                    }
+                });
+
+                res.status(200).json({
+                    message: "Entrées supprimées avec succès",
+                    count: deletedEntries.count
+                });
+            } catch (error) {
+                console.error("Erreur lors de la suppression des entrées:", error);
+                res.status(500).json({
+                    error: "Erreur lors de la suppression des entrées",
+                    details: error.message
+                });
+            }
         }
     } catch (error) {
         console.error("Erreur lors de la création de l'entrée:", error);

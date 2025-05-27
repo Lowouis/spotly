@@ -67,16 +67,15 @@ export const updateItem = async ({data, model}) => {
 };
 
 const deleteItems = async ({selectedItems, model}) => {
-    const data = {
-        ids: Array.from(selectedItems),
-    };
+    const data = Array.from(selectedItems);
+   
     try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${model}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(data),
+            body: JSON.stringify({ids: data}),
         });
 
         if (!response.ok) {
@@ -342,13 +341,13 @@ const renderCell = (key, itemDTO, item, model) => {
     const codeKeys = ["returnedConfirmationCode", "ip"];
 
     // Liste des clés qui doivent afficher un propriétaire
-    const ownerKeys = ["owner", "user", "resource"];
+    const ownerKeys = ["owner"];
 
     // Liste des clés qui doivent afficher une date
     const dateKeys = ["createdAt", "updatedAt", "lastUpdatedModerateStatus", "startDate", "endDate"];
 
     // Cas où la valeur est vide
-    if ((itemDTO[key] === "" || itemDTO[key] === null) && !["owner", "pickable"].includes(key)) {
+    if ((itemDTO[key] === "" || itemDTO[key] === null) && !["owner", "pickable", "user", "resource"].includes(key)) {
         return <EmptyCell/>;
     }
 
@@ -372,6 +371,23 @@ const renderCell = (key, itemDTO, item, model) => {
     const specializedCell = Object.values(cellTypes).find(cell => cell);
     if (specializedCell) {
         return specializedCell;
+    }
+
+    // Cas spécial pour user et resource
+    if (key === "user" && itemDTO[key]) {
+        return (
+            <span className="flex flex-row justify-start items-center">
+                {itemDTO[key].name} {itemDTO[key].surname}
+            </span>
+        );
+    }
+
+    if (key === "resource" && itemDTO[key]) {
+        return (
+            <span className="flex flex-row justify-start items-center">
+                {itemDTO[key].name}
+            </span>
+        );
     }
 
     // Cas où la valeur est un objet (seulement si aucun composant spécialisé n'est trouvé)
@@ -404,22 +420,30 @@ export default function ItemsOnTable({
                                          create_hidden = false,
                                          selectionMode = true,
                                          searchBy = {tag: "nom", attr: "name"},
-                                         filterableStatus = false
+                                         filters = []
                                      }) {
     const {isOpen: isOpenOnItem, onOpen: onOpenOnItem, onOpenChange: onOpenChangeOnItem} = useDisclosure();
     const [currentAction, setCurrentAction] = useState("create");
     const [currentItem, setCurrentItem] = useState();
     const [searchValue, setSearchValue] = useState("");
-    const [selectedStatus, setSelectedStatus] = useState(new Set([]));
+    const [selectedFilters, setSelectedFilters] = useState({});
     const [page, setPage] = React.useState(1);
     const rowsPerPage = 10;
 
-    // Obtenir les status uniques disponibles dans les items
-    const availableStatuses = React.useMemo(() => {
-        if (!items || !filterableStatus) return [];
-        const statuses = new Set(items.map(item => item.moderate));
-        return Array.from(statuses).filter(Boolean);
-    }, [items, filterableStatus]);
+    // Obtenir les valeurs uniques disponibles pour chaque filtre
+    const availableFilterValues = React.useMemo(() => {
+        if (!items || !filters.length) return {};
+
+        return filters.reduce((acc, {filterBy}) => {
+            const values = new Set();
+            items.forEach(item => {
+                const value = filterBy.split('.').reduce((obj, key) => obj && obj[key], item);
+                if (value) values.add(value);
+            });
+            acc[filterBy] = Array.from(values).filter(Boolean);
+            return acc;
+        }, {});
+    }, [items, filters]);
 
     const searchByArray = React.useMemo(
         () => Array.isArray(searchBy) ? searchBy : [searchBy],
@@ -429,12 +453,15 @@ export default function ItemsOnTable({
     items = React.useMemo(() => {
         let filteredItems = [...(items || [])];
 
-        // Filtrage par status
-        if (filterableStatus && selectedStatus.size > 0) {
-            filteredItems = filteredItems.filter(item =>
-                selectedStatus.has(item.moderate)
-            );
-        }
+        // Filtrage par les filtres dynamiques
+        Object.entries(selectedFilters).forEach(([filterBy, selectedValues]) => {
+            if (selectedValues.size > 0) {
+                filteredItems = filteredItems.filter(item => {
+                    const value = filterBy.split('.').reduce((obj, key) => obj && obj[key], item);
+                    return selectedValues.has(value);
+                });
+            }
+        });
 
         // Filtrage par recherche
         if (searchValue.trim()) {
@@ -455,7 +482,7 @@ export default function ItemsOnTable({
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
         return filteredItems.slice(start, end);
-    }, [items, searchValue, page, filter, searchByArray, selectedStatus, filterableStatus]);
+    }, [items, searchValue, page, filter, searchByArray, selectedFilters]);
 
     const pages = Math.ceil(items?.length / rowsPerPage);
 
@@ -518,6 +545,7 @@ export default function ItemsOnTable({
                             isLoading={isLoading}
                             isIconOnly
                             isDisabled
+                            aria-label="Nombre total d'éléments"
                         >
                             {items?.length ? items?.length : "0"}
                         </Button>
@@ -546,30 +574,39 @@ export default function ItemsOnTable({
                             placeholder: "text-content-tertiary dark:text-dark-content-tertiary"
                         }}
                     />
-                    {filterableStatus && availableStatuses.length > 0 && (
-                        <Select
-                            placeholder="Filtrer par status"
-                            selectedKeys={selectedStatus}
-                            onSelectionChange={setSelectedStatus}
-                            selectionMode="multiple"
-                            className="max-w-xs"
-                            size="xs"
-                            classNames={{
-                                label: "text-content-primary dark:text-dark-content-primary",
-                                value: "text-content-primary dark:text-dark-content-primary",
-                                description: "text-content-secondary dark:text-dark-content-secondary",
-                                trigger: "text-content-primary dark:text-dark-content-primary",
-                                placeholder: "text-content-secondary dark:text-dark-content-secondary",
-                                listbox: "text-content-primary dark:text-dark-content-primary"
-                            }}
-                        >
-                            {availableStatuses.map((status) => (
-                                <SelectItem key={status} value={status}>
-                                    {statusMapping[status] || status}
-                                </SelectItem>
-                            ))}
-                        </Select>
-                    )}
+                    {filters.map(({placeholder, filterBy}) => (
+                        availableFilterValues[filterBy]?.length > 0 && (
+                            <Select
+                                key={filterBy}
+                                placeholder={placeholder}
+                                selectedKeys={selectedFilters[filterBy] || new Set()}
+                                onSelectionChange={(selected) => {
+                                    setSelectedFilters(prev => ({
+                                        ...prev,
+                                        [filterBy]: selected
+                                    }));
+                                }}
+                                selectionMode="multiple"
+                                className="max-w-xs"
+                                size="xs"
+                                aria-label={placeholder}
+                                classNames={{
+                                    label: "text-content-primary dark:text-dark-content-primary",
+                                    value: "text-content-primary dark:text-dark-content-primary",
+                                    description: "text-content-secondary dark:text-dark-content-secondary",
+                                    trigger: "text-content-primary dark:text-dark-content-primary",
+                                    placeholder: "text-content-secondary dark:text-dark-content-secondary",
+                                    listbox: "text-content-primary dark:text-dark-content-primary"
+                                }}
+                            >
+                                {availableFilterValues[filterBy].map((value) => (
+                                    <SelectItem key={value} value={value}>
+                                        {statusMapping[value] || value}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        )
+                    ))}
                     <Tooltip content={"Rafraîchir les données"} color="foreground" size="sm" showArrow
                              placement="top-end">
                         <Button
@@ -579,6 +616,7 @@ export default function ItemsOnTable({
                             radius="full"
                             color="primary"
                             onPress={() => refreshData([model])}
+                            aria-label="Rafraîchir les données"
                         >
                             <ArrowPathIcon width={20} height={20}/>
                         </Button>
@@ -593,6 +631,7 @@ export default function ItemsOnTable({
                             radius="full"
                             color="default"
                             onPress={onOpenChangeDeleteConfirm}
+                            aria-label="Supprimer les éléments sélectionnés"
                         >
                             <TrashIcon width={20} height={20}/>
                         </Button>
@@ -626,6 +665,7 @@ export default function ItemsOnTable({
                                     }}
                                     endContent={<PlusCircleIcon height={24} width={24}/>}
                                     className="mr-4"
+                                    aria-label="Créer un nouvel élément"
                                 >
                                     Créer
                                 </Button>

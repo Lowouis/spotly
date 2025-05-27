@@ -71,6 +71,20 @@ const Resources = ({})=>{
         "Niveau de protection",
     ]
 
+    const searchParams = [
+        {tag: "nom", attr: "name"},
+        {tag: "description", attr: "description"},
+        {tag: "site", attr: "domain.name"},
+        {tag: "catégorie", attr: "category.name"},
+    ]
+
+    const filters = [
+        {
+            placeholder: "Filter par status",
+            filterBy: "status"
+        }
+    ]
+
     return (
         <div className="flex flex-col gap-3 w-full">
             <ItemsOnTable
@@ -82,6 +96,8 @@ const Resources = ({})=>{
                 actions={['edit', 'delete']}
                 columnsGreatNames={columnsGreatNames}
                 filter={['updatedAt', 'id', 'ownerId', 'domainId', 'categoryId', 'createdAt', 'pickableId']}
+                filters={filters}
+                searchBy={searchParams}
             />
         </div>
     );

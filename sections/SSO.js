@@ -7,7 +7,7 @@ import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
 
-const SMTPSettings = () => {
+const SSO = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isTesting, setIsTesting] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
@@ -15,21 +15,18 @@ const SMTPSettings = () => {
     const [isLoadingConfig, setIsLoadingConfig] = useState(true);
 
     const [formData, setFormData] = useState({
-        host: "",
-        port: "",
-        username: "",
-        password: "",
-        fromEmail: "",
-        fromName: "",
-        secure: true
+        realm: "",
+        kdc: "",
+        adminServer: "",
+        defaultDomain: "",
     });
 
     useEffect(() => {
         const loadConfig = async () => {
             setIsLoadingConfig(true);
             try {
-                console.log("Chargement de la configuration SMTP...");
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/smtp-config`);
+                console.log("Chargement de la configuration SSO...");
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/sso/kerberos-config`);
                 console.log("Réponse du serveur:", response.status);
 
                 if (response.ok) {
@@ -38,12 +35,10 @@ const SMTPSettings = () => {
 
                     setFormData(prev => ({
                         ...prev,
-                        host: data.host || "",
-                        port: data.port || "",
-                        username: data.username || "",
-                        fromEmail: data.fromEmail || "",
-                        fromName: data.fromName || "",
-                        secure: data.secure ?? true
+                        realm: data.realm || "",
+                        kdc: data.kdc || "",
+                        adminServer: data.adminServer || "",
+                        defaultDomain: data.defaultDomain || "",
                     }));
                 } else {
                     const errorData = await response.json();
@@ -71,17 +66,14 @@ const SMTPSettings = () => {
     }, []);
 
     const handleInputChange = (e) => {
-        const {name, value, type, checked} = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        const {name, value} = e.target;
+        setFormData(prev => ({...prev, [name]: value}));
         setErrorMessage(null);
         setConnectionStatus(null);
     };
 
     const validateForm = () => {
-        if (!formData.host || !formData.port || !formData.username || !formData.fromEmail || !formData.fromName) {
+        if (!formData.realm || !formData.kdc || !formData.adminServer || !formData.defaultDomain) {
             setErrorMessage("Tous les champs sont obligatoires");
             return false;
         }
@@ -90,11 +82,11 @@ const SMTPSettings = () => {
 
     const testConnection = async () => {
         if (!validateForm()) return;
-        
+
         setIsTesting(true);
         setConnectionStatus(null);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/test`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/sso/test-kerberos-connection`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
@@ -106,7 +98,7 @@ const SMTPSettings = () => {
                 setConnectionStatus('success');
                 addToast({
                     title: 'Test de connexion',
-                    description: 'Connexion SMTP réussie',
+                    description: 'Connexion SSO réussie',
                     color: 'success',
                     duration: 5000,
                 });
@@ -133,7 +125,7 @@ const SMTPSettings = () => {
 
         setIsLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/save-smtp-config`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/sso/save-kerberos-config`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
@@ -146,14 +138,14 @@ const SMTPSettings = () => {
             }
 
             addToast({
-                title: 'Configuration SMTP',
+                title: 'Configuration SSO',
                 description: 'Configuration sauvegardée avec succès',
                 color: 'success',
                 duration: 5000,
             });
         } catch (error) {
             addToast({
-                title: 'Configuration SMTP',
+                title: 'Configuration SSO',
                 description: error.message || 'Erreur lors de la sauvegarde',
                 color: 'danger',
                 duration: 5000,
@@ -164,102 +156,69 @@ const SMTPSettings = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
             <Card className="w-full">
                 <CardHeader className="flex gap-3">
                     <div className="flex flex-col">
-                        <p className="text-xl font-semibold">Configuration SMTP</p>
-                        <p className="text-small text-default-500">Configurez votre serveur SMTP pour l'envoi
-                            d'emails</p>
+                        <p className="text-xl font-semibold">Configuration SSO (Kerberos)</p>
+                        <p className="text-small text-default-500">Configurez votre serveur Kerberos pour
+                            l'authentification SSO</p>
                     </div>
                 </CardHeader>
                 <Divider/>
                 <CardBody>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                required
-                                name="host"
-                                label="Serveur SMTP"
-                                labelPlacement="outside"
-                                placeholder="smtp.example.com"
-                                value={formData.host}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.host}
-                                errorMessage={errorMessage && !formData.host ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                        <Input
+                            required
+                            name="realm"
+                            label="Realm Kerberos"
+                            labelPlacement="outside"
+                            placeholder="EXAMPLE.COM"
+                            value={formData.realm}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.realm}
+                            errorMessage={errorMessage && !formData.realm ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
 
-                            <Input
-                                required
-                                name="port"
-                                label="Port"
-                                labelPlacement="outside"
-                                placeholder="587"
-                                value={formData.port}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.port}
-                                errorMessage={errorMessage && !formData.port ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
-                        </div>
+                        <Input
+                            required
+                            name="kdc"
+                            label="Serveur KDC"
+                            labelPlacement="outside"
+                            placeholder="kdc.example.com:88"
+                            value={formData.kdc}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.kdc}
+                            errorMessage={errorMessage && !formData.kdc ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                required
-                                name="username"
-                                label="Nom d'utilisateur"
-                                labelPlacement="outside"
-                                placeholder="user@example.com"
-                                value={formData.username}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.username}
-                                errorMessage={errorMessage && !formData.username ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                        <Input
+                            required
+                            name="adminServer"
+                            label="Serveur Admin"
+                            labelPlacement="outside"
+                            placeholder="admin.example.com:749"
+                            value={formData.adminServer}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.adminServer}
+                            errorMessage={errorMessage && !formData.adminServer ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
 
-                            <Input
-                                required
-                                type="password"
-                                name="password"
-                                label="Mot de passe"
-                                labelPlacement="outside"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.password}
-                                errorMessage={errorMessage && !formData.password ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                required
-                                name="fromEmail"
-                                label="Email d'expédition"
-                                labelPlacement="outside"
-                                placeholder="noreply@example.com"
-                                value={formData.fromEmail}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.fromEmail}
-                                errorMessage={errorMessage && !formData.fromEmail ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
-
-                            <Input
-                                required
-                                name="fromName"
-                                label="Nom d'expédition"
-                                labelPlacement="outside"
-                                placeholder="Spotly"
-                                value={formData.fromName}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.fromName}
-                                errorMessage={errorMessage && !formData.fromName ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
-                        </div>
+                        <Input
+                            required
+                            name="defaultDomain"
+                            label="Domaine par défaut"
+                            labelPlacement="outside"
+                            placeholder="example.com"
+                            value={formData.defaultDomain}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.defaultDomain}
+                            errorMessage={errorMessage && !formData.defaultDomain ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
 
                         <div className="flex justify-end gap-4 mt-4">
                             <Button
@@ -295,4 +254,4 @@ const SMTPSettings = () => {
     );
 };
 
-export default SMTPSettings;
+export default SSO; 

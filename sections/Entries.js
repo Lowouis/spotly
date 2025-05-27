@@ -55,6 +55,13 @@ const Entries = ({})=>{
         {tag: "ressource", attr: "resource.name"}
     ];
 
+    const filters = [
+        {
+            placeholder: "Filtrer par status",
+            filterBy: "moderate"
+        }
+    ]
+
     return (
         <div className="flex flex-col gap-3 w-full">
             <ItemsOnTable
@@ -67,7 +74,7 @@ const Entries = ({})=>{
                 filter={['createdAt', 'updatedAt', 'id', 'comment', 'adminNote', 'recurringGroupId', 'system']}
                 model={"entry"}
                 searchBy={searchConfig}
-                filterableStatus={true}
+                filters={filters}
             />
         </div>
     );

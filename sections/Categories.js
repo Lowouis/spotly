@@ -48,6 +48,19 @@ const Categories = ({})=>{
         "Niveau de protection",
     ]
 
+    const searchParams = [
+        {tag: "nom", attr: "name"},
+        {tag: "description", attr: "description"},
+        {tag: "propriétaire", attr: "owner.username"},
+    ]
+
+    const filters = [
+        {
+            placeholder: "Filter par protection",
+            filterBy: "pickable.distinguishedName"
+        }
+    ]
+
     return (
         <div className="flex flex-col gap-3 w-full">
             <ItemsOnTable
@@ -59,6 +72,8 @@ const Categories = ({})=>{
                 columnsGreatNames={columnsGreatNames}
                 actions={['edit', 'delete']}
                 filter={['updatedAt', 'id', 'ownerId', 'createdAt', 'pickableId']}
+                filters={filters}
+                searchBy={searchParams}
             />
         </div>
     );

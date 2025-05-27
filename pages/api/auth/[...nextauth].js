@@ -6,10 +6,34 @@ import bycrypt from 'bcrypt';
 import {authenticate} from 'ldap-authentication';
 import {validateKerberosTicket} from '@/lib/kerberos-auth';
 import nextConfig from '../../../next.config.mjs';
+import {decrypt} from '@/lib/security';
 
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
 
 const basePath = nextConfig.basePath || '';
+
+// Fonction pour récupérer la configuration LDAP active
+async function getActiveLdapConfig() {
+    const config = await prisma.ldapConfig.findFirst({
+        where: {
+            isActive: true
+        },
+        orderBy: {
+            lastUpdated: 'desc'
+        }
+    });
+
+    if (!config) {
+        throw new Error('Aucune configuration LDAP active trouvée');
+    }
+
+    return {
+        serverUrl: decrypt(config.serverUrl),
+        bindDn: decrypt(config.bindDn),
+        adminCn: decrypt(config.adminCn),
+        adminPassword: decrypt(config.adminPassword)
+    };
+}
 
 export const authConfig = {
     adapter: PrismaAdapter(prisma),
@@ -24,74 +48,78 @@ export const authConfig = {
             },
             async authorize(credentials) {
                 console.log('Kerberos authorize called with credentials:', credentials ? 'Present' : 'Missing');
-                
+
                 if (!credentials?.ticket) {
-                    console.log('No Kerberos ticket provided');
+                    console.log('No ticket provided');
                     return null;
                 }
 
-                console.log('Validating Kerberos ticket...');
-                const result = await validateKerberosTicket(credentials.ticket);
-                console.log('Kerberos ticket validation result:', result);
+                try {
+                    const result = await validateKerberosTicket(credentials.ticket);
+                    console.log('Kerberos validation result:', result);
 
-                if (!result.success) {
-                    console.log('Kerberos ticket validation failed');
-                    return null;
-                }
-
-                console.log('Searching for user in database:', result.username);
-                let user = await prisma.user.findUnique({
-                    where: {
-                        username: result.username
-                    }
-                });
-                console.log('Database user search result:', user ? 'Found' : 'Not found');
-
-                if (!user) {
-                    console.log('User not found in database, attempting LDAP lookup...');
-                    const ldapUser = await authenticate({
-                        ldapOpts: {
-                            url: process.env.NEXT_PUBLIC_LDAP_DOMAIN,
-                        },
-                        adminDn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN,
-                        adminPassword: process.env.NEXT_PUBLIC_LDAP_ADMIN_PASSWORD,
-                        userSearchBase: process.env.NEXT_PUBLIC_LDAP_BASEDN,
-                        usernameAttribute: 'cn',
-                        username: result.username,
-                        attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
-                    }).catch(e => {
-                        console.error("LDAP user search failed:", e);
+                    if (!result || !result.username) {
+                        console.log('Invalid or missing username in Kerberos result');
                         return null;
+                    }
+
+                    let user = await prisma.user.findUnique({
+                        where: {
+                            username: result.username
+                        }
                     });
 
-                    if (ldapUser) {
-                        console.log('LDAP user found, creating user in database...');
-                        user = await prisma.user.create({
-                            data: {
-                                email: ldapUser.mail,
-                                name: ldapUser.givenName,
-                                surname: ldapUser.sn,
-                                username: ldapUser.sAMAccountName,
-                                external: true,
-                                password: null,
-                            }
-                        });
-                        console.log('User created in database:', user);
-                    } else {
-                        console.log('LDAP user not found');
-                    }
-                }
+                    if (!user) {
+                        console.log('User not found in database, attempting LDAP lookup...');
+                        const ldapConfig = await getActiveLdapConfig();
 
-                return user;
+                        const ldapUser = await authenticate({
+                            ldapOpts: {
+                                url: ldapConfig.serverUrl,
+                            },
+                            adminDn: ldapConfig.adminCn,
+                            adminPassword: ldapConfig.adminPassword,
+                            userSearchBase: ldapConfig.bindDn,
+                            usernameAttribute: 'cn',
+                            username: result.username,
+                            attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
+                        }).catch(e => {
+                            console.error("LDAP user search failed:", e);
+                            return null;
+                        });
+
+                        if (ldapUser) {
+                            console.log('LDAP user found, creating user in database...');
+                            user = await prisma.user.create({
+                                data: {
+                                    email: ldapUser.mail,
+                                    name: ldapUser.givenName,
+                                    surname: ldapUser.sn,
+                                    username: ldapUser.sAMAccountName,
+                                    external: true,
+                                    password: null,
+                                }
+                            });
+                            console.log('User created in database:', user);
+                        } else {
+                            console.log('LDAP user not found');
+                        }
+                    }
+
+                    return user;
+                } catch (error) {
+                    console.error('Kerberos validation error:', error);
+                    return null;
+                }
             }
         }),
         CredentialsProvider({
-            name : "credentials",
-            credentials : {
-                username: { label : 'login', type : 'text'},
-                password: { label : 'password', type : 'password' }
+            name: "credentials",
+            credentials: {
+                username: {label: 'login', type: 'text'},
+                password: {label: 'password', type: 'password'}
             },
-            async authorize(credentials){
+            async authorize(credentials) {
                 const user = await prisma.user.findUnique({
                     where: {
                         username: credentials?.username
@@ -100,47 +128,49 @@ export const authConfig = {
                     console.log(e);
                 });
 
-                if(!user || user.external === true){
-                    const ldapUser = await authenticate({
-                        ldapOpts: {
-                            url: process.env.NEXT_PUBLIC_LDAP_DOMAIN,
-                        },
-                        adminDn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN,
-                        adminPassword: process.env.NEXT_PUBLIC_LDAP_ADMIN_PASSWORD,
-                        userPassword: credentials.password,
-                        userSearchBase: process.env.NEXT_PUBLIC_LDAP_BASEDN,
-                        usernameAttribute: 'cn',
-                        username: credentials.username,
-                        attributes: ['dc','cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
-                    }).catch(e=>{
-                        throw new Error("LDAP user search failed / rejected : " + e);
-                    });
-
+                if (!user || user.external === true) {
                     try {
-                           if(!user){
-                               return await prisma.user.create({
-                                   data: {
-                                       email:      ldapUser.mail,
-                                       name:       ldapUser.givenName,
-                                       surname:    ldapUser.sn,
-                                       username:   ldapUser.sAMAccountName,
-                                       external :  true,
-                                       password :  null,
-                                   }
-                               });
-                           } else {
-                               return await prisma.user.update({
-                                   where : {
-                                     id : user.id
-                                   },
-                                   data : {
-                                       email : ldapUser.mail,
-                                       username : ldapUser.sAMAccountName,
-                                       name : ldapUser.name,
-                                       surname:    ldapUser.sn,
-                                   }
-                               });
-                           }
+                        const ldapConfig = await getActiveLdapConfig();
+
+                        const ldapUser = await authenticate({
+                            ldapOpts: {
+                                url: ldapConfig.serverUrl,
+                            },
+                            adminDn: ldapConfig.adminCn,
+                            adminPassword: ldapConfig.adminPassword,
+                            userPassword: credentials.password,
+                            userSearchBase: ldapConfig.bindDn,
+                            usernameAttribute: 'cn',
+                            username: credentials.username,
+                            attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
+                        }).catch(e => {
+                            throw new Error("LDAP user search failed / rejected : " + e);
+                        });
+
+                        if (!user) {
+                            return await prisma.user.create({
+                                data: {
+                                    email: ldapUser.mail,
+                                    name: ldapUser.givenName,
+                                    surname: ldapUser.sn,
+                                    username: ldapUser.sAMAccountName,
+                                    external: true,
+                                    password: null,
+                                }
+                            });
+                        } else {
+                            return await prisma.user.update({
+                                where: {
+                                    id: user.id
+                                },
+                                data: {
+                                    email: ldapUser.mail,
+                                    username: ldapUser.sAMAccountName,
+                                    name: ldapUser.name,
+                                    surname: ldapUser.sn,
+                                }
+                            });
+                        }
                     } catch (error) {
                         throw new Error("Prisma user creation/update failed: " + error.message);
                     }
@@ -148,14 +178,14 @@ export const authConfig = {
 
                 const isValidPassword = await bycrypt.compare(credentials.password, user.password);
 
-                if(!isValidPassword){
+                if (!isValidPassword) {
                     throw new Error("Invalid password");
                 }
 
                 delete user.password;
                 return user;
-            },
-        }),
+            }
+        })
     ],
     session: {
         strategy: "jwt",

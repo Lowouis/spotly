@@ -7,6 +7,7 @@ import Resources from "@/sections/Resources";
 import Users from "@/sections/Users";
 import Entries from "@/sections/Entries";
 import LDAP from "@/sections/LDAP";
+import SSO from "@/sections/SSO";
 import {useEffect, useState} from "react";
 import {DataHandlerProvider} from "@/context/DataHandler";
 import Sidebar from "@/components/admin/Sidebar";
@@ -14,6 +15,10 @@ import SMTPSettings from "@/sections/SMTP";
 import {General} from "@/sections/General";
 import Localisations from "@/sections/Localisations";
 import {useAuth} from "@/context/AuthContext";
+import {Tabs, Tab} from "@nextui-org/react";
+import {CiServer} from "react-icons/ci";
+import {TbCertificate} from "react-icons/tb";
+import {RiMailSettingsLine} from "react-icons/ri";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -61,10 +66,53 @@ const Content = () => {
             return <Users />;
         case 'entries':
             return <Entries />;
-        case 'ldap':
-            return <LDAP />;
-        case 'smtp':
-            return <SMTPSettings/>;
+        case 'auth':
+            return (
+                <div className="p-3">
+                    <div className="w-full max-w-2xl mx-auto">
+                        <Tabs
+                            aria-label="Options d'authentification"
+                            color="primary"
+                            variant="bordered"
+                            size="lg"
+                        >
+                            <Tab
+                                key="ldap"
+                                title={
+                                    <div className="flex items-center space-x-2">
+                                        <CiServer className="w-5 h-5"/>
+                                        <span>LDAP</span>
+                                    </div>
+                                }
+                            >
+                                <LDAP/>
+                            </Tab>
+                            <Tab
+                                key="sso"
+                                title={
+                                    <div className="flex items-center space-x-2">
+                                        <TbCertificate className="w-5 h-5"/>
+                                        <span>SSO</span>
+                                    </div>
+                                }
+                            >
+                                <SSO/>
+                            </Tab>
+                            <Tab
+                                key="smtp"
+                                title={
+                                    <div className="flex items-center space-x-2">
+                                        <RiMailSettingsLine className="w-5 h-5"/>
+                                        <span>SMTP</span>
+                                    </div>
+                                }
+                            >
+                                <SMTPSettings/>
+                            </Tab>
+                        </Tabs>
+                    </div>
+                </div>
+            );
         case 'locations':
             return <Localisations/>;
         default:

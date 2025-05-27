@@ -1,16 +1,19 @@
 'use client';
 
-import {Spacer} from "@nextui-org/react";
+import {Spacer, Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
 import React, {useEffect, useState} from "react";
-import {ArrowPathIcon, EyeIcon, EyeSlashIcon} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
 
 const LDAP = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isTesting, setIsTesting] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
+    const [connectionStatus, setConnectionStatus] = useState(null);
+    const [isLoadingConfig, setIsLoadingConfig] = useState(true);
 
     const [formData, setFormData] = useState({
         serverUrl: "",
@@ -20,28 +23,101 @@ const LDAP = () => {
     });
 
     useEffect(() => {
-        // Chargement sécurisé des variables d'environnement
-        setFormData({
-            serverUrl: process.env.NEXT_PUBLIC_LDAP_DOMAIN || "",
-            bindDn: process.env.NEXT_PUBLIC_LDAP_BASEDN || "",
-            adminCn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN || "",
-            adminPassword: "", // Ne pas pré-remplir le mot de passe pour des raisons de sécurité
-        });
+        const loadConfig = async () => {
+            setIsLoadingConfig(true);
+            try {
+                console.log("Chargement de la configuration LDAP...");
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/ldap/ldap-config`);
+                console.log("Réponse du serveur:", response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("Configuration reçue:", data);
+
+                    setFormData(prev => ({
+                        ...prev,
+                        serverUrl: data.serverUrl || "",
+                        bindDn: data.bindDn || "",
+                        adminCn: data.adminCn || "",
+                        adminPassword: "", // Ne pas pré-remplir le mot de passe
+                    }));
+                } else {
+                    const errorData = await response.json();
+                    console.error("Erreur lors du chargement:", errorData);
+                    addToast({
+                        title: 'Chargement de la configuration',
+                        description: errorData.message || 'Erreur lors du chargement de la configuration',
+                        color: 'danger',
+                        duration: 5000,
+                    });
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement de la configuration:", error);
+                addToast({
+                    title: 'Chargement de la configuration',
+                    description: 'Erreur lors du chargement de la configuration',
+                    color: 'danger',
+                    duration: 5000,
+                });
+            } finally {
+                setIsLoadingConfig(false);
+            }
+        };
+        loadConfig();
     }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({...prev, [name]: value}));
-        // Reset des messages d'erreur lors de la modification
-        if (errorMessage) setErrorMessage(null);
+        setErrorMessage(null);
+        setConnectionStatus(null);
     };
 
     const validateForm = () => {
-        if (!formData.serverUrl || !formData.bindDn || !formData.adminCn) {
-            setErrorMessage("Tous les champs obligatoires doivent être remplis");
+        if (!formData.serverUrl || !formData.bindDn || !formData.adminCn || !formData.adminPassword) {
+            setErrorMessage("Tous les champs sont obligatoires");
             return false;
         }
         return true;
+    };
+
+    const testConnection = async () => {
+        if (!validateForm()) return;
+
+        setIsTesting(true);
+        setConnectionStatus(null);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/test-ldap-connection`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                setConnectionStatus('success');
+                addToast({
+                    title: 'Test de connexion',
+                    description: 'Connexion LDAP réussie',
+                    color: 'success',
+                    duration: 5000,
+                });
+            } else {
+                setConnectionStatus('error');
+                throw new Error(result.message || 'Erreur de connexion');
+            }
+        } catch (error) {
+            setConnectionStatus('error');
+            addToast({
+                title: 'Test de connexion',
+                description: error.message || 'Erreur lors du test de connexion',
+                color: 'danger',
+                duration: 5000,
+            });
+        } finally {
+            setIsTesting(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -50,7 +126,7 @@ const LDAP = () => {
 
         setIsLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/save-ldap-config`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/ldap/save-ldap-config`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
@@ -59,138 +135,136 @@ const LDAP = () => {
             const result = await response.json();
 
             if (!response.ok) {
-                addToast({
-                    title: 'Configuration LDAP',
-                    description: 'Erreur lors de la sauvegarde',
-                    color: 'danger',
-                    duration: 5000,
-                })
                 throw new Error(result.message || 'Erreur lors de la sauvegarde');
             }
+
             addToast({
                 title: 'Configuration LDAP',
                 description: 'Configuration sauvegardée avec succès',
                 color: 'success',
                 duration: 5000,
-            })
-
+            });
         } catch (error) {
-            console.error('Erreur:', error);
-            setErrorMessage(error.message || "Une erreur est survenue");
+            addToast({
+                title: 'Configuration LDAP',
+                description: error.message || 'Erreur lors de la sauvegarde',
+                color: 'danger',
+                duration: 5000,
+            });
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div
-            className="flex bg-white dark:bg-neutral-900 flex-col p-6 rounded-lg shadow-sm h-full w-full space-y-2 justify-start items-start">
-            <h2 className="text-xl font-semibold p-4 text-black dark:text-white">Configuration LDAP</h2>
-            <form onSubmit={handleSubmit} className="flex flex-col w-full gap-4 p-4">
-                <div className="flex-1">
-                    <Input
-                        required
-                        name="serverUrl"
-                        label="URL du serveur LDAP"
-                        labelPlacement="outside"
-                        placeholder="ldap://example.com"
-                        value={formData.serverUrl}
-                        onChange={handleInputChange}
-                        isInvalid={!!errorMessage && !formData.serverUrl}
-                    />
-                </div>
+        <div className="max-w-4xl mx-auto">
+            <Card className="w-full ">
+                <CardHeader className="flex gap-3">
+                    <div className="flex flex-col">
+                        <p className="text-xl font-semibold">Configuration LDAP</p>
+                        <p className="text-small text-default-500">Configurez votre serveur LDAP pour
+                            l'authentification</p>
+                    </div>
+                </CardHeader>
+                <Divider/>
+                <CardBody>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                        <Input
+                            required
+                            name="serverUrl"
+                            label="URL du serveur LDAP"
+                            labelPlacement="outside"
+                            placeholder="ldap://example.com"
+                            value={formData.serverUrl}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.serverUrl}
+                            errorMessage={errorMessage && !formData.serverUrl ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
 
-                <div>
-                    <Input
-                        required
-                        name="bindDn"
-                        label="Bind Distinguished Name"
-                        labelPlacement="outside"
-                        placeholder="cn=admin,dc=example,dc=com"
-                        value={formData.bindDn}
-                        onChange={handleInputChange}
-                        isInvalid={!!errorMessage && !formData.bindDn}
-                    />
-                </div>
+                        <Input
+                            required
+                            name="bindDn"
+                            label="Base DN"
+                            labelPlacement="outside"
+                            placeholder="dc=example,dc=com"
+                            value={formData.bindDn}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.bindDn}
+                            errorMessage={errorMessage && !formData.bindDn ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
 
+                        <Input
+                            required
+                            name="adminCn"
+                            label="Nom d'utilisateur administrateur"
+                            labelPlacement="outside"
+                            placeholder="cn=admin"
+                            value={formData.adminCn}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.adminCn}
+                            errorMessage={errorMessage && !formData.adminCn ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
 
-                <div>
+                        <Input
+                            required
+                            name="adminPassword"
+                            label="Mot de passe administrateur"
+                            labelPlacement="outside"
+                            type={isVisible ? "text" : "password"}
+                            value={formData.adminPassword}
+                            onChange={handleInputChange}
+                            placeholder="••••••••"
+                            isInvalid={!!errorMessage && !formData.adminPassword}
+                            errorMessage={errorMessage && !formData.adminPassword ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                            endContent={
+                                <Button
+                                    type="button"
+                                    isIconOnly
+                                    radius="full"
+                                    variant="light"
+                                    onPress={() => setIsVisible(!isVisible)}
+                                    aria-label={isVisible ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+                                    isDisabled={isLoadingConfig}
+                                >
+                                    {isVisible ? <EyeSlashIcon className="h-5 w-5"/> : <EyeIcon className="h-5 w-5"/>}
+                                </Button>
+                            }
+                        />
 
-                    <Input
-                        required
-                        name="adminCn"
-                        label={"Nom commun de l'administrateur LDAP"}
-                        labelPlacement="outside"
-                        value={formData.adminCn}
-                        onChange={handleInputChange}
-                        isInvalid={!!errorMessage && !formData.adminCn}
-                    />
-                </div>
-
-
-                <div>
-                    <Input
-                        required
-                        name="adminPassword"
-                        label={"Mot de passe administrateur LDAP"}
-                        labelPlacement={"outside"}
-                        type={isVisible ? "text" : "password"}
-                        value={formData.adminPassword}
-                        onChange={handleInputChange}
-                        placeholder="Mot de passe"
-                        endContent={
+                        <div className="flex justify-end gap-4 mt-4">
                             <Button
-                                type="button"
-                                isIconOnly
-                                radius="full"
+                                color="default"
                                 variant="flat"
-                                onPress={() => {
-                                    setIsVisible(!isVisible)
-                                }}
-                                aria-label={isVisible ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+                                onPress={testConnection}
+                                isLoading={isTesting}
+                                isDisabled={isLoadingConfig}
+                                startContent={!isTesting && connectionStatus === 'success' ?
+                                    <CheckCircleIcon className="h-5 w-5 text-success"/> :
+                                    !isTesting && connectionStatus === 'error' ?
+                                        <XCircleIcon className="h-5 w-5 text-danger"/> : null}
                             >
-                                {isVisible ? (
-                                    <EyeSlashIcon className="h-5 w-5 "/>
-                                ) : (
-                                    <EyeIcon className="h-5 w-5"/>
-                                )}
+                                {isTesting ? "Test en cours..." :
+                                    connectionStatus === 'success' ? "Connexion réussie" :
+                                        connectionStatus === 'error' ? "Échec de connexion" : "Tester la connexion"}
                             </Button>
-                        }
-                    />
-                </div>
-
-                <div className="flex justify-end gap-4">
-                    <Button
-                        color={"default"}
-                        type="button"
-                        variant="flat"
-                    >
-                        Tester la connexion
-                        </Button>
-                    <Button
-                        type="submit"
-                        color="primary"
-                        variant="flat"
-                        isLoading={isLoading}
-                        startContent={!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
-                    >
-                        Mettre à jour
-                    </Button>
-                </div>
-            </form>
-
-            <Spacer y={4}/>
-
-            <div className="w-full mx-auto space-y-4">
-                <h2 className="text-xl font-semibold p-4 text-black dark:text-white">Configuration avancée des
-                    permissions LDAP</h2>
-
-                <div className="mt-4 p-4 bg-content1 rounded-lg">
-                    <p className="text-sm text-default-500">
-                        Fonctionnalité en cours de développement...
-                    </p>
-                </div>
-            </div>
+                            <Button
+                                type="submit"
+                                color="primary"
+                                variant="flat"
+                                isLoading={isLoading}
+                                isDisabled={isLoadingConfig}
+                                startContent={!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
+                            >
+                                Sauvegarder
+                            </Button>
+                        </div>
+                    </form>
+                </CardBody>
+            </Card>
         </div>
     );
 };

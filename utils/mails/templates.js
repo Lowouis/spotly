@@ -7,19 +7,19 @@ import {formatDuration} from "@/global";
  * @returns {string} - HTML complet avec des styles.
  */
 const wrapInHtmlTemplate = (body) => `
-    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #fff;">
-        <div class="w-full flex justify-center items-center">
-        <img 
-        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSljy3n2uMTUxQtGyUxZURLEbUrSbup0o7hFQ&s" 
-        alt="Spotly" class="w-full" />
+    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #fff; font-family: Arial, sans-serif;">
+        <div style="width: 100%; text-align: center; margin-bottom: 20px;">
+            <img 
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSljy3n2uMTUxQtGyUxZURLEbUrSbup0o7hFQ&s" 
+                alt="Spotly" 
+                style="max-width: 200px; height: auto;"
+            />
         </div>
         ${body}
-        <footer class="flex flex-col justify-start items-start" style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666;">
-        <span><a href="${process.env.NEXT_PUBLIC_API_ENDPOINT}">Spotly</a></span>
-
-            <hr style="border: none; border-top: 1px solid #eee;">
-            <p>Merci d'utiliser notre service !</p>
-            <p>⚠️ Ce message est généré automatiquement, merci de ne pas y répondre.</p>
+        <footer style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666; border-top: 1px solid #eee; padding-top: 20px;">
+            <a href="${process.env.NEXT_PUBLIC_API_ENDPOINT}" style="color: #666; text-decoration: none;">Spotly</a>
+            <p style="margin: 10px 0;">Merci d'utiliser notre service !</p>
+            <p style="margin: 10px 0;">⚠️ Ce message est généré automatiquement, merci de ne pas y répondre.</p>
         </footer>
     </div>
 `;
@@ -314,7 +314,11 @@ export const getEmailTemplate = (templateName, data) => {
     }
 
     const markdown = templates[templateName](data);
-    const htmlBody = marked(markdown);
+    const htmlBody = marked(markdown, {
+        gfm: true,
+        breaks: true,
+        headerIds: false
+    });
     return wrapInHtmlTemplate(htmlBody);
 };
 

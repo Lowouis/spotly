@@ -47,6 +47,19 @@ const Users = ({})=>{
         "Rôle",
     ]
 
+    const searchConfig = [
+        {tag: "nom", attr: "name"},
+        {tag: "prenom", attr: "surname"},
+        {tag: "mail", attr: "email"}
+    ];
+
+    const filters = [
+        {
+            placeholder: "Filtrer par rôle",
+            filterBy: "role"
+        }
+    ]
+
 
     return (
         <div className="flex flex-col gap-3 w-full">
@@ -59,6 +72,8 @@ const Users = ({})=>{
                 actions={['edit', 'delete']}
                 columnsGreatNames={columnsGreatNames}
                 filter={['updatedAt', 'id', 'password', 'createdAt', 'image', 'emailVerified']}
+                searchBy={searchConfig}
+                filters={filters}
             />
         </div>
     );

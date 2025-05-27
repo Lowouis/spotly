@@ -14,8 +14,17 @@ import {GrResources} from "react-icons/gr";
 import {RiApps2Line, RiMailSettingsLine} from "react-icons/ri";
 import {FaRegUser} from "react-icons/fa";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
-import {TbCertificate} from "react-icons/tb";
-
+import {
+    MdCategory,
+    MdDevices,
+    MdSecurity,
+    MdDashboard,
+    MdDomain,
+    MdSettings,
+    MdEventNote,
+    MdPeople,
+    MdLocationOn
+} from "react-icons/md";
 
 const sideItems = [
     {
@@ -88,35 +97,13 @@ const sideItems = [
         "permission": "ADMIN"
     },
     {
-        "title": "Mail",
-        "icon": <FiGrid />,
+        "title": "Liaisons",
         "items": [
             {
-                "id" : "smtp",
-                "title": "SMTP",
-                "icon": <RiMailSettingsLine />,
-                "permission": "SUPERADMIN"
-
-            },
-        ],
-        "permission": "SUPERADMIN"
-    },
-    {
-        "title": "Authentification",
-        "items": [
-            {
-                "id" : "ldap",
-                "title": "LDAP",
+                "id": "auth",
+                "title": "Configuration",
                 "icon": <CiServer />,
                 "permission": "SUPERADMIN"
-
-            },
-            {
-                "id": "sso",
-                "title": "SSO",
-                "icon": <TbCertificate/>,
-                "permission": "SUPERADMIN"
-
             }
         ],
         "permission": "SUPERADMIN"
@@ -135,6 +122,54 @@ const sideItems = [
         "permission": "SUPERADMIN"
     },
 
+];
+
+const menuItems = [
+    {
+        key: 'dashboard',
+        icon: <MdDashboard className="w-5 h-5"/>,
+        label: 'Tableau de bord'
+    },
+    {
+        key: 'domains',
+        icon: <MdDomain className="w-5 h-5"/>,
+        label: 'Domaines'
+    },
+    {
+        key: 'general',
+        icon: <MdSettings className="w-5 h-5"/>,
+        label: 'Général'
+    },
+    {
+        key: 'categories',
+        icon: <MdCategory className="w-5 h-5"/>,
+        label: 'Catégories'
+    },
+    {
+        key: 'resources',
+        icon: <MdDevices className="w-5 h-5"/>,
+        label: 'Ressources'
+    },
+    {
+        key: 'users',
+        icon: <MdPeople className="w-5 h-5"/>,
+        label: 'Utilisateurs'
+    },
+    {
+        key: 'entries',
+        icon: <MdEventNote className="w-5 h-5"/>,
+        label: 'Réservations'
+    },
+    {
+        key: 'auth',
+        icon: <MdSecurity className="w-5 h-5"/>,
+        label: 'Authentification'
+    },
+    {
+        key: 'locations',
+        icon: <MdLocationOn className="w-5 h-5"/>,
+        label: 'Localisations'
+    }
 ];
 
 export default function Sidebar() {

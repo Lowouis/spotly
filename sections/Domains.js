@@ -32,6 +32,17 @@ const Domains = ({})=>{
         "Niveau de protection",
     ];
 
+    const searchParams = [
+        {tag: "nom", attr: "name"},
+        {tag: "propriétaire", attr: "owner.username"},
+    ]
+
+    const filters = [
+        {
+            placeholder: "Filter par protection",
+            filterBy: "pickable.distinguishedName"
+        }
+    ]
 
     return (
         <div className="flex flex-col gap-3 w-full">
@@ -44,6 +55,8 @@ const Domains = ({})=>{
                     actions={["edit", "delete"]}
                     columnsGreatNames={columnsGreatNames}
                     filter={['updatedAt', 'createdAt', 'ownerId', 'id', 'pickableId']}
+                    filters={filters}
+                    searchParams={searchParams}
                 />
         </div>
     );

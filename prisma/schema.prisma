@@ -166,3 +166,14 @@ model timeScheduleOptions {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
+
+model KerberosConfig {
+  id            String   @id @default(uuid())
+  realm         String   @db.Text
+  kdc           String   @db.Text
+  adminServer   String   @db.Text
+  defaultDomain String   @db.Text
+  lastUpdated   DateTime @updatedAt
+  updatedBy     String
+  isActive      Boolean  @default(true)
+}
