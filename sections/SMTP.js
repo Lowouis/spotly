@@ -1,8 +1,9 @@
 'use client';
 
-import {Spacer, Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
+import {Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
+import {Switch} from "@nextui-org/switch";
 import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
@@ -259,6 +260,17 @@ const SMTPSettings = () => {
                                 errorMessage={errorMessage && !formData.fromName ? "Ce champ est requis" : ""}
                                 isDisabled={isLoadingConfig}
                             />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <Switch
+                                isSelected={formData.secure}
+                                onValueChange={(checked) => setFormData(prev => ({...prev, secure: checked}))}
+                                isDisabled={isLoadingConfig}
+                                size="sm"
+                            >
+                                Connexion sécurisée (TLS/SSL)
+                            </Switch>
                         </div>
 
                         <div className="flex justify-end gap-4 mt-4">
