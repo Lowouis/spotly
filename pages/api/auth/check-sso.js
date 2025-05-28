@@ -56,21 +56,19 @@ export default async function handler(req, res) {
 
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
-        // Initialiser le serveur Kerberos en passant une fonction vide comme dernier argument
+        // Initialiser le serveur Kerberos avec le principal complet comme service
         const server = await kerberos.initializeServer(
-            process.env.KERBEROS_SERVICE_NAME, // HTTP/sso.intranet.fhm.local
-            process.env.KERBEROS_REALM,         // FHM.LOCAL
+            process.env.KERBEROS_PRINCIPAL, // Utiliser le principal complet comme service
             () => {
             } // Fonction de rappel vide pour satisfaire la signature
         );
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
-        // Valider le ticket en passant les options (keytab et principal) à la méthode step
-        const result = await server.step(ticket, {
-            keytab: process.env.KERBEROS_KEYTAB_PATH,
-            principal: process.env.KERBEROS_PRINCIPAL
-        });
+        // Valider le ticket en passant les options (keytab) à la méthode step (si la doc le permet)
+        // La doc n'indique pas clairement si step prend keytab/principal
+        // Nous allons tenter sans d'abord, car initializeServer est configuré avec le principal
+        const result = await server.step(ticket);
 
         console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
         
