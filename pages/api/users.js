@@ -2,6 +2,7 @@
 import prisma from "@/prismaconf/init";
 import bycrypt from 'bcrypt';
 import {runMiddleware} from "@/lib/core";
+import {NextResponse} from 'next/server';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -90,6 +91,15 @@ export default async function handler(req, res) {
         }
 
         return res.status(200).json({ message: ids.count+": users deleted" });
+    } else if (req.method === "OPTIONS") {
+        // Gérer la requête preflight OPTIONS
+        const response = NextResponse.next();
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']);
+        res.writeHead(204, Object.fromEntries(response.headers.entries()));
+        res.end();
+    } else {
+        // Méthode non autorisée
+        res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE", "OPTIONS"]);
+        res.status(405).json({message: `Method ${req.method} not allowed`});
     }
-
 }

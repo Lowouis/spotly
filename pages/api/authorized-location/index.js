@@ -1,5 +1,6 @@
 import {PrismaClient} from '@prisma/client';
 import {runMiddleware} from '@/lib/core';
+import {NextResponse} from 'next/server';
 
 const prisma = new PrismaClient();
 
@@ -63,6 +64,14 @@ export default async function handler(req, res) {
             } catch (error) {
                 return res.status(500).json({error: 'Failed to delete authorized locations'});
             }
+
+        case 'OPTIONS':
+            // Gérer la requête preflight OPTIONS
+            const response = NextResponse.next();
+            res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']);
+            res.writeHead(204, Object.fromEntries(response.headers.entries()));
+            res.end();
+            break;
 
         default:
             res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);

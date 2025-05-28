@@ -1,6 +1,7 @@
 'use server';
 import prisma from "@/prismaconf/init";
 import {runMiddleware} from "@/lib/core";
+import {NextResponse} from "next/server";
 
 
 export default async function handler(req, res) {
@@ -278,6 +279,16 @@ export default async function handler(req, res) {
                     details: error.message
                 });
             }
+        } else if (req.method === "OPTIONS") {
+            // Gérer la requête preflight OPTIONS
+            const response = NextResponse.next();
+            res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'OPTIONS']);
+            res.writeHead(204, Object.fromEntries(response.headers.entries()));
+            res.end();
+        } else {
+            // Méthode non autorisée
+            res.setHeader("Allow", ["GET", "POST", "DELETE", "OPTIONS"]);
+            res.status(405).json({message: `Method ${req.method} not allowed`});
         }
     } catch (error) {
         console.error("Erreur lors de la création de l'entrée:", error);
@@ -286,5 +297,4 @@ export default async function handler(req, res) {
             details: error.message
         });
     }
-
 }

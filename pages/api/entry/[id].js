@@ -1,5 +1,6 @@
 import prisma from "@/prismaconf/init";
 import {runMiddleware} from "@/lib/core";
+import {NextResponse} from 'next/server';
 
 export default async function handler(req, res) {
 
@@ -53,7 +54,13 @@ export default async function handler(req, res) {
         });
 
         res.status(200).json(entry);
+    } else if (req.method === "OPTIONS") {
+        // Gérer la requête preflight OPTIONS
+        const response = NextResponse.next();
+        res.setHeader('Allow', ['PUT', 'DELETE', 'OPTIONS']);
+        res.writeHead(204, Object.fromEntries(response.headers.entries()));
+        res.end();
+    } else {
+        return res.status(405).json({message: "Method not allowed"});
     }
-
-    return res.status(405).json({ message: "Method not allowed" });
 }

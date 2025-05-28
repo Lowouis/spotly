@@ -1,5 +1,6 @@
 import {runMiddleware} from '@/lib/core';
 import {PrismaClient} from '@prisma/client';
+import {NextResponse} from 'next/server';
 
 const prisma = new PrismaClient();
 
@@ -28,6 +29,14 @@ export default async function handler(req, res) {
                 },
             });
             res.json(updatedOptions);
+            break;
+
+        case 'OPTIONS':
+            // Gérer la requête preflight OPTIONS
+            const response = NextResponse.next();
+            res.setHeader('Allow', ['GET', 'PUT', 'OPTIONS']);
+            res.writeHead(204, Object.fromEntries(response.headers.entries()));
+            res.end();
             break;
 
         default:
