@@ -1,6 +1,7 @@
 'use server';
 import prisma from "@/prismaconf/init";
 import {runMiddleware} from "@/lib/core";
+import {NextResponse} from 'next/server';
 
 export default async function handler(req, res) {
 
@@ -94,8 +95,16 @@ export default async function handler(req, res) {
             console.error("Error deleting categories:", error);
             res.status(500).json({ message: "Failed to delete categories" });
         }
+    } else if (req.method === "OPTIONS") {
+        // Gérer la requête preflight OPTIONS
+        // Le middleware ajoute déjà les en-têtes CORS nécessaires sur la réponse
+        const response = NextResponse.next();
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']); // S'assurer que OPTIONS est listé
+        res.writeHead(204, Object.fromEntries(response.headers.entries()));
+        res.end();
     } else {
-        res.setHeader("Allow", ["GET", "POST", "DELETE"]);
+        // Méthodes non autorisées autres que OPTIONS
+        res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE", "OPTIONS"]);
         res.status(405).json({ message: `Method ${req.method} not allowed` });
     }
 }
