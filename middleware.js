@@ -11,11 +11,6 @@ export async function middleware(req) {
 
     const response = NextResponse.next();
 
-    // Gérer les en-têtes CORS
-    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    response.headers.set('Access-Control-Max-Age', '86400'); // Cache pre-flight requests for 24 hours
-
     // Définir Access-Control-Allow-Origin et Access-Control-Allow-Credentials en fonction de l'origine de la requête
     if (origin) {
         response.headers.set('Access-Control-Allow-Origin', origin);
@@ -28,10 +23,28 @@ export async function middleware(req) {
         // response.headers.set('Access-Control-Allow-Credentials', 'false'); // Ne pas définir si ce n'est pas true avec *
     }
 
+    // Définir les autres en-têtes CORS pour toutes les réponses
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    response.headers.set('Access-Control-Max-Age', '86400'); // Cache pre-flight requests for 24 hours
+
     // Gérer les requêtes OPTIONS (pre-flight)
     if (req.method === 'OPTIONS') {
-        // Pour les requêtes OPTIONS, renvoyer une réponse avec un statut 204 (No Content) et les en-têtes CORS
-        return new NextResponse(null, {status: 204, headers: response.headers});
+        // Créer un nouvel objet headers pour la réponse OPTIONS pour s'assurer qu'ils sont bien définis
+        const optionsHeaders = new Headers(response.headers);
+
+        // Renforcer la définition des en-têtes spécifiques pour OPTIONS si nécessaire
+        if (origin) {
+            optionsHeaders.set('Access-Control-Allow-Origin', origin);
+            optionsHeaders.set('Access-Control-Allow-Credentials', 'true');
+        } else {
+            optionsHeaders.set('Access-Control-Allow-Origin', '*');
+        }
+        optionsHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        optionsHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+        optionsHeaders.set('Access-Control-Max-Age', '86400');
+
+        return new NextResponse(null, {status: 204, headers: optionsHeaders});
     }
 
     // Vérifier l'authentification pour les routes protégées
