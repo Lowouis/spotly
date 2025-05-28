@@ -2,6 +2,18 @@ import {runMiddleware} from "@/lib/core";
 import kerberos from 'kerberos';
 import prisma from "@/prismaconf/init";
 
+// Fonction utilitaire pour envelopper initializeServer dans une Promesse
+function initializeKerberosServer(servicePrincipal) {
+    return new Promise((resolve, reject) => {
+        kerberos.initializeServer(servicePrincipal, (err, serverInstance) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(serverInstance);
+        });
+    });
+}
+
 export default async function handler(req, res) {
     await runMiddleware(req, res);
 
@@ -56,18 +68,12 @@ export default async function handler(req, res) {
 
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
-        // Initialiser le serveur Kerberos avec le principal complet comme service
-        const server = await kerberos.initializeServer(
-            process.env.KERBEROS_PRINCIPAL, // Utiliser le principal complet comme service
-            () => {
-            } // Fonction de rappel vide pour satisfaire la signature
-        );
+        // Initialiser le serveur Kerberos en utilisant la fonction wrapper basée sur Promesse
+        const server = await initializeKerberosServer(process.env.KERBEROS_PRINCIPAL);
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
-        // Valider le ticket en passant les options (keytab) à la méthode step (si la doc le permet)
-        // La doc n'indique pas clairement si step prend keytab/principal
-        // Nous allons tenter sans d'abord, car initializeServer est configuré avec le principal
+        // Valider le ticket
         const result = await server.step(ticket);
 
         console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
