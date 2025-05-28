@@ -21,29 +21,31 @@ const Dashboard = ({})=>{
 
 
     return (
-        <div className="h-full p-2 ">
-            <div className="flex flex-row gap-4 mb-6">
-                <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.usersTotal || 0}
-                       label="utilisateurs"
-                    logo={<UsersIcon color={"#374151"} width={48} height={48}/>}/>
-                <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.entriesTotal || 0}
-                       label="réservations"
-                    logo={<BookmarkIcon color={"#374151"} width={48} height={48}/>}/>
-                <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.availableResourcesTotal || 0}
-                       label="disponibles"
-                    logo={<CubeIcon color={"#374151"} width={48} height={48}/>}/>
-                <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.bookedResourcesTotal || 0}
-                       label="utilisées"
-                    logo={<FireIcon color={"#374151"} width={48} height={48}/>}/>
-                <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.delayedResourcesTotal || 0}
-                       label="retards"
-                    logo={<ExclamationTriangleIcon color={"#374151"} width={48} height={48}/>}/>
-                <Block isLoaded={!activitiesStatsLoading} quantity={(activitiesStats?.ratio || 0) + "%"}
-                       label="disponibilité"
-                    logo={<ChartPieIcon color={"#374151"} width={48} height={48}/>}/>
-                <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.delayedResourcesTotal || 0}
-                       label="en attentes"
-                    logo={<ShieldExclamationIcon color={"#374151"} width={48} height={48}/>}/>
+        <div className="h-full p-2">
+            <div className="pb-4 w-full">
+                <div className="flex flex-row gap-4 mb-6 min-w-max px-2">
+                    <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.usersTotal || 0}
+                           label="utilisateurs"
+                           logo={<UsersIcon color={"#374151"} width={48} height={48}/>}/>
+                    <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.entriesTotal || 0}
+                           label="réservations"
+                           logo={<BookmarkIcon color={"#374151"} width={48} height={48}/>}/>
+                    <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.availableResourcesTotal || 0}
+                           label="disponibles"
+                           logo={<CubeIcon color={"#374151"} width={48} height={48}/>}/>
+                    <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.bookedResourcesTotal || 0}
+                           label="utilisées"
+                           logo={<FireIcon color={"#374151"} width={48} height={48}/>}/>
+                    <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.delayedResourcesTotal || 0}
+                           label="retards"
+                           logo={<ExclamationTriangleIcon color={"#374151"} width={48} height={48}/>}/>
+                    <Block isLoaded={!activitiesStatsLoading} quantity={(activitiesStats?.ratio || 0) + "%"}
+                           label="disponibilité"
+                           logo={<ChartPieIcon color={"#374151"} width={48} height={48}/>}/>
+                    <Block isLoaded={!activitiesStatsLoading} quantity={activitiesStats?.delayedResourcesTotal || 0}
+                           label="attentes"
+                           logo={<ShieldExclamationIcon color={"#374151"} width={48} height={48}/>}/>
+                </div>
             </div>
             <div className="h-[calc(100%-200px)]">
                 <ItemsOnTable

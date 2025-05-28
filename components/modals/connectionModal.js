@@ -13,7 +13,7 @@ export function ConnectionModal() {
         <div className="mx-auto mt-4">
             <Banner/>
             <div className="w-full flex justify-center items-center mt-5 flex-col">
-                <Card fullWidth className="max-w-full w-[400px] border-2" shadow="none">
+                <Card fullWidth className="max-w-full w-[400px]" shadow="md">
                     <CardBody className="overflow-hidden">
                         <Tabs
                             fullWidth

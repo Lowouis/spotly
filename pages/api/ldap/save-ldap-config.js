@@ -1,6 +1,7 @@
 import {encrypt} from '@/lib/security';
 import {ldapConnectionTest} from '@/lib/ldap-utils';
 import {runMiddleware} from "@/lib/core";
+import prisma from '@/prismaconf/init';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -24,10 +25,8 @@ export default async function handler(req, res) {
             adminCn: adminCn,
             adminDn: adminDn
         };
-        console.log(ldapConfig);
 
         const connectionResult = await ldapConnectionTest(ldapConfig);
-        console.log("TEST EN COURS")
         if (!connectionResult.success) {
             return res.status(401).json({
                 message: 'Échec de la connexion LDAP',
@@ -44,17 +43,14 @@ export default async function handler(req, res) {
             adminPassword: encrypt(adminPassword)
         };
 
-        // 3. Sauvegarde sécurisée (exemple avec Prisma)
+        // 3. Sauvegarde sécurisée
         const savedConfig = await prisma.ldapConfig.create({
             data: {
                 ...encryptedData,
                 lastUpdated: new Date(),
-                updatedBy: req.session.user.name + _ + req.session.user.surname // À adapter selon votre système d'authentification
+                updatedBy: req.session?.user ? `${req.session.user.name} ${req.session.user.surname}` : 'System'
             }
         });
-
-        // 4. Rotation des clés (logique à implémenter séparément)
-        rotateEncryptionKeysIfNeeded();
 
         return res.status(200).json({
             message: 'Configuration sauvegardée avec succès',

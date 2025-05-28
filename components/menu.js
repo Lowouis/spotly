@@ -206,11 +206,11 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center h-full">
                         <div className="relative group h-full flex items-center">
-                            <div className="relative z-10 cursor-pointer flex items-center">
+                            <div className="relative z-10 flex items-center hover:rotate-0 rotate-45 transition-all">
                                 <Image
-                                    src={`${basePath}/spotly_logo.png`}
+                                    src={`${basePath}/banner.png`}
                                     alt="Spotly Logo"
-                                    width={100}
+                                    width={40}
                                     height={40}
                                     style={{width: 'auto', height: 'auto'}}
                                     className="transition-all duration-500"
