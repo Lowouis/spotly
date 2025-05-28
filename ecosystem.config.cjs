@@ -5,7 +5,8 @@ module.exports = {
             script: 'npm',
             args: 'start',
             env: {
-                NODE_ENV: 'production'
+                NODE_ENV: 'production',
+                KRB5_KTNAME: '/etc/apache2/fhm.keytab'
             }
         },
         {

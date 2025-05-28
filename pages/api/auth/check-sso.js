@@ -3,13 +3,10 @@ import kerberos from 'kerberos';
 import prisma from "@/prismaconf/init";
 
 // Fonction utilitaire pour envelopper initializeServer dans une Promesse
-function initializeKerberosServer(servicePrincipal, keytabPath, principal) {
+function initializeKerberosServer(servicePrincipal) {
     return new Promise((resolve, reject) => {
-        // Passer les options keytab et principal à initializeServer
-        kerberos.initializeServer(servicePrincipal, {
-            keytab: keytabPath,
-            principal: principal
-        }, (err, serverInstance) => {
+        // Utiliser la signature simple (service, callback)
+        kerberos.initializeServer(servicePrincipal, (err, serverInstance) => {
             if (err) {
                 return reject(err);
             }
@@ -73,16 +70,12 @@ export default async function handler(req, res) {
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
         // Initialiser le serveur Kerberos en utilisant la fonction wrapper basée sur Promesse
-        // et en passant le chemin du keytab et le principal via les options
-        const server = await initializeKerberosServer(
-            process.env.KERBEROS_PRINCIPAL, // Service Principal
-            process.env.KERBEROS_KEYTAB_PATH, // Keytab Path
-            process.env.KERBEROS_PRINCIPAL // Principal
-        );
+        // et en passant uniquement le principal du service. La config keytab/principal devrait être prise de l'environnement.
+        const server = await initializeKerberosServer(process.env.KERBEROS_PRINCIPAL);
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
-        // Valider le ticket
+        // Valider le ticket. Les détails du keytab/principal devraient être déjà chargés.
         const result = await server.step(ticket);
 
         console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
