@@ -178,3 +178,17 @@ model KerberosConfig {
   updatedBy     String
   isActive      Boolean  @default(true)
 }
+
+model SmtpConfig {
+  id          String   @id @default(uuid())
+  host        String   @db.Text
+  port        String   @db.Text // Stocké chiffré, donc texte
+  username    String   @db.Text // Stocké chiffré, donc texte
+  password    String   @db.Text // Stocké chiffré, donc texte
+  fromEmail   String   @db.Text // Stocké chiffré, donc texte
+  fromName    String   @db.Text // Stocké chiffré, donc texte
+  secure      Boolean  @default(true)
+  lastUpdated DateTime @updatedAt
+  updatedBy   String
+  isActive    Boolean  @default(true)
+}
