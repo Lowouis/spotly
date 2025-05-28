@@ -6,6 +6,7 @@ export default async function handler(req, res) {
     await runMiddleware(req, res);
 
     console.log('[/api/auth/check-sso] - Reçu');
+    console.log('[/api/auth/check-sso] - Headers:', JSON.stringify(req.headers, null, 2));
 
     if (req.method !== 'GET') {
         console.log('[/api/auth/check-sso] - Méthode invalide:', req.method);
@@ -23,10 +24,25 @@ export default async function handler(req, res) {
 
     if (!authHeader || !authHeader.startsWith('Negotiate ')) {
         console.log('[/api/auth/check-sso] - En-tête Authorization Negotiate manquant ou mal formaté');
+        console.log('[/api/auth/check-sso] - Configuration Kerberos:');
+        console.log('- Service Name:', process.env.KERBEROS_SERVICE_NAME);
+        console.log('- Realm:', process.env.KERBEROS_REALM);
+        console.log('- Keytab Path:', process.env.KERBEROS_KEYTAB_PATH);
+        console.log('- Principal:', process.env.KERBEROS_PRINCIPAL);
+        
         res.setHeader('WWW-Authenticate', 'Negotiate');
         return res.status(401).json({
             message: 'Authentification Negotiate requise',
-            status: 'negotiate_required'
+            status: 'negotiate_required',
+            debug: {
+                headers: req.headers,
+                kerberosConfig: {
+                    serviceName: process.env.KERBEROS_SERVICE_NAME,
+                    realm: process.env.KERBEROS_REALM,
+                    keytabPath: process.env.KERBEROS_KEYTAB_PATH,
+                    principal: process.env.KERBEROS_PRINCIPAL
+                }
+            }
         });
     }
 
@@ -39,36 +55,60 @@ export default async function handler(req, res) {
     let responseToken = null;
 
     try {
+        console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
         // Initialiser le serveur Kerberos avec les variables d'environnement spécifiques
         const server = await kerberos.initializeServer(
-            process.env.KERBEROS_SERVICE_NAME, // HTTP/sso.intranet.fhm.local
-            process.env.KERBEROS_REALM,        // FHM.LOCAL
+            process.env.KERBEROS_SERVICE_NAME,
+            process.env.KERBEROS_REALM,
             {
-                keytab: process.env.KERBEROS_KEYTAB_PATH, // /etc/apache2/fhm.keytab
-                principal: process.env.KERBEROS_PRINCIPAL  // HTTP/sso.intranet.fhm.local@FHM.LOCAL
+                keytab: process.env.KERBEROS_KEYTAB_PATH,
+                principal: process.env.KERBEROS_PRINCIPAL
             }
         );
+        console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
+        console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
         // Valider le ticket
         const result = await server.step(ticket);
-
+        console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
+        
         if (result.success) {
             authenticated = true;
-            userPrincipal = result.username; // Le principal de l'utilisateur authentifié
-            responseToken = result.responseToken; // Token de réponse si nécessaire
-
+            userPrincipal = result.username;
+            responseToken = result.responseToken;
+            
             console.log('[/api/auth/check-sso] - Authentification Kerberos réussie pour', userPrincipal);
         } else {
-            throw new Error('Échec de la validation du ticket Kerberos');
+            console.error('[/api/auth/check-sso] - Échec de la validation du ticket:', result);
+            throw new Error('Échec de la validation du ticket Kerberos: ' + JSON.stringify(result));
         }
 
     } catch (kerberosError) {
-        console.error('[/api/auth/check-sso] - Erreur lors de la validation Kerberos:', kerberosError);
+        console.error('[/api/auth/check-sso] - Erreur détaillée lors de la validation Kerberos:', {
+            message: kerberosError.message,
+            stack: kerberosError.stack,
+            config: {
+                serviceName: process.env.KERBEROS_SERVICE_NAME,
+                realm: process.env.KERBEROS_REALM,
+                keytabPath: process.env.KERBEROS_KEYTAB_PATH,
+                principal: process.env.KERBEROS_PRINCIPAL
+            }
+        });
         res.setHeader('WWW-Authenticate', 'Negotiate');
         return res.status(401).json({
             message: 'Échec de l\'authentification Kerberos',
             status: 'authentication_failed',
-            details: kerberosError.message
+            details: kerberosError.message,
+            debug: {
+                error: kerberosError.message,
+                stack: kerberosError.stack,
+                config: {
+                    serviceName: process.env.KERBEROS_SERVICE_NAME,
+                    realm: process.env.KERBEROS_REALM,
+                    keytabPath: process.env.KERBEROS_KEYTAB_PATH,
+                    principal: process.env.KERBEROS_PRINCIPAL
+                }
+            }
         });
     }
 
