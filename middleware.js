@@ -9,16 +9,23 @@ export async function middleware(req) {
     const origin = req.headers.get('origin') || '';
 
     // Gérer les requêtes CORS
-    // if (req.method === 'OPTIONS') {
-    //     return new NextResponse(null, {
-    //         status: 200, 
-    //         headers: {
-    //             'Access-Control-Allow-Origin': '*',
-    //             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    //             'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    //         },
-    //     });
-    // }
+    if (req.method === 'OPTIONS') {
+        return new NextResponse(null, {
+            status: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+                'Access-Control-Max-Age': '86400',
+            },
+        });
+    }
+
+    // Ajouter les en-têtes CORS pour toutes les réponses
+    const response = NextResponse.next();
+    response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 
     // Vérifier l'authentification pour les routes protégées
     const token = await getToken({req});
@@ -55,7 +62,7 @@ export async function middleware(req) {
 
     // Si la route est publique, permettre l'accès
     if (isPublicRoute) {
-        return NextResponse.next();
+        return response;
     }
 
     // Vérifier l'accès aux routes admin
@@ -75,7 +82,7 @@ export async function middleware(req) {
         return NextResponse.redirect(loginUrl);
     }
 
-    return NextResponse.next();
+    return response;
 }
 
 export const config = {
