@@ -7,26 +7,30 @@ const basePath = nextConfig.basePath || '';
 export async function middleware(req) {
     const pathname = req.nextUrl.pathname;
     const origin = req.headers.get('origin') || '';
-    const host = req.headers.get('host') || '';
+    // const host = req.headers.get('host') || ''; // Plus besoin de cette variable ici
 
-    // Gérer les requêtes CORS
     const response = NextResponse.next();
 
-    // Autoriser l'origine de la requête si elle est différente de l'hôte
-    if (origin && origin !== `http://${host}` && origin !== `https://${host}`) {
-        response.headers.set('Access-Control-Allow-Origin', origin);
-        response.headers.set('Access-Control-Allow-Credentials', 'true');
-    } else {
-        // Sinon, autoriser toutes les origines (pour les requêtes sans credentials)
-        response.headers.set('Access-Control-Allow-Origin', '*');
-    }
-
+    // Gérer les en-têtes CORS
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     response.headers.set('Access-Control-Max-Age', '86400'); // Cache pre-flight requests for 24 hours
 
+    // Définir Access-Control-Allow-Origin et Access-Control-Allow-Credentials en fonction de l'origine de la requête
+    if (origin) {
+        response.headers.set('Access-Control-Allow-Origin', origin);
+        // Access-Control-Allow-Credentials doit être true lorsque l'origine n'est pas le joker
+        response.headers.set('Access-Control-Allow-Credentials', 'true');
+    } else {
+        // Fallback pour les requêtes sans origine (peut ne pas être nécessaire mais pour sécurité)
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        // Access-Control-Allow-Credentials ne doit pas être true avec le joker
+        // response.headers.set('Access-Control-Allow-Credentials', 'false'); // Ne pas définir si ce n'est pas true avec *
+    }
+
     // Gérer les requêtes OPTIONS (pre-flight)
     if (req.method === 'OPTIONS') {
+        // Pour les requêtes OPTIONS, renvoyer une réponse avec un statut 204 (No Content) et les en-têtes CORS
         return new NextResponse(null, {status: 204, headers: response.headers});
     }
 
@@ -56,7 +60,6 @@ export async function middleware(req) {
         }
         return pathWithoutBasePath === route;
     });
-
 
     // Si la route est publique, permettre l'accès
     if (isPublicRoute) {
