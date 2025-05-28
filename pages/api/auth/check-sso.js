@@ -56,20 +56,20 @@ export default async function handler(req, res) {
 
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
-        // Initialiser le serveur Kerberos avec les variables d'environnement spécifiques
+        // Initialiser le serveur Kerberos (sans les options)
         const server = await kerberos.initializeServer(
-            process.env.KERBEROS_SERVICE_NAME,
-            process.env.KERBEROS_REALM,
-            {
-                keytab: process.env.KERBEROS_KEYTAB_PATH,
-                principal: process.env.KERBEROS_PRINCIPAL
-            }
+            process.env.KERBEROS_SERVICE_NAME, // HTTP/sso.intranet.fhm.local
+            process.env.KERBEROS_REALM         // FHM.LOCAL
         );
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
-        // Valider le ticket
-        const result = await server.step(ticket);
+        // Valider le ticket en passant les options (keytab et principal) à la méthode step
+        const result = await server.step(ticket, {
+            keytab: process.env.KERBEROS_KEYTAB_PATH,
+            principal: process.env.KERBEROS_PRINCIPAL
+        });
+
         console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
         
         if (result.success) {
