@@ -56,10 +56,12 @@ export default async function handler(req, res) {
 
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
-        // Initialiser le serveur Kerberos (sans les options)
+        // Initialiser le serveur Kerberos en passant une fonction vide comme dernier argument
         const server = await kerberos.initializeServer(
             process.env.KERBEROS_SERVICE_NAME, // HTTP/sso.intranet.fhm.local
-            process.env.KERBEROS_REALM         // FHM.LOCAL
+            process.env.KERBEROS_REALM,         // FHM.LOCAL
+            () => {
+            } // Fonction de rappel vide pour satisfaire la signature
         );
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
