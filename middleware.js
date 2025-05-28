@@ -7,33 +7,32 @@ const basePath = nextConfig.basePath || '';
 export async function middleware(req) {
     const pathname = req.nextUrl.pathname;
     const origin = req.headers.get('origin') || '';
+    const host = req.headers.get('host') || '';
 
     // Gérer les requêtes CORS
-    if (req.method === 'OPTIONS') {
-        return new NextResponse(null, {
-            status: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-                'Access-Control-Max-Age': '86400',
-            },
-        });
+    const response = NextResponse.next();
+
+    // Autoriser l'origine de la requête si elle est différente de l'hôte
+    if (origin && origin !== `http://${host}` && origin !== `https://${host}`) {
+        response.headers.set('Access-Control-Allow-Origin', origin);
+        response.headers.set('Access-Control-Allow-Credentials', 'true');
+    } else {
+        // Sinon, autoriser toutes les origines (pour les requêtes sans credentials)
+        response.headers.set('Access-Control-Allow-Origin', '*');
     }
 
-    // Ajouter les en-têtes CORS pour toutes les réponses
-    const response = NextResponse.next();
-    response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    response.headers.set('Access-Control-Max-Age', '86400'); // Cache pre-flight requests for 24 hours
+
+    // Gérer les requêtes OPTIONS (pre-flight)
+    if (req.method === 'OPTIONS') {
+        return new NextResponse(null, {status: 204, headers: response.headers});
+    }
 
     // Vérifier l'authentification pour les routes protégées
     const token = await getToken({req});
     const isAuth = !!token;
-
-    console.log('Middleware - Path:', pathname);
-    console.log('Middleware - Token:', token);
-    console.log('Middleware - BasePath:', basePath);
 
     // Routes publiques qui ne nécessitent pas d'authentification
     const publicRoutes = [
@@ -58,7 +57,6 @@ export async function middleware(req) {
         return pathWithoutBasePath === route;
     });
 
-    console.log('Middleware - Is public route:', isPublicRoute);
 
     // Si la route est publique, permettre l'accès
     if (isPublicRoute) {
