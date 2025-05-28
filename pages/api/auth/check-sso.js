@@ -3,9 +3,13 @@ import kerberos from 'kerberos';
 import prisma from "@/prismaconf/init";
 
 // Fonction utilitaire pour envelopper initializeServer dans une Promesse
-function initializeKerberosServer(servicePrincipal) {
+function initializeKerberosServer(servicePrincipal, keytabPath, principal) {
     return new Promise((resolve, reject) => {
-        kerberos.initializeServer(servicePrincipal, (err, serverInstance) => {
+        // Passer les options keytab et principal à initializeServer
+        kerberos.initializeServer(servicePrincipal, {
+            keytab: keytabPath,
+            principal: principal
+        }, (err, serverInstance) => {
             if (err) {
                 return reject(err);
             }
@@ -69,7 +73,12 @@ export default async function handler(req, res) {
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
         // Initialiser le serveur Kerberos en utilisant la fonction wrapper basée sur Promesse
-        const server = await initializeKerberosServer(process.env.KERBEROS_PRINCIPAL);
+        // et en passant le chemin du keytab et le principal via les options
+        const server = await initializeKerberosServer(
+            process.env.KERBEROS_PRINCIPAL, // Service Principal
+            process.env.KERBEROS_KEYTAB_PATH, // Keytab Path
+            process.env.KERBEROS_PRINCIPAL // Principal
+        );
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
