@@ -93,10 +93,10 @@ export default async function handler(req, res) {
 
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
-        // Extraire le nom du service du principal complet
-        const serviceName = process.env.KERBEROS_PRINCIPAL.split('@')[0];
+
+
         // Initialiser le serveur Kerberos en utilisant la fonction wrapper basée sur Promesse et en passant uniquement le nom du service.
-        const server = await initializeKerberosServer(serviceName);
+        const server = await initializeKerberosServer(process.env.KERBEROS_PRINCIPAL);
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
