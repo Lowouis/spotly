@@ -109,21 +109,17 @@ export default async function handler(req, res) {
 
         console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
 
-        // Vérifier si le résultat est un objet avec une propriété success
-        if (typeof result === 'object' && result !== null) {
-            if (result.success) {
-                authenticated = true;
-                userPrincipal = result.username;
-                responseToken = result.responseToken;
-                console.log('[/api/auth/check-sso] - Authentification Kerberos réussie pour', userPrincipal);
-            } else {
-                console.error('[/api/auth/check-sso] - Échec de la validation du ticket:', result);
-                throw new Error('Échec de la validation du ticket Kerberos: ' + JSON.stringify(result));
-            }
+        // Si on a un résultat, c'est que l'authentification a réussi
+        if (result) {
+            authenticated = true;
+            // Le principal de l'utilisateur devrait être disponible dans le ticket
+            // On peut le récupérer avec server.username()
+            userPrincipal = await server.username();
+            responseToken = result;
+            console.log('[/api/auth/check-sso] - Authentification Kerberos réussie pour', userPrincipal);
         } else {
-            // Si le résultat n'est pas un objet, c'est probablement une erreur
-            console.error('[/api/auth/check-sso] - Format de réponse invalide:', result);
-            throw new Error('Format de réponse invalide lors de la validation Kerberos');
+            console.error('[/api/auth/check-sso] - Échec de la validation du ticket');
+            throw new Error('Échec de la validation du ticket Kerberos');
         }
 
     } catch (kerberosError) {
