@@ -94,13 +94,17 @@ export default async function handler(req, res) {
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
 
-
-        // Initialiser le serveur Kerberos en utilisant la fonction wrapper basée sur Promesse et en passant uniquement le nom du service.
-        const server = await initializeKerberosServer(process.env.KERBEROS_PRINCIPAL);
+        // Initialiser le serveur Kerberos avec le format correct
+        const server = await initializeKerberosServer('HTTP@sso.intranet.fhm.local');
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
-        // Valider le ticket. Les détails du keytab/principal devraient être déjà chargés via l'initialisation.
+
+        // Ajouter des logs pour déboguer le ticket
+        console.log('[/api/auth/check-sso] - Longueur du ticket:', ticket.length);
+        console.log('[/api/auth/check-sso] - Format du ticket:', typeof ticket);
+
+        // Valider le ticket
         const result = await server.step(ticket);
 
         console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
