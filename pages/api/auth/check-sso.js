@@ -1,6 +1,11 @@
 import {runMiddleware} from "@/lib/core";
 import kerberos from 'kerberos';
 import prisma from "@/prismaconf/init";
+import {exec} from 'child_process';
+import {promisify} from 'util';
+
+// Promisifier la fonction exec
+const execPromise = promisify(exec);
 
 // Fonction utilitaire pour envelopper initializeServer dans une Promesse
 function initializeKerberosServer(servicePrincipal) {
@@ -16,6 +21,24 @@ function initializeKerberosServer(servicePrincipal) {
 }
 
 export default async function handler(req, res) {
+    // --- Début du test kinit ---
+    console.log('[/api/auth/check-sso] - Exécution du test kinit...');
+    const kinitCommand = `kinit -k -t ${process.env.KRB5_KTNAME} ${process.env.KERBEROS_PRINCIPAL} || echo "kinit failed"`;
+    try {
+        const {stdout, stderr} = await execPromise(kinitCommand);
+        if (stdout.includes('kinit failed') || stderr) {
+            console.error('[/api/auth/check-sso] - Test kinit échoué:', stderr || stdout);
+            console.warn('[/api/auth/check-sso] - Cela peut indiquer un problème avec le keytab ou les permissions.');
+        } else {
+            console.log('[/api/auth/check-sso] - Test kinit réussi.');
+        }
+    } catch (error) {
+        console.error('[/api/auth/check-sso] - Erreur lors de l\'exécution de kinit:', error);
+        console.warn('[/api/auth/check-sso] - Assurez-vous que la commande kinit est disponible et que l\'environnement est correct.');
+    }
+    console.log('[/api/auth/check-sso] - Fin du test kinit.');
+    // --- Fin du test kinit ---
+
     await runMiddleware(req, res);
 
     console.log('[/api/auth/check-sso] - Reçu');
