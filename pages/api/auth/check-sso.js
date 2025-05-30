@@ -8,10 +8,11 @@ import {promisify} from 'util';
 const execPromise = promisify(exec);
 
 // Fonction utilitaire pour envelopper initializeServer dans une Promesse
-function initializeKerberosServer(servicePrincipal) {
+function initializeKerberosServer(serviceName) {
     return new Promise((resolve, reject) => {
         // Utiliser la signature simple (service, callback)
-        kerberos.initializeServer(servicePrincipal, (err, serverInstance) => {
+        // Passer uniquement le nom du service, le realm devrait être trouvé via l'environnement
+        kerberos.initializeServer(serviceName, (err, serverInstance) => {
             if (err) {
                 return reject(err);
             }
@@ -23,12 +24,12 @@ function initializeKerberosServer(servicePrincipal) {
 export default async function handler(req, res) {
     // --- Début du test kinit ---
     console.log('[/api/auth/check-sso] - Exécution du test kinit...');
-    const kinitCommand = `kinit -k -t ${process.env.KRB5_KTNAME} ${process.env.KERBEROS_PRINCIPAL} || echo "kinit failed"`;
+    const kinitCommand = `kinit -k -t ${process.env.KRB5_KTNAME || process.env.KERBEROS_KEYTAB_PATH} ${process.env.KERBEROS_PRINCIPAL} || echo "kinit failed"`;
     try {
         const {stdout, stderr} = await execPromise(kinitCommand);
         if (stdout.includes('kinit failed') || stderr) {
             console.error('[/api/auth/check-sso] - Test kinit échoué:', stderr || stdout);
-            console.warn('[/api/auth/check-sso] - Cela peut indiquer un problème avec le keytab ou les permissions.');
+            console.warn('[/api/auth/check-sso] - Cela peut indiquer un problème avec le keytab ou les permissions, ou le principal côté KDC.');
         } else {
             console.log('[/api/auth/check-sso] - Test kinit réussi.');
         }
@@ -92,19 +93,21 @@ export default async function handler(req, res) {
 
     try {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
-        // Initialiser le serveur Kerberos en utilisant la fonction wrapper basée sur Promesse
-        // et en passant uniquement le principal du service. La config keytab/principal devrait être prise de l'environnement.
-        const server = await initializeKerberosServer(process.env.KERBEROS_PRINCIPAL);
+        // Extraire le nom du service du principal complet
+        const serviceName = process.env.KERBEROS_PRINCIPAL.split('@')[0];
+        // Initialiser le serveur Kerberos en utilisant la fonction wrapper basée sur Promesse et en passant uniquement le nom du service.
+        const server = await initializeKerberosServer(serviceName);
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
-        // Valider le ticket. Les détails du keytab/principal devraient être déjà chargés.
+        // Valider le ticket. Les détails du keytab/principal devraient être déjà chargés via l'initialisation.
         const result = await server.step(ticket);
 
         console.log('[/api/auth/check-sso] - Résultat de la validation:', result);
         
         if (result.success) {
             authenticated = true;
+            // Le principal de l'utilisateur authentifié devrait être retourné ici (ex: utilisateur@REALM)
             userPrincipal = result.username;
             responseToken = result.responseToken;
             
@@ -186,7 +189,7 @@ export default async function handler(req, res) {
         } catch (dbError) {
             console.error('[/api/auth/check-sso] - Erreur base de données:', dbError);
             return res.status(500).json({
-                message: 'Erreur serveur lors de l\'authentification',
+                message: 'Échec de l\'authentification SSO',
                 status: 'server_error',
                 details: dbError.message
             });
