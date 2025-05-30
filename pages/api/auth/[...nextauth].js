@@ -22,7 +22,7 @@ async function getActiveLdapConfig() {
             lastUpdated: 'desc'
         }
     });
-
+    console.log(config)
     if (!config) {
         throw new Error('Aucune configuration LDAP active trouvée');
     }
@@ -31,6 +31,7 @@ async function getActiveLdapConfig() {
         serverUrl: decrypt(config.serverUrl),
         bindDn: decrypt(config.bindDn),
         adminCn: decrypt(config.adminCn),
+        adminDn : decrypt(config.adminDn),
         adminPassword: decrypt(config.adminPassword)
     };
 }
@@ -136,7 +137,7 @@ export const authConfig = {
                             ldapOpts: {
                                 url: ldapConfig.serverUrl,
                             },
-                            adminDn: ldapConfig.adminCn,
+                            adminDn: ldapConfig.adminDn,
                             adminPassword: ldapConfig.adminPassword,
                             userPassword: credentials.password,
                             userSearchBase: ldapConfig.bindDn,
