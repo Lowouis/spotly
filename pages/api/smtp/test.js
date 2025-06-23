@@ -40,6 +40,9 @@ export default async function handler(req, res) {
             auth: {
                 user: username,
                 pass: password
+            },
+            tls: {
+                rejectUnauthorized: false // Pour ignorer les erreurs de certificat auto-signé
             }
         });
 
@@ -56,4 +59,4 @@ export default async function handler(req, res) {
             details: process.env.NODE_ENV === 'development' ? error.message : null
         });
     }
-} 
+}

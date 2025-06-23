@@ -1,7 +1,6 @@
 import {encrypt} from '@/lib/security';
 import {ldapConnectionTest} from '@/lib/ldap-utils';
 import {runMiddleware} from "@/lib/core";
-import prisma from '@/prismaconf/init';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -23,10 +22,13 @@ export default async function handler(req, res) {
             bindDN: bindDn,
             bindCredentials: adminPassword,
             adminCn: adminCn,
-            adminDn: adminDn
+            adminDn: adminDn,
+            username: adminCn
         };
+        console.log(ldapConfig);
 
         const connectionResult = await ldapConnectionTest(ldapConfig);
+        console.log("TEST EN COURS")
         if (!connectionResult.success) {
             return res.status(401).json({
                 message: 'Échec de la connexion LDAP',

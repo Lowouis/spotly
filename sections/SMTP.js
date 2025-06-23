@@ -3,10 +3,10 @@
 import {Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
-import {Switch} from "@nextui-org/switch";
 import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
+import {Switch} from "@heroui/react";
 
 const SMTPSettings = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,7 @@ const SMTPSettings = () => {
         password: "",
         fromEmail: "",
         fromName: "",
-        secure: true
+        secure: false
     });
 
     useEffect(() => {
@@ -30,7 +30,7 @@ const SMTPSettings = () => {
             setIsLoadingConfig(true);
             try {
                 console.log("Chargement de la configuration SMTP...");
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/smtp-config`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/smtp/config`);
                 console.log("Réponse du serveur:", response.status);
 
                 if (response.ok) {
@@ -95,7 +95,7 @@ const SMTPSettings = () => {
         setIsTesting(true);
         setConnectionStatus(null);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/test`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/smtp/test`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
@@ -134,7 +134,7 @@ const SMTPSettings = () => {
 
         setIsLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/save-smtp-config`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/smtp/save`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(formData),
@@ -170,8 +170,8 @@ const SMTPSettings = () => {
                 <CardHeader className="flex gap-3">
                     <div className="flex flex-col">
                         <p className="text-xl font-semibold">Configuration SMTP</p>
-                        <p className="text-small text-default-500">Configurez votre serveur SMTP pour l'envoi
-                            d'emails</p>
+                        <p className="text-small text-default-500">Configurez votre serveur SMTP pour l&apos;envoi
+                            d&apos;emails</p>
                     </div>
                 </CardHeader>
                 <Divider/>
@@ -179,7 +179,7 @@ const SMTPSettings = () => {
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div className="grid grid-cols-2 gap-4">
                             <Input
-                                required
+                                isRequired
                                 name="host"
                                 label="Serveur SMTP"
                                 labelPlacement="outside"
@@ -192,7 +192,7 @@ const SMTPSettings = () => {
                             />
 
                             <Input
-                                required
+                                isRequired
                                 name="port"
                                 label="Port"
                                 labelPlacement="outside"
@@ -220,7 +220,7 @@ const SMTPSettings = () => {
                             />
 
                             <Input
-                                required
+                                isRequired
                                 type="password"
                                 name="password"
                                 label="Mot de passe"
@@ -236,7 +236,7 @@ const SMTPSettings = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <Input
-                                required
+                                isRequired
                                 name="fromEmail"
                                 label="Email d'expédition"
                                 labelPlacement="outside"
@@ -249,7 +249,7 @@ const SMTPSettings = () => {
                             />
 
                             <Input
-                                required
+                                isRequired
                                 name="fromName"
                                 label="Nom d'expédition"
                                 labelPlacement="outside"
@@ -265,7 +265,18 @@ const SMTPSettings = () => {
                         <div className="grid grid-cols-2 gap-4">
                             <Switch
                                 isSelected={formData.secure}
-                                onValueChange={(checked) => setFormData(prev => ({...prev, secure: checked}))}
+                                onValueChange={(checked) => {
+                                    if( checked && formData.port !== "465" ) {
+                                        addToast({
+                                            title: 'Connexion sécurisée',
+                                            description: 'Pour une connexion sécurisée, le port doit être 465.',
+                                            color: 'warning',
+                                            duration: 5000,
+                                        });
+                                        return;
+                                    }
+                                    setFormData(prev => ({...prev, secure: checked}))
+                                }}
                                 isDisabled={isLoadingConfig}
                                 size="sm"
                             >

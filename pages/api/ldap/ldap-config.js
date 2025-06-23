@@ -25,12 +25,14 @@ export default async function handler(req, res) {
                 message: 'Aucune configuration LDAP trouvée'
             });
         }
+        console.log(config);
 
         // Décrypter les données sensibles
         const decryptedConfig = {
             serverUrl: decrypt(config.serverUrl),
             bindDn: decrypt(config.bindDn),
             adminCn: decrypt(config.adminCn),
+            adminDn: decrypt(config.adminDn),
             // Ne pas renvoyer le mot de passe pour des raisons de sécurité
         };
 
