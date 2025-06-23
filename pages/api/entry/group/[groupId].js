@@ -1,5 +1,5 @@
 import {getServerSession} from "next-auth/next";
-import {authConfig} from "../../auth/[...nextauth]";
+import authConfig from "../../auth/[...nextauth]";
 import prisma from "@/prismaconf/init";
 import {runMiddleware} from "@/lib/core";
 
