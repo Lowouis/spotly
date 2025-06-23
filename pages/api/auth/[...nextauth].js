@@ -22,26 +22,9 @@ async function getActiveLdapConfig() {
             lastUpdated: 'desc'
         }
     });
-    console.log(config)
     if (!config) {
         throw new Error('Aucune configuration LDAP active trouvée');
-    } if(!user || user.external === true){
-        const ldapUser = await authenticate({
-            ldapOpts: {
-                url: process.env.NEXT_PUBLIC_LDAP_DOMAIN,
-                //tlsOptions : {rejectUnauthorized: false}
-            },
-            adminDn: process.env.NEXT_PUBLIC_LDAP_ADMIN_DN,
-            adminPassword: process.env.NEXT_PUBLIC_LDAP_ADMIN_PASSWORD,
-            userPassword: credentials.password,
-            userSearchBase: process.env.NEXT_PUBLIC_LDAP_BASEDN,
-            usernameAttribute: 'cn',
-            username: credentials.username,
-            attributes: ['dc','cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
-        }).catch(e=>{
-            throw new Error("LDAP user search failed / rejected : " + e);
-        });
-
+    } 
     return {
         serverUrl: decrypt(config.serverUrl),
         bindDn: decrypt(config.bindDn),
@@ -49,7 +32,6 @@ async function getActiveLdapConfig() {
         adminDn : decrypt(config.adminDn),
         adminPassword: decrypt(config.adminPassword)
     };
-}
 }
 
 const authConfig = {
