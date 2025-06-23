@@ -114,7 +114,7 @@ export default async function handler(req, res) {
             authenticated = true;
             // Le principal de l'utilisateur devrait être disponible dans le ticket
             // On peut le récupérer avec server.username()
-            userPrincipal = await server.username();
+            userPrincipal = await server.username;
             responseToken = result;
             console.log('[/api/auth/check-sso] - Authentification Kerberos réussie pour', userPrincipal);
         } else {
