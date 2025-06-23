@@ -22,9 +22,20 @@ function initializeKerberosServer(serviceName) {
 }
 
 export default async function handler(req, res) {
+    // Récupérer la configuration Kerberos active depuis la base
+    const kerberosConfig = await prisma.kerberosConfig.findFirst({
+        where: { isActive: true },
+        orderBy: { lastUpdated: 'desc' }
+    });
+    if (!kerberosConfig) {
+        return res.status(500).json({
+            message: 'Aucune configuration Kerberos active trouvée',
+            status: 'kerberos_config_missing'
+        });
+    }
     // --- Début du test kinit ---
     console.log('[/api/auth/check-sso] - Exécution du test kinit...');
-    const kinitCommand = `kinit -k -t ${process.env.KRB5_KTNAME || process.env.KERBEROS_KEYTAB_PATH} ${process.env.KERBEROS_PRINCIPAL} || echo "kinit failed"`;
+    const kinitCommand = `kinit -k -t ${kerberosConfig.keytabPath} HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm} || echo "kinit failed"`;
     try {
         const {stdout, stderr} = await execPromise(kinitCommand);
         if (stdout.includes('kinit failed') || stderr) {
@@ -62,10 +73,10 @@ export default async function handler(req, res) {
     if (!authHeader || !authHeader.startsWith('Negotiate ')) {
         console.log('[/api/auth/check-sso] - En-tête Authorization Negotiate manquant ou mal formaté');
         console.log('[/api/auth/check-sso] - Configuration Kerberos:');
-        console.log('- Service Name:', process.env.KERBEROS_SERVICE_NAME);
-        console.log('- Realm:', process.env.KERBEROS_REALM);
-        console.log('- Keytab Path:', process.env.KERBEROS_KEYTAB_PATH);
-        console.log('- Principal:', process.env.KERBEROS_PRINCIPAL);
+        console.log('- Service Name:', 'HTTP');
+        console.log('- Realm:', kerberosConfig.realm);
+        console.log('- Keytab Path:', kerberosConfig.keytabPath);
+        console.log('- Principal:', `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`);
         
         res.setHeader('WWW-Authenticate', 'Negotiate');
         return res.status(401).json({
@@ -74,10 +85,10 @@ export default async function handler(req, res) {
             debug: {
                 headers: req.headers,
                 kerberosConfig: {
-                    serviceName: process.env.KERBEROS_SERVICE_NAME,
-                    realm: process.env.KERBEROS_REALM,
-                    keytabPath: process.env.KERBEROS_KEYTAB_PATH,
-                    principal: process.env.KERBEROS_PRINCIPAL
+                    serviceName: 'HTTP',
+                    realm: kerberosConfig.realm,
+                    keytabPath: kerberosConfig.keytabPath,
+                    principal: `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`
                 }
             }
         });
@@ -95,7 +106,7 @@ export default async function handler(req, res) {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
 
         // Initialiser le serveur Kerberos avec le format correct
-        const server = await initializeKerberosServer('HTTP@sso.intranet.fhm.local');
+        const server = await initializeKerberosServer(`HTTP@${kerberosConfig.defaultDomain}`);
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
@@ -113,8 +124,7 @@ export default async function handler(req, res) {
         if (result) {
             authenticated = true;
             // Le principal de l'utilisateur devrait être disponible dans le ticket
-            // On peut le récupérer avec server.username()
-            userPrincipal = await server.username;
+            userPrincipal = server.username;
             responseToken = result;
             console.log('[/api/auth/check-sso] - Authentification Kerberos réussie pour', userPrincipal);
         } else {
@@ -127,10 +137,10 @@ export default async function handler(req, res) {
             message: kerberosError.message,
             stack: kerberosError.stack,
             config: {
-                serviceName: process.env.KERBEROS_SERVICE_NAME,
-                realm: process.env.KERBEROS_REALM,
-                keytabPath: process.env.KERBEROS_KEYTAB_PATH,
-                principal: process.env.KERBEROS_PRINCIPAL
+                serviceName: 'HTTP',
+                realm: kerberosConfig.realm,
+                keytabPath: kerberosConfig.keytabPath,
+                principal: `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`
             }
         });
         res.setHeader('WWW-Authenticate', 'Negotiate');
@@ -142,10 +152,10 @@ export default async function handler(req, res) {
                 error: kerberosError.message,
                 stack: kerberosError.stack,
                 config: {
-                    serviceName: process.env.KERBEROS_SERVICE_NAME,
-                    realm: process.env.KERBEROS_REALM,
-                    keytabPath: process.env.KERBEROS_KEYTAB_PATH,
-                    principal: process.env.KERBEROS_PRINCIPAL
+                    serviceName: 'HTTP',
+                    realm: kerberosConfig.realm,
+                    keytabPath: kerberosConfig.keytabPath,
+                    principal: `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`
                 }
             }
         });

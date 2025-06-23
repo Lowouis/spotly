@@ -48,6 +48,16 @@ const authConfig = {
             async authorize(credentials) {
                 console.log('Kerberos authorize called with credentials:', credentials ? 'Present' : 'Missing');
 
+                // Bypass si aucune config Kerberos active
+                const kerberosConfig = await prisma.kerberosConfig.findFirst({
+                    where: { isActive: true },
+                    orderBy: { lastUpdated: 'desc' }
+                });
+                if (!kerberosConfig) {
+                    console.log('Aucune configuration Kerberos active trouvée, bypass de la vérification Kerberos.');
+                    return null;
+                }
+
                 if (!credentials?.ticket) {
                     console.log('No ticket provided');
                     return null;

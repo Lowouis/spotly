@@ -3,7 +3,7 @@
 import {ConnectionModal} from "@/components/modals/connectionModal";
 import {useRouter} from 'next/navigation';
 import {useSession} from 'next-auth/react';
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
 import nextConfig from '../../next.config.mjs';
@@ -63,12 +63,27 @@ function LoginContent() {
     const { status } = useSession();
     const [debugInfo, setDebugInfo] = useState(null);
     const [ssoError, setSsoError] = useState(null);
+    const [kerberosConfigExists, setKerberosConfigExists] = useState(undefined);
+
+    // Vérifie la présence d'une config Kerberos active
+    useEffect(() => {
+        fetch('/api/sso/kerberos-config')
+            .then(res => {
+                if (res.status === 200) {
+                    setKerberosConfigExists(true);
+                } else {
+                    setKerberosConfigExists(false);
+                }
+            })
+            .catch(() => setKerberosConfigExists(false));
+    }, []);
 
     const {data: ssoData, isLoading: isSSOChecking, error: queryError} = useQuery({
         queryKey: ['ssoStatus'],
         queryFn: checkSSOStatus,
         retry: false,
         refetchOnWindowFocus: false,
+        enabled: kerberosConfigExists, // n'active la requête SSO que si la config existe
         onSuccess: (data) => {
             console.log('SSO check successful:', data);
             setDebugInfo(data.debug);
@@ -85,14 +100,20 @@ function LoginContent() {
         }
     });
 
-    if (isSSOChecking) {
+    if (kerberosConfigExists === undefined) {
+        // On attend de savoir si la config existe
+        return null;
+    }
+
+    if (kerberosConfigExists && isSSOChecking) {
         return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
     }
 
-    if (ssoData?.isSSO) {
+    if (kerberosConfigExists && ssoData?.isSSO) {
         return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
     }
 
+    // Si pas de config Kerberos, on affiche seulement la modal classique
     return (
         <div className="flex flex-col items-center">
             <ConnectionModal/>
