@@ -2,7 +2,7 @@
 
 import {ConnectionModal} from "@/components/modals/connectionModal";
 import {useRouter} from 'next/navigation';
-import {useSession} from 'next-auth/react';
+import {useSession, signIn} from 'next-auth/react';
 import React, {useState, useEffect} from 'react';
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
@@ -85,36 +85,50 @@ function LoginContent() {
         retry: false,
         refetchOnWindowFocus: false,
         enabled: kerberosConfigExists, // n'active la requête SSO que si la config existe
-        onSuccess: (data) => {
-            console.log('SSO check successful:', data);
-            setDebugInfo(data.debug);
-            if (data.status === 'not_authenticated') {
-                setSsoError('Pas d\'authentification SSO détectée');
-            } else if (data.status === 'pending' && !data.debug.auth.ticketPresent) {
-                setSsoError('Ticket SSO manquant ou invalide');
+        onSuccess: async (data) => {
+            if (data.ticket) {
+                console.log('Ticket SSO reçu, tentative de connexion via NextAuth...');
+                const res = await signIn('kerberos', {
+                    redirect: false,
+                    ticket: data.ticket
+                });
+
+                if (res && res.ok) {
+                    console.log('Connexion via NextAuth réussie. Redirection...');
+                    // On recharge la page à la racine pour que tous les contextes soient mis à jour
+                    window.location.href = `${basePath}/`;
+                } else {
+                    console.error("Échec de la connexion NextAuth :", res?.error);
+                    setSsoError(res?.error || "Une erreur est survenue lors de la finalisation de la connexion SSO.");
+                }
+            } else {
+                setSsoError("Réponse SSO invalide du serveur (ticket manquant).");
             }
         },
         onError: (error) => {
-            console.error('SSO check failed:', error);
-            setDebugInfo({error: error.message});
-            setSsoError(error.message);
+            // Une erreur 401 est normale pendant la négociation Kerberos, le navigateur va réessayer.
+            // On ne l'affiche pas comme une erreur bloquante.
+            if (error.message && error.message.includes('401')) {
+                console.warn('Challenge Negotiate reçu. En attente de la nouvelle tentative du navigateur.');
+            } else {
+                console.error('SSO check failed:', error);
+                setDebugInfo({error: error.message});
+                setSsoError(error.message);
+            }
         }
     });
 
-    if (kerberosConfigExists === undefined) {
-        // On attend de savoir si la config existe
-        return null;
+    // Si le status de la session next-auth est déjà authentifié, on ne fait rien et on attend la redirection
+    if (status === 'authenticated') {
+        return <SSOLoadingModal/>;
     }
 
-    if (kerberosConfigExists && isSSOChecking) {
+    if (kerberosConfigExists === undefined || (kerberosConfigExists && isSSOChecking)) {
+        // On attend de savoir si la config existe OU si la vérification SSO est en cours
         return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
     }
 
-    if (kerberosConfigExists && ssoData?.isSSO) {
-        return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
-    }
-
-    
+    // Le SSO a échoué ou n'est pas configuré, on affiche le formulaire de connexion manuelle
     return (
         <div className="flex flex-col items-center">
             <div className="absolute top-4 right-4">
