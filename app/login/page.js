@@ -82,7 +82,15 @@ function LoginContent() {
     const {data: ssoData, isLoading: isSSOChecking, error: queryError} = useQuery({
         queryKey: ['ssoStatus'],
         queryFn: checkSSOStatus,
-        retry: false,
+        retry: (failureCount, error) => {
+            // Si c'est le challenge Negotiate (normal), et qu'on n'a pas déjà tenté, on retente une fois.
+            if (error.message.includes('Authentification Negotiate requise') && failureCount < 2) {
+                console.log('Challenge Negotiate reçu, nouvelle tentative...');
+                return true;
+            }
+            // Pour toute autre erreur, on abandonne.
+            return false;
+        },
         refetchOnWindowFocus: false,
         enabled: kerberosConfigExists, // n'active la requête SSO que si la config existe
         onSuccess: async (data) => {
@@ -106,11 +114,8 @@ function LoginContent() {
             }
         },
         onError: (error) => {
-            // Une erreur 401 est normale pendant la négociation Kerberos, le navigateur va réessayer.
-            // On ne l'affiche pas comme une erreur bloquante.
-            if (error.message && error.message.includes('401')) {
-                console.warn('Challenge Negotiate reçu. En attente de la nouvelle tentative du navigateur.');
-            } else {
+            // N'afficher une erreur que si ce n'est PAS le challenge Negotiate attendu
+            if (!error.message.includes('Authentification Negotiate requise')) {
                 console.error('SSO check failed:', error);
                 setDebugInfo({error: error.message});
                 setSsoError(error.message);
