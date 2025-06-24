@@ -2,6 +2,7 @@
 
 import React, {useEffect, useState} from "react";
 import {Button, Form, Input, Link} from "@nextui-org/react";
+import NextLink from "next/link";
 import {signIn} from "next-auth/react";
 import {useRouter} from 'next/navigation';
 import {addToast} from "@heroui/toast";
@@ -97,8 +98,7 @@ export default function LoginTab() {
             ))}
 
             <div className="w-full">
-                <p className="flex justify-center items-center m-1 p-2 text-sm">Vous n&#39;avez
-                    pas de compte ?&nbsp; <Link underline="hover" size="sm" color="foreground"
+                <p className="flex justify-center items-center m-1 p-2 text-sm">Vous n&#39;avez pas de compte ?&nbsp; <Link as={NextLink} underline="hover" size="sm" color="foreground"
                                                 href="/register">Créer
                         un compte</Link></p>
                 <Button

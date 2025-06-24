@@ -54,6 +54,7 @@ export async function middleware(req) {
     // Routes publiques qui ne nécessitent pas d'authentification
     const publicRoutes = [
         '/login',
+        '/register',
         '/api/auth',
         '/api/*',
         '/_next',
@@ -66,12 +67,16 @@ export async function middleware(req) {
     const pathWithoutBasePath = pathname.replace(basePath, '');
     console.log('Middleware - Path without basePath:', pathWithoutBasePath);
 
+    const normalizedPath = pathWithoutBasePath.endsWith('/') && pathWithoutBasePath.length > 1
+        ? pathWithoutBasePath.slice(0, -1)
+        : pathWithoutBasePath;
+
     const isPublicRoute = publicRoutes.some(route => {
         if (route.endsWith('*')) {
             const baseRoute = route.slice(0, -1);
-            return pathWithoutBasePath.startsWith(baseRoute);
+            return normalizedPath.startsWith(baseRoute);
         }
-        return pathWithoutBasePath === route;
+        return normalizedPath === route;
     });
 
     // Si la route est publique, permettre l'accès

@@ -4,16 +4,15 @@ import Banner from "@/components/utils/banner";
 import React, {useState} from "react";
 import {Input} from "@nextui-org/input";
 import {Button} from "@nextui-org/button";
-import {Card, CardBody, Link,} from "@nextui-org/react";
+import {Card, CardBody, CardFooter, CardHeader, Link, ScrollShadow} from "@nextui-org/react";
 import {useMutation} from "@tanstack/react-query";
 import {addToast} from "@heroui/toast";
-
+import NextLink from "next/link";
 export async function createUser(creditentials) {
     const test = creditentials.reduce((acc, creditential) => {
         acc[creditential.name] = creditential.value;
         return acc;
     }, {})
-    console.log(test);
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`, {
         method: 'POST',
         headers: {
@@ -113,61 +112,65 @@ export function RegisterModal({}) {
 
 
     return (
-        <div className="mx-auto mt-4">
+        <div className="w-full">
             <Banner/>
             <div className="w-full flex justify-center items-center mt-5 flex-col">
-                <Card fullWidth className="max-w-full w-[400px] border-2" shadow="none">
-                    <CardBody className="overflow-hidden">
-                        <form className="flex flex-col justify-center space-y-4">
-                            {creditentials.map((input, index) => (
-                                <div key={index}>
-                                    <p className=" text-small mb-2">{input.label}</p>
-                                    <Input
-                                        key={index}
-                                        type={input.type}
-                                        placeholder={"Entrer votre " + input.label.toLowerCase()}
-                                        className="mb-2"
-                                        radius="sm"
-                                        isRequired={true}
-                                        name={input.name}
-                                        value={input.value}
-                                        onChange={(e) => {
-                                            const newCreditentials = [...creditentials];
-                                            newCreditentials[index].value = e.target.value;
-                                            setCreditentials(newCreditentials);
-                                        }}
-                                        errorMessage={() => {
-                                            if (input.type === "password" && input.value.length < 8) {
-                                                return "Le mot de passe doit contenir au moins 8 caractères";
-                                            } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
-                                                return "Les mots de passe ne correspondent pas";
-                                            }
-                                            return "";
-                                        }}
-                                        validate={() => {
-                                            if (input.type === "password" && input.value.length < 8) {
-                                                return false;
-                                            } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
-                                                return false;
-                                            }
-                                            return true;
-                                        }}
-                                        size="lg"
-                                    />
+                <form onSubmit={handleSubmit}>
+                    <Card fullWidth className="max-w-full w-[400px] h-[600px]" shadow="sm">
+                        <CardHeader>
+                            <p className="text-center text-2xl w-full">Créer un compte</p>
+                        </CardHeader>
+                        <CardBody>
+                            <ScrollShadow className="w-full h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                <div className="flex flex-col justify-center space-y-4">
+                                    {creditentials.map((input, index) => (
+                                        <div key={index}>
+                                            <p className=" text-small mb-2">{input.label}</p>
+                                            <Input
+                                                key={index}
+                                                type={input.type}
+                                                placeholder={"Entrer votre " + input.label.toLowerCase()}
+                                                className="mb-2"
+                                                radius="sm"
+                                                isRequired={true}
+                                                name={input.name}
+                                                value={input.value}
+                                                onChange={(e) => {
+                                                    const newCreditentials = [...creditentials];
+                                                    newCreditentials[index].value = e.target.value;
+                                                    setCreditentials(newCreditentials);
+                                                }}
+                                                errorMessage={() => {
+                                                    if (input.type === "password" && input.value.length < 8) {
+                                                        return "Le mot de passe doit contenir au moins 8 caractères";
+                                                    } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
+                                                        return "Les mots de passe ne correspondent pas";
+                                                    }
+                                                    return "";
+                                                }}
+                                                validate={() => {
+                                                    if (input.type === "password" && input.value.length < 8) {
+                                                        return false;
+                                                    } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
+                                                        return false;
+                                                    }
+                                                    return true;
+                                                }}
+                                                size="lg"
+                                            />
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-
-                            <div className="">
+                            </ScrollShadow>
+                        </CardBody>
+                        <CardFooter className="pb-4">
+                            <div className="w-full mb-4">
                                 <p className="flex justify-center items-center m-1 p-2 text-sm">Vous avez deja un compte
-                                    ? &nbsp;<Link underline="hover" size="sm" color="foreground" href="/login"> Se
+                                    ? &nbsp;<Link as={NextLink} underline="hover" size="sm" color="foreground" href="/login"> Se
                                         connecter</Link></p>
                                 <Button
                                     type={"submit"}
                                     fullWidth
-                                    onPress={async () => {
-                                        setConnectionLoading(true);
-                                        handleSubmit()
-                                    }}
                                     color="default"
                                     isLoading={connectionLoading}
                                     size="lg"
@@ -176,9 +179,9 @@ export function RegisterModal({}) {
                                     Créer mon compte
                                 </Button>
                             </div>
-                        </form>
-                    </CardBody>
-                </Card>
+                        </CardFooter>
+                    </Card>
+                </form>
             </div>
         </div>
     );

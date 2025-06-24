@@ -5,6 +5,7 @@ import {useSession} from 'next-auth/react';
 import React, {useEffect} from 'react';
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {RegisterModal} from "@/components/modals/registerModal";
+import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 
 
 export default function Page() {
@@ -20,7 +21,10 @@ export default function Page() {
 
     return (
         <QueryClientProvider client={queryClient}>
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center">
+                <div className="absolute top-4 right-4">
+                    <DarkModeSwitch />
+                </div>
                 <RegisterModal/>
             </div>
         </QueryClientProvider>

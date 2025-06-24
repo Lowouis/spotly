@@ -3,7 +3,7 @@ import {signIn} from 'next-auth/react';
 export default async function handler(req, res) {
     console.log('Kerberos callback handler called');
     
-    if (req.method !== 'POST') {
+    if (req.method !== 'POST' && req.method !== 'OPTIONS') {
         console.log('Invalid method:', req.method);
         return res.status(405).json({message: 'Method not allowed'});
     }
