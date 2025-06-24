@@ -5,11 +5,13 @@ import {Button, Form, Input, Link} from "@nextui-org/react";
 import {signIn} from "next-auth/react";
 import {useRouter} from 'next/navigation';
 import {addToast} from "@heroui/toast";
+import {EyeIcon, EyeSlashIcon} from "@heroicons/react/24/outline";
 
 export default function LoginTab() {
     const router = useRouter();
     const [connectionLoading, setConnectionLoading] = useState(false);
     const [wrongCredentials, setWrongCredentials] = useState(false);
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [creditentials, setCreditentials] = useState([
         {
             "label": "Nom d'utilisateur",
@@ -71,13 +73,25 @@ export default function LoginTab() {
                 <div key={index} className="w-full">
                     <p className=" text-small mb-2">{input.label}</p>
                     <Input key={index}
-                           type={input.type}
+                           type={input.name === 'password' ? (isPasswordVisible ? 'text' : 'password') : input.type}
                            placeholder={"Entrer votre " + input.label.toLowerCase()}
                            className="mb-2"
                            radius="sm"
                            name={input.name}
                            size="lg"
                            onChange={(e) => handleChange(e, index)}
+                           endContent={
+                               input.name === 'password' && (
+                                   <button className="focus:outline-none" type="button"
+                                           onClick={() => setIsPasswordVisible(!isPasswordVisible)}>
+                                       {isPasswordVisible ? (
+                                           <EyeSlashIcon className="h-5 w-5 text-gray-400"/>
+                                       ) : (
+                                           <EyeIcon className="h-5 w-5 text-gray-400"/>
+                                       )}
+                                   </button>
+                               )
+                           }
                     />
                 </div>
             ))}

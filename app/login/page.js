@@ -7,6 +7,7 @@ import React, {useState, useEffect} from 'react';
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
 import nextConfig from '../../next.config.mjs';
+import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 
 const basePath = nextConfig.basePath || '';
 
@@ -113,9 +114,12 @@ function LoginContent() {
         return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
     }
 
-    // Si pas de config Kerberos, on affiche seulement la modal classique
+    
     return (
         <div className="flex flex-col items-center">
+            <div className="absolute top-4 right-4">
+                <DarkModeSwitch />
+            </div>
             <ConnectionModal/>
             {debugInfo && (
                 <div className="mt-4 p-4 bg-gray-100 rounded-lg max-w-lg w-full">

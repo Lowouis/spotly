@@ -19,6 +19,8 @@ const SSO = () => {
         kdc: "",
         adminServer: "",
         defaultDomain: "",
+        serviceHost: "",
+        keytabPath: "",
     });
 
     useEffect(() => {
@@ -39,6 +41,8 @@ const SSO = () => {
                         kdc: data.kdc || "",
                         adminServer: data.adminServer || "",
                         defaultDomain: data.defaultDomain || "",
+                        serviceHost: data.serviceHost || "",
+                        keytabPath: data.keytabPath || "",
                     }));
                 } else {
                     const errorData = await response.json();
@@ -73,7 +77,7 @@ const SSO = () => {
     };
 
     const validateForm = () => {
-        if (!formData.realm || !formData.kdc || !formData.adminServer || !formData.defaultDomain) {
+        if (!formData.realm || !formData.kdc || !formData.adminServer || !formData.defaultDomain || !formData.serviceHost || !formData.keytabPath) {
             setErrorMessage("Tous les champs sont obligatoires");
             return false;
         }
@@ -217,6 +221,32 @@ const SSO = () => {
                             onChange={handleInputChange}
                             isInvalid={!!errorMessage && !formData.defaultDomain}
                             errorMessage={errorMessage && !formData.defaultDomain ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
+
+                        <Input
+                            required
+                            name="serviceHost"
+                            label="Nom d'hôte du service HTTP"
+                            labelPlacement="outside"
+                            placeholder="sso.intranet.fhm.local"
+                            value={formData.serviceHost}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.serviceHost}
+                            errorMessage={errorMessage && !formData.serviceHost ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
+
+                        <Input
+                            required
+                            name="keytabPath"
+                            label="Chemin du fichier keytab"
+                            labelPlacement="outside"
+                            placeholder="/etc/apache2/fhm.keytab"
+                            value={formData.keytabPath}
+                            onChange={handleInputChange}
+                            isInvalid={!!errorMessage && !formData.keytabPath}
+                            errorMessage={errorMessage && !formData.keytabPath ? "Ce champ est requis" : ""}
                             isDisabled={isLoadingConfig}
                         />
 

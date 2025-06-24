@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     }
     // --- Début du test kinit ---
     console.log('[/api/auth/check-sso] - Exécution du test kinit...');
-    const kinitCommand = `kinit -k -t ${kerberosConfig.keytabPath} HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm} || echo "kinit failed"`;
+    const kinitCommand = `kinit -k -t ${kerberosConfig.keytabPath} HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm} || echo "kinit failed"`;
     try {
         const {stdout, stderr} = await execPromise(kinitCommand);
         if (stdout.includes('kinit failed') || stderr) {
@@ -76,7 +76,7 @@ export default async function handler(req, res) {
         console.log('- Service Name:', 'HTTP');
         console.log('- Realm:', kerberosConfig.realm);
         console.log('- Keytab Path:', kerberosConfig.keytabPath);
-        console.log('- Principal:', `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`);
+        console.log('- Principal:', `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`);
         
         res.setHeader('WWW-Authenticate', 'Negotiate');
         return res.status(401).json({
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
                     serviceName: 'HTTP',
                     realm: kerberosConfig.realm,
                     keytabPath: kerberosConfig.keytabPath,
-                    principal: `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`
+                    principal: `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`
                 }
             }
         });
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
 
         // Initialiser le serveur Kerberos avec le format correct
-        const server = await initializeKerberosServer(`HTTP@${kerberosConfig.defaultDomain}`);
+        const server = await initializeKerberosServer(`HTTP@${kerberosConfig.serviceHost}`);
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
@@ -140,7 +140,7 @@ export default async function handler(req, res) {
                 serviceName: 'HTTP',
                 realm: kerberosConfig.realm,
                 keytabPath: kerberosConfig.keytabPath,
-                principal: `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`
+                principal: `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`
             }
         });
         res.setHeader('WWW-Authenticate', 'Negotiate');
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
                     serviceName: 'HTTP',
                     realm: kerberosConfig.realm,
                     keytabPath: kerberosConfig.keytabPath,
-                    principal: `HTTP/${kerberosConfig.defaultDomain}@${kerberosConfig.realm}`
+                    principal: `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`
                 }
             }
         });

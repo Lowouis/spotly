@@ -10,8 +10,8 @@ export default async function handler(req, res) {
         return res.status(405).json({message: 'Method not allowed'});
     }
 
-    const {realm, kdc, adminServer, defaultDomain} = req.body;
-    if (!realm || !kdc || !adminServer || !defaultDomain) {
+    const {realm, kdc, adminServer, defaultDomain, serviceHost, keytabPath} = req.body;
+    if (!realm || !kdc || !adminServer || !defaultDomain || !serviceHost || !keytabPath) {
         return res.status(400).json({message: 'Tous les champs sont requis'});
     }
 
@@ -21,7 +21,9 @@ export default async function handler(req, res) {
             realm,
             kdc,
             adminServer,
-            defaultDomain
+            defaultDomain,
+            serviceHost,
+            keytabPath
         };
 
         const validationResult = await validateKerberosConfig(config);
@@ -37,7 +39,9 @@ export default async function handler(req, res) {
             realm: encrypt(realm),
             kdc: encrypt(kdc),
             adminServer: encrypt(adminServer),
-            defaultDomain: encrypt(defaultDomain)
+            defaultDomain: encrypt(defaultDomain),
+            serviceHost: encrypt(serviceHost),
+            keytabPath: encrypt(keytabPath)
         };
 
         // 3. Désactiver toutes les configurations existantes

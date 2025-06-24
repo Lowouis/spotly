@@ -31,7 +31,9 @@ export default async function handler(req, res) {
             realm: decrypt(config.realm),
             kdc: decrypt(config.kdc),
             adminServer: decrypt(config.adminServer),
-            defaultDomain: decrypt(config.defaultDomain)
+            defaultDomain: decrypt(config.defaultDomain),
+            serviceHost: decrypt(config.serviceHost),
+            keytabPath: decrypt(config.keytabPath)
         };
 
         return res.status(200).json(decryptedConfig);
