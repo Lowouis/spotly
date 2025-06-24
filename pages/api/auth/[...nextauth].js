@@ -46,32 +46,33 @@ const authConfig = {
                 ticket: {label: "Kerberos Ticket", type: "text"}
             },
             async authorize(credentials) {
-                console.log('Kerberos authorize called with credentials:', credentials ? 'Present' : 'Missing');
+                console.log('[KERBEROS AUTHORIZE] - Démarrage de l\'autorisation Kerberos.');
 
-                // Bypass si aucune config Kerberos active
                 const kerberosConfig = await prisma.kerberosConfig.findFirst({
                     where: { isActive: true },
                     orderBy: { lastUpdated: 'desc' }
                 });
                 if (!kerberosConfig) {
-                    console.log('Aucune configuration Kerberos active trouvée, bypass de la vérification Kerberos.');
+                    console.error('[KERBEROS AUTHORIZE] - Aucune configuration Kerberos active trouvée. Autorisation refusée.');
                     return null;
                 }
 
                 if (!credentials?.ticket) {
-                    console.log('No ticket provided');
+                    console.error('[KERBEROS AUTHORIZE] - Aucun ticket fourni. Autorisation refusée.');
                     return null;
                 }
 
                 try {
+                    console.log('[KERBEROS AUTHORIZE] - Tentative de validation du ticket Kerberos...');
                     const result = await validateKerberosTicket(credentials.ticket);
-                    console.log('Kerberos validation result:', result);
+                    console.log('[KERBEROS AUTHORIZE] - Résultat de la validation :', result);
 
                     if (!result || !result.username) {
-                        console.log('Invalid or missing username in Kerberos result');
+                        console.error('[KERBEROS AUTHORIZE] - Nom d\'utilisateur manquant ou invalide dans le résultat de la validation. Autorisation refusée.');
                         return null;
                     }
 
+                    console.log(`[KERBEROS AUTHORIZE] - Recherche de l'utilisateur en base : ${result.username}`);
                     let user = await prisma.user.findUnique({
                         where: {
                             username: result.username
@@ -79,8 +80,9 @@ const authConfig = {
                     });
 
                     if (!user) {
-                        console.log('User not found in database, attempting LDAP lookup...');
+                        console.log(`[KERBEROS AUTHORIZE] - Utilisateur ${result.username} non trouvé. Tentative de recherche LDAP...`);
                         const ldapConfig = await getActiveLdapConfig();
+                        console.log('[KERBEROS AUTHORIZE] - Configuration LDAP active chargée.');
 
                         const ldapUser = await authenticate({
                             ldapOpts: {
@@ -93,12 +95,12 @@ const authConfig = {
                             username: result.username,
                             attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
                         }).catch(e => {
-                            console.error("LDAP user search failed:", e);
+                            console.error("[KERBEROS AUTHORIZE] - Échec de la recherche utilisateur LDAP:", e);
                             return null;
                         });
 
                         if (ldapUser) {
-                            console.log('LDAP user found, creating user in database...');
+                            console.log('[KERBEROS AUTHORIZE] - Utilisateur LDAP trouvé, création en base de données...');
                             user = await prisma.user.create({
                                 data: {
                                     email: ldapUser.mail,
@@ -109,15 +111,17 @@ const authConfig = {
                                     password: null,
                                 }
                             });
-                            console.log('User created in database:', user);
+                            console.log('[KERBEROS AUTHORIZE] - Utilisateur créé en base de données:', user.username);
                         } else {
-                            console.log('LDAP user not found');
+                            console.error(`[KERBEROS AUTHORIZE] - Utilisateur ${result.username} non trouvé dans LDAP. Autorisation refusée.`);
+                            return null;
                         }
                     }
 
+                    console.log(`[KERBEROS AUTHORIZE] - Autorisation réussie pour l'utilisateur :`, user);
                     return user;
                 } catch (error) {
-                    console.error('Kerberos validation error:', error);
+                    console.error('[KERBEROS AUTHORIZE] - Erreur majeure dans le bloc try/catch :', error);
                     return null;
                 }
             }
