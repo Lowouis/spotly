@@ -3,6 +3,7 @@ import kerberos from 'kerberos';
 import prisma from "@/prismaconf/init";
 import {exec} from 'child_process';
 import {promisify} from 'util';
+import {decrypt} from "@/lib/security";
 
 // Promisifier la fonction exec
 const execPromise = promisify(exec);
@@ -33,9 +34,17 @@ export default async function handler(req, res) {
             status: 'kerberos_config_missing'
         });
     }
+
+    // Déchiffrer la configuration
+    const decryptedConfig = {
+        realm: decrypt(kerberosConfig.realm),
+        keytabPath: decrypt(kerberosConfig.keytabPath),
+        serviceHost: decrypt(kerberosConfig.serviceHost)
+    };
+
     // --- Début du test kinit ---
     console.log('[/api/auth/check-sso] - Exécution du test kinit...');
-    const kinitCommand = `kinit -k -t ${kerberosConfig.keytabPath} HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm} || echo "kinit failed"`;
+    const kinitCommand = `kinit -k -t ${decryptedConfig.keytabPath} HTTP/${decryptedConfig.serviceHost}@${decryptedConfig.realm} || echo "kinit failed"`;
     try {
         const {stdout, stderr} = await execPromise(kinitCommand);
         if (stdout.includes('kinit failed') || stderr) {
@@ -74,9 +83,9 @@ export default async function handler(req, res) {
         console.log('[/api/auth/check-sso] - En-tête Authorization Negotiate manquant ou mal formaté');
         console.log('[/api/auth/check-sso] - Configuration Kerberos:');
         console.log('- Service Name:', 'HTTP');
-        console.log('- Realm:', kerberosConfig.realm);
-        console.log('- Keytab Path:', kerberosConfig.keytabPath);
-        console.log('- Principal:', `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`);
+        console.log('- Realm:', decryptedConfig.realm);
+        console.log('- Keytab Path:', decryptedConfig.keytabPath);
+        console.log('- Principal:', `HTTP/${decryptedConfig.serviceHost}@${decryptedConfig.realm}`);
         
         res.setHeader('WWW-Authenticate', 'Negotiate');
         return res.status(401).json({
@@ -86,9 +95,9 @@ export default async function handler(req, res) {
                 headers: req.headers,
                 kerberosConfig: {
                     serviceName: 'HTTP',
-                    realm: kerberosConfig.realm,
-                    keytabPath: kerberosConfig.keytabPath,
-                    principal: `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`
+                    realm: decryptedConfig.realm,
+                    keytabPath: decryptedConfig.keytabPath,
+                    principal: `HTTP/${decryptedConfig.serviceHost}@${decryptedConfig.realm}`
                 }
             }
         });
@@ -106,7 +115,7 @@ export default async function handler(req, res) {
         console.log('[/api/auth/check-sso] - Tentative d\'initialisation du serveur Kerberos...');
 
         // Initialiser le serveur Kerberos avec le format correct
-        const server = await initializeKerberosServer(`HTTP@${kerberosConfig.serviceHost}`);
+        const server = await initializeKerberosServer(`HTTP@${decryptedConfig.serviceHost}`);
         console.log('[/api/auth/check-sso] - Serveur Kerberos initialisé avec succès');
 
         console.log('[/api/auth/check-sso] - Tentative de validation du ticket...');
@@ -138,9 +147,9 @@ export default async function handler(req, res) {
             stack: kerberosError.stack,
             config: {
                 serviceName: 'HTTP',
-                realm: kerberosConfig.realm,
-                keytabPath: kerberosConfig.keytabPath,
-                principal: `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`
+                realm: decryptedConfig.realm,
+                keytabPath: decryptedConfig.keytabPath,
+                principal: `HTTP/${decryptedConfig.serviceHost}@${decryptedConfig.realm}`
             }
         });
         res.setHeader('WWW-Authenticate', 'Negotiate');
@@ -153,9 +162,9 @@ export default async function handler(req, res) {
                 stack: kerberosError.stack,
                 config: {
                     serviceName: 'HTTP',
-                    realm: kerberosConfig.realm,
-                    keytabPath: kerberosConfig.keytabPath,
-                    principal: `HTTP/${kerberosConfig.serviceHost}@${kerberosConfig.realm}`
+                    realm: decryptedConfig.realm,
+                    keytabPath: decryptedConfig.keytabPath,
+                    principal: `HTTP/${decryptedConfig.serviceHost}@${decryptedConfig.realm}`
                 }
             }
         });
