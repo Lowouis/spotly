@@ -88,13 +88,13 @@ function LoginContent() {
             .catch(() => setKerberosConfigExists(false));
     }, []);
 
-    // Nettoyer le flag manualLogout uniquement si on est sur login, non authentifié, et pas de ticket SSO
+    // Nettoyer le flag manualLogout si la session n'est pas authentifiée
     useEffect(() => {
-        if (status === 'unauthenticated' && !ssoTicket) {
+        if (status !== 'authenticated') {
             localStorage.removeItem('manualLogout');
             setManualLogout(false);
         }
-    }, [status, ssoTicket]);
+    }, [status]);
 
     // Rediriger automatiquement si déjà authentifié
     useEffect(() => {
@@ -172,7 +172,7 @@ function LoginContent() {
                 <DarkModeSwitch />
             </div>
             <ConnectionModal/>
-            {ssoTicket && (
+            {ssoReady && ssoTicket && status !== 'authenticated' && (
                 <Button color="primary" onPress={handleSsoLogin} className="mb-4">
                     Connexion SSO
                 </Button>
