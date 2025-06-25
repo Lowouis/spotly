@@ -93,58 +93,59 @@ function LoginContent() {
         },
         refetchOnWindowFocus: false,
         enabled: kerberosConfigExists, // n'active la requête SSO que si la config existe
-        onSuccess: async (data) => {
-            console.log('useQuery onSuccess DÉCLENCHÉ. Data:', data);
-            if (data && data.ticket) {
-                console.log('Ticket SSO reçu, validation via API de callback...');
-                try {
-                    const kerberosResponse = await fetch(`${basePath}/api/auth/callback/kerberos`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ ticket: data.ticket }),
-                    });
+    });
 
-                    if (!kerberosResponse.ok) {
-                        throw new Error(`Échec de la validation du ticket via l'API de callback`);
-                    }
+    // Utiliser useEffect pour réagir aux changements de ssoData et queryError
+    useEffect(() => {
+        const handleSsoSuccess = async (data) => {
+            console.log('useEffect a détecté un ticket SSO. Validation en cours...');
+            try {
+                const kerberosResponse = await fetch(`${basePath}/api/auth/callback/kerberos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticket: data.ticket }),
+                });
 
-                    const user = await kerberosResponse.json();
-
-                    console.log('Utilisateur validé reçu:', user.username, 'Tentative de connexion NextAuth...');
-                    const res = await signIn('sso-login', {
-                        redirect: false,
-                        username: user.username,
-                    });
-
-                    console.log('Résultat de signIn:', res);
-
-                    if (res && res.ok) {
-                        console.log('Connexion via NextAuth réussie. Redirection...');
-                        window.location.href = `${basePath}/`;
-                    } else {
-                        throw new Error(res?.error || "Échec de la finalisation de la session NextAuth");
-                    }
-                } catch (error) {
-                    console.error("Erreur dans le processus de connexion SSO :", error);
-                    setSsoError(error.message);
+                if (!kerberosResponse.ok) {
+                    const errorData = await kerberosResponse.json();
+                    throw new Error(`Échec de la validation du ticket: ${errorData.error}`);
                 }
-            } else {
-                console.log('onSuccess déclenché, mais pas de ticket trouvé dans data.');
-                setSsoError("Réponse SSO invalide du serveur (ticket manquant).");
-            }
-        },
-        onError: (error) => {
-            console.log('useQuery onError DÉCLENCHÉ. Error:', error);
-            // N'afficher une erreur que si ce n'est PAS le challenge Negotiate attendu
-            if (!error.message.includes('Authentification Negotiate requise')) {
-                console.error('SSO check failed:', error);
-                setDebugInfo({error: error.message});
+
+                const user = await kerberosResponse.json();
+                console.log('Utilisateur validé reçu:', user.username, 'Tentative de connexion NextAuth...');
+                const res = await signIn('sso-login', {
+                    redirect: false,
+                    username: user.username,
+                });
+
+                console.log('Résultat de signIn:', res);
+
+                if (res && res.ok) {
+                    console.log('Connexion via NextAuth réussie. Redirection...');
+                    window.location.href = `${basePath}/`;
+                } else {
+                    throw new Error(res?.error || "Échec de la finalisation de la session NextAuth");
+                }
+            } catch (error) {
+                console.error("Erreur dans le processus de connexion SSO :", error);
                 setSsoError(error.message);
             }
+        };
+
+        if (ssoData && ssoData.ticket) {
+            handleSsoSuccess(ssoData);
         }
-    });
+    }, [ssoData, router]);
+
+    useEffect(() => {
+        if (queryError) {
+            console.error('useEffect a détecté une erreur SSO:', queryError.message);
+            if (!queryError.message.includes('Authentification Negotiate requise')) {
+                setDebugInfo({ error: queryError.message });
+                setSsoError(queryError.message);
+            }
+        }
+    }, [queryError]);
 
     // Si le status de la session next-auth est déjà authentifié, on ne fait rien et on attend la redirection
     if (status === 'authenticated') {
