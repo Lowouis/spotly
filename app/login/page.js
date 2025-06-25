@@ -95,19 +95,37 @@ function LoginContent() {
         enabled: kerberosConfigExists, // n'active la requête SSO que si la config existe
         onSuccess: async (data) => {
             if (data.ticket) {
-                console.log('Ticket SSO reçu, tentative de connexion via NextAuth...');
-                const res = await signIn('kerberos', {
-                    redirect: false,
-                    ticket: data.ticket
-                });
+                console.log('Ticket SSO reçu, validation via API de callback...');
+                try {
+                    const kerberosResponse = await fetch(`${basePath}/api/auth/callback/kerberos`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ ticket: data.ticket }),
+                    });
 
-                if (res && res.ok) {
-                    console.log('Connexion via NextAuth réussie. Redirection...');
-                    // On recharge la page à la racine pour que tous les contextes soient mis à jour
-                    window.location.href = `${basePath}/`;
-                } else {
-                    console.error("Échec de la connexion NextAuth :", res?.error);
-                    setSsoError(res?.error || "Une erreur est survenue lors de la finalisation de la connexion SSO.");
+                    if (!kerberosResponse.ok) {
+                        throw new Error(`Échec de la validation du ticket via l'API de callback`);
+                    }
+
+                    const user = await kerberosResponse.json();
+
+                    console.log('Utilisateur validé reçu:', user.username, 'Tentative de connexion NextAuth...');
+                    const res = await signIn('sso-login', {
+                        redirect: false,
+                        username: user.username,
+                    });
+
+                    if (res && res.ok) {
+                        console.log('Connexion via NextAuth réussie. Redirection...');
+                        window.location.href = `${basePath}/`;
+                    } else {
+                        throw new Error(res?.error || "Échec de la finalisation de la session NextAuth");
+                    }
+                } catch (error) {
+                    console.error("Erreur dans le processus de connexion SSO :", error);
+                    setSsoError(error.message);
                 }
             } else {
                 setSsoError("Réponse SSO invalide du serveur (ticket manquant).");

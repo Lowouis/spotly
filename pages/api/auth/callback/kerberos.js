@@ -1,40 +1,52 @@
-import {signIn} from 'next-auth/react';
+import {validateKerberosTicket} from "@/lib/kerberos-auth";
+import prisma from "@/prismaconf/init";
+import {decrypt} from "@/lib/security";
 
 export default async function handler(req, res) {
-    console.log('Kerberos callback handler called');
-    
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
-        console.log('Invalid method:', req.method);
-        return res.status(405).json({message: 'Method not allowed'});
+        return res.status(405).end();
     }
 
-    const authHeader = req.headers.authorization;
-    console.log('Auth header present:', !!authHeader);
-    
-    if (!authHeader?.startsWith('Negotiate ')) {
-        console.log('No Kerberos ticket in header');
-        return res.status(401).json({message: 'No Kerberos ticket provided'});
+    const {ticket} = req.body;
+    if (!ticket) {
+        return res.status(400).json({error: "Ticket manquant"});
     }
-
-    const ticket = authHeader.substring('Negotiate '.length);
-    console.log('Kerberos ticket extracted, attempting sign in...');
 
     try {
-        const result = await signIn('kerberos', {
-            redirect: false,
-            ticket: ticket
-        });
-        console.log('Sign in result:', result);
-
-        if (result?.error) {
-            console.log('Sign in error:', result.error);
-            return res.status(401).json({message: result.error});
+        const validationResult = await validateKerberosTicket(ticket);
+        if (!validationResult || !validationResult.username) {
+            return res.status(401).json({error: "Ticket Kerberos invalide"});
         }
 
-        console.log('Sign in successful');
-        return res.status(200).json({success: true});
+        let user = await prisma.user.findUnique({
+            where: {username: validationResult.username},
+        });
+
+        if (!user) {
+            const ldapConfig = await prisma.ldapConfig.findFirst({
+                where: {isActive: true},
+                orderBy: {lastUpdated: 'desc'}
+            });
+
+            if (!ldapConfig || !ldapConfig.emailDomain) {
+                return res.status(500).json({error: "La configuration du domaine de messagerie est manquante."});
+            }
+            const emailDomain = decrypt(ldapConfig.emailDomain);
+
+            // Logique de création de l'utilisateur si non trouvé (peut être étendue avec LDAP)
+            user = await prisma.user.create({
+                data: {
+                    username: validationResult.username,
+                    email: `${validationResult.username}@${emailDomain}`,
+                    external: true,
+                },
+            });
+        }
+
+        return res.status(200).json(user);
+
     } catch (error) {
-        console.error('Kerberos authentication error:', error);
-        return res.status(500).json({message: 'Internal server error'});
+        console.error("Erreur lors de la validation Kerberos ou de l'accès DB:", error);
+        return res.status(500).json({error: "Erreur interne du serveur"});
     }
 } 

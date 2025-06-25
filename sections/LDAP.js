@@ -21,6 +21,7 @@ const LDAP = () => {
         adminCn: "",
         adminDn: "",
         adminPassword: "",
+        emailDomain: "",
     });
 
     useEffect(() => {
@@ -41,6 +42,7 @@ const LDAP = () => {
                         bindDn: data.bindDn || "",
                         adminCn: data.adminCn || "",
                         adminDn: data.adminDn || "",
+                        emailDomain: data.emailDomain || "",
                         adminPassword: "", // Ne pas pré-remplir le mot de passe
                     }));
                 } else {
@@ -220,6 +222,16 @@ const LDAP = () => {
                             onChange={handleInputChange}
                             isInvalid={!!errorMessage && !formData.adminDn}
                             errorMessage={errorMessage && !formData.adminDn ? "Ce champ est requis" : ""}
+                            isDisabled={isLoadingConfig}
+                        />
+
+                        <Input
+                            name="emailDomain"
+                            label="Domaine de messagerie"
+                            labelPlacement="outside"
+                            placeholder="example.com"
+                            value={formData.emailDomain}
+                            onChange={handleInputChange}
                             isDisabled={isLoadingConfig}
                         />
 

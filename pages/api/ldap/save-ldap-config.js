@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     }
 
     // Validation des données
-    const {serverUrl, bindDn, adminCn, adminDn, adminPassword} = req.body;
+    const {serverUrl, bindDn, adminCn, adminDn, adminPassword, emailDomain} = req.body;
     if (!serverUrl || !bindDn || !adminCn || !adminDn || !adminPassword) {
         return res.status(400).json({message: 'Tous les champs sont requis'});
     }
@@ -43,7 +43,8 @@ export default async function handler(req, res) {
             bindDn: encrypt(bindDn),
             adminCn: encrypt(adminCn),
             adminDn: encrypt(adminDn),
-            adminPassword: encrypt(adminPassword)
+            adminPassword: encrypt(adminPassword),
+            emailDomain: emailDomain ? encrypt(emailDomain) : null,
         };
 
         // 3. Sauvegarde sécurisée

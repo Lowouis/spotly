@@ -154,6 +154,7 @@ model LdapConfig {
   adminCn       String   @db.Text
   adminDn       String   @db.Text
   adminPassword String   @db.Text
+  emailDomain   String?
   lastUpdated   DateTime @updatedAt
   updatedBy     String
   isActive      Boolean  @default(true)

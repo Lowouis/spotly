@@ -33,6 +33,7 @@ export default async function handler(req, res) {
             bindDn: decrypt(config.bindDn),
             adminCn: decrypt(config.adminCn),
             adminDn: decrypt(config.adminDn),
+            emailDomain: config.emailDomain ? decrypt(config.emailDomain) : null,
             // Ne pas renvoyer le mot de passe pour des raisons de sécurité
         };
 
