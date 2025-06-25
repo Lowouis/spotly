@@ -55,8 +55,8 @@ export async function middleware(req) {
     const publicRoutes = [
         '/login',
         '/register',
-        '/api/auth',
-        '/api/*',
+        '/api/auth', // Uniquement les routes next-auth sont publiques
+        '/api/public', // Routes API publiques personnalisées
         '/_next',
         '/favicon.ico',
         '/spotly_logo.png',
@@ -75,6 +75,10 @@ export async function middleware(req) {
         if (route.endsWith('*')) {
             const baseRoute = route.slice(0, -1);
             return normalizedPath.startsWith(baseRoute);
+        }
+        // Ajustement pour correspondre aux sous-routes de /api/auth et /api/public
+        if (route === '/api/auth' || route === '/api/public') {
+            return normalizedPath.startsWith(route);
         }
         return normalizedPath === route;
     });

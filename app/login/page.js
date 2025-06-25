@@ -14,7 +14,7 @@ const basePath = nextConfig.basePath || '';
 const checkSSOStatus = async () => {
     console.log('Checking SSO status...');
     try {
-        const response = await fetch(`${basePath}/api/auth/check-sso`, {
+        const response = await fetch(`${basePath}/api/public/check-sso`, {
             method: 'GET',
             credentials: 'include',
             headers: {
