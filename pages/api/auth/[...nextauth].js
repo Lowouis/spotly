@@ -40,6 +40,23 @@ const authConfig = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.AUTH_SECRET,
     debug: true,
+    cookies: {
+        sessionToken: {
+            options: {
+                path: basePath || '/',
+            },
+        },
+        callbackUrl: {
+            options: {
+                path: basePath || '/',
+            },
+        },
+        csrfToken: {
+            options: {
+                path: basePath || '/',
+            },
+        },
+    },
     providers: [
         CredentialsProvider({
             id: 'sso-login',
@@ -54,7 +71,7 @@ const authConfig = {
                 const user = await prisma.user.findUnique({
                     where: { username: credentials.username }
                 });
-                // L'utilisateur doit exister car il a été créé/vérifié juste avant par notre API de callback
+                
                 return user;
             }
         }),
