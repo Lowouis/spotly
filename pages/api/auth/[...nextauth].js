@@ -162,9 +162,9 @@ const authConfig = {
         },
     },
     pages: {
-        signIn: `$/login`,
+        signIn: `${basePath}/login`,
         signOut: `/`,
-        error: `/error`,
+        error: `${basePath}/error`,
     },
     events: {
         async signIn(message) {
