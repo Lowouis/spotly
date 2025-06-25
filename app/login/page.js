@@ -94,7 +94,8 @@ function LoginContent() {
         refetchOnWindowFocus: false,
         enabled: kerberosConfigExists, // n'active la requête SSO que si la config existe
         onSuccess: async (data) => {
-            if (data.ticket) {
+            console.log('useQuery onSuccess DÉCLENCHÉ. Data:', data);
+            if (data && data.ticket) {
                 console.log('Ticket SSO reçu, validation via API de callback...');
                 try {
                     const kerberosResponse = await fetch(`${basePath}/api/auth/callback/kerberos`, {
@@ -130,10 +131,12 @@ function LoginContent() {
                     setSsoError(error.message);
                 }
             } else {
+                console.log('onSuccess déclenché, mais pas de ticket trouvé dans data.');
                 setSsoError("Réponse SSO invalide du serveur (ticket manquant).");
             }
         },
         onError: (error) => {
+            console.log('useQuery onError DÉCLENCHÉ. Error:', error);
             // N'afficher une erreur que si ce n'est PAS le challenge Negotiate attendu
             if (!error.message.includes('Authentification Negotiate requise')) {
                 console.error('SSO check failed:', error);
