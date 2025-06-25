@@ -3,114 +3,95 @@ import {getToken} from 'next-auth/jwt';
 import nextConfig from './next.config.mjs';
 
 const basePath = nextConfig.basePath || '';
+const trustedOrigin = process.env.NEXTAUTH_URL
+    ? new URL(process.env.NEXTAUTH_URL).origin
+    : 'http://localhost:3000';
 
-export async function middleware(req) {
-    const pathname = req.nextUrl.pathname;
-    const origin = req.headers.get('origin') || '';
-    // const host = req.headers.get('host') || ''; // Plus besoin de cette variable ici
-
-    const response = NextResponse.next();
-
-    // Définir Access-Control-Allow-Origin et Access-Control-Allow-Credentials en fonction de l'origine de la requête
-    if (origin) {
-        response.headers.set('Access-Control-Allow-Origin', origin);
-        // Access-Control-Allow-Credentials doit être true lorsque l'origine n'est pas le joker
-        response.headers.set('Access-Control-Allow-Credentials', 'true');
-    } else {
-        // Fallback pour les requêtes sans origine (peut ne pas être nécessaire mais pour sécurité)
-        response.headers.set('Access-Control-Allow-Origin', '*');
-        // Access-Control-Allow-Credentials ne doit pas être true avec le joker
-        // response.headers.set('Access-Control-Allow-Credentials', 'false'); // Ne pas définir si ce n'est pas true avec *
-    }
-
-    // Définir les autres en-têtes CORS pour toutes les réponses
+// Helper function to add CORS headers to any response
+function addCorsHeaders(response) {
+    response.headers.set('Access-Control-Allow-Origin', trustedOrigin);
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    response.headers.set('Access-Control-Max-Age', '86400'); // Cache pre-flight requests for 24 hours
+    response.headers.set('Access-Control-Max-Age', '86400');
+    return response;
+}
 
-    // Gérer les requêtes OPTIONS (pre-flight)
+export async function middleware(req) {
+    // Handle pre-flight OPTIONS requests first
     if (req.method === 'OPTIONS') {
-        // Créer un nouvel objet headers pour la réponse OPTIONS pour s'assurer qu'ils sont bien définis
-        const optionsHeaders = new Headers(response.headers);
-
-        // Renforcer la définition des en-têtes spécifiques pour OPTIONS si nécessaire
-        if (origin) {
-            optionsHeaders.set('Access-Control-Allow-Origin', origin);
-            optionsHeaders.set('Access-Control-Allow-Credentials', 'true');
-        } else {
-            optionsHeaders.set('Access-Control-Allow-Origin', '*');
-        }
-        optionsHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        optionsHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-        optionsHeaders.set('Access-Control-Max-Age', '86400');
-
-        return new NextResponse(null, {status: 204, headers: optionsHeaders});
+        const optionsResponse = new NextResponse(null, { status: 204 });
+        return addCorsHeaders(optionsResponse);
     }
 
-    // Vérifier l'authentification pour les routes protégées
-    const token = await getToken({req});
-    const isAuth = !!token;
+    const pathname = req.nextUrl.pathname;
+    const pathWithoutBasePath = pathname.replace(basePath, '');
+    console.log('Middleware - Path without basePath:', pathWithoutBasePath);
+    
+    // Create the base response that will be used for pass-through requests
+    const response = NextResponse.next();
+    addCorsHeaders(response);
 
-    // Routes publiques qui ne nécessitent pas d'authentification
+    // Public routes that do not require authentication
     const publicRoutes = [
         '/login',
         '/register',
-        '/api/auth', // Uniquement les routes next-auth sont publiques
-        '/api/public', // Routes API publiques personnalisées
+        '/api/auth',
+        '/api/public',
         '/_next',
         '/favicon.ico',
         '/spotly_logo.png',
         '/banner.png'
     ];
-
-    // Vérifier si la route actuelle est publique en retirant le basePath
-    const pathWithoutBasePath = pathname.replace(basePath, '');
-    console.log('Middleware - Path without basePath:', pathWithoutBasePath);
-
+    
     const normalizedPath = pathWithoutBasePath.endsWith('/') && pathWithoutBasePath.length > 1
         ? pathWithoutBasePath.slice(0, -1)
         : pathWithoutBasePath;
 
     const isPublicRoute = publicRoutes.some(route => {
         if (route.endsWith('*')) {
-            const baseRoute = route.slice(0, -1);
-            return normalizedPath.startsWith(baseRoute);
+            return normalizedPath.startsWith(route.slice(0, -1));
         }
-        // Ajustement pour correspondre aux sous-routes de /api/auth et /api/public
         if (route === '/api/auth' || route === '/api/public') {
             return normalizedPath.startsWith(route);
         }
         return normalizedPath === route;
     });
 
-    // Si la route est publique, permettre l'accès
     if (isPublicRoute) {
-        return response;
+        return response; // Pass through with CORS headers
     }
 
-    // Vérifier l'accès aux routes admin
-    if (pathWithoutBasePath.startsWith('/admin')) {
-        if (!token || (token.role !== "ADMIN" && token.role !== "SUPERADMIN")) {
-            const loginUrl = new URL(`${basePath}/login`, req.url);
-            loginUrl.searchParams.set('callbackUrl', req.url);
-            console.log('Middleware - Redirecting to login (admin):', loginUrl.toString());
-            return NextResponse.redirect(loginUrl);
-        }
-    }
+    // From this point, all routes are protected.
+    const token = await getToken({req});
+    const isAuth = !!token;
 
     if (!isAuth) {
         const loginUrl = new URL(`${basePath}/login`, req.url);
         loginUrl.searchParams.set('callbackUrl', req.url);
         console.log('Middleware - Redirecting to login (auth):', loginUrl.toString());
-        return NextResponse.redirect(loginUrl);
+        const redirectResponse = NextResponse.redirect(loginUrl);
+        return addCorsHeaders(redirectResponse);
     }
 
+    // At this point, the user is authenticated. Now check roles.
+    if (pathWithoutBasePath.startsWith('/admin')) {
+        if (token.role !== "ADMIN" && token.role !== "SUPERADMIN") {
+            const loginUrl = new URL(`${basePath}/login`, req.url);
+            loginUrl.searchParams.set('callbackUrl', req.url);
+            console.log('Middleware - Redirecting to login (insufficient privileges):', loginUrl.toString());
+            const redirectResponse = NextResponse.redirect(loginUrl);
+            return addCorsHeaders(redirectResponse);
+        }
+    }
+
+    // If all checks pass, allow the request.
     return response;
 }
 
 export const config = {
     matcher: [
-        // Exclure toutes les ressources statiques
+        // Exclude all static resources
         '/((?!_next/static|_next/image|favicon.ico|public/|spotly_logo.png|banner.png).*)',
     ],
 };

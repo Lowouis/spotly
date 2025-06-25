@@ -92,7 +92,8 @@ function LoginContent() {
             return false;
         },
         refetchOnWindowFocus: false,
-        enabled: kerberosConfigExists, // n'active la requête SSO que si la config existe
+        // Ne lance la vérification SSO que si une config existe ET que l'on n'est pas déjà en train de se connecter
+        enabled: kerberosConfigExists === true && status === 'unauthenticated',
     });
 
     // Utiliser useEffect pour réagir aux changements de ssoData et queryError
@@ -147,9 +148,9 @@ function LoginContent() {
         }
     }, [queryError]);
 
-    // Si le status de la session next-auth est déjà authentifié, on ne fait rien et on attend la redirection
-    if (status === 'authenticated') {
-        return <SSOLoadingModal/>;
+    // Si la session est en cours de chargement (après soumission manuelle) ou déjà authentifiée, afficher le modal
+    if (status === 'loading' || status === 'authenticated') {
+        return <SSOLoadingModal />;
     }
 
     if (kerberosConfigExists === undefined || (kerberosConfigExists && isSSOChecking)) {
