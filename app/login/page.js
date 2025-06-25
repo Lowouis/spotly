@@ -8,7 +8,6 @@ import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query"
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
 import nextConfig from '../../next.config.mjs';
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
-import {Button} from "@nextui-org/button";
 
 const basePath = nextConfig.basePath || '';
 
@@ -66,14 +65,6 @@ function LoginContent() {
     const [debugInfo, setDebugInfo] = useState(null);
     const [ssoError, setSsoError] = useState(null);
     const [kerberosConfigExists, setKerberosConfigExists] = useState(undefined);
-    const [manualLogout, setManualLogout] = useState(false);
-    const [ssoTicket, setSsoTicket] = useState(null);
-    const [ssoReady, setSsoReady] = useState(false);
-
-    // Lire le flag manualLogout au chargement
-    useEffect(() => {
-        setManualLogout(!!localStorage.getItem('manualLogout'));
-    }, []);
 
     // Vérifie la présence d'une config Kerberos active
     useEffect(() => {
@@ -92,55 +83,70 @@ function LoginContent() {
         queryKey: ['ssoStatus'],
         queryFn: checkSSOStatus,
         retry: (failureCount, error) => {
+            // Si c'est le challenge Negotiate (normal), et qu'on n'a pas déjà tenté, on retente une fois.
             if (error.message.includes('Authentification Negotiate requise') && failureCount < 2) {
                 console.log('Challenge Negotiate reçu, nouvelle tentative...');
                 return true;
             }
+            // Pour toute autre erreur, on abandonne.
             return false;
         },
         refetchOnWindowFocus: false,
-        enabled: kerberosConfigExists === true && status === 'unauthenticated' && !manualLogout,
-        onSuccess: (data) => {
-            if (data && data.ticket) {
-                setSsoTicket(data.ticket);
-                setSsoReady(true);
-            } else {
-                setSsoReady(false);
-            }
-        },
-        onError: () => setSsoReady(false),
+        // Ne lance la vérification SSO que si une config existe ET que l'on n'est pas déjà en train de se connecter
+        enabled: kerberosConfigExists === true && status === 'unauthenticated',
     });
 
-    // Fonction pour lancer la connexion SSO manuellement
-    const handleSsoLogin = async () => {
-        localStorage.removeItem('manualLogout');
-        setManualLogout(false);
-        if (ssoTicket) {
+    // Utiliser useEffect pour réagir aux changements de ssoData et queryError
+    useEffect(() => {
+        const handleSsoSuccess = async (data) => {
+            console.log('useEffect a détecté un ticket SSO. Validation en cours...');
             try {
                 const kerberosResponse = await fetch(`${basePath}/api/auth/callback/kerberos`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ticket: ssoTicket }),
+                    body: JSON.stringify({ ticket: data.ticket }),
                 });
+
                 if (!kerberosResponse.ok) {
                     const errorData = await kerberosResponse.json();
                     throw new Error(`Échec de la validation du ticket: ${errorData.error}`);
                 }
+
                 const user = await kerberosResponse.json();
+                console.log('Utilisateur validé reçu:', user.username, 'Tentative de connexion NextAuth...');
                 const res = await signIn('sso-login', {
                     redirect: false,
                     username: user.username,
                 });
+
+                console.log('Résultat de signIn:', res);
+
                 if (res && res.ok) {
+                    console.log('Connexion via NextAuth réussie. Redirection...');
                     window.location.href = `${basePath}/`;
                 } else {
                     throw new Error(res?.error || "Échec de la finalisation de la session NextAuth");
                 }
             } catch (error) {
+                console.error("Erreur dans le processus de connexion SSO :", error);
                 setSsoError(error.message);
             }
+        };
+
+        if (ssoData && ssoData.ticket) {
+            handleSsoSuccess(ssoData);
         }
-    };
+    }, [ssoData, router]);
+
+    useEffect(() => {
+        if (queryError) {
+            console.error('useEffect a détecté une erreur SSO:', queryError.message);
+            if (!queryError.message.includes('Authentification Negotiate requise')) {
+                setDebugInfo({ error: queryError.message });
+                setSsoError(queryError.message);
+            }
+        }
+    }, [queryError]);
 
     // Si la session est en cours de chargement (après soumission manuelle) ou déjà authentifiée, afficher le modal
     if (status === 'loading' || status === 'authenticated') {
@@ -148,20 +154,17 @@ function LoginContent() {
     }
 
     if (kerberosConfigExists === undefined || (kerberosConfigExists && isSSOChecking)) {
+        // On attend de savoir si la config existe OU si la vérification SSO est en cours
         return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
     }
 
+    // Le SSO a échoué ou n'est pas configuré, on affiche le formulaire de connexion manuelle
     return (
         <div className="flex flex-col items-center">
             <div className="absolute top-4 right-4">
                 <DarkModeSwitch />
             </div>
             <ConnectionModal/>
-            {ssoReady && ssoTicket && (
-                <Button color="primary" onPress={handleSsoLogin} className="mb-4">
-                    Connexion SSO
-                </Button>
-            )}
             {debugInfo && (
                 <div className="mt-4 p-4 bg-gray-100 rounded-lg max-w-lg w-full">
                     <h3 className="text-lg font-semibold mb-2">Informations de débogage SSO</h3>
