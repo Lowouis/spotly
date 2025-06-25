@@ -180,14 +180,17 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                     color="danger"
                                     textValue="Se déconnecter"
                                     startContent={<CiLogout className="w-4 h-4"/>}
-                                    onPress={() => signOut().then(() => {
-                                        addToast({
-                                            title: 'Déconnexion',
-                                            message: 'Vous avez été déconnecté',
-                                            type: 'success',
-                                            duration: 5000,
+                                    onPress={() => {
+                                        localStorage.setItem('manualLogout', '1');
+                                        signOut().then(() => {
+                                            addToast({
+                                                title: 'Déconnexion',
+                                                message: 'Vous avez été déconnecté',
+                                                type: 'success',
+                                                duration: 5000,
+                                            });
                                         });
-                                    })}
+                                    }}
                                 >
                                     Se déconnecter
                                 </DropdownItem>
@@ -305,14 +308,17 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                     className="text-danger"
                                     color="danger"
                                     startContent={<CiLogout className="w-4 h-4"/>}
-                                    onPress={() => signOut().then(() => {
-                                        addToast({
-                                            title: 'Déconnexion',
-                                            message: 'Vous avez été déconnecté',
-                                            type: 'success',
-                                            duration: 5000,
+                                    onPress={() => {
+                                        localStorage.setItem('manualLogout', '1');
+                                        signOut().then(() => {
+                                            addToast({
+                                                title: 'Déconnexion',
+                                                message: 'Vous avez été déconnecté',
+                                                type: 'success',
+                                                duration: 5000,
+                                            });
                                         });
-                                    })}
+                                    }}
                                 >
                                     Se déconnecter
                                 </DropdownItem>
