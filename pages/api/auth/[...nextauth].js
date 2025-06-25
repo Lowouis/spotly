@@ -8,6 +8,8 @@ import {validateKerberosTicket} from '@/lib/kerberos-auth';
 import nextConfig from '../../../next.config.mjs';
 import {decrypt} from '@/lib/security';
 
+console.log("Valeur de NEXTAUTH_URL au démarrage :", process.env.NEXTAUTH_URL);
+
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
 
 const basePath = nextConfig.basePath || '';
