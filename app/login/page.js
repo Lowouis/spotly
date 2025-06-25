@@ -68,7 +68,7 @@ function LoginContent() {
 
     // Vérifie la présence d'une config Kerberos active
     useEffect(() => {
-        fetch(`${basePath}/api/sso/kerberos-config`)
+        fetch(`${basePath}/api/public/kerberos-config`)
             .then(res => {
                 if (res.status === 200) {
                     setKerberosConfigExists(true);
