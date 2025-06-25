@@ -1,6 +1,7 @@
 import {validateKerberosTicket} from "@/lib/kerberos-auth";
 import prisma from "@/prismaconf/init";
 import {decrypt} from "@/lib/security";
+import {authenticate} from 'ldap-authentication';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
@@ -23,13 +24,15 @@ export default async function handler(req, res) {
         }
 
         console.log(`Callback Kerberos: Ticket validé pour l'utilisateur ${validationResult.username}. Recherche en BDD.`);
+        // Extraire le login avant le @
+        const login = validationResult.username.split('@')[0];
         let user = await prisma.user.findUnique({
-            where: {username: validationResult.username},
+            where: {username: login},
         });
         console.log(`Callback Kerberos: Utilisateur trouvé en BDD:`, user);
 
         if (!user) {
-            console.log(`Callback Kerberos: L'utilisateur n'existe pas. Tentative de création.`);
+            // Charger la config LDAP
             const ldapConfig = await prisma.ldapConfig.findFirst({
                 where: {isActive: true},
                 orderBy: {lastUpdated: 'desc'}
@@ -40,14 +43,30 @@ export default async function handler(req, res) {
                 return res.status(500).json({error: "La configuration du domaine de messagerie est manquante."});
             }
             const emailDomain = decrypt(ldapConfig.emailDomain);
-            console.log(`Callback Kerberos: Domaine de messagerie utilisé: ${emailDomain}`);
-
-            // Logique de création de l'utilisateur si non trouvé (peut être étendue avec LDAP)
+            let ldapUser = null;
+            try {
+                ldapUser = await authenticate({
+                    ldapOpts: {
+                        url: decrypt(ldapConfig.serverUrl),
+                    },
+                    adminDn: decrypt(ldapConfig.adminDn),
+                    adminPassword: decrypt(ldapConfig.adminPassword),
+                    userSearchBase: decrypt(ldapConfig.bindDn),
+                    usernameAttribute: 'sAMAccountName',
+                    username: login,
+                    attributes: ['mail', 'givenName', 'sn', 'sAMAccountName'],
+                });
+            } catch (e) {
+                console.error('Callback Kerberos: LDAP user search failed:', e);
+            }
             user = await prisma.user.create({
                 data: {
-                    username: validationResult.username,
-                    email: `${validationResult.username}@${emailDomain}`,
+                    username: login,
+                    email: ldapUser && ldapUser.mail ? ldapUser.mail : `${login}@${emailDomain}`,
+                    name: ldapUser && ldapUser.givenName ? ldapUser.givenName : null,
+                    surname: ldapUser && ldapUser.sn ? ldapUser.sn : null,
                     external: true,
+                    password: null,
                 },
             });
             console.log(`Callback Kerberos: Utilisateur créé:`, user);
