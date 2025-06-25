@@ -8,8 +8,6 @@ import {validateKerberosTicket} from '@/lib/kerberos-auth';
 import nextConfig from '../../../next.config.mjs';
 import {decrypt} from '@/lib/security';
 
-console.log("Valeur de NEXTAUTH_URL au démarrage :", process.env.NEXTAUTH_URL);
-
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
 
 const basePath = nextConfig.basePath || '';
@@ -65,13 +63,15 @@ const authConfig = {
                 username: { label: "Username", type: "text" }
             },
             async authorize(credentials) {
+                console.log('Provider [sso-login]: Recherche de l\'utilisateur:', credentials?.username);
                 if (!credentials?.username) {
+                    console.log('Provider [sso-login]: Pas de username fourni.');
                     return null;
                 }
                 const user = await prisma.user.findUnique({
                     where: { username: credentials.username }
                 });
-                
+                console.log('Provider [sso-login]: Utilisateur trouvé en BDD:', user);
                 return user;
             }
         }),

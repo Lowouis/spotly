@@ -117,6 +117,8 @@ function LoginContent() {
                         username: user.username,
                     });
 
+                    console.log('Résultat de signIn:', res);
+
                     if (res && res.ok) {
                         console.log('Connexion via NextAuth réussie. Redirection...');
                         window.location.href = `${basePath}/`;
