@@ -38,8 +38,6 @@ export async function middleware(req) {
     const publicRoutes = [
         '/login',
         '/register',
-        '/api/auth',
-        '/api/public',
         '/api',
         '/_next',
         '/favicon.ico',
@@ -55,7 +53,7 @@ export async function middleware(req) {
         if (route.endsWith('*')) {
             return normalizedPath.startsWith(route.slice(0, -1));
         }
-        if (route === '/api/auth' || route === '/api/public') {
+        if (route === '/api') {
             return normalizedPath.startsWith(route);
         }
         return normalizedPath === route;
