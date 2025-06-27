@@ -40,6 +40,7 @@ export async function middleware(req) {
         '/register',
         '/api/auth',
         '/api/public',
+        '/api',
         '/_next',
         '/favicon.ico',
         '/spotly_logo.png',
