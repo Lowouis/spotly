@@ -8,33 +8,27 @@ import {Card, CardBody, CardFooter, CardHeader, Link, ScrollShadow} from "@nextu
 import {useMutation} from "@tanstack/react-query";
 import {addToast} from "@heroui/toast";
 import NextLink from "next/link";
-export async function createUser(creditentials) {
-    const test = creditentials.reduce((acc, creditential) => {
-        acc[creditential.name] = creditential.value;
-        return acc;
-    }, {})
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`, {
+export async function createUser(userData) {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/auth/register`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-
-        body: JSON.stringify(
-            creditentials.reduce((acc, creditential) => {
-                acc[creditential.name] = creditential.value;
-                return acc;
-            }, {})
-        ),
+        body: JSON.stringify(userData),
     });
+
+    const data = await response.json();
+
     if (!response.ok) {
         addToast({
             title: "Erreur",
-            description: "Une erreur est survenue lors de la création de votre compte",
+            description: data.message || "Une erreur est survenue lors de la création de votre compte",
             type: "error",
-        })
-        throw new Error('Failed to create user');
+        });
+        throw new Error(data.message || 'Failed to create user');
     }
-    return response.json();
+
+    return data;
 }
 
 export function RegisterModal({}) {
@@ -88,26 +82,39 @@ export function RegisterModal({}) {
             })
             setConnectionLoading(false);
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             setConnectionLoading(false);
             setCreditentials(creditentials.map(cred => ({...cred, value: ""})));
             window.location.href = "/login";
             addToast({
                 title: "Succès",
-                description: "Votre compte a été créé avec succès",
+                description: data.message || "Votre compte a été créé avec succès",
                 type: "success",
-            })
-
+            });
         }
     });
 
-    const handleSubmit = () => {
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        setConnectionLoading(true);
 
-        mutation.mutate(
-            creditentials
-        )
+        const userData = creditentials.reduce((acc, cred) => {
+            acc[cred.name] = cred.value;
+            return acc;
+        }, {});
 
-    }
+        if (userData.password !== userData.confirmPassword) {
+            addToast({
+                title: "Erreur",
+                description: "Les mots de passe ne correspondent pas",
+                type: "error",
+            });
+            setConnectionLoading(false);
+            return;
+        }
+
+        mutation.mutate(userData);
+    };
     
 
 

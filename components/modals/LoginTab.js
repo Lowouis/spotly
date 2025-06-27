@@ -35,14 +35,14 @@ export default function LoginTab() {
             username: creditentials[0].value,
             password: creditentials[1].value,
         }).then((response) => {
-            console.log(response);
             if (response.status === 401) {
                 setWrongCredentials(true);
+                setConnectionLoading(false);
             }
             if (response.ok) {
                 router.push('/');
             }
-            setConnectionLoading(false);
+            
         });
 
     };
@@ -117,6 +117,7 @@ export default function LoginTab() {
                 >
                     {!connectionLoading ? "Connexion" : "En cours de connexion"}
                 </Button>
+               
             </div>
         </Form>
     );

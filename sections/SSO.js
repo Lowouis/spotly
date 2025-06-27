@@ -28,7 +28,7 @@ const SSO = () => {
             setIsLoadingConfig(true);
             try {
                 console.log("Chargement de la configuration SSO...");
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/sso/kerberos-config`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/public/kerberos-config`);
                 console.log("Réponse du serveur:", response.status);
 
                 if (response.ok) {

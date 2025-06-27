@@ -28,7 +28,7 @@ export async function fetchAPI(path, urlParamsObject = {}, options = {}) {
 
 export const fetchIP = async () => {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/client-ip`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/public/client-ip`, {
             headers: {
                 'Accept': 'application/json',
             },

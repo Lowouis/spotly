@@ -1,7 +1,6 @@
 import {createContext, useContext, useEffect} from 'react';
 import {useSession} from 'next-auth/react';
 import {useRouter} from 'next/navigation';
-import {addToast} from '@heroui/toast';
 
 const AuthContext = createContext();
 
@@ -12,12 +11,6 @@ export const AuthProvider = ({children}) => {
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/login");
-            addToast({
-                title: 'Session expirée',
-                message: 'Veuillez vous reconnecter',
-                type: 'warning',
-                duration: 5000,
-            });
         }
     }, [status, router]);
 

@@ -38,23 +38,7 @@ const authConfig = {
     adapter: PrismaAdapter(prisma),
     secret: process.env.AUTH_SECRET,
     debug: true,
-    cookies: {
-        sessionToken: {
-            options: {
-                path: basePath || '/',
-            },
-        },
-        callbackUrl: {
-            options: {
-                path: basePath || '/',
-            },
-        },
-        csrfToken: {
-            options: {
-                path: basePath || '/',
-            },
-        },
-    },
+    
     providers: [
         CredentialsProvider({
             id: 'sso-login',
@@ -166,17 +150,12 @@ const authConfig = {
             return session;
         },
         redirect: async ({ url, baseUrl }) => {
-            console.log('Redirect Callback - URL:', url);
-            console.log('Redirect Callback - BaseURL:', baseUrl);
-
-            // Si l'URL est relative, utiliser le baseUrl
-            if (url.startsWith('/')) {
-                return `${baseUrl}${url}`;
+            const basePath = nextConfig.basePath || '';
+            if (url.startsWith(baseUrl)) return url;
+            if (basePath && url.startsWith(basePath)) {
+                return baseUrl + url.slice(basePath.length);
             }
-            // Si l'URL est absolue et contient le domaine de base, l'utiliser telle quelle
-            if (url.startsWith(baseUrl)) {
-                return url;
-            }
+            if (url.startsWith('/')) return baseUrl + url;
             return url;
         },
     },
@@ -208,5 +187,7 @@ const authConfig = {
         },
     },
 };
+
+console.log('Final authConfig:', JSON.stringify(authConfig, null, 2));
 
 export default NextAuth(authConfig);

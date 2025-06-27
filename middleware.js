@@ -25,7 +25,9 @@ export async function middleware(req) {
     }
 
     const pathname = req.nextUrl.pathname;
-    const pathWithoutBasePath = pathname.replace(basePath, '');
+    const pathWithoutBasePath = pathname.startsWith(basePath)
+    ? pathname.slice(basePath.length)
+    : pathname;
     console.log('Middleware - Path without basePath:', pathWithoutBasePath);
     
     // Create the base response that will be used for pass-through requests
@@ -65,9 +67,9 @@ export async function middleware(req) {
     // From this point, all routes are protected.
     const token = await getToken({req});
     const isAuth = !!token;
+    const loginUrl = new URL(`${basePath}/login`, req.url);
 
     if (!isAuth) {
-        const loginUrl = new URL(`${basePath}/login`, req.url);
         loginUrl.searchParams.set('callbackUrl', req.url);
         console.log('Middleware - Redirecting to login (auth):', loginUrl.toString());
         const redirectResponse = NextResponse.redirect(loginUrl);
@@ -77,7 +79,6 @@ export async function middleware(req) {
     // At this point, the user is authenticated. Now check roles.
     if (pathWithoutBasePath.startsWith('/admin')) {
         if (token.role !== "ADMIN" && token.role !== "SUPERADMIN") {
-            const loginUrl = new URL(`${basePath}/login`, req.url);
             loginUrl.searchParams.set('callbackUrl', req.url);
             console.log('Middleware - Redirecting to login (insufficient privileges):', loginUrl.toString());
             const redirectResponse = NextResponse.redirect(loginUrl);

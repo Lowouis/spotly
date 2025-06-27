@@ -1,171 +1,72 @@
 'use client';
 
 import {ConnectionModal} from "@/components/modals/connectionModal";
-import {useRouter} from 'next/navigation';
-import {useSession, signIn} from 'next-auth/react';
+import {useRouter, useSearchParams} from 'next/navigation';
+import {useSession} from 'next-auth/react';
 import React, {useState, useEffect} from 'react';
-import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
-import nextConfig from '../../next.config.mjs';
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
+import {Spinner, Button} from "@nextui-org/react";
+import {useSSO} from '@/hooks/useSSO';
 
-const basePath = nextConfig.basePath || '';
-
-const checkSSOStatus = async () => {
-    console.log('Checking SSO status...');
-    try {
-        const response = await fetch(`${basePath}/api/public/check-sso`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-        });
-        console.log('SSO check response status:', response.status);
-
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                const errorData = await response.json();
-                throw new Error(`Erreur lors de la vérification SSO: ${errorData.message || response.statusText}`);
-            } else {
-                throw new Error(`Erreur lors de la vérification SSO: ${response.status} ${response.statusText}`);
-            }
-        }
-
-        const data = await response.json();
-        console.log('SSO check response data:', data);
-
-        // Vérification plus détaillée de l'état SSO
-        if (data.status === 'not_authenticated') {
-            console.log('SSO non authentifié - détails:', data.debug);
-            return {...data, isSSO: false};
-        }
-
-        if (data.status === 'pending' && !data.debug.auth.ticketPresent) {
-            console.log('SSO en attente mais pas de ticket - détails:', data.debug);
-            return {...data, isSSO: false};
-        }
-
-        return data;
-    } catch (error) {
-        console.error('SSO check error:', error);
-        return {
-            status: 'error',
-            isSSO: false,
-            error: error.message
-        };
-    }
-};
 
 function LoginContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { status } = useSession();
-    const [debugInfo, setDebugInfo] = useState(null);
-    const [ssoError, setSsoError] = useState(null);
-    const [kerberosConfigExists, setKerberosConfigExists] = useState(undefined);
+    const [manualLogout, setManualLogout] = useState(false);
+    const ssoParam = searchParams.get('sso');
 
-    // Vérifie la présence d'une config Kerberos active
     useEffect(() => {
-        fetch(`${basePath}/api/public/kerberos-config`)
-            .then(res => {
-                if (res.status === 200) {
-                    setKerberosConfigExists(true);
-                } else {
-                    setKerberosConfigExists(false);
-                }
-            })
-            .catch(() => setKerberosConfigExists(false));
-    }, []);
-
-    const {data: ssoData, isLoading: isSSOChecking, error: queryError} = useQuery({
-        queryKey: ['ssoStatus'],
-        queryFn: checkSSOStatus,
-        retry: (failureCount, error) => {
-            // Si c'est le challenge Negotiate (normal), et qu'on n'a pas déjà tenté, on retente une fois.
-            if (error.message.includes('Authentification Negotiate requise') && failureCount < 2) {
-                console.log('Challenge Negotiate reçu, nouvelle tentative...');
-                return true;
-            }
-            // Pour toute autre erreur, on abandonne.
-            return false;
-        },
-        refetchOnWindowFocus: false,
-        // Ne lance la vérification SSO que si une config existe ET que l'on n'est pas déjà en train de se connecter
-        enabled: kerberosConfigExists === true && status === 'unauthenticated',
-    });
-
-    // Utiliser useEffect pour réagir aux changements de ssoData et queryError
-    useEffect(() => {
-        const handleSsoSuccess = async (data) => {
-            console.log('useEffect a détecté un ticket SSO. Validation en cours...');
-            try {
-                const kerberosResponse = await fetch(`${basePath}/api/auth/callback/kerberos`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ticket: data.ticket }),
-                });
-
-                if (!kerberosResponse.ok) {
-                    const errorData = await kerberosResponse.json();
-                    throw new Error(`Échec de la validation du ticket: ${errorData.error}`);
-                }
-
-                const user = await kerberosResponse.json();
-                console.log('Utilisateur validé reçu:', user.username, 'Tentative de connexion NextAuth...');
-                const res = await signIn('sso-login', {
-                    redirect: false,
-                    username: user.username,
-                });
-
-                console.log('Résultat de signIn:', res);
-
-                if (res && res.ok) {
-                    console.log('Connexion via NextAuth réussie. Redirection...');
-                    window.location.href = `${basePath}/`;
-                } else {
-                    throw new Error(res?.error || "Échec de la finalisation de la session NextAuth");
-                }
-            } catch (error) {
-                console.error("Erreur dans le processus de connexion SSO :", error);
-                setSsoError(error.message);
-            }
-        };
-
-        if (ssoData && ssoData.ticket) {
-            handleSsoSuccess(ssoData);
+        if(status === 'authenticated'){
+            router.replace("/");
         }
-    }, [ssoData, router]);
 
-    useEffect(() => {
-        if (queryError) {
-            console.error('useEffect a détecté une erreur SSO:', queryError.message);
-            if (!queryError.message.includes('Authentification Negotiate requise')) {
-                setDebugInfo({ error: queryError.message });
-                setSsoError(queryError.message);
-            }
-        }
-    }, [queryError]);
+        setManualLogout(!!localStorage.getItem('manualLogout'));
+    }, [status, router]);
 
-    // Si la session est en cours de chargement (après soumission manuelle) ou déjà authentifiée, afficher le modal
-    if (status === 'loading' || status === 'authenticated') {
-        return <SSOLoadingModal />;
+    const {
+        isLoading: isSSOChecking,
+        error: ssoError,
+        debug: ssoDebug,
+        kerberosConfigExists,
+        triggerSSO
+    } = useSSO({ manualLogout, ssoParam, status });
+
+
+
+
+    if (status === 'loading') {
+        return (
+            <div className="flex justify-center items-center h-screen">
+                <Spinner label="Chargement..." color="primary" />
+            </div>
+        );
     }
 
-    if (kerberosConfigExists === undefined || (kerberosConfigExists && isSSOChecking)) {
-        // On attend de savoir si la config existe OU si la vérification SSO est en cours
-        return <SSOLoadingModal debugInfo={debugInfo} error={ssoError}/>;
+    if (kerberosConfigExists && isSSOChecking) {
+        return <SSOLoadingModal debugInfo={ssoDebug} error={ssoError}/>;
     }
-
-    // Le SSO a échoué ou n'est pas configuré, on affiche le formulaire de connexion manuelle
     return (
         <div className="flex flex-col items-center">
             <div className="absolute top-4 right-4">
                 <DarkModeSwitch />
             </div>
-            <ConnectionModal/>
-            {debugInfo && (
+            <ConnectionModal />
+            <Button 
+                    onPress={triggerSSO} 
+                    color="warning" 
+                    isDisable={true}   
+                    className="mx-auto m-2 w-[400px]"
+                    size="lg"
+                    radius="sm"
+                    isDisabled={!kerberosConfigExists}
+                    isLoading={isSSOChecking || status === "loading"}
+                >   
+                Connexion via SSO
+            </Button>
+            {ssoDebug && (
                 <div className="mt-4 p-4 bg-gray-100 rounded-lg max-w-lg w-full">
                     <h3 className="text-lg font-semibold mb-2">Informations de débogage SSO</h3>
                     {ssoError && (
@@ -174,11 +75,14 @@ function LoginContent() {
                         </div>
                     )}
                     <pre className="text-sm overflow-auto">
-                        {JSON.stringify(debugInfo, null, 2)}
+                        {JSON.stringify(ssoDebug, null, 2)}
                     </pre>
                 </div>
             )}
+        
+        
         </div>
+
     );
 }
 
@@ -191,4 +95,3 @@ export default function Page() {
         </QueryClientProvider>
     );
 }
-

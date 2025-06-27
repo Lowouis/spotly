@@ -25,20 +25,20 @@ export default async function handler(req, res) {
         // Initialiser Kerberos avec la configuration chargée
         await initializeKerberos(config);
 
-        const authHeader = req.headers.authorization;
+    const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith('Negotiate ')) {
-            res.setHeader('WWW-Authenticate', 'Negotiate');
-            return res.status(401).json({message: 'Authentification Negotiate requise'});
-        }
+    if (!authHeader || !authHeader.startsWith('Negotiate ')) {
+        res.setHeader('WWW-Authenticate', 'Negotiate');
+        return res.status(401).json({message: 'Authentification Negotiate requise'});
+    }
 
-        const ticket = authHeader.split(' ')[1];
+    const ticket = authHeader.split(' ')[1];
 
-        if (!ticket) {
-            return res.status(400).json({message: 'En-tête Negotiate mal formaté'});
-        }
+    if (!ticket) {
+        return res.status(400).json({message: 'En-tête Negotiate mal formaté'});
+    }
 
-        return res.status(200).json({ticket});
+    return res.status(200).json({ticket});
 
     } catch (error) {
         console.error("Erreur dans check-sso:", error);
