@@ -282,7 +282,7 @@ export default async function handler(req, res) {
         } else if (req.method === "OPTIONS") {
             // Gérer la requête preflight OPTIONS
             const response = NextResponse.next();
-            res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'OPTIONS']);
+            res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']);
             res.writeHead(204, Object.fromEntries(response.headers.entries()));
             res.end();
         } else {
