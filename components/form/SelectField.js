@@ -126,12 +126,12 @@ const SelectField = ({
                     isDisabled={awaiting}
                     isRequired={isRequired}
                     id={name}
-                    classNames={"z-index-45"}
                     name={name}
                     aria-label={label}
                     role="combobox"
                     aria-controls={`${name}-listbox`}
                     aria-haspopup="listbox"
+                    className={"z-index-45"}
                     label={
                     <span className="p-0.5">
                         <span className="mr-2 text-content-primary dark:text-dark-content-primary">{label}</span>
@@ -159,7 +159,7 @@ const SelectField = ({
                         description: "text-content-secondary dark:text-dark-content-secondary",
                         trigger: "text-content-primary dark:text-dark-content-primary",
                         placeholder: "text-content-secondary dark:text-dark-content-secondary",
-                        listbox: "text-content-primary dark:text-dark-content-primary"
+                        listbox: "text-content-primary dark:text-dark-content-primary",
                     }}
                     disabledKeys={validates ? Object.keys(validates).filter(key => !validates[key]) : []}
                 >
