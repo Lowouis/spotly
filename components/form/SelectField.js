@@ -70,7 +70,6 @@ const SelectField = ({
         return () => subscription.unsubscribe();
     }, [value, defaultValue, setValue, name, resolvedOptions, eyesOn, watch]);
     const handleChange = (selectedValue) => {
-        console.log("handleChange", selectedValue);
         if (!selectedValue || selectedValue.size === 0) {
             onReset();
             setWatchedValue(null);
@@ -113,16 +112,11 @@ const SelectField = ({
             }
         }
     }, [defaultValue, resolvedOptions, isLoading, name, setValue]);
-    
-    
-    console.log("resolvedOptions : ", resolvedOptions)
-    
+
     return (
         <div className="my-2 w-full">
                 <Select
-                    onPress={()=>console.log("SELECT PRESS")}
                     size="sm"
-                    portal
                     isDisabled={awaiting}
                     isRequired={isRequired}
                     id={name}
@@ -131,7 +125,6 @@ const SelectField = ({
                     role="combobox"
                     aria-controls={`${name}-listbox`}
                     aria-haspopup="listbox"
-                    className={"z-index-45"}
                     label={
                     <span className="p-0.5">
                         <span className="mr-2 text-content-primary dark:text-dark-content-primary">{label}</span>
@@ -159,17 +152,16 @@ const SelectField = ({
                         description: "text-content-secondary dark:text-dark-content-secondary",
                         trigger: "text-content-primary dark:text-dark-content-primary",
                         placeholder: "text-content-secondary dark:text-dark-content-secondary",
-                        listbox: "text-content-primary dark:text-dark-content-primary",
+                        listbox: "text-content-primary dark:text-dark-content-primary"
                     }}
                     disabledKeys={validates ? Object.keys(validates).filter(key => !validates[key]) : []}
                 >
                     {(option) => (
                         <SelectItem
-                            onPress={()=>console.log("SELECTITEM PRESS")}
                             variant='bordered'
                             color="default"
                             aria-label={option?.name || option}
-                            key={option?.id?.toString()}
+                            key={option?.id}
                             value={option?.id?.toString()}
                             textValue={option?.name || option}
                             description={option?.description && option?.description}
