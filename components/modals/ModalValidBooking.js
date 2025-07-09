@@ -82,10 +82,10 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
             if (firstEntry.moderate === "WAITING") {
                 const owner = whoIsOwner(firstEntry);
                 sendEmail({
-                    "to": firstEntry.user.email,
-                    "subject": "Demande de réservation Spotly - " + firstEntry.resource.name,
-                    "text": getEmailTemplate("groupReservationWaiting",
-                        {
+                    to: firstEntry.user.email,
+                    subject: "Demande de réservation Spotly - " + firstEntry.resource.name,
+                    templateName: "groupReservationWaiting",
+                    data: {
                             name: session.user.surname,
                             resource: firstEntry.resource.name,
                             domain: firstEntry.resource.domains.name,
@@ -106,13 +106,12 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 minute: "numeric"
                             }),
                             owner: owner.name + " " + owner.surname,
-                        })
+                        }
                 });
                 sendEmail({
-                    "to": owner.email,
-                    "subject": "Nouvelle demande de réservation Spotly - " + firstEntry.resource.name,
-                    "text": getEmailTemplate("groupReservationRequestOwner",
-                        {
+                    to: owner.email,
+                    subject: "Nouvelle demande de réservation Spotly - " + firstEntry.resource.name,
+                    data: {
                             user: firstEntry.user.surname,
                             resource: firstEntry.resource.name,
                             entries: entry,
@@ -134,16 +133,17 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 hour: "numeric",
                                 minute: "numeric"
                             }),
-                        })
+                        },
+                    templateName: "groupReservationRequestOwner"
                 });
             } else {
                 // Pour les réservations non modérées, on envoie un seul email pour le groupe
                 if (data.length > 0) {
                     sendEmail({
-                        "to": data[0].user.email,
-                        "subject": "Nouvelles réservations Spotly - " + data[0].resource.name,
-                        "text": getEmailTemplate("groupReservationAccepted",
-                            {
+                        to: data[0].user.email,
+                        subject: "Nouvelles réservations Spotly - " + data[0].resource.name,
+                        templateName: "groupReservationAccepted",
+                        data: {
                                 user: data[0].user.name + " " + data[0].user.surname,
                                 resource: data[0].resource.name,
                                 entries: data.map(entry => ({
@@ -152,7 +152,6 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                     returnedConfirmationCode: entry.returnedConfirmationCode
                                 }))
                             }
-                        )
                     });
                 }
             }

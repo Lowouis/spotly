@@ -1,20 +1,26 @@
 'use server';
-
+import path from 'path';
 import nodemailer from 'nodemailer';
 import {runMiddleware} from "@/lib/core";
 import {marked} from 'marked';
 import prisma from "@/prismaconf/init";
 import {decrypt} from '@/lib/security';
+import { htmlToText } from 'html-to-text';
+import { getEmailTemplate } from '@/utils/mails/templates';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
         return res.status(405).json({message: 'Method not allowed'});
     }
-    const {to, subject, text} = req.body;
+    const {to, subject, templateName, data} = req.body;
 
-    // Convertir le Markdown en HTML
-    const htmlContent = marked(text);
+    const htmlContent = getEmailTemplate(templateName, data);
+
+    const textContent = htmlToText(htmlContent, {
+        wordwrap: 130,
+
+    });
 
     try {
         // Récupérer la configuration SMTP active
@@ -55,13 +61,20 @@ export default async function handler(req, res) {
 
         const info = await transporter.sendMail({
             headers: {
-                'Content-Type': 'text/html; charset=utf-8',
+                'Content-Type': 'multipart/related; charset=utf-8',
             },
             from: `"${decrypt(smtpConfig.fromName)}" <${decrypt(smtpConfig.fromEmail)}>`,
             to,
             subject,
-            text: text, // Version texte brut (Markdown)
-            html: htmlContent, // Version HTML convertie
+            html: htmlContent,
+            text: textContent, 
+            attachments: [
+                {
+                    filename: 'banner.png',
+                    path: path.resolve(process.cwd(), 'public/banner.png'),
+                    cid: 'bannerimg'
+                }
+            ]
         });
 
         return res.status(200).json({message: 'Email sent successfully!', info});

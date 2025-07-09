@@ -84,7 +84,6 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
     const [resendTimer, setResendTimer] = useState(0);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const [modalStepper, setModalStepper] = useState("main");
-
     const { mutate: sendEmail } = useEmail();
 
     const {data: timeScheduleOptions, isLoading: isLoadingtimeScheduleOptions} = useQuery({
@@ -215,13 +214,20 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
         });
         setModalStepper("main");
         sendEmail({
-            "to": entry.user.email,
-            "subject": "Confirmation de restitution - " + entry.resource.name,
-            "text": getEmailTemplate("reservationReturnedConfirmation",
-                {
-                    resource: entry.resource,
-                    endDate: new Date(entry.endDate),
-                })
+            to: entry.user.email,
+            subject: "Confirmation de restitution - " + entry.resource.name,
+            templateName: "reservationReturnedConfirmation",
+            data : {
+                resource: entry.resource.name,
+                endDate: new Date(entry.endDate).toLocaleString("FR-fr", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric"
+                }),
+            }
         });
         handleRefresh();
     }
@@ -233,9 +239,10 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             method : "DELETE"
         });
         sendEmail({
-            "to": entry.user.email,
-            "subject": "Confirmation de l'annulation de votre réservation Spotly - " + entry.resource.name,
-            "text": getEmailTemplate("reservationCancelled", {
+            to: entry.user.email,
+            subject: "Confirmation de l'annulation de votre réservation Spotly - " + entry.resource.name,
+            templateName: "reservationCancelled",
+            data: {
                     user: entry.user.name + " " + entry.user.surname,
                     resource: entry.resource.name,
                     startDate: new Date(entry.startDate).toLocaleString("FR-fr", {
@@ -254,7 +261,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                         hour: "numeric",
                         minute: "numeric"
                     }),
-                })
+            }
         });
         setModalStepper("main")
         handleRefresh();
@@ -294,9 +301,10 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
 
 
         sendEmail({
-            "to": entry.user.email,
-            "subject": "Code de réservation pour : " + entry.resource.name,
-            "text": getEmailTemplate("resentCode", {
+            to: entry.user.email,
+            subject: "Code de réservation pour : " + entry.resource.name,
+            templateName: "resentCode",
+            data: {
                 user: entry.user.name + " " + entry.user.surname,
                 resource: entry.resource.name,
                 startDate: new Date(entry.startDate).toLocaleString("FR-fr", {
@@ -315,7 +323,8 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                     hour: "numeric",
                     minute: "numeric"
                 }),
-            })
+                key : entry.returnedConfirmationCode
+            }
         });
 
     };

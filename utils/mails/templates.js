@@ -6,24 +6,32 @@ import {formatDuration} from "@/global";
  * @param {string} body - Contenu HTML du corps de l'email.
  * @returns {string} - HTML complet avec des styles.
  */
-const wrapInHtmlTemplate = (body) => `
+const wrapInHtmlTemplate = (body, subject = "Spotly") => `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>${subject}</title>
+  </head>
+  <body style="margin:0;padding:0;">
     <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #fff; font-family: Arial, sans-serif;">
-        <div style="width: 100%; text-align: center; margin-bottom: 20px;">
-            <img 
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSljy3n2uMTUxQtGyUxZURLEbUrSbup0o7hFQ&s" 
-                alt="Spotly" 
-                style="max-width: 200px; height: auto;"
-            />
-        </div>
-        ${body}
-        <footer style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666; border-top: 1px solid #eee; padding-top: 20px;">
-            <a href="${process.env.NEXT_PUBLIC_API_ENDPOINT}" style="color: #666; text-decoration: none;">Spotly</a>
-            <p style="margin: 10px 0;">Merci d'utiliser notre service !</p>
-            <p style="margin: 10px 0;">⚠️ Ce message est généré automatiquement, merci de ne pas y répondre.</p>
-        </footer>
+      <div style="width: 100%; text-align: center; margin-bottom: 20px;">
+        <img 
+          src="cid:bannerimg"
+          alt="Spotly" 
+          style="max-width: 200px; height: auto;"
+        />
+      </div>
+      ${body}
+      <footer style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666; border-top: 1px solid #eee; padding-top: 20px;">
+        <a href="${process.env.NEXT_PUBLIC_API_ENDPOINT}" style="color: #666; text-decoration: none;">Spotly</a>
+        <p style="margin: 10px 0;">Merci d'utiliser notre service !</p>
+        <p style="margin: 10px 0;">⚠️ Ce message est généré automatiquement, merci de ne pas y répondre.</p>
+      </footer>
     </div>
+  </body>
+</html>
 `;
-
 const templates = {
     rejected: (data) => `
 # Refus de la demande de réservation
@@ -168,14 +176,17 @@ Suite à votre demande, voici le code de réservation pour la ressource **${data
 - **Date de début** : ${data.startDate}
 - **Date de fin** : ${data.endDate}
 
-- **Code de réservation** : <div style="text-align: center; font-size: 24px; font-weight: bold; margin: 15px 0; padding: 10px; background-color: #f5f5f5; border-radius: 5px;">${data.key}</div>
+- **Code de réservation** : 
+<div style="text-align: center; font-size: 24px; font-weight: bold; margin: auto; padding: 5px; background-color: #f5f5f5; border-radius: 5px;">
+${data.key}
+</div>
 ---
 
 Cordialement,  
 L'équipe de gestion des ressources 
 `,
     groupReservationAccepted: (data) => `
-# Confirmation de réservation de groupe
+# Confirmation de réservation
 
 Bonjour **${data.user}**,
 
@@ -208,7 +219,7 @@ L'équipe de gestion des ressources
 `,
 
     groupReservationWaiting: (data) => `
-# Demande de réservation de groupe en attente
+# Demande de réservation en attente
 
 Bonjour **${data.user}**,
 
@@ -314,11 +325,8 @@ export const getEmailTemplate = (templateName, data) => {
     }
 
     const markdown = templates[templateName](data);
-    const htmlBody = marked(markdown, {
-        gfm: true,
-        breaks: true,
-        headerIds: false
-    });
-    return wrapInHtmlTemplate(htmlBody);
-};
+
+    const htmlBody = marked(markdown);
+
+    return wrapInHtmlTemplate(htmlBody, data.subject || "Spotly");};
 

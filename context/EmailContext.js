@@ -8,6 +8,10 @@ export const EmailProvider = ({ children }) => {
     const [emailError, setEmailError] = useState({"type": "", "message": ""});
     const mutation = useMutation({
         mutationFn: async (emailData) => {
+            console.log("EMAIL DATA", emailData);
+            if (!emailData.templateName || !emailData.data) {
+                throw new Error("templateName et data sont obligatoires !");
+            }
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/mail/sendEmail`, {
                 method: 'POST',
                 headers: {

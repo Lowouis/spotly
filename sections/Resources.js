@@ -20,7 +20,6 @@ const Resources = ({})=>{
         enabled : !isRefreshing
     });
 
-
     const ResourcesFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom', placeholder : "ex : P-ADMIN12, Audi A4 Bleu" },
         {

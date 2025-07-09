@@ -70,6 +70,7 @@ const SelectField = ({
         return () => subscription.unsubscribe();
     }, [value, defaultValue, setValue, name, resolvedOptions, eyesOn, watch]);
     const handleChange = (selectedValue) => {
+        console.log("handleChange", selectedValue);
         if (!selectedValue || selectedValue.size === 0) {
             onReset();
             setWatchedValue(null);
@@ -112,14 +113,20 @@ const SelectField = ({
             }
         }
     }, [defaultValue, resolvedOptions, isLoading, name, setValue]);
-
+    
+    
+    console.log("resolvedOptions : ", resolvedOptions)
+    
     return (
         <div className="my-2 w-full">
                 <Select
+                    onPress={()=>console.log("SELECT PRESS")}
                     size="sm"
+                    portal
                     isDisabled={awaiting}
                     isRequired={isRequired}
                     id={name}
+                    classNames={"z-index-45"}
                     name={name}
                     aria-label={label}
                     role="combobox"
@@ -158,10 +165,11 @@ const SelectField = ({
                 >
                     {(option) => (
                         <SelectItem
+                            onPress={()=>console.log("SELECTITEM PRESS")}
                             variant='bordered'
                             color="default"
                             aria-label={option?.name || option}
-                            key={option?.id}
+                            key={option?.id?.toString()}
                             value={option?.id?.toString()}
                             textValue={option?.name || option}
                             description={option?.description && option?.description}

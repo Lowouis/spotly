@@ -429,7 +429,7 @@ export default function ItemsOnTable({
     const [selectedFilters, setSelectedFilters] = useState({});
     const [page, setPage] = React.useState(1);
     const rowsPerPage = 10;
-
+    const totalItems = items?.length;
     // Obtenir les valeurs uniques disponibles pour chaque filtre
     const availableFilterValues = React.useMemo(() => {
         if (!items || !filters.length) return {};
@@ -484,8 +484,8 @@ export default function ItemsOnTable({
         return filteredItems.slice(start, end);
     }, [items, searchValue, page, filter, searchByArray, selectedFilters]);
 
-    const pages = Math.ceil(items?.length / rowsPerPage);
-
+    const pages = Math.ceil(totalItems / rowsPerPage);
+    console.log("pages : ", items);
     const {
         isOpen: isOpenDeleteConfirm,
         onOpen: onOpenDeleteConfirm,

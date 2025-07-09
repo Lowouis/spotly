@@ -100,7 +100,8 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                         sendEmail({
                                             to: item.user.email,
                                             subject: "Votre réservation a été refusée",
-                                            text: getEmailTemplate("rejected", item),
+                                            templateName: "rejected",
+                                            data: item,
                                         });
                                     }}
                                     className="flex items-center gap-2"
@@ -126,7 +127,8 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                                         sendEmail({
                                             to: item.user.email,
                                             subject: "Votre réservation a été acceptée",
-                                            text: getEmailTemplate("reservationConfirmation", item),
+                                            templateName: "reservationConfirmation",
+                                            data: item,
                                         });
                                     }}
                                     className="flex items-center gap-2"
