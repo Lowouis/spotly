@@ -83,7 +83,7 @@ const SelectField = ({
         });
 
         return () => subscription.unsubscribe();
-    }, [defaultValue, setValue, name, resolvedOptions, eyesOn, watch]);
+    }, [defaultValue, setValue, name, resolvedOptions, eyesOn, watch, value]);
     const handleChange = (selectedValue) => {
         if (!selectedValue || selectedValue.size === 0) {
             onReset();
