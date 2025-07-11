@@ -79,7 +79,7 @@ const Resources = ({})=>{
 
     const filters = [
         {
-            placeholder: "Filter par status",
+            placeholder: "Filtrer par status",
             filterBy: "status"
         }
     ]

@@ -190,8 +190,6 @@ export default async function handler(req, res) {
                 ? (maxReccurringGroupId[0]._max.recurringGroupId || 0) + 1
                 : 1;
 
-            console.log("CURRENT ID-->  :", maxReccurringGroupId);
-            console.log("NEXT ID-->  :", nextReccurringGroupId);
 
             try {
                 for (const availabilityEntry of validAvailabilities) {
@@ -239,9 +237,6 @@ export default async function handler(req, res) {
             }
         } else if(req.method === "DELETE"){
             const {ids} = req.body;
-            console.log("-------------------------")
-            console.log("IDS", req.body)
-            console.log("-------------------------")
 
             if (!ids || !Array.isArray(ids) || ids.length === 0) {
                 return res.status(400).json({

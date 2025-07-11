@@ -4,7 +4,6 @@ import {PrismaAdapter} from '@next-auth/prisma-adapter';
 import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
 import {authenticate} from 'ldap-authentication';
-import {validateKerberosTicket} from '@/lib/kerberos-auth';
 import nextConfig from '../../../next.config.mjs';
 import {decrypt} from '@/lib/security';
 
@@ -47,15 +46,12 @@ const authConfig = {
                 username: { label: "Username", type: "text" }
             },
             async authorize(credentials) {
-                console.log('Provider [sso-login]: Recherche de l\'utilisateur:', credentials?.username);
                 if (!credentials?.username) {
-                    console.log('Provider [sso-login]: Pas de username fourni.');
                     return null;
                 }
                 const user = await prisma.user.findUnique({
                     where: { username: credentials.username }
                 });
-                console.log('Provider [sso-login]: Utilisateur trouvé en BDD:', user);
                 return user;
             }
         }),
@@ -71,7 +67,6 @@ const authConfig = {
                         username: credentials?.username
                     }
                 }).catch((e) => {
-                    console.log(e);
                 });
 
                 if (!user || user.external === true) {
@@ -139,13 +134,9 @@ const authConfig = {
     },
     callbacks: {
         jwt: async ({ token, user }) => {
-            console.log('JWT Callback - Token:', token);
-            console.log('JWT Callback - User:', user);
             return {...token, ...user};
         },
         session: async ({ session, token }) => {
-            console.log('Session Callback - Session:', session);
-            console.log('Session Callback - Token:', token);
             session.user = token;
             return session;
         },
@@ -166,13 +157,10 @@ const authConfig = {
     },
     events: {
         async signIn(message) {
-            console.log('SignIn Event:', message);
         },
         async signOut(message) {
-            console.log('SignOut Event:', message);
         },
         async error(message) {
-            console.log('Error Event:', message);
         },
     },
     logger: {
@@ -183,11 +171,9 @@ const authConfig = {
             console.warn('NextAuth Warning:', code);
         },
         debug(code, metadata) {
-            console.log('NextAuth Debug:', code, metadata);
         },
     },
 };
 
-console.log('Final authConfig:', JSON.stringify(authConfig, null, 2));
 
 export default NextAuth(authConfig);

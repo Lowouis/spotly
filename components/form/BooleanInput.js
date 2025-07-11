@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {Radio, RadioGroup, Tooltip} from "@nextui-org/react";
-import {useFormContext, Controller} from "react-hook-form";
+import {Radio, RadioGroup, Tooltip} from "@heroui/react";
+import {Controller, useFormContext} from "react-hook-form";
 
 
 export default function BooleanInput({label, name, value, required, dependsOn = null}) {
@@ -11,7 +11,6 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
     const domainValue = watch(dependsOn[0]) !== undefined ? watch(dependsOn[0]) : null;
     const categoryValue = watch(dependsOn[1]) !== undefined ? watch(dependsOn[1]) : null;
     const owner = watch(dependsOn[2]) !== undefined ? watch(dependsOn[2]) : null;
-    console.log("owner", watch("owner"));
     // useEffect pour activer/désactiver le champ en fonction de dependsO
     useEffect(() => {
         // Si dependsOn est null, le champ est toujours activé
@@ -26,11 +25,6 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
             (categoryValue?.owner !== null && categoryValue?.owner !== undefined) ||
             (owner !== null && owner !== undefined)
         );
-        console.log("hasOwner", hasOwner, {
-            domainOwner: domainValue?.owner,
-            categoryOwner: categoryValue?.owner,
-            resourceOwner: owner
-        });
         setDisabled(!hasOwner);
 
         if (!hasOwner) {

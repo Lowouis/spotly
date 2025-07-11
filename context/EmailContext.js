@@ -8,7 +8,6 @@ export const EmailProvider = ({ children }) => {
     const [emailError, setEmailError] = useState({"type": "", "message": ""});
     const mutation = useMutation({
         mutationFn: async (emailData) => {
-            console.log("EMAIL DATA", emailData);
             if (!emailData.templateName || !emailData.data) {
                 throw new Error("templateName et data sont obligatoires !");
             }
@@ -26,7 +25,6 @@ export const EmailProvider = ({ children }) => {
             }
 
             const result = await response.json();
-            console.log('Email sent successfully:', result);
             setEmailError({ type: "success", message: 'Email sent successfully!' });
             return result;
         },

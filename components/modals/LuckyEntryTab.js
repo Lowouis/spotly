@@ -12,7 +12,7 @@ import {
     ModalHeader,
     Tooltip,
     useDisclosure
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {ArrowLeftCircleIcon, ArrowRightCircleIcon, ClockIcon} from "@heroicons/react/24/outline";
 import {useQuery} from "@tanstack/react-query";
 import {lastestPickable} from "@/global";

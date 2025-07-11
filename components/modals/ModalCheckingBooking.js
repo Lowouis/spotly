@@ -9,7 +9,7 @@ import {
     Spinner,
     Tooltip,
     useDisclosure
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
     ArrowLeftIcon,
     ArrowUturnLeftIcon,
@@ -20,7 +20,6 @@ import {
 import Stepper from "@/components/utils/Stepper";
 import React, {useEffect, useState} from "react";
 import {useMutation, useQuery} from "@tanstack/react-query";
-import {getEmailTemplate} from "@/utils/mails/templates";
 import {useEmail} from "@/context/EmailContext";
 import {addToast} from "@heroui/toast";
 import EntryComments from "@/components/comments/EntryComments";
@@ -591,8 +590,8 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                                             className="text-sm"
                                                         >
                                                             {resendTimer > 0
-                                                                ? `Renvoyer le code dans ${resendTimer}s`
-                                                                : "Renvoyer le code"}
+                                                                ? `Récupérer le code dans ${resendTimer}s`
+                                                                : "Récupérer le code"}
                                                         </Button>
 
                                                     </div>

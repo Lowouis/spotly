@@ -3,7 +3,6 @@
 import ItemsOnTable from "@/components/listing/ItemsOnTable";
 import {useQuery} from "@tanstack/react-query";
 import {useRefreshContext} from "@/context/RefreshContext";
-import {Select, SelectItem} from "@nextui-org/react";
 import {useState} from "react";
 
 const statusMapping = {

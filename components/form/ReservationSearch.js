@@ -4,10 +4,10 @@ import * as yup from 'yup';
 import {parseDate} from '@internationalized/date';
 import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
-import {Alert, Form, Modal, ModalBody, ModalContent, ModalHeader, Switch} from "@nextui-org/react";
+import {Alert, Form, Modal, ModalBody, ModalContent, ModalHeader, Switch, Tooltip} from "@heroui/react";
 import {AlternativeMenu} from "@/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
-import {Button} from "@nextui-org/button";
+import {Button} from "@heroui/button";
 import ReservationUserListing from "@/components/listing/Listings";
 import {useQuery, useQueryClient} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
@@ -15,11 +15,10 @@ import MatchingEntriesTable from "@/components/listing/MatchingEntriesTable";
 import {addToast} from "@heroui/toast";
 import {useMediaQuery} from 'react-responsive';
 import DateRangePickerSplitted from '@/components/form/DateRangePickerSplitted';
-import {DatePicker} from "@nextui-org/date-picker";
-import {Tooltip} from '@heroui/react';
+import {DatePicker} from "@heroui/date-picker";
 import {IoEarthOutline} from "react-icons/io5";
 import {BiCategory} from "react-icons/bi";
-import {CiCalendarDate, CiSearch} from "react-icons/ci";
+import {CiCalendarDate} from "react-icons/ci";
 import {AnimatePresence, motion} from "framer-motion";
 
 const schemaFirstPart = yup.object().shape({
@@ -271,7 +270,7 @@ const ReservationSearch = () => {
             text: "Choisissez une date"
         },
         {
-            icon: <CiSearch size={50} color="#0ea5e9"/>,
+            icon: null,
             text: "Vous pouvez commencer votre recherche"
         }
     ];
@@ -609,10 +608,10 @@ const ReservationSearch = () => {
                                                             transition={{duration: 0.4, type: "spring"}}
                                                             className="flex flex-col items-center space-y-8 text-center max-w-md"
                                                         >
-                                                            <div
+                                                            {stepConfig[step - 1].icon && <div
                                                                 className="w-16 h-16 rounded-full bg-primary-50/50 dark:bg-primary-900/10 flex items-center justify-center backdrop-blur-sm border border-primary-100 dark:border-primary-800/20">
                                                                 {stepConfig[step - 1].icon}
-                                                            </div>
+                                                            </div>}
                                                             <div className="space-y-3">
                                                                 <h3 className="text-2xl font-semibold bg-gradient-to-r from-neutral-800 to-neutral-600 dark:from-neutral-200 dark:to-neutral-400 bg-clip-text text-transparent">
                                                                     {stepConfig[step - 1].text}

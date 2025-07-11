@@ -16,8 +16,6 @@ export default async function handler(req, res) {
                 ip: ip,
             }
         });
-        console.log(authorizedLocation);
-        console.log("ip", ip)
         if (!authorizedLocation) {
             return res.status(401).json({error: 'IP not authorized'});
         }

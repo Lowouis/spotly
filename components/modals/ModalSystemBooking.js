@@ -1,4 +1,4 @@
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@nextui-org/react";
+import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@heroui/react";
 import {formatDuration} from "@/global";
 import {CalendarIcon, ClockIcon, ShieldExclamationIcon, TrashIcon, UserIcon} from "@heroicons/react/24/outline";
 import {useState} from "react";

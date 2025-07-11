@@ -39,7 +39,7 @@ const Domains = ({})=>{
 
     const filters = [
         {
-            placeholder: "Filter par protection",
+            placeholder: "Filtrer par protection",
             filterBy: "pickable.distinguishedName"
         }
     ]

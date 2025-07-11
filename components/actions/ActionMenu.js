@@ -1,5 +1,5 @@
 import React from "react";
-import {Button, Tooltip, useDisclosure} from "@nextui-org/react";
+import {Button, Tooltip, useDisclosure} from "@heroui/react";
 import {TrashIcon} from "@heroicons/react/24/solid";
 import ModalCheckingBooking from "@/components/modals/ModalCheckingBooking";
 import {PencilIcon} from "@heroicons/react/24/outline";

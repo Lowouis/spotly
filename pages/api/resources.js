@@ -62,7 +62,6 @@ export default async function handler(req, res) {
         return res.status(200).json(sanitizedResources);
     } else if(req.method === "POST"){
         const {name, description, moderate, domains, category, owner, pickable } = req.body;
-        console.log(req.body);
         const ressource = await prisma.resource.create({
             data : {
                 name : name,

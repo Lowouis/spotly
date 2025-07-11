@@ -1,12 +1,11 @@
 'use client';
 
-import {Card, CardBody, CardHeader, Divider} from "@nextui-org/react";
-import {Input} from "@nextui-org/input";
-import {Button} from "@nextui-org/button";
+import {Card, CardBody, CardHeader, Divider, Switch} from "@heroui/react";
+import {Input} from "@heroui/input";
+import {Button} from "@heroui/button";
 import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
-import {Switch} from "@heroui/react";
 
 const SMTPSettings = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -29,13 +28,10 @@ const SMTPSettings = () => {
         const loadConfig = async () => {
             setIsLoadingConfig(true);
             try {
-                console.log("Chargement de la configuration SMTP...");
                 const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/smtp/config`);
-                console.log("Réponse du serveur:", response.status);
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log("Configuration reçue:", data);
 
                     setFormData(prev => ({
                         ...prev,

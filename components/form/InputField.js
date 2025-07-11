@@ -1,8 +1,8 @@
 import React from "react";
-import {Input} from "@nextui-org/input";
+import {Input} from "@heroui/input";
 import {useFormContext} from "react-hook-form";
 import {IoEyeOffOutline, IoEyeOutline} from "react-icons/io5";
-import {Button} from "@nextui-org/button";
+import {Button} from "@heroui/button";
 
 export default function InputField({
                                        required,
@@ -36,7 +36,7 @@ export default function InputField({
                         message: patternMessage || 'Format invalide'
                     } : undefined
                 })}
-                className={`form-input ${errors[name] ? 'input-error' : ''}`}
+                className={`form-input ${errors[name] ? 'input-error' : ''} placeholder:text-neutral-500 dark:placeholder:text-neutral-400 text-neutral-900 dark:text-neutral-100`}
                 variant="bordered"
                 endContent={
                     hidden &&

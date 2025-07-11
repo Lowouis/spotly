@@ -18,7 +18,7 @@ import {
     Tooltip,
     useDisclosure,
     User
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {ArrowPathIcon, BookmarkIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
 import {signOut, useSession} from "next-auth/react";
 import React, {useEffect, useState} from "react";
@@ -432,7 +432,6 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                             />
                                             <Tooltip content="Changer l'email" showArrow placement="top-end">
                                                 <Button
-                                                    onPress={() => console.log("refresh mail")}
                                                     color="primary"
                                                     variant="flat"
                                                     isIconOnly
@@ -460,7 +459,6 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                             />
                                             <Tooltip content="Changer le mot de passe" showArrow placement="top-end">
                                                 <Button
-                                                    onPress={() => console.log("refresh password")}
                                                     color="primary"
                                                     variant="flat"
                                                     isIconOnly

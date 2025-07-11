@@ -1,7 +1,7 @@
 'use client';
 
 import {SessionProvider} from 'next-auth/react';
-import {NextUIProvider} from "@nextui-org/react";
+import {HeroUIProvider} from "@heroui/react";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {EmailProvider} from "@/context/EmailContext";
 import {AdminDataManager} from "@/context/AdminDataManager";
@@ -21,7 +21,7 @@ export default function Providers({children}) {
                 <AdminDataManager>
                     <EmailProvider>
                         <RefreshProvider>
-                            <NextUIProvider>
+                            <HeroUIProvider>
                                 <ToastProvider
                                     placement="bottom-right"
                                     maxVisibleToasts={5}
@@ -32,7 +32,7 @@ export default function Providers({children}) {
                                         {children}
                                     </AuthProvider>
                                 </SessionProvider>
-                            </NextUIProvider>
+                            </HeroUIProvider>
                         </RefreshProvider>
                     </EmailProvider>
                 </AdminDataManager>

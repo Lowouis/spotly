@@ -3,7 +3,6 @@ import {initializeKerberos} from "@/lib/kerberos-auth";
 import prisma from "@/prismaconf/init";
 
 export default async function handler(req, res) {
-    console.log('--- NOUVELLE VERSION DE CHECK-SSO.JS EXÉCUTÉE ---');
     await runMiddleware(req, res);
 
     if (req.method !== 'GET' && req.method !== 'OPTIONS') {

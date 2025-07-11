@@ -15,10 +15,11 @@ import SMTPSettings from "@/sections/SMTP";
 import {General} from "@/sections/General";
 import Localisations from "@/sections/Localisations";
 import {useAuth} from "@/context/AuthContext";
-import {Tabs, Tab} from "@nextui-org/react";
+import {Tab, Tabs} from "@heroui/react";
 import {CiServer} from "react-icons/ci";
 import {TbCertificate} from "react-icons/tb";
 import {RiMailSettingsLine} from "react-icons/ri";
+import TestSelect from "@/components/tests/TestSelect";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -115,6 +116,8 @@ const Content = () => {
             );
         case 'locations':
             return <Localisations/>;
+        case 'tests':
+            return <TestSelect/>
         default:
             return <div>Section en cours de développement</div>;
     }

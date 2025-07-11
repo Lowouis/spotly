@@ -1,5 +1,5 @@
-import {today, getLocalTimeZone} from '@internationalized/date';
-import {DateRangePicker} from "@nextui-org/date-picker";
+import {getLocalTimeZone, today} from '@internationalized/date';
+import {DateRangePicker} from "@heroui/date-picker";
 import {useFormContext} from "react-hook-form";
 import {I18nProvider} from 'react-aria';
 import React from "react";

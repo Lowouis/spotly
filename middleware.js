@@ -28,7 +28,6 @@ export async function middleware(req) {
     const pathWithoutBasePath = pathname.startsWith(basePath)
     ? pathname.slice(basePath.length)
     : pathname;
-    console.log('Middleware - Path without basePath:', pathWithoutBasePath);
     
     // Create the base response that will be used for pass-through requests
     const response = NextResponse.next();
@@ -70,7 +69,6 @@ export async function middleware(req) {
 
     if (!isAuth) {
         loginUrl.searchParams.set('callbackUrl', req.url);
-        console.log('Middleware - Redirecting to login (auth):', loginUrl.toString());
         const redirectResponse = NextResponse.redirect(loginUrl);
         return addCorsHeaders(redirectResponse);
     }
@@ -79,7 +77,6 @@ export async function middleware(req) {
     if (pathWithoutBasePath.startsWith('/admin')) {
         if (token.role !== "ADMIN" && token.role !== "SUPERADMIN") {
             loginUrl.searchParams.set('callbackUrl', req.url);
-            console.log('Middleware - Redirecting to login (insufficient privileges):', loginUrl.toString());
             const redirectResponse = NextResponse.redirect(loginUrl);
             return addCorsHeaders(redirectResponse);
         }

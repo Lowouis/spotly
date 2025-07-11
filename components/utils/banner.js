@@ -1,7 +1,7 @@
 'use client';
 
 
-import {Image} from "@nextui-org/react";
+import {Image} from "@heroui/react";
 import nextConfig from '../../next.config.mjs';
 
 const basePath = nextConfig.basePath || '';

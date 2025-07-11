@@ -1,5 +1,5 @@
 'use client';
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@nextui-org/react";
+import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {addToast} from "@heroui/toast";
 

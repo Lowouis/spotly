@@ -1,5 +1,5 @@
 'use client';
-import {Button} from "@nextui-org/button";
+import {Button} from "@heroui/button";
 import {
     Autocomplete,
     AutocompleteItem,
@@ -14,14 +14,13 @@ import {
     Spinner,
     Textarea,
     Tooltip
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {formatDate} from "@/components/modals/ModalCheckingBooking";
 import {formatDuration, lastestPickable, whoIsOwner} from "@/global";
 import {ArrowLeftIcon, ArrowRightCircleIcon} from "@heroicons/react/24/solid";
 import React, {useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useEmail} from "@/context/EmailContext";
-import {getEmailTemplate} from "@/utils/mails/templates";
 import {addToast} from "@heroui/toast";
 import {getAllUsers} from "@/utils/api"
 
@@ -160,7 +159,6 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                 description: `Votre ${firstEntry.moderate === "WAITING" ? "demande" : "réservation"} est bien enregistrée, un mail de confirmation a été envoyé à ${session.user.email}`,
                 color: "success"
             });
-            console.log("Fin du mutate");
         },
         onError: (error) => {
             console.error("Erreur lors de la mutation:", error);

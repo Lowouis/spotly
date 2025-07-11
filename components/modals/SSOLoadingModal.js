@@ -1,6 +1,6 @@
 'use client';
 
-import {Modal, ModalBody, ModalContent, Spinner} from "@nextui-org/react";
+import {Modal, ModalBody, ModalContent, Spinner} from "@heroui/react";
 import {useEffect, useState} from "react";
 
 export default function SSOLoadingModal({debugInfo}) {
@@ -26,10 +26,10 @@ export default function SSOLoadingModal({debugInfo}) {
             }}
         >
             <ModalContent>
-                <ModalBody className="flex flex-col items-center justify-center py-8">
-                    <Spinner size="lg" color="primary"/>
+                <ModalBody className="flex flex-col items-center justify-center py-8 text-neutral-500">
+                    <Spinner size="lg" color="warning"/>
                     <p className="mt-4 text-lg">Authentification SSO en cours...</p>
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-sm">
                         Temps d attente: {loadingTime} secondes
                     </p>
 

@@ -26,10 +26,8 @@ export default async function handler(req, res) {
             adminDn: adminDn,
             username: adminCn
         };
-        console.log(ldapConfig);
 
         const connectionResult = await ldapConnectionTest(ldapConfig);
-        console.log("TEST EN COURS")
         if (!connectionResult.success) {
             return res.status(401).json({
                 message: 'Échec de la connexion LDAP',

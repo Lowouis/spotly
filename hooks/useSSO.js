@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { signIn } from 'next-auth/react';
+import {useCallback, useEffect, useState} from 'react';
+import {signIn} from 'next-auth/react';
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -9,6 +9,7 @@ export function useSSO({ manualLogout, ssoParam, status }) {
     const [error, setError] = useState(null);
     const [debug, setDebug] = useState(null);
     const [forceSSO, setForceSSO] = useState(0);
+    const [ticketSSO, setTicketSSO] = useState(null);
 
     // Fonction dédiée pour récupérer la config Kerberos
     const fetchKerberosConfig = useCallback(async () => {
@@ -66,36 +67,38 @@ export function useSSO({ manualLogout, ssoParam, status }) {
         }
     }, []);
 
-    // Récupération de la config au montage
+    // Fonction dédiée pour récupérer le ticket SSO
+    const fetchTicket = useCallback(async () => {
+        try {
+            const res = await fetch(`${basePath}/api/public/check-sso`);
+            const data = await res.json();
+            if (data.ticket) {
+                setTicketSSO(data.ticket);
+            } else {
+                setTicketSSO(null);
+            }
+        } catch {
+            setTicketSSO(null);
+        }
+    }, []);
+
+    // Récupération de la config et du ticket au montage
     useEffect(() => {
         fetchKerberosConfig();
-    }, [fetchKerberosConfig]);
-
-    // Déclenchement auto ou manuel du SSO (fusion des conditions)
-    useEffect(() => {
-        if (
-            (
-                kerberosConfigExists === true &&
-                status === 'unauthenticated' &&
-                !manualLogout &&
-                ssoParam !== 'off'
-            ) || forceSSO > 0
-        ) {
-            handleSSOLogin();
-        }
-        // eslint-disable-next-line
-    }, [kerberosConfigExists, status, manualLogout, ssoParam, forceSSO]);
+        fetchTicket();
+    }, [fetchKerberosConfig, fetchTicket]);
 
     // triggerSSO force le SSO à la demande
     const triggerSSO = useCallback(() => {
-        setForceSSO(f => f + 1);
-    }, []);
+        handleSSOLogin();
+    }, [handleSSOLogin]);
 
     return {
         isLoading,
         error,
         debug,
         kerberosConfigExists,
+        ticketSSO,
         triggerSSO,
     };
 } 

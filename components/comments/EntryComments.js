@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Button } from "@nextui-org/button";
-import { IoIosArrowUp, IoIosArrowDown } from "react-icons/io";
-import { motion, AnimatePresence } from "framer-motion";
+import React, {useState} from 'react';
+import {Button} from "@heroui/button";
+import {IoIosArrowDown} from "react-icons/io";
+import {AnimatePresence, motion} from "framer-motion";
 
 export default function EntryComments({ entry, adminMode = false }) {
     const [showComments, setShowComments] = useState(false);

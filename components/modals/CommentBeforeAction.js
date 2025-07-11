@@ -1,9 +1,8 @@
 import {useAdminDataManagerContext} from "@/context/AdminDataManager";
-import {Button} from "@nextui-org/button";
-import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea} from "@nextui-org/react";
+import {Button} from "@heroui/button";
+import {Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Textarea} from "@heroui/react";
 import {addToast} from "@heroui/toast";
 import {useEmail} from "@/context/EmailContext";
-import {getEmailTemplate} from "@/utils/mails/templates";
 
 export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
     const {updateEntryModerate} = useAdminDataManagerContext()

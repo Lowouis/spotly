@@ -19,7 +19,6 @@ export default async function handler(req, res) {
         res.status(200).json(categories);
     } else if (req.method === "POST"){
         const {name, description, owner, pickable } = req.body;
-        console.log(req.body);
         const category = await prisma.category.create({
             data: {
                 name,
@@ -55,7 +54,6 @@ export default async function handler(req, res) {
                 });
             }
         }
-        console.log(pickable);
         const category = await prisma.category.update({
             where: {
                 id: id,

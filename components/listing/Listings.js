@@ -2,10 +2,9 @@ import ModalCheckingBooking from "@/components/modals/ModalCheckingBooking";
 import ModalCancelGroup from "@/components/modals/ModalCancelGroup";
 import ModalSystemBooking from "@/components/modals/ModalSystemBooking";
 import {formatDuration} from "@/global";
-import {Alert, Button} from "@nextui-org/react";
+import {Alert, Button, Tooltip} from "@heroui/react";
 import {useState} from "react";
 import {TrashIcon} from "@heroicons/react/24/outline";
-import {Tooltip} from "@heroui/react";
 
 
 const STATUS_CONFIG = {
@@ -410,7 +409,6 @@ const organizeEntriesByGroup = (entries) => {
         if (entry.recurringGroupId === 0) {
             grouped.independent.push(entry);
         } else {
-            console.log(entry.recurringGroupId);
             if (!grouped.recurring[entry.recurringGroupId]) {
                 grouped.recurring[entry.recurringGroupId] = [];
             }

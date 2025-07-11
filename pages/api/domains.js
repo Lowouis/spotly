@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         res.status(200).json(domain);
     } else if (req.method === "PUT") {
         const {id, name, owner, pickable} = req.body;
-        console.log("owner : ", owner)
+        console.log("PUT", {id, name, owner, pickable});
         if (owner === undefined) {
             const resources = await prisma.resource.findMany({
                 where: {
@@ -47,7 +47,6 @@ export default async function handler(req, res) {
                 }
             });
             if (resources.length !== 0) {
-                console.log("resources : ", resources)
                 return res.status(422).json({
                     code: "MODERATED_RESOURCES_WITH_OWNER",
                     message: "Impossible de supprimer le propriétaire, il existe encore des ressources modérer liée à ce domaine.",

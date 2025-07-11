@@ -14,12 +14,12 @@ import {
     TableRow,
     Tooltip,
     useDisclosure
-} from "@nextui-org/react";
-import {Button} from "@nextui-org/button";
+} from "@heroui/react";
+import {Button} from "@heroui/button";
 import React, {useState} from "react";
 import {PlusCircleIcon, TrashIcon} from "@heroicons/react/24/solid";
 import {ArrowPathIcon, MagnifyingGlassIcon} from "@heroicons/react/24/outline";
-import {Input} from "@nextui-org/input";
+import {Input} from "@heroui/input";
 import {useMutation} from "@tanstack/react-query";
 import ActionMenuModerate from "@/components/actions/ActionMenu";
 import {useSession} from "next-auth/react";
@@ -485,7 +485,6 @@ export default function ItemsOnTable({
     }, [items, searchValue, page, filter, searchByArray, selectedFilters]);
 
     const pages = Math.ceil(totalItems / rowsPerPage);
-    console.log("pages : ", items);
     const {
         isOpen: isOpenDeleteConfirm,
         onOpen: onOpenDeleteConfirm,
@@ -586,17 +585,18 @@ export default function ItemsOnTable({
                                         [filterBy]: selected
                                     }));
                                 }}
+                                variant="bordered"
                                 selectionMode="multiple"
                                 className="max-w-xs"
                                 size="xs"
                                 aria-label={placeholder}
                                 classNames={{
-                                    label: "text-content-primary dark:text-dark-content-primary",
-                                    value: "text-content-primary dark:text-dark-content-primary",
-                                    description: "text-content-secondary dark:text-dark-content-secondary",
-                                    trigger: "text-content-primary dark:text-dark-content-primary",
-                                    placeholder: "text-content-secondary dark:text-dark-content-secondary",
-                                    listbox: "text-content-primary dark:text-dark-content-primary"
+                                    trigger: "text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900",
+                                    value: "text-neutral-900 dark:text-neutral-100",
+                                    placeholder: "text-neutral-500 dark:text-neutral-400",
+                                    listbox: "text-neutral-900 dark:text-neutral-100",
+                                    label: "text-neutral-800 dark:text-neutral-200",
+                                    description: "text-neutral-500 dark:text-neutral-400"
                                 }}
                             >
                                 {availableFilterValues[filterBy].map((value) => (

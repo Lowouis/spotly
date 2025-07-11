@@ -25,7 +25,6 @@ export default async function handler(req, res) {
                 message: 'Aucune configuration LDAP trouvée'
             });
         }
-        console.log(config);
 
         // Décrypter les données sensibles
         const decryptedConfig = {

@@ -42,7 +42,7 @@ export default async function handler(req, res) {
                 pass: password
             },
             tls: {
-                rejectUnauthorized: false // Pour ignorer les erreurs de certificat auto-signé
+                rejectUnauthorized: false,
             }
         });
 

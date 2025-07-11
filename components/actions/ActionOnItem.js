@@ -1,4 +1,4 @@
-import {Modal, ModalContent, ModalHeader,} from "@nextui-org/react";
+import {Modal, ModalContent, ModalHeader,} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/components/form/ItemForm";
 import React from "react";
@@ -34,12 +34,10 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
         mutationFn: updateItem,
         onSuccess: handleSuccess,
         onError: (error) => {
-            console.log("Error:", error);
             if (error?.code === "MODERATED_RESOURCES_WITH_OWNER") {
                 const resourcesList = error.resources
                     .map(resource => resource.name)
                     .join(', ');
-                console.log("Resources list:", resourcesList);
                 addToast({
                     title: "Action requise",
                     description: `${error.message}\n\nVeuillez modifier la modération des ressources suivantes:\n${resourcesList}`,

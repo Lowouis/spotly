@@ -2,11 +2,11 @@
 
 import Banner from "@/components/utils/banner";
 import React, {useState} from "react";
-import {Card, CardBody, Tab, Tabs} from "@nextui-org/react";
+import {Card, CardBody, Tab, Tabs} from "@heroui/react";
 import LoginTab from "./LoginTab";
 import LuckyEntryTab from "./LuckyEntryTab";
 
-export function ConnectionModal() {
+export function ConnectionModal({onManualLogin}) {
     const [selected, setSelected] = useState("login");
 
     return (
@@ -23,7 +23,7 @@ export function ConnectionModal() {
                             onSelectionChange={setSelected}
                         >
                             <Tab key="login" title="Se connecter">
-                                <LoginTab/>
+                                <LoginTab onManualLogin={onManualLogin}/>
                             </Tab>
                             <Tab key="sign-up" title="J'ai réservé">
                                 <LuckyEntryTab setSelected={setSelected}/>

@@ -1,8 +1,18 @@
+'use client';
 import React, {useEffect} from 'react';
 import {useFormContext} from 'react-hook-form';
 import {useQuery} from "@tanstack/react-query";
-import {Chip, Select, SelectItem} from "@nextui-org/react";
+import {Chip, Select, SelectItem} from "@heroui/react";
 import {firstLetterUppercase} from "@/global";
+
+const defaultClassNames = {
+    label: "text-content-primary dark:text-dark-content-primary",
+    value: "text-content-primary dark:text-dark-content-primary",
+    description: "text-content-secondary dark:text-dark-content-secondary",
+    trigger: "text-content-primary dark:text-dark-content-primary",
+    placeholder: "text-content-secondary dark:text-dark-content-secondary",
+    listbox: "text-content-primary dark:text-dark-content-primary"
+};
 
 const SelectField = ({
                         name,
@@ -16,11 +26,13 @@ const SelectField = ({
                         defaultValue,
                          validates,
                          placeholder = "Aucun",
-                         eyesOn = null
+                         eyesOn = null,
+                         classNames = {}
                      }) => {
     const { setValue, watch, formState: { errors }, register } = useFormContext();
     const value = watch(name);
     const [selectedKey, setSelectedKey] = React.useState(null);
+
     const { data: resolvedOptions, isLoading, error } = useQuery({
         queryKey: [name, options],
         queryFn: async () => {
@@ -35,8 +47,9 @@ const SelectField = ({
     const [watchedValue, setWatchedValue] = React.useState(null);
 
     useEffect(() => {
-        if(value === null && defaultValue && resolvedOptions !== undefined){
-            if(typeof defaultValue === "string"){
+        // On ne réinjecte le defaultValue QUE si c'est le tout premier render (pas après un reset manuel)
+        if (value === undefined && defaultValue && resolvedOptions !== undefined) {
+            if (typeof defaultValue === "string") {
                 const objectFromOptions = resolvedOptions.find(option => option.name === defaultValue);
                 setValue(name, objectFromOptions);
             } else {
@@ -52,6 +65,7 @@ const SelectField = ({
         const updateInheritance = () => {
             const inheritanceDomain = watch('domains');
             const inheritanceCategory = watch('category');
+            console.log('[SelectField] updateInheritance', {inheritanceDomain, inheritanceCategory, eyesOn});
             if (eyesOn !== null && (inheritanceDomain !== undefined || inheritanceCategory !== undefined)) {
                 const domainName = inheritanceDomain?.[eyesOn]?.name;
                 const categoryName = inheritanceCategory?.[eyesOn]?.name;
@@ -62,13 +76,14 @@ const SelectField = ({
 
         updateInheritance();
         const subscription = watch((value, {name: fieldName}) => {
+            console.log('[SelectField] watch subscription', {value, fieldName});
             if (fieldName === 'domains' || fieldName === 'category') {
                 updateInheritance();
             }
         });
 
         return () => subscription.unsubscribe();
-    }, [value, defaultValue, setValue, name, resolvedOptions, eyesOn, watch]);
+    }, [defaultValue, setValue, name, resolvedOptions, eyesOn, watch]);
     const handleChange = (selectedValue) => {
         if (!selectedValue || selectedValue.size === 0) {
             onReset();
@@ -113,9 +128,16 @@ const SelectField = ({
         }
     }, [defaultValue, resolvedOptions, isLoading, name, setValue]);
 
+    // On force les ids des options en string (NextUI attend des strings)
+    const safeOptions = resolvedOptions ? resolvedOptions.map(opt => ({...opt, id: opt.id?.toString()})) : [];
+    // selectedKeys : undefined si aucune sélection
+    const safeSelectedKeys = selectedKey ? new Set([selectedKey]) : undefined;
+
+ 
     return (
         <div className="my-2 w-full">
                 <Select
+                    autoComplete='off'
                     size="sm"
                     isDisabled={awaiting}
                     isRequired={isRequired}
@@ -132,27 +154,27 @@ const SelectField = ({
                             radius={'full'}
                             variant={'flat'}
                             size="sm"
-                            color={resolvedOptions && resolvedOptions?.length !== 0 ? "primary" : "danger"}
-                        >{resolvedOptions?.length ? resolvedOptions.length : 0}</Chip>
+                            color={safeOptions && safeOptions.length !== 0 ? "primary" : "danger"}
+                        >{safeOptions.length ? safeOptions.length : 0}</Chip>
                     </span>
                     }
                     variant={variant}
                     labelPlacement={labelPlacement}
-                    items={resolvedOptions || []}
+                    items={safeOptions}
                     selectedKeys={selectedKey ? new Set([selectedKey]) : new Set([])}
                     isLoading={isLoading}
                     hideEmptyContent={true}
                     onSelectionChange={handleChange}
                     placeholder={eyesOn !== null && watchedValue !== undefined ?
                         <span
-                            className="italic text-content-secondary dark:text-dark-content-secondary">{watchedValue} par héritage</span> : resolvedOptions?.length ? placeholder : "Aucune donnée"}
+                            className="italic text-neutral-500 dark:text-neutral-400">{watchedValue} par héritage</span> : safeOptions.length ? placeholder : "Aucune donnée"}
                     classNames={{
-                        label: "text-content-primary dark:text-dark-content-primary",
-                        value: "text-content-primary dark:text-dark-content-primary",
-                        description: "text-content-secondary dark:text-dark-content-secondary",
-                        trigger: "text-content-primary dark:text-dark-content-primary",
-                        placeholder: "text-content-secondary dark:text-dark-content-secondary",
-                        listbox: "text-content-primary dark:text-dark-content-primary"
+                        trigger: "text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900",
+                        value: "text-neutral-900 dark:text-neutral-100",
+                        placeholder: "text-neutral-500 dark:text-neutral-400",
+                        listbox: "text-neutral-900 dark:text-neutral-100",
+                        label: "text-neutral-800 dark:text-neutral-200",
+                        description: "text-neutral-500 dark:text-neutral-400"
                     }}
                     disabledKeys={validates ? Object.keys(validates).filter(key => !validates[key]) : []}
                 >
@@ -162,7 +184,7 @@ const SelectField = ({
                             color="default"
                             aria-label={option?.name || option}
                             key={option?.id}
-                            value={option?.id?.toString()}
+                            value={option?.id}
                             textValue={option?.name || option}
                             description={option?.description && option?.description}
                         >

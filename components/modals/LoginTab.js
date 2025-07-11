@@ -1,7 +1,7 @@
 'use client';
 
 import React, {useEffect, useState} from "react";
-import {Button, Form, Input, Link} from "@nextui-org/react";
+import {Button, Form, Input, Link} from "@heroui/react";
 import NextLink from "next/link";
 import {signIn} from "next-auth/react";
 import {useRouter} from 'next/navigation';

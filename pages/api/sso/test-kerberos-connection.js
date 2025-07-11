@@ -1,6 +1,6 @@
 import {runMiddleware} from "@/lib/core";
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import {exec} from 'child_process';
+import {promisify} from 'util';
 
 const execPromise = promisify(exec);
 
@@ -20,7 +20,6 @@ export default async function handler(req, res) {
         const principal = `HTTP/${serviceHost}@${realm}`;
         const kinitCommand = `kinit -k -t ${keytabPath} ${principal}`;
 
-        console.log(`[test-kerberos-connection] - Exécution du test : ${kinitCommand}`);
 
         const { stdout, stderr } = await execPromise(kinitCommand);
 

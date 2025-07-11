@@ -1,5 +1,5 @@
 'use client';
-import {DatePicker, Input} from "@nextui-org/react";
+import {DatePicker, Input} from "@heroui/react";
 import TimeInput from '@/components/form/HourSelect';
 import {useState} from 'react';
 import {addToast} from "@heroui/toast";

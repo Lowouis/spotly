@@ -1,5 +1,5 @@
-import {Tooltip, useDisclosure} from "@nextui-org/react";
-import {Button} from "@nextui-org/button";
+import {Tooltip, useDisclosure} from "@heroui/react";
+import {Button} from "@heroui/button";
 import ModalValidBooking from "@/components/modals/ModalValidBooking";
 import React, {useState} from "react";
 import BlinkingDotText from "@/components/utils/BlinkingDotText";

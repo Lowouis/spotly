@@ -3,7 +3,7 @@ import {useSession} from "next-auth/react";
 import {useRouter} from 'next/navigation'
 import React, {useEffect, useState} from "react";
 import {ReservationSearch} from "@/components/form/ReservationSearch";
-import {Button} from "@nextui-org/button";
+import {Button} from "@heroui/button";
 
 
 export default function App() {

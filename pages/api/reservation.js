@@ -190,7 +190,6 @@ export default async function reservation(req, res) {
             }
         }
     } catch (e) {
-        console.log(e);
         res.status(500).json({error: "Not authorized"});
     }
 }

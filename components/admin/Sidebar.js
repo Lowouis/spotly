@@ -1,30 +1,32 @@
 'use client'
 import React, {useState} from 'react'
-import {FiGrid,} from 'react-icons/fi'
 import {signOut, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
 import {useAdminContext} from "@/context/Admin";
-import {Skeleton} from "@nextui-org/react";
-import {MdArrowForwardIos, MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from "react-icons/md";
-import {CiLocationOn, CiLogout, CiServer, CiSettings} from "react-icons/ci";
+import {Skeleton} from "@heroui/react";
+import {
+    MdArrowForwardIos,
+    MdBookmarkBorder,
+    MdCategory,
+    MdDashboard,
+    MdDevices,
+    MdDomain,
+    MdEventNote,
+    MdLocationOn,
+    MdOutlineCategory,
+    MdOutlineSpaceDashboard,
+    MdPeople,
+    MdSecurity,
+    MdSettings
+} from "react-icons/md";
+import {CiCircleCheck, CiLocationOn, CiLogout, CiServer, CiSettings} from "react-icons/ci";
 import UserInitialsIcon from "@/components/utils/UserInitialsIcon";
 import {addToast} from "@heroui/toast";
 import {IoMdGlobe} from "react-icons/io";
 import {GrResources} from "react-icons/gr";
-import {RiApps2Line, RiMailSettingsLine} from "react-icons/ri";
+import {RiApps2Line} from "react-icons/ri";
 import {FaRegUser} from "react-icons/fa";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
-import {
-    MdCategory,
-    MdDevices,
-    MdSecurity,
-    MdDashboard,
-    MdDomain,
-    MdSettings,
-    MdEventNote,
-    MdPeople,
-    MdLocationOn
-} from "react-icons/md";
 
 const sideItems = [
     {
@@ -121,6 +123,18 @@ const sideItems = [
         ],
         "permission": "SUPERADMIN"
     },
+    {
+        "title": "Tests",
+        "items": [
+            {
+                "id": "tests",
+                "title": "Tests",
+                "icon": <CiSettings/>,
+                "permission": "SUPERADMIN"
+            }
+        ],
+        "permission": "SUPERADMIN"
+    }
 
 ];
 
@@ -169,6 +183,11 @@ const menuItems = [
         key: 'locations',
         icon: <MdLocationOn className="w-5 h-5"/>,
         label: 'Localisations'
+    },
+    {
+        key: 'tests',
+        icon: <CiCircleCheck className="w-5 h-5"/>,
+        label: 'Tests'
     }
 ];
 
@@ -332,7 +351,7 @@ function NavItem({
                      badge,
                      id,
                      color="bg-gray-200",
-                     action = ()=>{console.log("Set an action to this item")},
+                     action
                  }) {
     const {activeSection, setActiveSection} = useAdminContext();
     return (

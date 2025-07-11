@@ -2,12 +2,13 @@
 
 import Banner from "@/components/utils/banner";
 import React, {useState} from "react";
-import {Input} from "@nextui-org/input";
-import {Button} from "@nextui-org/button";
-import {Card, CardBody, CardFooter, CardHeader, Link, ScrollShadow} from "@nextui-org/react";
+import {Input} from "@heroui/input";
+import {Button} from "@heroui/button";
+import {Card, CardBody, CardFooter, CardHeader, Link, ScrollShadow} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {addToast} from "@heroui/toast";
 import NextLink from "next/link";
+
 export async function createUser(userData) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/auth/register`, {
         method: 'POST',

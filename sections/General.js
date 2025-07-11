@@ -1,12 +1,11 @@
 import {useState} from 'react';
 import {CiCamera, CiCircleAlert, CiCircleCheck} from 'react-icons/ci';
-import {Button} from '@nextui-org/button';
+import {Button} from '@heroui/button';
 import {addToast} from "@heroui/toast";
 import Image from 'next/image';
-import {Form} from "@nextui-org/form";
-import {Slider} from "@heroui/react";
+import {Form} from "@heroui/form";
+import {Skeleton, Slider} from "@heroui/react";
 import {useMutation, useQuery} from '@tanstack/react-query';
-import {Skeleton} from '@nextui-org/react';
 import nextConfig from '../next.config.mjs';
 
 const basePath = nextConfig.basePath || '';
@@ -50,7 +49,6 @@ export const General = () => {
             refetch();
         },
         onError: (error) => {
-            console.log(error);
             addToast({
                 title: 'Erreur de mise à jour',
                 description: error.message || 'Une erreur est survenue lors de la mise à jour',

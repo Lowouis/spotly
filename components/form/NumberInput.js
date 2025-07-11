@@ -1,5 +1,5 @@
-import React, {useEffect} from "react";
-import {Radio, RadioGroup} from "@nextui-org/react";
+import React from "react";
+import {Radio, RadioGroup} from "@heroui/react";
 import {useFormContext} from "react-hook-form";
 
 

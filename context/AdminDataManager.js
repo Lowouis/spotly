@@ -38,10 +38,8 @@ export const AdminDataManager = ({ children }) => {
         mutation.mutate({entry, moderate}, {
             onSuccess: (data) => {
 
-                console.log("Mutation successful", data);
             },
             onError: (error) => {
-                console.log("Mutation error", error);
             }
         });
     }

@@ -1,11 +1,5 @@
 import React from "react";
-import {
-    Dropdown,
-    DropdownTrigger,
-    DropdownMenu,
-    DropdownItem,
-    Button,
-} from "@nextui-org/react";
+import {Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger,} from "@heroui/react";
 
 export default function TableDropDown({icon, items}) {
     return (

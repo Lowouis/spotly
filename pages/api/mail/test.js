@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { runMiddleware } from "@/lib/core";
+import {runMiddleware} from "@/lib/core";
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -8,7 +8,6 @@ export default async function handler(req, res) {
     }
 
     const { smtpConfig, user} = req.body;
-    console.log(smtpConfig);
     const transporter = nodemailer.createTransport({
         ...smtpConfig,
         auth: null,
