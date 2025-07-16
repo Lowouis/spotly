@@ -27,7 +27,8 @@ const SelectField = ({
                          validates,
                          placeholder = "Aucun",
                          eyesOn = null,
-                         classNames = {}
+                         classNames = {},
+                         inheritAttribute = "name"
                      }) => {
     const { setValue, watch, formState: { errors }, register } = useFormContext();
     const value = watch(name);
@@ -65,10 +66,9 @@ const SelectField = ({
         const updateInheritance = () => {
             const inheritanceDomain = watch('domains');
             const inheritanceCategory = watch('category');
-            console.log('[SelectField] updateInheritance', {inheritanceDomain, inheritanceCategory, eyesOn});
             if (eyesOn !== null && (inheritanceDomain !== undefined || inheritanceCategory !== undefined)) {
-                const domainName = inheritanceDomain?.[eyesOn]?.name;
-                const categoryName = inheritanceCategory?.[eyesOn]?.name;
+                const domainName = inheritanceDomain?.[eyesOn]?.[inheritAttribute];
+                const categoryName = inheritanceCategory?.[eyesOn]?.[inheritAttribute];
                 const newValue = domainName || categoryName;
                 setWatchedValue(newValue);
             }
@@ -76,7 +76,6 @@ const SelectField = ({
 
         updateInheritance();
         const subscription = watch((value, {name: fieldName}) => {
-            console.log('[SelectField] watch subscription', {value, fieldName});
             if (fieldName === 'domains' || fieldName === 'category') {
                 updateInheritance();
             }
@@ -133,7 +132,6 @@ const SelectField = ({
     // selectedKeys : undefined si aucune sélection
     const safeSelectedKeys = selectedKey ? new Set([selectedKey]) : undefined;
 
- 
     return (
         <div className="my-2 w-full">
                 <Select

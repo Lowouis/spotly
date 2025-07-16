@@ -31,7 +31,6 @@ function LoginContent() {
         checkTicket,
         ssoLogin
     } = useSSO({ssoParam, status});
-    console.log("SSO EXIST ? : ", kerberosConfigExists)
 
     const handleSSOClick = async () => {
         try {

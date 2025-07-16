@@ -9,7 +9,6 @@ import {addToast} from "@heroui/toast";
 
 export default function ItemForm({ onSubmit, onClose, action, fields, defaultValues }) {
     // Log à chaque render d'ItemForm
-    console.log('[ItemForm] RENDER', {defaultValues, fields});
     const methods = useForm({
         type: "onSubmit",
         defaultValues: defaultValues
@@ -26,7 +25,6 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
 
 
     const handleSubmit = async (data) => {
-        console.log('[ItemForm] SUBMIT', data);
         // Correction : on force les valeurs nulles pour les champs de type 'object'
         const cleanedData = {...data};
         fields.forEach(field => {
@@ -108,13 +106,10 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             placeholder={field.placeholder}
                                             eyesOn={field.watchValue}
                                             onReset={() => {
-                                                console.log(`[ItemForm] onReset déclenché pour ${field.name}`);
                                                 methods.setValue(field.name, null);
-                                                setTimeout(() => {
-                                                    console.log(`[ItemForm] valeur après reset pour ${field.name}:`, methods.getValues(field.name));
-                                                }, 0);
                                                 methods.trigger(field.name);
                                             }}
+                                            inheritAttribute={field.name === "pickable" ? "distinguishedName" : "name"}
                                         />
                                     );
                                 default:
