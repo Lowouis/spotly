@@ -1,143 +1,129 @@
-## En cours de développement
+<!-- Logo centré et réduit -->
+<p align="center">
+  <img src="./public/banner.png" alt="Spotly Logo" width="120" />
+</p>
 
-## Spotly
+## À qui s'adresse Spotly ?
 
-## French Version
+Spotly est destiné à toutes les organisations (entreprises, collectivités, établissements scolaires, associations...)
+qui souhaitent gérer efficacement la réservation de ressources partagées: salles, équipements, véhicules, etc. Il est
+particulièrement adapté aux structures multi-sites ou nécessitant une gestion fine des droits d’accès et de
+l’authentification.
 
-Spotly est une application open source de gestion et de réservation de ressources 
-pour les entreprises. Elle permet aux employés de réserver et d'organiser efficacement 
-l'utilisation de ressources partagées telles que les salles, les équipements, les véhicules,
-etc. Grâce à une interface intuitive et des fonctionnalités avancées de gestion des créneaux,
-Spotly simplifie la planification et optimise l’utilisation des ressources.
+## Présentation
 
-## Fonctionnalités
+Spotly est une application web open source de gestion et de réservation de ressources. Elle permet de planifier,
+réserver et suivre l’utilisation de tout type de ressource partagée, avec une interface moderne, responsive et des
+fonctionnalités avancées (créneaux récurrents, gestion des droits, notifications, etc.).
 
-+ Réservation de ressources : Réservez facilement des ressources partagées pour une période donnée.
-+ Affichage des disponibilités en temps réel  : Consultez rapidement les ressources disponibles.
-+ Créneaux récurrents  : Organisez des réservations récurrentes pour une utilisation planifiée sur plusieurs semaines ou mois.
-+ Gestion par catégories  : Triez les ressources par catégories (salles, équipements, véhicules) et sites géographiques.
-+ Options d’authentification sécurisées  : Intégration LDAP et SSO pour une authentification sécurisée (selon les besoins d'entreprise).
-+ Adaptabilité mobile : Utilisation responsive pour une expérience optimale sur tous les appareils.
+L’objectif: simplifier la logistique interne, optimiser l’utilisation des ressources et offrir une expérience
+utilisateur fluide, sur desktop comme sur mobile.
+
+## Aperçu
+
+![Capture d’écran Spotly](./docs/screenshot1.png)
+![Capture d’écran réservation](./docs/screenshot2.png)
+
+📺 **Démo vidéo complète sur YouTube**  
+[Voir la chaîne YouTube Spotly](https://www.youtube.com/@ServiceSpotly)
+
+## Fonctionnalités principales
+
+- 📅 Réservation de ressources (salles, équipements, véhicules, etc.)
+- 🔄 Créneaux récurrents et gestion avancée du calendrier
+- 👥 Gestion des utilisateurs, rôles et droits d’accès
+- 🏢 Multi-sites et multi-catégories
+- 🔒 Authentification sécurisée (LDAP, SSO, local)
+- 📱 Interface responsive (mobile & desktop)
+- 📊 Statistiques d’utilisation
+- 🔔 Notifications et rappels (email)
 
 ## Prérequis
 
-+ Node.js (v14+ recommandé)
-+ Next.js (v12+)
-+ Prisma pour la gestion de base de données
-+ Base de données compatible (MySQL, PostgreSQL, etc.)
-+ Optionnel : Serveur LDAP/SSO pour l’authentification
+- Node.js (v16+ recommandé)
+- Next.js (v13+)
+- Prisma (ORM)
+- Base de données compatible (MySQL, PostgreSQL, MariaDB…)
+- Serveur LDAP/SSO (optionnel, pour l’authentification d’entreprise)
+- (Facultatif) Serveur SMTP pour l’envoi d’emails
 
-## Installation
+## Installation rapide
 
-Clonez le projet et installez les dépendances :
+1. Clonez le dépôt:
+   ```bash
+   git clone https://github.com/lowouis/spotly.git
+   cd spotly
+   npm install
+   ```
+2. Configurez vos variables d’environnement dans `.env.local` (voir exemple ci-dessous)
+3. Initialisez la base de données:
+   ```bash
+   npx prisma db push
+   ```
+4. Lancez l’application:
+   ```bash
+   npm run dev
+   ```
 
+Exemple de fichier `.env.local`:
 ```bash
-git clone https://github.com/lowouis/spotly.git
-cd spotly
-npm install
+# Environnement
+NODE_ENV="development"
+
+# Base de données
+DATABASE_URL="mysql://root:password@localhost:3306/spotly"
+
+# Sécurité (clé secrète pour NextAuth)
+AUTH_SECRET="ab7ec0bad16e38cdbe7c513a6b617a380d76a4024f57adcaeafa241af127117a"
+
+# API Configuration
+NEXT_PUBLIC_API_ENDPOINT="http://localhost:3000/spotly"
+NEXT_PUBLIC_BASE_PATH="/spotly"
+NEXTAUTH_URL="http://localhost:3000/spotly"
+NEXT_PUBLIC_API_DOMAIN="spotly.example.local"
+
+# SMTP Configuration (envoi d'emails)
+NEXT_PUBLIC_EMAIL_USER="spotly@example.fr" // Adresse email expéditrice
+NEXT_PUBLIC_SMTP_HOST="bluemind" // Nom du serveur SMTP
+NEXT_PUBLIC_SMTP_PORT=25
+NEXT_PUBLIC_SMTP_SECURE=false
+
+# LDAP Configuration (authentification entreprise)
+NEXT_PUBLIC_LDAP_DOMAIN="ldap://example.me.local"
+NEXT_PUBLIC_LDAP_BASEDN="dc=example,dc=local"
+NEXT_PUBLIC_LDAP_ADMIN_DN="CN=username,DC=example,DC=local"
+NEXT_PUBLIC_LDAP_ADMIN_PASSWORD="password"
+
+# Logs
+LOGS_DIR="logs"
+
+# SSO Configuration (Kerberos)
+KERBEROS_REALM="EXAMPLE.LOCAL"
+KERBEROS_SERVICE_NAME="HTTP"
+KERBEROS_KEYTAB_PATH="/etc/krb5.keytab"
+KERBEROS_PRINCIPAL="HTTP/sso.exemple.domain.local@EXAMPLE.LOCAL"
 ```
 
-Créez un fichier `.env.local` à la racine du projet et ajoutez les variables d'environnement suivantes :
-
-```bash
-DATABASE_URL="mysql://user:password@localhost:3306/spotly"
-LDAP_URL="ldap://ldap.example.com"
-LDAP_BIND_DN="cn=admin,dc=example,dc=com"
-LDAP_BIND_CREDENTIALS="password"
-```
-
-
-## Démarrage
-
-Pour lancer l'application en mode développement :
-
-```bash
-npm run dev
-```
-
-Pour lancer l'application en mode production :
-
-```bash
-npm run build
-npm run start
-```
+👉 **Pour une installation détaillée, consultez le manuel complet sur Authorea**  
+[Manuel d’installation Spotly sur Authorea](https://www.authorea.com/spotly-manuel-install)
 
 ## Licence
 
-Ce projet est sous licence MIT. Pour plus d'informations, consultez le fichier `LICENSE`.
+Ce projet est distribué sous licence **GNU GPL v3**.  
+Voir le fichier `LICENSE` pour plus d’informations.
 
 ## Auteur
 
-Ce projet a été développé par Louis GURITA et est maintenu par lui même. 
-Pour toute question ou suggestion, n'hésitez pas à me contacter.
+Développé et maintenu par **Louis GURITA**.
 
+- [GitHub](https://github.com/lowouis)
+- [LinkedIn](https://www.linkedin.com/in/louisgurita/)
+- Contact: louisguritapro@gmail.com
 
-## English Version
+## Contribuer
 
-Spotly is an open-source resource management and booking application designed for businesses. 
-It enables employees to reserve and efficiently organize the use of shared resources, such as 
-meeting rooms, equipment, vehicles, and more. With its intuitive interface and advanced scheduling
-features, Spotly simplifies planning and optimizes resource utilization.
-
-## Features
-
-+ Resource Booking: Easily reserve shared resources for a given time period.
-+ Real-Time Availability: Quickly check available resources.
-+ Recurring Slots: Schedule recurring reservations for planned use over several weeks or months.
-+ Category Management: Sort resources by categories (rooms, equipment, vehicles) and geographical locations.
-+ Secure Authentication Options: LDAP and SSO integration for secure authentication (according to company needs).
-+ Mobile Adaptability: Responsive design for an optimal experience across all devices.
-
-## Prerequisites
-
-+ Node.js (v14+ recommended)
-+ Next.js (v12+)
-+ Prisma for database management
-+ Compatible Database (MySQL, PostgreSQL, etc.)
-+ Optional: LDAP/SSO server for authentication
-
-## Installation
-
-Clone the project and install the dependencies:
-
-```bash
-git clone
-cd spotly
-npm install
-```
-
-Create a `.env.local` file at the root of the project and add the following environment variables:
-
-```bash
-DATABASE_URL="mysql://user:password@localhost:3306/spotly"
-LDAP_URL="ldap://ldap.example.com"
-LDAP_BIND_DN="cn=admin,dc=example,dc=com"
-LDAP_BIND_CREDENTIALS="password"
-```
-
-## Getting Started
-
-To run the application in development mode:
-
-```bash
-npm run dev
-```
-
-To run the application in production mode:
-
-```bash
-npm run build
-npm run start
-```
-
-## License
-
-This project is licensed under the MIT License. For more information, see the `LICENSE` file.
-
-## Author
-
-This project was developed by Louis GURITA and is maintained by him.
-For any questions or suggestions, feel free to contact me.
+Les contributions sont les bienvenues!  
+Merci de lire le fichier `CONTRIBUTING.md` avant de proposer une pull request.
 ```
 
 

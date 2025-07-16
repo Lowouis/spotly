@@ -429,7 +429,6 @@ export default function ItemsOnTable({
     const [selectedFilters, setSelectedFilters] = useState({});
     const [page, setPage] = React.useState(1);
     const rowsPerPage = 10;
-    const totalItems = items?.length;
     const [sortConfig, setSortConfig] = useState({key: null, direction: 'asc'});
     // Obtenir les valeurs uniques disponibles pour chaque filtre
     const availableFilterValues = React.useMemo(() => {
@@ -451,13 +450,13 @@ export default function ItemsOnTable({
         [searchBy]
     );
 
-    items = React.useMemo(() => {
-        let filteredItems = [...(items || [])];
+    const {filteredItems, paginatedItems} = React.useMemo(() => {
+        let filtered = [...(items || [])];
 
         // Filtrage par les filtres dynamiques
         Object.entries(selectedFilters).forEach(([filterBy, selectedValues]) => {
             if (selectedValues.size > 0) {
-                filteredItems = filteredItems.filter(item => {
+                filtered = filtered.filter(item => {
                     const value = filterBy.split('.').reduce((obj, key) => obj && obj[key], item);
                     return selectedValues.has(value);
                 });
@@ -466,24 +465,18 @@ export default function ItemsOnTable({
 
         // Filtrage par recherche
         if (searchValue.trim()) {
-            filteredItems = filteredItems.filter(item => {
+            filtered = filtered.filter(item => {
                 const itemDTO = EntryDTO(item, filter);
                 return searchByArray.some(({attr}) => {
-                    const valueToSearch = attr.split('.').reduce((obj, key) => {
-                        return obj && obj[key];
-                    }, itemDTO);
-
-                    return String(valueToSearch || '')
-                        .toLowerCase()
-                        .includes(searchValue.toLowerCase());
+                    const valueToSearch = attr.split('.').reduce((obj, key) => obj && obj[key], itemDTO);
+                    return String(valueToSearch || '').toLowerCase().includes(searchValue.toLowerCase());
                 });
             });
         }
 
-
         // Tri alphabétique sur la colonne 'name' uniquement
         if (sortConfig.key === 'name') {
-            filteredItems.sort((a, b) => {
+            filtered.sort((a, b) => {
                 const aValue = (a.name || '').toLowerCase();
                 const bValue = (b.name || '').toLowerCase();
                 if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -494,10 +487,14 @@ export default function ItemsOnTable({
 
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
-        return filteredItems.slice(start, end);
+        const paginated = filtered.slice(start, end);
+
+        return {filteredItems: filtered, paginatedItems: paginated};
     }, [items, searchValue, page, filter, searchByArray, selectedFilters, sortConfig]);
 
+    const totalItems = filteredItems.length;
     const pages = Math.ceil(totalItems / rowsPerPage);
+
     const {
         isOpen: isOpenDeleteConfirm,
         onOpen: onOpenDeleteConfirm,
@@ -696,7 +693,7 @@ export default function ItemsOnTable({
                 </div>
             </div>
             <Skeleton className="rounded-lg mt-2 h-full" isLoaded={!isLoading}>
-                {items && items.length > 0 ? (
+                {paginatedItems && paginatedItems.length > 0 ? (
                     <Table
                         classNames={{
                             wrapper: "min-h-[222px] max-h-[1000px] overflow-y-auto",
@@ -759,7 +756,7 @@ export default function ItemsOnTable({
                             </TableColumn>
                         </TableHeader>
                         <TableBody>
-                            {items.map((item, index) => {
+                            {paginatedItems.map((item, index) => {
                                 const itemDTO = EntryDTO(item, filter);
                                 return (
                                     <TableRow key={item.id}>
