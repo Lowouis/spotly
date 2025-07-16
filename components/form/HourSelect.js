@@ -32,15 +32,21 @@ export default function HourSelect({label, defaultValue, name, onChange, isDisab
             disabledKeys={disabledKeys}
             onChange={onChange}
             classNames={{
-                value: "text-content-primary dark:text-dark-content-primary font-medium",
-                trigger: "bg-transparent text-content-primary dark:text-dark-content-primary",
-                listbox: "text-content-primary dark:text-dark-content-primary",
-                placeholder: "text-content-secondary dark:text-dark-content-secondary"
+                trigger: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                value: "text-neutral-900 dark:text-neutral-100 font-semibold",
+                placeholder: "text-neutral-500 dark:text-neutral-400",
+                listbox: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg",
+                popoverContent: "py-2",
+                item: "py-3 px-4 min-h-[48px] flex items-center transition-colors duration-150 cursor-pointer",
+                selectedItem: "bg-primary-700/20 dark:bg-primary-700/20 text-primary-400 dark:text-primary-300 font-bold",
+                highlightedItem: "bg-neutral-100 dark:bg-neutral-800",
+                label: "text-neutral-800 dark:text-neutral-200 font-semibold",
+                description: "text-neutral-600 dark:text-neutral-400 text-sm"
             }}
         >
             {(hour) => (
-                <SelectItem key={hour.key} value={hour.key}>
-                    {hour.label}
+                <SelectItem key={hour.key} value={hour.key} className="py-3 px-4 min-h-[48px] flex items-center">
+                    <span className="font-semibold">{hour.label}</span>
                 </SelectItem>
             )}
         </Select>

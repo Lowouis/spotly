@@ -3,7 +3,7 @@ import {signIn} from 'next-auth/react';
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-export function useSSO({ manualLogout, ssoParam, status }) {
+export function useSSO({ssoParam, status}) {
     const [kerberosConfigExists, setKerberosConfigExists] = useState(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -82,16 +82,59 @@ export function useSSO({ manualLogout, ssoParam, status }) {
         }
     }, []);
 
+    // Fonction pour vérifier la présence d'un ticket Kerberos
+    const checkTicket = useCallback(async () => {
+        try {
+            const res = await fetch(`${basePath}/api/public/check-sso`);
+            const data = await res.json();
+            if (data.ticket) {
+                return data.ticket;
+            }
+            return null;
+        } catch {
+            return null;
+        }
+    }, []);
+
+    // Fonction pour authentifier via NextAuth avec un ticket
+    const ssoLogin = useCallback(async (ticket) => {
+        setIsLoading(true);
+        setError(null);
+        setDebug(null);
+        try {
+            const kerberosResponse = await fetch(`${basePath}/api/auth/callback/kerberos`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ticket}),
+            });
+            if (!kerberosResponse.ok) {
+                const errorData = await kerberosResponse.json();
+                throw new Error(errorData.error || 'Erreur Kerberos');
+            }
+            const user = await kerberosResponse.json();
+            const resSignIn = await signIn('sso-login', {
+                redirect: false,
+                username: user.username,
+            });
+            if (resSignIn && resSignIn.ok) {
+                window.location.href = `${basePath}/`;
+            } else {
+                throw new Error(resSignIn?.error || 'Erreur NextAuth');
+            }
+        } catch (e) {
+            setError(e.message);
+            setDebug(e);
+            throw e;
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     // Récupération de la config et du ticket au montage
     useEffect(() => {
         fetchKerberosConfig();
         fetchTicket();
     }, [fetchKerberosConfig, fetchTicket]);
-
-    // triggerSSO force le SSO à la demande
-    const triggerSSO = useCallback(() => {
-        handleSSOLogin();
-    }, [handleSSOLogin]);
 
     return {
         isLoading,
@@ -99,6 +142,7 @@ export function useSSO({ manualLogout, ssoParam, status }) {
         debug,
         kerberosConfigExists,
         ticketSSO,
-        triggerSSO,
+        checkTicket,
+        ssoLogin,
     };
 } 

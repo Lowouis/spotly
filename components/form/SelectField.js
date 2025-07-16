@@ -19,7 +19,7 @@ const SelectField = ({
                         label,
                         options,
                         awaiting = false,
-                        variant = "bordered",
+                         variant = "fade",
                         labelPlacement="inside",
                         isRequired = true,
                         onReset = () => {},
@@ -152,7 +152,7 @@ const SelectField = ({
                         <span className="mr-2 text-content-primary dark:text-dark-content-primary">{label}</span>
                         <Chip
                             radius={'full'}
-                            variant={'flat'}
+                            variant={"flat"}
                             size="sm"
                             color={safeOptions && safeOptions.length !== 0 ? "primary" : "danger"}
                         >{safeOptions.length ? safeOptions.length : 0}</Chip>
@@ -169,12 +169,16 @@ const SelectField = ({
                         <span
                             className="italic text-neutral-500 dark:text-neutral-400">{watchedValue} par héritage</span> : safeOptions.length ? placeholder : "Aucune donnée"}
                     classNames={{
-                        trigger: "text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900",
-                        value: "text-neutral-900 dark:text-neutral-100",
+                        trigger: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                        value: "text-neutral-900 dark:text-neutral-100 font-semibold",
                         placeholder: "text-neutral-500 dark:text-neutral-400",
-                        listbox: "text-neutral-900 dark:text-neutral-100",
-                        label: "text-neutral-800 dark:text-neutral-200",
-                        description: "text-neutral-500 dark:text-neutral-400"
+                        listbox: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg",
+                        popoverContent: "py-2",
+                        item: "py-3 px-4 min-h-[48px] flex items-center transition-colors duration-150 cursor-pointer",
+                        selectedItem: "bg-primary-700/20 dark:bg-primary-700/20 text-primary-400 dark:text-primary-300 font-bold",
+                        highlightedItem: "bg-neutral-100 dark:bg-neutral-800",
+                        label: "text-neutral-800 dark:text-neutral-200 font-semibold",
+                        description: "text-neutral-600 dark:text-neutral-400 text-sm"
                     }}
                     disabledKeys={validates ? Object.keys(validates).filter(key => !validates[key]) : []}
                 >
@@ -182,15 +186,36 @@ const SelectField = ({
                         <SelectItem
                             variant='bordered'
                             color="default"
-                            aria-label={option?.name || option}
+                            aria-label={
+                                typeof option?.distinguishedName === 'string' ? option.distinguishedName
+                                    : typeof option?.name === 'string' ? option.name
+                                        : (option?.id || '')
+                            }
                             key={option?.id}
                             value={option?.id}
-                            textValue={option?.name || option}
-                            description={option?.description && option?.description}
+                            textValue={
+                                typeof option?.distinguishedName === 'string' ? option.distinguishedName
+                                    : typeof option?.name === 'string' ? option.name
+                                        : (option?.id || '')
+                            }
+                            description={
+                                typeof option?.description === 'string'
+                                    ? <span
+                                        className="text-neutral-400 dark:text-neutral-400 text-sm">{option.description}</span>
+                                    : ''
+                            }
+                            className="py-3 px-4 min-h-[48px] flex items-center"
                         >
-                            {option?.name && firstLetterUppercase(option.name) || option}
-                            {" "}
-                            {option?.surname && firstLetterUppercase(option.surname)}
+                        <span className="font-semibold">
+                          {(typeof option?.distinguishedName === 'string' ? option.distinguishedName
+                              : typeof option?.name === 'string' ? option.name
+                                  : (option?.id || ''))}
+                        </span>
+                            {option?.surname && (
+                                <span className="ml-2 text-neutral-400 dark:text-neutral-400">
+                            {firstLetterUppercase(option.surname)}
+                          </span>
+                            )}
                         </SelectItem>
                     )}
                 </Select>

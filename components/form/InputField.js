@@ -36,8 +36,14 @@ export default function InputField({
                         message: patternMessage || 'Format invalide'
                     } : undefined
                 })}
-                className={`form-input ${errors[name] ? 'input-error' : ''} placeholder:text-neutral-500 dark:placeholder:text-neutral-400 text-neutral-900 dark:text-neutral-100`}
+                className={`form-input ${errors[name] ? 'input-error' : ''}`}
                 variant="bordered"
+                classNames={{
+                    inputWrapper: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                    input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400",
+                    label: "text-neutral-800 dark:text-neutral-200 font-semibold",
+                    errorMessage: "text-red-500 text-sm mt-1",
+                }}
                 endContent={
                     hidden &&
                     <Button className="scale-75" size="md" variant="faded" onPress={() => setIsVisible(!isVisible)}

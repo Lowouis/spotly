@@ -48,7 +48,7 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
                              color="warning">
                         <RadioGroup
                             id={name}
-                            label={label}
+                            label={<span className="text-neutral-900 dark:text-neutral-100">{label}</span>}
                             isDisabled={disabled}
                             className={`form-input ${formErrors[name] ? 'input-error' : ''}`}
                             value={field.value}
@@ -57,13 +57,13 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
                         >
                             <Radio
                                 value="1"
-                                description="Un modérateur doit valider la réservation pour cette ressource"
+                                description={<span className="text-neutral-500 dark:text-neutral-400">Un modérateur doit valider la réservation pour cette ressource</span>}
                             >
                                 Oui
                             </Radio>
                             <Radio
                                 value="0"
-                                description="La ressource est en libre disposition"
+                                description={<span className="text-neutral-500 dark:text-neutral-400">La ressource est en libre disposition</span>}
                             >
                                 Non
                             </Radio>

@@ -18,7 +18,7 @@ import {
 import {Button} from "@heroui/button";
 import React, {useState} from "react";
 import {PlusCircleIcon, TrashIcon} from "@heroicons/react/24/solid";
-import {ArrowPathIcon, MagnifyingGlassIcon} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Input} from "@heroui/input";
 import {useMutation} from "@tanstack/react-query";
 import ActionMenuModerate from "@/components/actions/ActionMenu";
@@ -430,6 +430,7 @@ export default function ItemsOnTable({
     const [page, setPage] = React.useState(1);
     const rowsPerPage = 10;
     const totalItems = items?.length;
+    const [sortConfig, setSortConfig] = useState({key: null, direction: 'asc'});
     // Obtenir les valeurs uniques disponibles pour chaque filtre
     const availableFilterValues = React.useMemo(() => {
         if (!items || !filters.length) return {};
@@ -479,10 +480,22 @@ export default function ItemsOnTable({
             });
         }
 
+
+        // Tri alphabétique sur la colonne 'name' uniquement
+        if (sortConfig.key === 'name') {
+            filteredItems.sort((a, b) => {
+                const aValue = (a.name || '').toLowerCase();
+                const bValue = (b.name || '').toLowerCase();
+                if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
         const start = (page - 1) * rowsPerPage;
         const end = start + rowsPerPage;
         return filteredItems.slice(start, end);
-    }, [items, searchValue, page, filter, searchByArray, selectedFilters]);
+    }, [items, searchValue, page, filter, searchByArray, selectedFilters, sortConfig]);
 
     const pages = Math.ceil(totalItems / rowsPerPage);
     const {
@@ -585,13 +598,11 @@ export default function ItemsOnTable({
                                         [filterBy]: selected
                                     }));
                                 }}
-                                variant="bordered"
+                                variant="flat"
                                 selectionMode="multiple"
                                 className="max-w-xs"
-                                size="xs"
                                 aria-label={placeholder}
                                 classNames={{
-                                    trigger: "text-neutral-900 dark:text-neutral-100 bg-white dark:bg-neutral-900",
                                     value: "text-neutral-900 dark:text-neutral-100",
                                     placeholder: "text-neutral-500 dark:text-neutral-400",
                                     listbox: "text-neutral-900 dark:text-neutral-100",
@@ -720,12 +731,28 @@ export default function ItemsOnTable({
                         radius="md"
                     >
                         <TableHeader>
-                            {columnsGreatNames.map((item, index) => (
-                                <TableColumn key={index} align="left"
-                                             className="text-content-primary dark:text-dark-content-primary">
-                                    {item}
-                                </TableColumn>
-                            ))}
+                            {columnsGreatNames.map((item, index) => {
+                                // On cible la colonne 'Nom' (clé 'name')
+                                const isNameCol = item === 'Nom';
+                                return (
+                                    <TableColumn
+                                        key={index}
+                                        align="left"
+                                        className="text-content-primary dark:text-dark-content-primary cursor-pointer select-none"
+                                        onClick={isNameCol ? () => setSortConfig(prev => ({
+                                            key: 'name',
+                                            direction: prev.key === 'name' && prev.direction === 'asc' ? 'desc' : 'asc'
+                                        })) : undefined}
+                                    >
+                                        {item}
+                                        {isNameCol && sortConfig.key === 'name' && (
+                                            sortConfig.direction === 'asc' ?
+                                                <ChevronUpIcon className="inline w-4 h-4 ml-1"/> :
+                                                <ChevronDownIcon className="inline w-4 h-4 ml-1"/>
+                                        )}
+                                    </TableColumn>
+                                );
+                            })}
                             <TableColumn key="actions" align="right"
                                          className="text-content-primary dark:text-dark-content-primary">
                                 {"<>"}

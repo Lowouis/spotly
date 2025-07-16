@@ -426,8 +426,10 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                                 type="email"
                                                 variant="bordered"
                                                 classNames={{
-                                                    label: "text-neutral-700 dark:text-neutral-300",
-                                                    input: "text-sm"
+                                                    inputWrapper: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                                                    input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 text-sm",
+                                                    label: "text-neutral-800 dark:text-neutral-200 font-semibold text-sm",
+                                                    errorMessage: "text-red-500 text-sm mt-1",
                                                 }}
                                             />
                                             <Tooltip content="Changer l'email" showArrow placement="top-end">
@@ -436,7 +438,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                                     variant="flat"
                                                     isIconOnly
                                                     size="sm"
-                                                    className="mb-1"
+                                                    className="rounded-lg shadow-sm"
                                                 >
                                                     <ArrowPathIcon className="w-4 h-4"/>
                                                 </Button>
@@ -453,8 +455,10 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                                 type="password"
                                                 variant="bordered"
                                                 classNames={{
-                                                    label: "text-neutral-700 dark:text-neutral-300",
-                                                    input: "text-sm"
+                                                    inputWrapper: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                                                    input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 text-sm",
+                                                    label: "text-neutral-800 dark:text-neutral-200 font-semibold text-sm",
+                                                    errorMessage: "text-red-500 text-sm mt-1",
                                                 }}
                                             />
                                             <Tooltip content="Changer le mot de passe" showArrow placement="top-end">
@@ -464,7 +468,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                                     isIconOnly
                                                     size="sm"
                                                     disabled={session.user?.external}
-                                                    className="mb-1"
+                                                    className="rounded-lg shadow-sm"
                                                 >
                                                     <ArrowPathIcon className="w-4 h-4"/>
                                                 </Button>
