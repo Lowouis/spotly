@@ -72,15 +72,18 @@ function LoginContent() {
                 <DarkModeSwitch />
             </div>
             <ConnectionModal />
+            <pre className="text-xs bg-neutral-100 dark:bg-neutral-900 rounded p-2 mb-2 max-w-xl w-full overflow-auto">
+                {JSON.stringify({kerberosConfigExists, isSSOChecking, ssoError, ssoDebug}, null, 2)}
+            </pre>
             <Button
                 onPress={handleSSOClick}
-                    color="warning" 
-                    className="mx-auto m-2 w-[400px]"
-                    size="lg"
-                    radius="sm"
+                color="warning"
+                className="mx-auto m-2 w-[400px]"
+                size="lg"
+                radius="sm"
                 isDisabled={!kerberosConfigExists}
-                    isLoading={isSSOChecking || status === "loading"}
-                >
+                isLoading={isSSOChecking || status === "loading"}
+            >
                 Connexion automatique
             </Button>
             {ssoDebug && (
