@@ -170,15 +170,16 @@ model timeScheduleOptions {
 }
 
 model KerberosConfig {
-  id          String   @id @default(uuid())
-  realm       String   @db.Text
-  serviceName String   @db.Text
-  keytabPath  String   @db.Text
-  principal   String   @db.Text
-  serviceHost String   @db.Text
-  lastUpdated DateTime @updatedAt
-  updatedBy   String
-  isActive    Boolean  @default(true)
+  id            String   @id @default(uuid())
+  realm         String   @db.Text
+  kdc           String   @db.Text
+  adminServer   String   @db.Text
+  defaultDomain String   @db.Text
+  serviceHost   String   @db.Text
+  keytabPath    String   @db.Text
+  lastUpdated   DateTime @updatedAt
+  updatedBy     String
+  isActive      Boolean  @default(true)
 }
 
 model SmtpConfig {

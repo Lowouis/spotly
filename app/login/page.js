@@ -23,7 +23,6 @@ function LoginContent() {
             router.replace("/");
         }
     }, [status, router]);
-    console.log("SSO EXIST ? : ", kerberosConfigExists)
     const {
         isLoading: isSSOChecking,
         error: ssoError,
@@ -32,6 +31,7 @@ function LoginContent() {
         checkTicket,
         ssoLogin
     } = useSSO({ssoParam, status});
+    console.log("SSO EXIST ? : ", kerberosConfigExists)
 
     const handleSSOClick = async () => {
         try {

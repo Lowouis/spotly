@@ -17,6 +17,7 @@ export function useSSO({ssoParam, status}) {
             const res = await fetch(`${basePath}/api/public/kerberos-config`);
             if (res.ok) {
                 const data = await res.json();
+                console.log("Réponse API kerberos-config:", data);
                 setKerberosConfigExists(data.kerberosConfigExists);
             } else {
                 setKerberosConfigExists(false);
