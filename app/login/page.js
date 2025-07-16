@@ -23,7 +23,7 @@ function LoginContent() {
             router.replace("/");
         }
     }, [status, router]);
-
+    console.log("SSO EXIST ? : ", kerberosConfigExists)
     const {
         isLoading: isSSOChecking,
         error: ssoError,

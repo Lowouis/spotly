@@ -1,7 +1,17 @@
 import React from "react";
 import {Select, SelectItem} from "@heroui/select";
 
-export default function HourSelect({label, defaultValue, name, onChange, isDisabled, isInvalid, minValue, maxValue}) {
+export default function HourSelect({
+                                       label,
+                                       defaultValue,
+                                       value,
+                                       name,
+                                       onChange,
+                                       isDisabled,
+                                       isInvalid,
+                                       minValue,
+                                       maxValue
+                                   }) {
     const hours = Array.from({length: 24}, (_, i) => {
         const hour = i.toString().padStart(2, '0');
         return {key: hour, label: `${hour}h`};
@@ -23,6 +33,7 @@ export default function HourSelect({label, defaultValue, name, onChange, isDisab
             isRequired
             defaultSelectedKeys={[defaultValue]}
             variant="bordered"
+            selectedKeys={value ? [value] : []}
             label={label}
             items={hours}
             size="sm"

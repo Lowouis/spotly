@@ -96,7 +96,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                         minValue={today(getLocalTimeZone())}
                         classNames={{
                             base: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                            input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400",
+                            input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
                             label: "text-neutral-800 dark:text-neutral-200 font-semibold",
                             calendarWrapper: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg",
                         }}
@@ -142,7 +142,6 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                                 cellButton: [
                                     "data-[today=true]:text-primary",
                                     "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
-                                    "hover:bg-primary hover:text-primary-foreground",
                                     "rounded-small transition-colors",
                                     "data-[today=true]:font-semibold",
                                     // Range selection styles
