@@ -40,7 +40,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const router = useRouter();
     const {data: session, status} = useSession();
-
+    const [activeLogo, setActiveLogo] = useState(false);
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -213,7 +213,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center h-full">
                         <div className="relative group h-full flex items-center">
-                            <div className="relative z-10 flex items-center hover:rotate-0 rotate-45 transition-all">
+                            {activeLogo && <div
+                                className="relative z-10 flex items-center hover:rotate-0 rotate-45 transition-all">
                                 <Image
                                     src={`${basePath}/banner.png`}
                                     alt="Spotly Logo"
@@ -223,7 +224,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                     className="transition-all duration-500"
                                     priority
                                 />
-                            </div>
+                            </div>}
                         </div>
                     </div>
 
