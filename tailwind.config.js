@@ -8,6 +8,18 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
       "./node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}"
   ],
+    safelist: [
+        'rotate-0',
+        'rotate-45',
+        'gap-8',
+        'bg-neutral-900/50',
+        'h-full',
+        'overflow-visible',
+        'backdrop-blur',
+        'dark:bg-neutral-900/50',
+        'dark:text-blue-400',
+        'dark:hover:bg-gray-700'
+    ],
     theme: {
         extend: {
             textColor: {

@@ -34,11 +34,16 @@ import nextConfig from '../next.config.mjs';
 const basePath = nextConfig.basePath || '';
 
 export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRefresh, selectedTab}) {
+    const [mounted, setMounted] = useState(false);
     const {isOpen, onOpen, onClose} = useDisclosure();
     const isMobile = useMediaQuery({query: '(max-width: 768px)'});
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const router = useRouter();
     const {data: session, status} = useSession();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -56,6 +61,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
     if (status === "loading" || !session?.user) {
         return <></>;
     }
+
+    if (!mounted) return null;
 
     const handleTabChange = (key) => {
         handleSearchMode(key);

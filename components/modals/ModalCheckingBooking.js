@@ -414,7 +414,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                 },
             }}
             classNames={{
-                closeButton: "text-blue-500 hover:bg-gray-200 rounded-full p-3 text-xl"
+                closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-blue-400 rounded-full p-3 text-xl"
             }}
         >
             <ModalContent>
