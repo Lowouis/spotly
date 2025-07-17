@@ -23,6 +23,3 @@ voir <https://www.gnu.org/licenses/>.
     Vous devriez avoir reçu une copie de la Licence Publique Générale GNU avec ce programme. Si ce n’est pas le cas, voir <https://www.gnu.org/licenses/>.
 
 ---
-
-Pour le texte complet officiel en français: https://www.gnu.org/licenses/gpl-3.0.fr.html
-Pour le texte complet officiel en anglais: https://www.gnu.org/licenses/gpl-3.0.html 
