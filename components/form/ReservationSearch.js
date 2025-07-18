@@ -501,8 +501,8 @@ const ReservationSearch = () => {
                                                         <div
                                                             className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-24 mt-3' : 'opacity-0 max-h-0 overflow-hidden'}`}>
                                                             <div
-                                                                className="flex gap-3 w-full bg-neutral-50/50 dark:bg-neutral-800/20 p-3 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
-                                                                <div className="w-1/2">
+                                                                className="flex gap-3 w-full bg-neutral-50/50 dark:bg-neutral-800/20 p-1 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
+                                                                <div className="flex items-center w-3/4 mx-2">
                                                                     <SelectField
                                                                         onReset={handleResourceOnReset}
                                                                         name="recursive_unit"
@@ -522,7 +522,7 @@ const ReservationSearch = () => {
                                                                         }}
                                                                     />
                                                                 </div>
-                                                                <div className="w-1/2">
+                                                                <div className="flex items-center w-1/4 mx-2">
                                                                     <DatePicker
                                                                         isRequired={isRecurrent}
                                                                         disabled={!isRecurrent}
@@ -541,25 +541,26 @@ const ReservationSearch = () => {
                                                                         errorMessage={errors.recursive_limit?.message}
                                                                         className='justify-center items-center'
                                                                         classNames={{
-                                                                            label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                                            input: "bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm border-neutral-200/50 dark:border-neutral-700/50 hover:border-primary-400/50 dark:hover:border-primary-400/50 transition-colors h-10",
-                                                                            value: "text-neutral-800 dark:text-neutral-200",
-                                                                            placeholder: "text-neutral-500 dark:text-neutral-400",
-                                                                            base: "h-full"
+                                                                            inputWrapper: "border-none",
+                                                                            base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                                                                            input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
+                                                                            label: "text-neutral-800 dark:text-neutral-200 font-semibold",
+                                                                            calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
                                                                         }}
                                                                         calendarProps={{
                                                                             classNames: {
-                                                                                base: "bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm border border-neutral-200/50 dark:border-neutral-700/50",
-                                                                                headerWrapper: "pt-4",
-                                                                                prevButton: "hover:bg-neutral-100 dark:hover:bg-neutral-700",
-                                                                                nextButton: "hover:bg-neutral-100 dark:hover:bg-neutral-700",
-                                                                                gridHeader: "border-b border-neutral-200/50 dark:border-neutral-700/50",
+                                                                                base: "bg-background",
+                                                                                headerWrapper: "pt-4 bg-background",
+                                                                                prevButton: "border-1 border-default-200 rounded-small",
+                                                                                nextButton: "border-1 border-default-200 rounded-small",
+                                                                                gridHeader: "bg-background shadow-none border-b-1 border-default-100",
                                                                                 cellButton: [
                                                                                     "data-[today=true]:text-primary",
-                                                                                    "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
-                                                                                    "hover:bg-neutral-100 dark:hover:bg-neutral-700",
-                                                                                    "rounded-md transition-colors",
+                                                                                    "data-[selected=true]:bg-primary data-[selected=true]:text-black",
+                                                                                    "hover:bg-primary hover:text-primary-foreground",
+                                                                                    "rounded-small transition-colors",
                                                                                     "data-[today=true]:font-semibold",
+                                                                                    // Range selection styles
                                                                                     "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
                                                                                     "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
                                                                                     "data-[in-range=true]:bg-primary/20",

@@ -32,7 +32,7 @@ const logToFile = (message) => {
     fs.appendFileSync(logFile, logMessage);
 };
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('0 * * * *', async () => {
     logToFile('⏳ Vérification des mises à jour...');
 
     try {
@@ -46,30 +46,51 @@ cron.schedule('* * * * *', async () => {
         })}`);
 
 
-        // Mise à jour des ressources qui sont dont la réservation et le pickup sont automatisés faire une transaction plus tard ici $transaction
-        const autoReservedEntries = await prisma.entry.updateMany({
-            data: {
-                moderate: "USED"
-            },
+        // Mise à jour des ressources qui sont dont la réservation et le pickup sont automatisés avec priorité pickable > category > domains
+        // Cas 1 : priorité ressource
+        const autoReservedEntriesResource = await prisma.entry.updateMany({
+            data: {moderate: "USED"},
             where: {
                 resource: {
-                    OR: [
-                        {pickable: {name: "FLUENT" || "HIGH_TRUST"}},
-                        {category: {pickable: {name: "FLUENT" || "HIGH_TRUST"}}},
-                        {domains: {pickable: {name: "FLUENT" || "HIGH_TRUST"}}},
-                    ]
+                    pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}
                 },
                 moderate: "ACCEPTED",
-                startDate: {
-                    lte: now
-                },
-                endDate: {
-                    gt: now
-                }
+                startDate: {lte: now},
+                endDate: {gt: now}
             }
         });
 
-        logToFile(`🔄 ${autoReservedEntries.count} réservations mis à jour en utilisées (USED)`);
+        // Cas 2 : priorité catégorie (seulement si resource.pickable est null)
+        const autoReservedEntriesCategory = await prisma.entry.updateMany({
+            data: {moderate: "USED"},
+            where: {
+                resource: {
+                    pickable: null,
+                    category: {pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}}
+                },
+                moderate: "ACCEPTED",
+                startDate: {lte: now},
+                endDate: {gt: now}
+            }
+        });
+
+        // Cas 3 : priorité domaine (seulement si resource.pickable et category.pickable sont null)
+        const autoReservedEntriesDomain = await prisma.entry.updateMany({
+            data: {moderate: "USED"},
+            where: {
+                resource: {
+                    pickable: null,
+                    category: {pickable: null},
+                    domains: {pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}}
+                },
+                moderate: "ACCEPTED",
+                startDate: {lte: now},
+                endDate: {gt: now}
+            }
+        });
+
+        const totalAutoReserved = autoReservedEntriesResource.count + autoReservedEntriesCategory.count + autoReservedEntriesDomain.count;
+        logToFile(`🔄 ${totalAutoReserved} réservations mis à jour en utilisées (USED)`);
 
         // Mise a jour des réservations qui sont en retard
         const lateEntries = await prisma.entry.updateMany({
@@ -85,37 +106,57 @@ cron.schedule('* * * * *', async () => {
         });
 
         logToFile(`🔄 ${lateEntries.count} ressources mis à jour en retard (DELAYED)`);
-        // Mise à jour des ressources dont la réservation et la restitution est automatisés
-        const autoReturnedEntries = await prisma.entry.updateMany({
-            data: {
-                moderate: "ENDED",
-                returned: true
-            },
+        // Mise à jour des ressources dont la réservation et la restitution est automatisée (priorité pickable > category > domains, uniquement FLUENT)
+        // Cas 1 : priorité ressource
+        const autoReturnedEntriesResource = await prisma.entry.updateMany({
+            data: {moderate: "ENDED", returned: true},
             where: {
                 resource: {
-                    OR: [
-                        {pickable: {name: "FLUENT"}},
-                        {category: {pickable: {name: "FLUENT"}}},
-                        {domains: {pickable: {name: "FLUENT"}}},
-                    ],
-
+                    pickable: {name: "FLUENT"}
                 },
                 moderate: "USED",
                 AND: [
-                    {
-                        endDate: {
-                            lt: now
-                        }
-                    },
-                    {
-                        startDate: {
-                            lt: now
-                        }
-                    }
+                    {endDate: {lt: now}},
+                    {startDate: {lt: now}}
                 ]
             }
-        })
-        logToFile(`🔄 ${autoReturnedEntries.count} ressources mis à jour en terminé (ENDED)`);
+        });
+
+        // Cas 2 : priorité catégorie (seulement si resource.pickable est null)
+        const autoReturnedEntriesCategory = await prisma.entry.updateMany({
+            data: {moderate: "ENDED", returned: true},
+            where: {
+                resource: {
+                    pickable: null,
+                    category: {pickable: {name: "FLUENT"}}
+                },
+                moderate: "USED",
+                AND: [
+                    {endDate: {lt: now}},
+                    {startDate: {lt: now}}
+                ]
+            }
+        });
+
+        // Cas 3 : priorité domaine (seulement si resource.pickable et category.pickable sont null)
+        const autoReturnedEntriesDomain = await prisma.entry.updateMany({
+            data: {moderate: "ENDED", returned: true},
+            where: {
+                resource: {
+                    pickable: null,
+                    category: {pickable: null},
+                    domains: {pickable: {name: "FLUENT"}}
+                },
+                moderate: "USED",
+                AND: [
+                    {endDate: {lt: now}},
+                    {startDate: {lt: now}}
+                ]
+            }
+        });
+
+        const totalAutoReturned = autoReturnedEntriesResource.count + autoReturnedEntriesCategory.count + autoReturnedEntriesDomain.count;
+        logToFile(`🔄 ${totalAutoReturned} ressources mis à jour en terminé (ENDED)`);
 
 
     } catch (error) {

@@ -15,7 +15,6 @@ export const CommentBeforeAction = ({action, item, isOpen, onOpenChange}) => {
                 onOpenChange={onOpenChange}
                 size="md"
                 backdrop="blur"
-                closeOnEsc
                 motionProps={{
                     variants: {
                         enter: {

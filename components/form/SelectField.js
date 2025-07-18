@@ -156,7 +156,6 @@ const SelectField = ({
                         >{safeOptions.length ? safeOptions.length : 0}</Chip>
                     </span>
                     }
-                    variant={variant}
                     labelPlacement={labelPlacement}
                     items={safeOptions}
                     selectedKeys={selectedKey ? new Set([selectedKey]) : new Set([])}

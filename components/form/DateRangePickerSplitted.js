@@ -95,10 +95,11 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                         maxValue={endDate}
                         minValue={today(getLocalTimeZone())}
                         classNames={{
-                            base: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                            inputWrapper: "border-none",
+                            base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
                             input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
                             label: "text-neutral-800 dark:text-neutral-200 font-semibold",
-                            calendarWrapper: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg",
+                            calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
                         }}
                         calendarProps={{
                             classNames: {
@@ -109,7 +110,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                                 gridHeader: "bg-background shadow-none border-b-1 border-default-100",
                                 cellButton: [
                                     "data-[today=true]:text-primary",
-                                    "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
+                                    "data-[selected=true]:bg-primary data-[selected=true]:text-black",
                                     "hover:bg-primary hover:text-primary-foreground",
                                     "rounded-small transition-colors",
                                     "data-[today=true]:font-semibold",
@@ -141,7 +142,8 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                                 gridHeader: "bg-background shadow-none border-b-1 border-default-100",
                                 cellButton: [
                                     "data-[today=true]:text-primary",
-                                    "data-[selected=true]:bg-primary data-[selected=true]:text-primary-foreground",
+                                    "data-[selected=true]:bg-primary data-[selected=true]:text-black",
+                                    "hover:bg-primary hover:text-primary-foreground",
                                     "rounded-small transition-colors",
                                     "data-[today=true]:font-semibold",
                                     // Range selection styles
@@ -163,10 +165,11 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                         isDisabled={!startDate}
                         isInvalid={!!dateError}
                         classNames={{
-                            base: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                            input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400",
+                            inputWrapper: "border-none",
+                            base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                            input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
                             label: "text-neutral-800 dark:text-neutral-200 font-semibold",
-                            calendarWrapper: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg",
+                            calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
                         }}
                     />
                     <TimeInput

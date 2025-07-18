@@ -71,9 +71,6 @@ function LoginContent() {
                 <DarkModeSwitch />
             </div>
             <ConnectionModal />
-            <pre className="text-xs bg-neutral-100 dark:bg-neutral-900 rounded p-2 mb-2 max-w-xl w-full overflow-auto">
-                {JSON.stringify({kerberosConfigExists, isSSOChecking, ssoError, ssoDebug}, null, 2)}
-            </pre>
             <Button
                 onPress={handleSSOClick}
                 color="warning"
