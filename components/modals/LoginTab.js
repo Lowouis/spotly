@@ -34,6 +34,7 @@ export default function LoginTab() {
             redirect: false,
             username: creditentials[0].value,
             password: creditentials[1].value,
+            callbackUrl: window.location.origin + window.location.pathname.replace('/login', '') + window.location.search
         }).then((response) => {
             if (response.status === 401) {
                 setWrongCredentials(true);
@@ -42,7 +43,6 @@ export default function LoginTab() {
             if (response.ok) {
                 router.push('/');
             }
-            
         });
 
     };

@@ -48,6 +48,7 @@ export function useSSO({ssoParam, status}) {
                 const resSignIn = await signIn('sso-login', {
                     redirect: false,
                     username: user.username,
+                    callbackUrl: window.location.origin + window.location.pathname.replace('/login', '') + window.location.search
                 });
                 if (resSignIn && resSignIn.ok) {
                     window.location.href = `${basePath}/`;
@@ -115,6 +116,7 @@ export function useSSO({ssoParam, status}) {
             const resSignIn = await signIn('sso-login', {
                 redirect: false,
                 username: user.username,
+                callbackUrl: window.location.origin + window.location.pathname.replace('/login', '') + window.location.search
             });
             if (resSignIn && resSignIn.ok) {
                 window.location.href = `${basePath}/`;
