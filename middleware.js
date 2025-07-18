@@ -67,8 +67,13 @@ export async function middleware(req) {
     const isAuth = !!token;
     const loginUrl = new URL(`${basePath}/login`, req.url);
 
+    const currentUrl = new URL(req.url);
     if (!isAuth) {
-        loginUrl.searchParams.set('callbackUrl', req.url);
+        if (!currentUrl.searchParams.has('callbackUrl')) {
+            loginUrl.searchParams.set('callbackUrl', req.url);
+        } else {
+            loginUrl.searchParams.set('callbackUrl', currentUrl.searchParams.get('callbackUrl'));
+        }
         const redirectResponse = NextResponse.redirect(loginUrl);
         return addCorsHeaders(redirectResponse);
     }
