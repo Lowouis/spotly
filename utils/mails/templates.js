@@ -18,13 +18,13 @@ const wrapInHtmlTemplate = (body, subject = "Spotly") => `
       <div style="width: 100%; text-align: center; margin-bottom: 20px;">
         <img 
           src="cid:bannerimg"
-          alt="Spotly" 
+          alt="Spotly"
           style="max-width: 200px; height: auto;"
         />
       </div>
       ${body}
       <footer style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666; border-top: 1px solid #eee; padding-top: 20px;">
-        <a href="${process.env.NEXT_PUBLIC_API_ENDPOINT}" style="color: #666; text-decoration: none;">Spotly</a>
+        <a href="${process.env.NEXTAUTH_URL}" style="color: #666; text-decoration: none;">Spotly</a>
         <p style="margin: 10px 0;">Merci d'utiliser notre service !</p>
         <p style="margin: 10px 0;">⚠️ Ce message est généré automatiquement, merci de ne pas y répondre.</p>
       </footer>
@@ -208,6 +208,12 @@ ${data.entries.map((entry, index) => `
         hour: "2-digit",
         minute: "2-digit"
     })}
+
+${entry.isCode ? `<div style="text-align:center; margin: 16px 0;"><span style="font-size:2em; font-weight:bold; letter-spacing:0.1em;">${entry.returnedConfirmationCode}</span></div>` : ''}
+
+<div style="text-align:center; margin: 12px 0;">
+  <a href="${process.env.NEXTAUTH_URL}?sso=1&resId=${entry.id}&tab=bookings" style="display:inline-block; background:#2563eb; color:#fff; font-weight:bold; padding:10px 24px; border-radius:6px; text-decoration:none; font-size:1.1em;">Voir ma réservation</a>
+</div>
 
 `).join('\n')}
 

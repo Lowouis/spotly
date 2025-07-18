@@ -32,6 +32,13 @@ function LoginContent() {
         ssoLogin
     } = useSSO({ssoParam, status});
 
+    useEffect(() => {
+        if (ssoParam === "1" && kerberosConfigExists) {
+            handleSSOClick();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ssoParam, kerberosConfigExists]);
+
     const handleSSOClick = async () => {
         try {
             const ticket = await checkTicket();
@@ -73,7 +80,7 @@ function LoginContent() {
             <ConnectionModal />
             <Button
                 onPress={handleSSOClick}
-                color="warning"
+                color="secondary"
                 className="mx-auto m-2 w-[400px]"
                 size="lg"
                 radius="sm"

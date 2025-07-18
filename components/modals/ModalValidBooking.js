@@ -146,10 +146,12 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 user: data[0].user.name + " " + data[0].user.surname,
                                 resource: data[0].resource.name,
                                 entries: data.map(entry => ({
+                                    id: entry.id,
                                     startDate: entry.startDate,
                                     endDate: entry.endDate,
-                                    returnedConfirmationCode: entry.returnedConfirmationCode
-                                }))
+                                    returnedConfirmationCode: entry.returnedConfirmationCode,
+                                    isCode: lastestPickable(entry) !== "FLUENT" && lastestPickable(entry) !== "LOW_TRUST"
+                                })),
                             }
                     });
                 }

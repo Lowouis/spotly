@@ -20,6 +20,7 @@ import {IoEarthOutline} from "react-icons/io5";
 import {BiCategory} from "react-icons/bi";
 import {CiCalendarDate} from "react-icons/ci";
 import {AnimatePresence, motion} from "framer-motion";
+import {useSearchParams} from "next/navigation";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.object().required('Vous devez choisir un site'),
@@ -36,12 +37,20 @@ const schemaFirstPart = yup.object().shape({
 const ReservationSearch = () => {
     const { data: session  } = useSession();
     const queryClient = useQueryClient();
-    const [searchMode, setSearchMode] = useState("search");
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get("tab");
+    const [searchMode, setSearchMode] = useState(tabParam || "search");
     const [data, setData] = useState(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isRecurrent, setIsRecurrent] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const isMobile = useMediaQuery({query: '(max-width: 768px)'}); // Détecte les écrans de moins de 768px
+
+    useEffect(() => {
+        if (tabParam && tabParam !== searchMode) {
+            setSearchMode(tabParam);
+        }
+    }, [tabParam]);
 
     const methods = useForm({
         resolver: yupResolver(schemaFirstPart),

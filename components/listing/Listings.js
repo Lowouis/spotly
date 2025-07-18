@@ -3,8 +3,9 @@ import ModalCancelGroup from "@/components/modals/ModalCancelGroup";
 import ModalSystemBooking from "@/components/modals/ModalSystemBooking";
 import {formatDuration} from "@/global";
 import {Alert, Button, Tooltip} from "@heroui/react";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {TrashIcon} from "@heroicons/react/24/outline";
+import {useSearchParams} from "next/navigation";
 
 
 const STATUS_CONFIG = {
@@ -103,7 +104,7 @@ const StatusIndicator = ({status}) => {
 };
 
 // Composant pour un groupe de réservations récurrentes
-const RecurringGroup = ({entries, handleRefresh, setUserAlert, currentTab = "all"}) => {
+const RecurringGroup = ({entries, handleRefresh, setUserAlert, currentTab = "all", autoOpenId}) => {
     const [isOpen, setIsOpen] = useState(true);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
@@ -216,6 +217,7 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, currentTab = "all
                                     setUserAlert={setUserAlert}
                                     isGrouped={true}
                                     isLast={index === sortedEntries.length - 1}
+                                    autoOpenModal={autoOpenId === entry.id}
                                 />
                             ))}
                         </div>
@@ -265,8 +267,15 @@ const getStatusText = (entry) => {
     }
 }
 
-const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLast = false}) => {
+const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLast = false, autoOpenModal}) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (autoOpenModal) {
+            setIsModalOpen(true);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoOpenModal]);
 
     if (!entry) return null;
 
@@ -340,6 +349,7 @@ const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLas
             </div>
         );
     };
+
 
     return (
         <div className={`w-full flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 
@@ -427,6 +437,20 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
     });
 
     const [selectedTab, setSelectedTab] = useState("all");
+    const searchParams = useSearchParams();
+    const resIdParam = searchParams.get("resId");
+    const [autoOpenId, setAutoOpenId] = useState(null);
+
+    useEffect(() => {
+        if (resIdParam && entries && entries.length > 0) {
+            const found = entries.some(e => e.id === parseInt(resIdParam));
+            if (found) {
+                setAutoOpenId(parseInt(resIdParam));
+            } else {
+                setAutoOpenId(null);
+            }
+        }
+    }, [resIdParam, entries]);
 
 
     const getSortedEntries = () => {
@@ -466,6 +490,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
                             entry={entry}
                             handleRefresh={handleRefresh}
                             setUserAlert={setUserAlert}
+                            autoOpenModal={autoOpenId === entry.id}
                         />
                     ))}
 
@@ -479,6 +504,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
                                     handleRefresh={handleRefresh}
                                     setUserAlert={setUserAlert}
                                     currentTab={selectedTab}
+                                    autoOpenId={autoOpenId}
                                 />
                             ))}
                         </div>
@@ -526,6 +552,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
             indicator: <div className="w-2 h-2 rounded-full bg-red-500 ml-2"/>
         }
     ];
+
 
     return (
         <div className="mx-auto w-[90%] max-w-[1089px]">

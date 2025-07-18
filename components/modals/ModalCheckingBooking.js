@@ -7,8 +7,7 @@ import {
     ModalFooter,
     ModalHeader,
     Spinner,
-    Tooltip,
-    useDisclosure
+    Tooltip
 } from "@heroui/react";
 import {
     ArrowLeftIcon,
@@ -77,11 +76,11 @@ const CountdownTimer = ({targetDate, textBefore = ""}) => {
     );
 };
 
-export default function ModalCheckingBooking({entry, adminMode = false, handleRefresh}) {
+export default function ModalCheckingBooking({entry, adminMode = false, handleRefresh, isOpen, onOpenChange}) {
     const [otp, setOtp] = useState("");
     const [error, setError] = useState(null);
     const [resendTimer, setResendTimer] = useState(0);
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+    // SUPPRIMÉ : const {isOpen: modalIsOpen, onOpen: onModalOpen, onOpenChange: onModalOpenChange} = useDisclosure();
     const [modalStepper, setModalStepper] = useState("main");
     const { mutate: sendEmail } = useEmail();
 
@@ -354,7 +353,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                                 color="default"
                                 isIconOnly
                                 radius="sm"
-                                onPress={onOpen}
+                                onPress={onOpenChange}
                             >
                                 <ChevronRightIcon
                                     className="font-bold"
@@ -371,7 +370,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
                             size="lg"
                             color="default"
                             variant={adminMode ? "ghost" : "flat"}
-                            onPress={onOpen}
+                            onPress={onOpenChange}
                         >
                             <span className="flex justify-center items-center">
                                 <ChevronRightIcon

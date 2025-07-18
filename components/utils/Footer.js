@@ -28,7 +28,7 @@ export default function Footer(){
                         className="flex flex-row justify-center items-center space-x-1 transition-all">
                         <a
                             className="hover:cursor-pointer"
-                            href="https://www.youtube.com/channel/UCjtaWAPNoNn1r_O3H73yQUg"
+                            href="https://www.youtube.com/@ServiceSpotly"
                             target="_blank"
                         >
                             Youtube
