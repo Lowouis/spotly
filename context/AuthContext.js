@@ -10,7 +10,8 @@ export const AuthProvider = ({children}) => {
 
     useEffect(() => {
         if (status === "unauthenticated") {
-            router.push("/login");
+            const params = window.location.search;
+            router.push("/login" + params);
         }
     }, [status, router]);
 

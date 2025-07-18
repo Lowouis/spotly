@@ -86,7 +86,7 @@ export function RegisterModal({}) {
         onSuccess: (data) => {
             setConnectionLoading(false);
             setCreditentials(creditentials.map(cred => ({...cred, value: ""})));
-            window.location.href = "/login";
+            window.location.href = "/login" + window.location.search;
             addToast({
                 title: "Succès",
                 description: data.message || "Votre compte a été créé avec succès",

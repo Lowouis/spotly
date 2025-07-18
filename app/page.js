@@ -12,7 +12,8 @@ export default function App() {
     const [loading, setLoading] = useState(true);
     useEffect(() => {
         if (status !== 'authenticated' && status !== 'loading') {
-            router.push('/login');
+            const params = window.location.search;
+            router.push('/login' + params);
         } else if(status === 'authenticated') {
             setLoading(false);
         }

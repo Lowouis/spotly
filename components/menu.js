@@ -47,9 +47,9 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
 
     useEffect(() => {
         if (status === "unauthenticated") {
-            // Récupère l'URL courante avec tous les paramètres
-            const currentPath = window.location.pathname + window.location.search;
-            router.push(`/login?callbackUrl=${encodeURIComponent(currentPath)}`);
+            // Récupère les paramètres de l'URL courante
+            const params = window.location.search;
+            router.push(`/login${params}`);
             addToast({
                 title: 'Session expirée',
                 message: 'Veuillez vous reconnecter',
