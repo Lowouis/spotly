@@ -34,9 +34,11 @@ function LoginContent() {
 
     useEffect(() => {
         if (ssoParam === "1" && kerberosConfigExists) {
-            handleSSOClick();
+            const timeout = setTimeout(() => {
+                handleSSOClick();
+            }, 600); // 200ms de délai pour fiabiliser l'auto-login SSO
+            return () => clearTimeout(timeout);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ssoParam, kerberosConfigExists]);
 
     const handleSSOClick = async () => {

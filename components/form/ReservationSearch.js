@@ -50,7 +50,7 @@ const ReservationSearch = () => {
         if (tabParam && tabParam !== searchMode) {
             setSearchMode(tabParam);
         }
-    }, [tabParam]);
+    }, [tabParam, searchMode]);
 
     const methods = useForm({
         resolver: yupResolver(schemaFirstPart),
