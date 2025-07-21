@@ -20,7 +20,7 @@ import {IoEarthOutline} from "react-icons/io5";
 import {BiCategory} from "react-icons/bi";
 import {CiCalendarDate} from "react-icons/ci";
 import {AnimatePresence, motion} from "framer-motion";
-import {useSearchParams} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 
 const schemaFirstPart = yup.object().shape({
     site: yup.object().required('Vous devez choisir un site'),
@@ -39,18 +39,45 @@ const ReservationSearch = () => {
     const queryClient = useQueryClient();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get("tab");
-    const [searchMode, setSearchMode] = useState(tabParam || "search");
+    const resIdParam = searchParams.get("resId");
+
+    const [searchMode, setSearchMode] = useState("search");
+    const [autoOpenResId, setAutoOpenResId] = useState(null);
+
+    // Effet centralisé pour gérer les paramètres d'URL
+    useEffect(() => {
+        const newSearchParams = new URLSearchParams(searchParams);
+        let urlHasChanged = false;
+
+        if (tabParam) {
+            setSearchMode(tabParam);
+            newSearchParams.delete('tab');
+            urlHasChanged = true;
+        }
+
+        if (resIdParam) {
+            setAutoOpenResId(parseInt(resIdParam));
+            newSearchParams.delete('resId');
+            urlHasChanged = true;
+        }
+
+        if (urlHasChanged) {
+            router.replace(`?${newSearchParams.toString()}`);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tabParam, resIdParam]);
+
+    const handleSearchMode = (current) => {
+        setSearchMode(current);
+        setAutoOpenResId(null); // Réinitialiser l'ID pour ne pas rouvrir le modal
+    };
+
     const [data, setData] = useState(null);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isRecurrent, setIsRecurrent] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const isMobile = useMediaQuery({query: '(max-width: 768px)'}); // Détecte les écrans de moins de 768px
-
-    useEffect(() => {
-        if (tabParam && tabParam !== searchMode) {
-            setSearchMode(tabParam);
-        }
-    }, [tabParam, searchMode]);
+    const router = useRouter();
 
     const methods = useForm({
         resolver: yupResolver(schemaFirstPart),
@@ -58,10 +85,6 @@ const ReservationSearch = () => {
     });
 
     const {watch, setValue, formState: {errors}} = methods;
-
-    const handleSearchMode = (current) => {
-        setSearchMode(current);
-    }
 
     const handleRefresh = ()=>{
         handleResetAllFilters();
@@ -679,7 +702,9 @@ const ReservationSearch = () => {
                             </div>
                         </div>
                     )}
-                    {searchMode === "bookings" && (<ReservationUserListing entries={userEntries} handleRefresh={handleRefresh} />)}
+                    {searchMode === "bookings" && (
+                        <ReservationUserListing entries={userEntries} handleRefresh={handleRefresh}
+                                                autoOpenResId={autoOpenResId}/>)}
                 </div>
             </div>
         </div>

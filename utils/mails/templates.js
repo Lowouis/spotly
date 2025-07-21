@@ -147,7 +147,7 @@ La ressource de votre réservation a été restitué avec succès.
     hour: "numeric",
     minute: "numeric"
     })}
-- **Retard** : ${formatDuration(new Date() - new Date(data.endDate))}
+${new Date() > new Date(data.endDate) ? `- **Retard** : ${formatDuration(new Date() - new Date(data.endDate))}` : ''}
 
 ### Nous vous remercions d'avoir utilisé Spotly.
 ---
@@ -177,9 +177,9 @@ Suite à votre demande, voici le code de réservation pour la ressource **${data
 - **Date de fin** : ${data.endDate}
 
 - **Code de réservation** : 
-<div style="text-align: center; font-size: 24px; font-weight: bold; margin: auto; padding: 5px; background-color: #f5f5f5; border-radius: 5px;">
+<span style="display: block; margin: 16px auto; text-align: center; font-size: 2.5em; font-weight: bold; letter-spacing: 0.1em;">
 ${data.key}
-</div>
+</span>
 ---
 
 Cordialement,  

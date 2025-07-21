@@ -13,7 +13,6 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
         onOpenChange: onOpenChangeCommentBeforeAction
     } = useDisclosure();
 
-
     return (
         <>
             <div className="flex flex-row justify-start space-x-2">
@@ -79,7 +78,6 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
             {actions.includes('view') && (
                 <ModalCheckingBooking entry={entry} adminMode={true} handleRefresh={handleRefresh}/>
             )}
-
             </div>
             </>
     );

@@ -5,7 +5,7 @@ import {formatDuration} from "@/global";
 import {Alert, Button, Tooltip} from "@heroui/react";
 import {useEffect, useState} from "react";
 import {TrashIcon} from "@heroicons/react/24/outline";
-import {useSearchParams} from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 
 
 const STATUS_CONFIG = {
@@ -269,10 +269,16 @@ const getStatusText = (entry) => {
 
 const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLast = false, autoOpenModal}) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
     useEffect(() => {
         if (autoOpenModal) {
             setIsModalOpen(true);
+            // Supprime le paramètre resId de l'URL en utilisant le routeur Next.js
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete('resId');
+            router.replace(`?${newSearchParams.toString()}`);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [autoOpenModal]);
@@ -429,7 +435,7 @@ const organizeEntriesByGroup = (entries) => {
     return grouped;
 };
 
-export default function ReservationUserListing({entries = [], handleRefresh}) {
+export default function ReservationUserListing({entries = [], handleRefresh, autoOpenResId}) {
     const [userAlert, setUserAlert] = useState({
         title: "",
         description: "",
@@ -437,20 +443,13 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
     });
 
     const [selectedTab, setSelectedTab] = useState("all");
-    const searchParams = useSearchParams();
-    const resIdParam = searchParams.get("resId");
-    const [autoOpenId, setAutoOpenId] = useState(null);
+    // Supprimer la lecture de resIdParam et l'état autoOpenId d'ici
+    // const searchParams = useSearchParams();
+    // const resIdParam = searchParams.get("resId");
+    // const [autoOpenId, setAutoOpenId] = useState(null);
 
-    useEffect(() => {
-        if (resIdParam && entries && entries.length > 0) {
-            const found = entries.some(e => e.id === parseInt(resIdParam));
-            if (found) {
-                setAutoOpenId(parseInt(resIdParam));
-            } else {
-                setAutoOpenId(null);
-            }
-        }
-    }, [resIdParam, entries]);
+    // L'effet qui utilisait resIdParam est maintenant inutile ici
+    // useEffect(() => { ... });
 
 
     const getSortedEntries = () => {
@@ -490,7 +489,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
                             entry={entry}
                             handleRefresh={handleRefresh}
                             setUserAlert={setUserAlert}
-                            autoOpenModal={autoOpenId === entry.id}
+                            autoOpenModal={autoOpenResId === entry.id}
                         />
                     ))}
 
@@ -504,7 +503,7 @@ export default function ReservationUserListing({entries = [], handleRefresh}) {
                                     handleRefresh={handleRefresh}
                                     setUserAlert={setUserAlert}
                                     currentTab={selectedTab}
-                                    autoOpenId={autoOpenId}
+                                    autoOpenId={autoOpenResId}
                                 />
                             ))}
                         </div>

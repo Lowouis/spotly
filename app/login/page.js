@@ -33,13 +33,23 @@ function LoginContent() {
     } = useSSO({ssoParam, status});
 
     useEffect(() => {
-        if (ssoParam === "1" && kerberosConfigExists) {
+        console.log(`[DEBUG SSO Trigger Check] ssoParam: ${ssoParam}, kerberosConfigExists: ${kerberosConfigExists}, status: ${status}`);
+        // On attend que la session soit bien vérifiée et non authentifiée
+        if (ssoParam === "1" && kerberosConfigExists && status === 'unauthenticated') {
+            // Supprime le paramètre sso de l'URL en utilisant le routeur Next.js
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.delete('sso');
+            const newUrl = `/login?${newSearchParams.toString()}`;
+            router.replace(newUrl);
+
             const timeout = setTimeout(() => {
+                console.log('[DEBUG SSO Trigger] Déclenchement de handleSSOClick.');
                 handleSSOClick();
-            }, 600); // 200ms de délai pour fiabiliser l'auto-login SSO
+            }, 600); // délai pour fiabiliser l'auto-login SSO
             return () => clearTimeout(timeout);
         }
-    }, [ssoParam, kerberosConfigExists]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ssoParam, kerberosConfigExists, status]);
 
     const handleSSOClick = async () => {
         try {

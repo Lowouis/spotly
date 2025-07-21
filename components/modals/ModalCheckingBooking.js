@@ -7,7 +7,8 @@ import {
     ModalFooter,
     ModalHeader,
     Spinner,
-    Tooltip
+    Tooltip,
+    useDisclosure
 } from "@heroui/react";
 import {
     ArrowLeftIcon,
@@ -76,7 +77,26 @@ const CountdownTimer = ({targetDate, textBefore = ""}) => {
     );
 };
 
-export default function ModalCheckingBooking({entry, adminMode = false, handleRefresh, isOpen, onOpenChange}) {
+export default function ModalCheckingBooking({
+                                                 entry,
+                                                 adminMode = false,
+                                                 handleRefresh,
+                                                 isOpen: controlledIsOpen,
+                                                 onOpenChange: controlledOnOpenChange,
+                                                 setUserAlert
+                                             }) {
+    const {
+        isOpen: uncontrolledIsOpen,
+        onOpen: onUncontrolledOpen,
+        onOpenChange: onUncontrolledOpenChange
+    } = useDisclosure();
+
+    const isControlled = controlledIsOpen !== undefined;
+
+    const isOpen = isControlled ? controlledIsOpen : uncontrolledIsOpen;
+    const onOpenChange = isControlled ? controlledOnOpenChange : onUncontrolledOpenChange;
+    const onOpen = isControlled ? () => onOpenChange(true) : onUncontrolledOpen;
+
     const [otp, setOtp] = useState("");
     const [error, setError] = useState(null);
     const [resendTimer, setResendTimer] = useState(0);
@@ -216,7 +236,7 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
             subject: "Confirmation de restitution - " + entry.resource.name,
             templateName: "reservationReturnedConfirmation",
             data : {
-                resource: entry.resource.name,
+                resource: entry.resource,
                 endDate: new Date(entry.endDate).toLocaleString("FR-fr", {
                     weekday: "long",
                     year: "numeric",
@@ -342,47 +362,23 @@ export default function ModalCheckingBooking({entry, adminMode = false, handleRe
 
     return (
         <>
-            {adminMode ?
-                (
-                    <div className="flex justify-center items-center ">
-                        <Tooltip content="Consulter" color="foreground" size={'sm'} showArrow>
-                            <Button
-                                className="font-medium underline underline-offset-4"
-                                size="sm"
-                                variant="flat"
-                                color="default"
-                                isIconOnly
-                                radius="sm"
-                                onPress={onOpenChange}
-                            >
-                                <ChevronRightIcon
-                                    className="font-bold"
-                                    width="18"
-                                    height="18"
-                                />
-                            </Button>
-                        </Tooltip>
-                    </div>
-                ) : (
-                    <Tooltip content={"Consulter"} color="foreground" showArrow>
-                        <Button
-                            isIconOnly={true}
-                            size="lg"
-                            color="default"
-                            variant={adminMode ? "ghost" : "flat"}
-                            onPress={onOpenChange}
-                        >
-                            <span className="flex justify-center items-center">
-                                <ChevronRightIcon
-                                    className="font-bold"
-                                    width="24"
-                                    height="24"
-                                />
-                            </span>
-                        </Button>
-                    </Tooltip>
-
-                )}
+            <Tooltip content="Consulter" color="foreground" size={adminMode ? 'sm' : undefined} showArrow>
+                <Button
+                    className={adminMode ? "font-medium underline underline-offset-4" : undefined}
+                    size={adminMode ? "sm" : "lg"}
+                    variant="flat"
+                    color="default"
+                    isIconOnly
+                    radius={adminMode ? "sm" : "lg"}
+                    onPress={onOpen}
+                >
+                    <ChevronRightIcon
+                        className="font-bold"
+                        width={adminMode ? "18" : "24"}
+                        height={adminMode ? "18" : "24"}
+                    />
+                </Button>
+            </Tooltip>
         <Modal
             isOpen={isOpen}
             onOpenChange={onOpenChange}
