@@ -3,7 +3,7 @@
 import {ConnectionModal} from "@/components/modals/connectionModal";
 import {useRouter, useSearchParams} from 'next/navigation';
 import {useSession} from 'next-auth/react';
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
@@ -18,6 +18,7 @@ function LoginContent() {
     const { status } = useSession();
     const ssoParam = searchParams.get('sso');
     const [autoSsoAttempted, setAutoSsoAttempted] = useState(false);
+    const ssoTimeoutRef = useRef(null);
 
     useEffect(() => {
         if(status === 'authenticated'){
@@ -45,14 +46,22 @@ function LoginContent() {
             const newUrl = `/login?${newSearchParams.toString()}`;
             router.replace(newUrl);
 
-            const timeout = setTimeout(() => {
+            ssoTimeoutRef.current = setTimeout(() => {
                 console.log('[DEBUG SSO Trigger] Déclenchement de handleSSOClick.');
                 handleSSOClick();
-            }, 600); // délai pour fiabiliser l'auto-login SSO
-            return () => clearTimeout(timeout);
+            }, 600);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ssoParam, kerberosConfigExists, status, autoSsoAttempted]);
+    }, [ssoParam, kerberosConfigExists, status]);
+
+    // Effet de nettoyage qui ne s'exécute qu'à la destruction du composant
+    useEffect(() => {
+        return () => {
+            if (ssoTimeoutRef.current) {
+                clearTimeout(ssoTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleSSOClick = async () => {
         try {
