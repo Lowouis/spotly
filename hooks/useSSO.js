@@ -119,7 +119,8 @@ export function useSSO({ssoParam, status}) {
                 callbackUrl: window.location.origin + window.location.pathname.replace('/login', '') + window.location.search
             });
             if (resSignIn && resSignIn.ok) {
-                window.location.href = `${basePath}/`;
+                // Utiliser l'URL de callback fournie par NextAuth
+                window.location.href = resSignIn.url;
             } else {
                 throw new Error(resSignIn?.error || 'Erreur NextAuth');
             }

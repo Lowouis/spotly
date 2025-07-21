@@ -35,16 +35,15 @@ export default function LoginTab() {
             username: creditentials[0].value,
             password: creditentials[1].value,
             callbackUrl: window.location.origin + window.location.pathname.replace('/login', '') + window.location.search
-        }).then((response) => {
-            if (response.status === 401) {
-                setWrongCredentials(true);
-                setConnectionLoading(false);
-            }
-            if (response.ok) {
-                router.push('/');
-            }
         });
 
+        if (result.ok) {
+            // Utiliser l'URL de callback fournie par NextAuth
+            router.push(result.url);
+        } else if (result.status === 401) {
+            setWrongCredentials(true);
+            setConnectionLoading(false);
+        }
     };
 
     const handleChange = (e, index) => {
