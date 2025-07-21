@@ -50,17 +50,26 @@ export default async function handler(req, res) {
                     userSearchBase: decrypt(ldapConfig.bindDn),
                     usernameAttribute: 'sAMAccountName',
                     username: login,
-                    attributes: ['mail', 'givenName', 'sn', 'sAMAccountName'],
+                    attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
                 });
             } catch (e) {
-                console.error('Callback Kerberos: LDAP user search failed:', e);
+                console.error('Callback Kerberos: La recherche LDAP a échoué. L\'utilisateur n\'a pas pu être créé avec les détails complets.', e);
+                return res.status(500).json({error: "Impossible de récupérer les détails de l'utilisateur depuis l'annuaire. L'utilisateur n'a pas été créé."});
             }
+
+
+            if (!ldapUser) {
+                console.error('Callback Kerberos: Aucun utilisateur trouvé dans l\'annuaire LDAP pour le login:', login);
+                return res.status(404).json({error: "Utilisateur non trouvé dans l'annuaire d'entreprise."});
+            }
+
+            console.log('[DEBUG] Utilisateur trouvé dans LDAP:', ldapUser);
             user = await prisma.user.create({
                 data: {
                     username: login,
-                    email: ldapUser && ldapUser.mail ? ldapUser.mail : `${login}@${emailDomain}`,
-                    name: ldapUser && ldapUser.givenName ? ldapUser.givenName : null,
-                    surname: ldapUser && ldapUser.sn ? ldapUser.sn : null,
+                    email: ldapUser.mail ? ldapUser.mail : `${login}@${emailDomain}`,
+                    name: ldapUser.givenName,
+                    surname: ldapUser.sn,
                     external: true,
                     password: null,
                 },
