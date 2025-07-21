@@ -3,7 +3,7 @@
 import {ConnectionModal} from "@/components/modals/connectionModal";
 import {useRouter, useSearchParams} from 'next/navigation';
 import {useSession} from 'next-auth/react';
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
@@ -17,6 +17,7 @@ function LoginContent() {
     const searchParams = useSearchParams();
     const { status } = useSession();
     const ssoParam = searchParams.get('sso');
+    const [autoSsoAttempted, setAutoSsoAttempted] = useState(false);
 
     useEffect(() => {
         if(status === 'authenticated'){
@@ -33,9 +34,11 @@ function LoginContent() {
     } = useSSO({ssoParam, status});
 
     useEffect(() => {
-        console.log(`[DEBUG SSO Trigger Check] ssoParam: ${ssoParam}, kerberosConfigExists: ${kerberosConfigExists}, status: ${status}`);
-        // On attend que la session soit bien vérifiée et non authentifiée
-        if (ssoParam === "1" && kerberosConfigExists && status === 'unauthenticated') {
+        console.log(`[DEBUG SSO Trigger Check] ssoParam: ${ssoParam}, kerberosConfigExists: ${kerberosConfigExists}, status: ${status}, autoSsoAttempted: ${autoSsoAttempted}`);
+        // On attend que la session soit bien vérifiée, non authentifiée, et qu'on n'ait pas déjà tenté le SSO
+        if (ssoParam === "1" && kerberosConfigExists && status === 'unauthenticated' && !autoSsoAttempted) {
+            setAutoSsoAttempted(true); // Verrouiller pour ne pas retenter
+
             // Supprime le paramètre sso de l'URL en utilisant le routeur Next.js
             const newSearchParams = new URLSearchParams(searchParams);
             newSearchParams.delete('sso');
@@ -49,7 +52,7 @@ function LoginContent() {
             return () => clearTimeout(timeout);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ssoParam, kerberosConfigExists, status]);
+    }, [ssoParam, kerberosConfigExists, status, autoSsoAttempted]);
 
     const handleSSOClick = async () => {
         try {
