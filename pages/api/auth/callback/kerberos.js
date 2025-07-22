@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
             if (!ldapResult.success || !ldapResult.user) {
                 console.error('Callback Kerberos: Aucun utilisateur trouvé dans l\'annuaire LDAP pour le login:', login);
-                return res.status(404).json({error: `Utilisateur non trouvé dans l'annuaire d'entreprise : ${login} : ${ldapResult || "Utilisateur ou mot de passe incorrect"}`});
+                return res.status(404).json({error: `Utilisateur non trouvé dans l'annuaire d'entreprise : ${login} : ${JSON.stringify(ldapResult) || "Utilisateur ou mot de passe incorrect"}`});
             }
 
             const ldapUser = ldapResult.user;
