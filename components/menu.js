@@ -367,7 +367,6 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                 backdrop="blur"
                 classNames={{
                     base: "bg-white dark:bg-neutral-900",
-                    header: "border-b border-neutral-200 dark:border-neutral-800",
                     body: "py-6",
                     footer: "border-t border-neutral-200 dark:border-neutral-800",
                     closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full p-3 text-xl"
@@ -422,8 +421,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                     />
                                 </div>
                             </ModalHeader>
-                            <ModalBody>
-                                {!session.user?.external && (
+                            {!session.user?.external && (
+                                <ModalBody>
                                     <Form className="w-full space-y-4" validationBehavior="native">
                                         <div className="flex flex-row justify-between items-end w-full gap-3">
                                             <Input
@@ -442,7 +441,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                                     errorMessage: "text-red-500 text-sm mt-1",
                                                 }}
                                             />
-                                            <Tooltip content="Changer l'email" showArrow placement="top-end">
+                                            <Tooltip content="Changer l'email" showArrow placement="top-end"
+                                                     color="primary">
                                                 <Button
                                                     color="primary"
                                                     variant="flat"
@@ -471,7 +471,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                                     errorMessage: "text-red-500 text-sm mt-1",
                                                 }}
                                             />
-                                            <Tooltip content="Changer le mot de passe" showArrow placement="top-end">
+                                            <Tooltip content="Changer le mot de passe" showArrow placement="top-end"
+                                                     color="primary">
                                                 <Button
                                                     color="primary"
                                                     variant="flat"
@@ -485,8 +486,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                             </Tooltip>
                                         </div>
                                     </Form>
-                                )}
-                            </ModalBody>
+                                </ModalBody>
+                            )}
                         </>
                     )}
                 </ModalContent>
