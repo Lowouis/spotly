@@ -51,7 +51,8 @@ export default async function handler(req, res) {
             };
 
             // Rechercher l'utilisateur dans LDAP
-            const ldapResult = await findLdapUser(decryptedConfig, login);
+            // Rechercher l'utilisateur dans LDAP avec le mode SSO activé
+            const ldapResult = await findLdapUser(decryptedConfig, login, false, null, true);
 
             if (!ldapResult.success || !ldapResult.user) {
                 console.error('Callback Kerberos: Aucun utilisateur trouvé dans l\'annuaire LDAP pour le login:', login);
