@@ -3,9 +3,9 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import {PrismaAdapter} from '@next-auth/prisma-adapter';
 import prisma from '@/prismaconf/init';
 import bycrypt from 'bcrypt';
-import {authenticate} from 'ldap-authentication';
 import nextConfig from '../../../next.config.mjs';
 import {decrypt} from '@/lib/security';
+import {findLdapUser} from '@/lib/ldap-utils';
 
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
 
@@ -62,69 +62,85 @@ const authConfig = {
                 password: {label: 'password', type: 'password'}
             },
             async authorize(credentials) {
+                if (!credentials?.username) {
+                    throw new Error("Nom d'utilisateur requis");
+                }
+
+                // Rechercher l'utilisateur dans la base de données
                 const user = await prisma.user.findUnique({
                     where: {
-                        username: credentials?.username
+                        username: credentials.username
                     }
-                }).catch((e) => {
-                });
+                }).catch(() => null);
 
-                if (!user || user.external === true) {
-                    try {
-                        const ldapConfig = await getActiveLdapConfig();
+                // Si l'utilisateur existe et n'est pas externe, vérifier le mot de passe local
+                if (user && !user.external) {
+                    if (!credentials.password) {
+                        throw new Error("Mot de passe requis");
+                    }
 
-                        const ldapUser = await authenticate({
-                            ldapOpts: {
-                                url: ldapConfig.serverUrl,
-                            },
-                            adminDn: ldapConfig.adminDn,
-                            adminPassword: ldapConfig.adminPassword,
-                            userPassword: credentials.password,
-                            userSearchBase: ldapConfig.bindDn,
-                            usernameAttribute: 'cn',
-                            username: credentials.username,
-                            attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
-                        }).catch(e => {
-                            throw new Error("LDAP user search failed / rejected : " + e);
+                    const isValidPassword = await bycrypt.compare(credentials.password, user.password);
+                    if (!isValidPassword) {
+                        throw new Error("Mot de passe invalide");
+                    }
+
+                    const userWithoutPassword = {...user};
+                    delete userWithoutPassword.password;
+                    return userWithoutPassword;
+                }
+
+                // Sinon, essayer l'authentification LDAP
+                try {
+                    if (!credentials.password) {
+                        throw new Error("Mot de passe requis pour l'authentification LDAP");
+                    }
+
+                    const ldapConfig = await getActiveLdapConfig();
+
+                    // Authentifier l'utilisateur avec LDAP
+                    const ldapResult = await findLdapUser(
+                        ldapConfig,
+                        credentials.username,
+                        true, // avec authentification par mot de passe
+                        credentials.password
+                    );
+
+                    if (!ldapResult.success || !ldapResult.user) {
+                        throw new Error("Échec de l'authentification LDAP: " + (ldapResult.error || "Utilisateur ou mot de passe incorrect"));
+                    }
+
+                    const ldapUser = ldapResult.user;
+
+                    // Si l'utilisateur n'existe pas dans la base de données, le créer
+                    if (!user) {
+                        const newUser = await prisma.user.create({
+                            data: {
+                                username: ldapUser.sAMAccountName,
+                                email: ldapUser.mail,
+                                name: ldapUser.givenName || '',
+                                surname: ldapUser.sn || '',
+                                external: true,
+                                password: null,
+                            }
                         });
-
-                        if (!user) {
-                            return await prisma.user.create({
-                                data: {
-                                    email: ldapUser.mail,
-                                    name: ldapUser.givenName,
-                                    surname: ldapUser.sn,
-                                    username: ldapUser.sAMAccountName,
-                                    external: true,
-                                    password: null,
-                                }
-                            });
-                        } else {
-                            return await prisma.user.update({
-                                where: {
-                                    id: user.id
-                                },
-                                data: {
-                                    email: ldapUser.mail,
-                                    username: ldapUser.sAMAccountName,
-                                    name: ldapUser.name,
-                                    surname: ldapUser.sn,
-                                }
-                            });
-                        }
-                    } catch (error) {
-                        throw new Error("Prisma user creation/update failed: " + error.message);
+                        return newUser;
                     }
+
+                    // Sinon, mettre à jour l'utilisateur existant
+                    const updatedUser = await prisma.user.update({
+                        where: {id: user.id},
+                        data: {
+                            email: ldapUser.mail,
+                            name: ldapUser.givenName || user.name,
+                            surname: ldapUser.sn || user.surname,
+                        }
+                    });
+
+                    return updatedUser;
+                } catch (error) {
+                    console.error("Erreur d'authentification LDAP:", error);
+                    throw new Error("Échec de l'authentification: " + error.message);
                 }
-
-                const isValidPassword = await bycrypt.compare(credentials.password, user.password);
-
-                if (!isValidPassword) {
-                    throw new Error("Invalid password");
-                }
-
-                delete user.password;
-                return user;
             }
         })
     ],

@@ -1,7 +1,7 @@
 import {validateKerberosTicket} from "@/lib/kerberos-auth";
 import prisma from "@/prismaconf/init";
 import {decrypt} from "@/lib/security";
-import {authenticate} from 'ldap-authentication';
+import {findLdapUser} from '@/lib/ldap-utils';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
@@ -23,6 +23,8 @@ export default async function handler(req, res) {
 
         // Extraire le login avant le @
         const login = validationResult.username.split('@')[0];
+
+        // Rechercher l'utilisateur dans la base de données
         let user = await prisma.user.findUnique({
             where: {username: login},
         });
@@ -34,42 +36,38 @@ export default async function handler(req, res) {
                 orderBy: {lastUpdated: 'desc'}
             });
 
-            if (!ldapConfig || !ldapConfig.emailDomain) {
-                console.error("Callback Kerberos: Configuration du domaine de messagerie manquante.");
-                return res.status(500).json({error: "La configuration du domaine de messagerie est manquante."});
-            }
-            const emailDomain = decrypt(ldapConfig.emailDomain);
-            let ldapUser = null;
-            try {
-                ldapUser = await authenticate({
-                    ldapOpts: {
-                        url: decrypt(ldapConfig.serverUrl),
-                    },
-                    adminDn: decrypt(ldapConfig.adminDn),
-                    adminPassword: decrypt(ldapConfig.adminPassword),
-                    userSearchBase: decrypt(ldapConfig.bindDn),
-                    usernameAttribute: 'sAMAccountName',
-                    username: login,
-                    attributes: ['dc', 'cn', 'givenName', 'sAMAccountName', 'mail', 'sn'],
-                });
-            } catch (e) {
-                console.error('Callback Kerberos: La recherche LDAP a échoué. L\'utilisateur n\'a pas pu être créé avec les détails complets.', e);
-                return res.status(500).json({error: "Impossible de récupérer les détails de l'utilisateur depuis l'annuaire. L'utilisateur n'a pas été créé."});
+            if (!ldapConfig) {
+                console.error("Callback Kerberos: Configuration LDAP manquante.");
+                return res.status(500).json({error: "La configuration LDAP est manquante."});
             }
 
+            // Préparer la configuration LDAP déchiffrée
+            const decryptedConfig = {
+                serverUrl: decrypt(ldapConfig.serverUrl),
+                bindDn: decrypt(ldapConfig.bindDn),
+                adminDn: decrypt(ldapConfig.adminDn),
+                adminPassword: decrypt(ldapConfig.adminPassword),
+                emailDomain: ldapConfig.emailDomain ? decrypt(ldapConfig.emailDomain) : null
+            };
 
-            if (!ldapUser) {
+            // Rechercher l'utilisateur dans LDAP
+            const ldapResult = await findLdapUser(decryptedConfig, login);
+
+            if (!ldapResult.success || !ldapResult.user) {
                 console.error('Callback Kerberos: Aucun utilisateur trouvé dans l\'annuaire LDAP pour le login:', login);
                 return res.status(404).json({error: "Utilisateur non trouvé dans l'annuaire d'entreprise."});
             }
 
+            const ldapUser = ldapResult.user;
             console.log('[DEBUG] Utilisateur trouvé dans LDAP:', ldapUser);
+
+            // Créer l'utilisateur dans la base de données
             user = await prisma.user.create({
                 data: {
                     username: login,
-                    email: ldapUser.mail ? ldapUser.mail : `${login}@${emailDomain}`,
-                    name: ldapUser.givenName,
-                    surname: ldapUser.sn,
+                    email: ldapUser.mail || (decryptedConfig.emailDomain ? `${login}@${decryptedConfig.emailDomain}` : null),
+                    name: ldapUser.givenName || '',
+                    surname: ldapUser.sn || '',
                     external: true,
                     password: null,
                 },
@@ -82,4 +80,4 @@ export default async function handler(req, res) {
         console.error("Erreur majeure dans le callback Kerberos:", error);
         return res.status(500).json({error: "Erreur interne du serveur"});
     }
-} 
+}
