@@ -560,19 +560,49 @@ export default function ModalCheckingBooking({
                                                                 base: "gap-3"
                                                             }}
                                                         />
-                                                        <Button
-                                                            isIconOnly
-                                                            size="lg"
-                                                            color="primary"
-                                                            variant="flat"
-                                                            onPress={handleUpdateEntity}
-                                                            isDisabled={otp.length !== 6}
-                                                        >
-                                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                                                 stroke="currentColor" strokeWidth="2">
-                                                                <path d="M20 6L9 17L4 12"/>
-                                                            </svg>
-                                                        </Button>
+                                                        {otp.length === 6 ? (
+                                                            <Button
+                                                                isIconOnly
+                                                                size="lg"
+                                                                color="primary"
+                                                                variant="flat"
+                                                                onPress={handleUpdateEntity}
+                                                            >
+                                                                <svg width="24" height="24" viewBox="0 0 24 24"
+                                                                     fill="none"
+                                                                     stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M20 6L9 17L4 12"/>
+                                                                </svg>
+                                                            </Button>
+                                                        ) : (
+                                                            <Button
+                                                                isIconOnly
+                                                                size="lg"
+                                                                color="primary"
+                                                                variant="flat"
+                                                                onPress={async () => {
+                                                                    try {
+                                                                        const text = await navigator.clipboard.readText();
+                                                                        // Si le texte collé contient uniquement des chiffres et a une longueur de 6 ou moins
+                                                                        if (/^\d+$/.test(text) && text.length <= 6) {
+                                                                            setOtp(text.substring(0, 6));
+                                                                        }
+                                                                    } catch (err) {
+                                                                        console.error('Impossible d\'accéder au presse-papiers:', err);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <svg width="24" height="24" viewBox="0 0 24 24"
+                                                                     fill="none"
+                                                                     stroke="currentColor" strokeWidth="2">
+                                                                    <rect x="9" y="9" width="13" height="13" rx="2"
+                                                                          ry="2"></rect>
+                                                                    <path
+                                                                        d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                                </svg>
+                                                            </Button>
+                                                        )}
+                                                        
                                                     </div>
 
                                                     <div className="flex flex-col items-center space-y-2 w-full">
