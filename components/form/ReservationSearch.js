@@ -4,7 +4,7 @@ import * as yup from 'yup';
 import {parseDate} from '@internationalized/date';
 import SelectField from './SelectField';
 import React, {useEffect, useState} from "react";
-import {Alert, Form, Modal, ModalBody, ModalContent, ModalHeader, Switch, Tooltip} from "@heroui/react";
+import {Form, Modal, ModalBody, ModalContent, ModalHeader, Switch, Tooltip} from "@heroui/react";
 import {AlternativeMenu} from "@/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@heroui/button";
@@ -334,23 +334,6 @@ const ReservationSearch = () => {
             />
             <div className="flex flex-col md:w-full h-full">
                 <div className="flex flex-col justify-center items-center h-full">
-                    {searchMode === "search" && (
-                        <div className="flex flex-col justify-center items-center w-2/3 ">
-                            <div className="flex flex-col justify-center items-center w-full ">
-                                <Alert
-                                    color="danger"
-                                    variant="solid"
-                                    title="Retard"
-                                    description={
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-bold">Vous avez des réservations en retard.</span>
-                                        <span>Merci de vous rentre dans la section réservations pour restitué les ressources manquante pour pouvoir effectuer une nouvelle réservation.</span>
-                                    </div>
-                                    }
-                                />
-                            </div>
-                        </div>
-                    )}
                     {searchMode === "search" && (
                         <div
                             className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full"
