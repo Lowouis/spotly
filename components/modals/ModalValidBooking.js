@@ -80,12 +80,21 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
 
             if (firstEntry.moderate === "WAITING") {
                 const owner = whoIsOwner(firstEntry);
+                const entriesArray = Array.isArray(data) ? data : [data];
+                const userFullName = `${firstEntry.user.name} ${firstEntry.user.surname}`;
+                // Email to requester (user)
                 sendEmail({
                     to: firstEntry.user.email,
                     subject: "Demande de réservation Spotly - " + firstEntry.resource.name,
-                    templateName: "groupReservationWaiting",
-                    data: {
-                            name: session.user.surname,
+                    templateName: entriesArray.length > 1 ? "groupReservationWaiting" : "reservationRequestUser",
+                    data: entriesArray.length > 1
+                        ? {
+                            user: userFullName,
+                            resource: firstEntry.resource.name,
+                            entries: entriesArray,
+                        }
+                        : {
+                            name: userFullName,
                             resource: firstEntry.resource.name,
                             domain: firstEntry.resource.domains.name,
                             startDate: new Date(firstEntry.startDate).toLocaleString("FR-fr", {
@@ -107,14 +116,21 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                             owner: owner.name + " " + owner.surname,
                         }
                 });
+
+                // Email to owner
                 sendEmail({
                     to: owner.email,
                     subject: "Nouvelle demande de réservation Spotly - " + firstEntry.resource.name,
-                    data: {
-                            user: firstEntry.user.surname,
+                    templateName: entriesArray.length > 1 ? "groupReservationRequestOwner" : "reservationRequestOwner",
+                    data: entriesArray.length > 1
+                        ? {
+                            user: userFullName,
                             resource: firstEntry.resource.name,
-                            entries: entry,
-                            owner : owner.name + " " + owner.surname,
+                            entries: entriesArray,
+                        }
+                        : {
+                            user: userFullName,
+                            resource: firstEntry.resource.name,
                             domain: firstEntry.resource.domains.name,
                             startDate: new Date(firstEntry.startDate).toLocaleString("FR-fr", {
                                 weekday: "long",
@@ -133,7 +149,6 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 minute: "numeric"
                             }),
                         },
-                    templateName: "groupReservationRequestOwner"
                 });
             } else {
                 // Pour les réservations non modérées, on envoie un seul email pour le groupe

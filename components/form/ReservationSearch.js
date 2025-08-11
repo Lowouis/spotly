@@ -171,8 +171,24 @@ const ReservationSearch = () => {
     const [resetKeytResetKey] = useState(0);
 
     useEffect(() => {
-        if (userEntries) {
-            setDelayed(userEntries.filter((entry) => entry.moderate === "USED" && new Date(entry.endDate) < new Date()).length);
+        if (!userEntries) {
+            setDelayed(0);
+            return;
+        }
+
+        const numDelayed = userEntries.filter(
+            (entry) => entry.moderate === "USED" && new Date(entry.endDate) < new Date()
+        ).length;
+
+        setDelayed(numDelayed);
+
+        if (numDelayed > 0) {
+            addToast({
+                title: 'Retard',
+                description: `Vous avez ${numDelayed} réservation${numDelayed > 1 ? 's' : ''} en retard.`,
+                color: 'warning',
+                duration: 5000,
+            });
         }
     }, [userEntries]);
 
@@ -318,7 +334,7 @@ const ReservationSearch = () => {
             />
             <div className="flex flex-col md:w-full h-full">
                 <div className="flex flex-col justify-center items-center h-full">
-                    {searchMode === "search" && delayed !== 0 &&  (
+                    {searchMode === "search" && (
                         <div className="flex flex-col justify-center items-center w-2/3 ">
                             <div className="flex flex-col justify-center items-center w-full ">
                                 <Alert
@@ -335,7 +351,7 @@ const ReservationSearch = () => {
                             </div>
                         </div>
                     )}
-                    {searchMode === "search" && delayed === 0 &&  (
+                    {searchMode === "search" && (
                         <div
                             className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full"
                             role="search">
@@ -684,7 +700,7 @@ const ReservationSearch = () => {
                             </div>
                         </div>
                     )}
-                    {searchMode === "search" && delayed === 0 &&  (
+                    {searchMode === "search" && (
                         <div
                             className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
