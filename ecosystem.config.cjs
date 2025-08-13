@@ -12,9 +12,10 @@ module.exports = {
         },
         {
             name: 'spotly-cron',
-            script: './utils/cron.mjs',
+            script: './scripts/cron.mjs',
             env: {
-                NODE_ENV: 'production'
+                NODE_ENV: 'production',
+                RUN_AT_START: '1'
             },
             autorestart: true,
             watch: false
