@@ -17,7 +17,8 @@ import {ArrowLeftCircleIcon, ArrowRightCircleIcon, ClockIcon} from "@heroicons/r
 import {useQuery} from "@tanstack/react-query";
 import {lastestPickable} from "@/global";
 import {addToast} from "@heroui/toast";
-import {checkIPAuthorization, fetchIP} from '@/utils/api';
+import {fetchIP} from '@/utils/api';
+import {useEntryActions} from "@/hooks/useEntryActions";
 
 export default function LuckyEntryTab({setSelected}) {
     const [ifl, setIfl] = useState({"username": "", "otp": ""});
@@ -31,57 +32,24 @@ export default function LuckyEntryTab({setSelected}) {
 
     const [entry, setEntry] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-
     const [isActionLoading, setIsActionLoading] = useState(false);
+
+    // Use the centralized hook
+    const {
+        hasBlockingPrevious,
+        isAbleToPickUp,
+        handlePickUp,
+        handleReturn
+    } = useEntryActions(entry, clientIP);
 
     const handleResourceAction = async () => {
         setIsActionLoading(true);
         try {
-            if (lastestPickable(entry)?.name === "HIGH_AUTH") {
-                const isAuthorized = await checkIPAuthorization(clientIP);
-                if (!isAuthorized) {
-                    return;
-                }
+            if (entry.moderate === "ACCEPTED") {
+                await handlePickUp(onOpenChange, () => fetchEntry());
+            } else if (entry.moderate === "USED") {
+                await handleReturn(onOpenChange, () => fetchEntry());
             }
-
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/${entry.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    moderate: entry.moderate === "ACCEPTED" ? "USED" : "ENDED",
-                    returned: entry.moderate === "USED"
-                })
-            });
-
-            if (!response.ok) {
-                addToast({
-                    title: "Erreur",
-                    description: "Une erreur est survenue lors de l'action",
-                    timeout: 5000,
-                    color: "danger"
-                })
-                throw new Error('Failed to update entry');
-            }
-
-            addToast({
-                title: entry.moderate === "ACCEPTED" ?
-                    "La ressource a bien été récupérée" :
-                    "La ressource a bien été retournée",
-                description: "Vous pouvez la retrouver dans la section 'Mes réservations'",
-                timeout: 5000,
-                color: "success"
-            });
-
-            await fetchEntry();
-        } catch (error) {
-            addToast({
-                title: "Erreur",
-                description: "Une erreur est survenue lors de l'action",
-                timeout: 5000,
-                color: "danger"
-            });
         } finally {
             setIsActionLoading(false);
         }
@@ -119,47 +87,6 @@ export default function LuckyEntryTab({setSelected}) {
             setIsLoading(false);
         }
     };
-
-
-    {
-        entry && entry.moderate === "ACCEPTED" && (
-            lastestPickable(entry)?.name === "HIGH_AUTH" ? (
-                <div className="space-y-4">
-                    <Button
-                        color="default"
-                        className="w-full font-medium"
-                        size="lg"
-                        onPress={async () => {
-                            if (await checkIPAuthorization(clientIP)) {
-                                fetchEntry();
-                            } else {
-                                addToast({
-                                    title: "Accès refusé",
-                                    description: "Cette action n&apos;est pas autorisée depuis cet appareil.",
-                                    timeout: 5000,
-                                    color: "danger"
-                                });
-                            }
-                        }}
-                    >
-                        Récupérer la ressource
-                    </Button>
-                    <p className="text-xs text-neutral-500 text-center">
-                        Cette action nécessite une autorisation spéciale de l&apos;appareil
-                    </p>
-                </div>
-            ) : (
-                <Button
-                    color="primary"
-                    className="w-full font-medium"
-                    size="lg"
-                    onPress={() => fetchEntry()}
-                >
-                    Récupérer la ressource
-                </Button>
-            )
-        )
-    }
 
     return (
         <>
@@ -213,7 +140,7 @@ export default function LuckyEntryTab({setSelected}) {
                 <div className="w-full border-t border-neutral-200 dark:border-neutral-700 pt-4">
                     <div className="flex justify-center items-center space-x-2">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Je n&apos;ai pas de réservation
+                    Je n'ai pas de réservation
                 </span>
                         <Tooltip
                             color="foreground"
@@ -321,9 +248,10 @@ export default function LuckyEntryTab({setSelected}) {
                                                 size="lg"
                                                 isLoading={isActionLoading}
                                                 onPress={handleResourceAction}
+                                                isDisabled={!isAbleToPickUp()}
                                                 startContent={<ArrowRightCircleIcon className="w-5 h-5"/>}
                                             >
-                                                Récupérer la ressource
+                                                {isAbleToPickUp() ? 'Récupérer la ressource' : (hasBlockingPrevious ? 'Ressource non restituée' : 'Indisponible pour le moment')}
                                             </Button>
                                         )}
 

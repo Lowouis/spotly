@@ -23,6 +23,7 @@ import {useMutation, useQuery} from "@tanstack/react-query";
 import {useEmail} from "@/context/EmailContext";
 import {addToast} from "@heroui/toast";
 import EntryComments from "@/components/comments/EntryComments";
+import {useEntryActions} from "@/hooks/useEntryActions";
 
 
 export const formatDate = (date) => {
@@ -145,22 +146,15 @@ export default function ModalCheckingBooking({
     const { mutate: sendEmail } = useEmail();
     const [warnSent, setWarnSent] = useState(false);
 
-    const {data: timeScheduleOptions, isLoading: isLoadingtimeScheduleOptions} = useQuery({
-        queryKey: ['timeScheduleOptions'],
-        queryFn: async () => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/timeScheduleOptions`);
-            if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des options de planification');
-            }
-            const data = await response.json();
-            return {
-                onPickup: data.onPickup,
-                onReturn: data.onReturn,
-                ajustedStartDate: new Date(new Date(entry.startDate).getTime() - (data.onPickup || 0) * 60000).toISOString(),
-                ajustedEndDate: new Date(new Date(entry.endDate).getTime() + (data.onReturn || 0) * 60000).toISOString(),
-            };
-        }
-    });
+    // Use the centralized hook
+    const {
+        timeScheduleOptions,
+        isLoadingTSO,
+        hasBlockingPrevious,
+        isAbleToPickUp,
+        handlePickUp: hookHandlePickUp,
+        handleReturn: hookHandleReturn
+    } = useEntryActions(entry, null); // No clientIP needed for authenticated users
 
     // Reuse du comptage via hook partagé (évite la duplication de logique)
     const {count: waitlistCount, enabled: waitEnabled} = useWaitlistCount(entry);
@@ -187,7 +181,6 @@ export default function ModalCheckingBooking({
             return candidates[0];
         }
     });
-    const hasBlockingPrevious = new Date(entry.startDate) <= new Date() && entry?.resource?.status === 'UNAVAILABLE' && !!previousNotReturned;
 
     useEffect(() => {
         if (warnSent) return;
@@ -216,8 +209,7 @@ export default function ModalCheckingBooking({
         if (whichPickable() === "DIGIT" || whichPickable() === "HIGH_AUTH" || whichPickable() === "LOW_AUTH") {
             setModalStepper("pickup")
         } else {
-            handlePickUpUpdate({entry});
-            onClose();
+            hookHandlePickUp(onClose, handleRefresh);
         }
         handleRefresh();
     }
@@ -229,7 +221,7 @@ export default function ModalCheckingBooking({
         if (whichPickable() === "DIGIT" || whichPickable() === "HIGH_AUTH" || whichPickable() === "LOW_AUTH") {
             setModalStepper("return")
         } else {
-            handleReturnUpdate({entry});
+            hookHandleReturn(null, handleRefresh);
         }
     }
     const whichPickable = () => {
@@ -243,7 +235,7 @@ export default function ModalCheckingBooking({
     }
 
     const validDatesToPickup = () => {
-        if (isLoadingtimeScheduleOptions || !timeScheduleOptions) {
+        if (isLoadingTSO || !timeScheduleOptions) {
             return false;
         }
         const nowIso = new Date().toISOString();
@@ -377,7 +369,7 @@ export default function ModalCheckingBooking({
             title: "Annulation de réservation",
             description : "Votre réservation à bien été "+(adminMode ? "supprimer" : "annuler")+" avec succès.", status: "success",
             timeout: 5000,
-            color : "success"
+            color: "success"
         });
     }
 
@@ -437,7 +429,7 @@ export default function ModalCheckingBooking({
 
     };
 
-    const isAbleToPickUp = () => {
+    const localIsAbleToPickUp = () => {
         const resourceAvailable = entry?.resource?.status === 'AVAILABLE';
         const noQueue = waitEnabled ? (waitlistCount === 0) : true;
         return (entry.moderate === "ACCEPTED")
@@ -511,7 +503,7 @@ export default function ModalCheckingBooking({
             <ModalContent>
                 {(onClose) => (
                     <>
-                        {isLoadingtimeScheduleOptions ? (
+                        {isLoadingTSO ? (
                             <ModalBody>
                                 <div className="flex justify-center items-center p-4">
                                     <Spinner size="lg"/>
@@ -793,7 +785,7 @@ export default function ModalCheckingBooking({
                                                                                 <span
                                                                                     className="text-neutral-600 dark:text-neutral-400">
                                                                                     {new Date(entry.startDate) > new Date()
-                                                                                        ? (isAbleToPickUp()
+                                                                                        ? (localIsAbleToPickUp()
                                                                                                 ? `Récupération possible dès maintenant`
                                                                                                 : `${formatDate(entry.startDate)}`
                                                                                         )
@@ -808,7 +800,7 @@ export default function ModalCheckingBooking({
                                                                             </div>
                                                                             {whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && (
                                                                                 <Button
-                                                                                    isDisabled={!isAbleToPickUp() || hasBlockingPrevious}
+                                                                                    isDisabled={!localIsAbleToPickUp() || hasBlockingPrevious}
                                                                                     size="lg"
                                                                                     className="text-neutral-600 dark:text-neutral-400"
                                                                                     variant="flat"
@@ -818,11 +810,11 @@ export default function ModalCheckingBooking({
                                                                                 >
                                                                                     {hasBlockingPrevious
                                                                                         ? "Ressource non restituée"
-                                                                                        : isAbleToPickUp()
+                                                                                        : localIsAbleToPickUp()
                                                                                             ? "Récupérer"
                                                                                             :
                                                                                             <WaitlistInfo entry={entry}
-                                                                                                          isAble={isAbleToPickUp()}/>}
+                                                                                                          isAble={localIsAbleToPickUp()}/>}
                                                                                 </Button>
                                                                             )}
                                                                         </div>
@@ -926,8 +918,7 @@ export default function ModalCheckingBooking({
                                             </Button>
                                         </Tooltip>
                                     )}
-                                    {entry.moderate !== "ENDED" || entry.moderate === "ACCEPTED" &&
-                                        <Button size={"lg"} color="default" onPress={onClose}>Modifier</Button>}
+
                                 </ModalFooter>
                             </>
                         )}
