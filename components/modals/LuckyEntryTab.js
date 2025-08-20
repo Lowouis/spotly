@@ -140,7 +140,7 @@ export default function LuckyEntryTab({setSelected}) {
                 <div className="w-full border-t border-neutral-200 dark:border-neutral-700 pt-4">
                     <div className="flex justify-center items-center space-x-2">
                 <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Je n'ai pas de réservation
+                    Je n&apos;ai pas de réservation
                 </span>
                         <Tooltip
                             color="foreground"
