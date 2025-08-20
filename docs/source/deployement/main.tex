@@ -1,0 +1,297 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{geometry}
+
+
+\geometry{margin=2.5cm}
+
+% Configuration des listings
+\lstset{
+    basicstyle=\footnotesize\ttfamily,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!50!black},
+    stringstyle=\color{orange},
+}
+
+\title{Documentation d'installation}
+\author{Spotly}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+Spotly est une application open source de gestion de réservation. Cette documentation détaille les étapes nécessaires pour installer, configurer et déployer Spotly sur un serveur Linux.
+
+\section{Prérequis}
+\subsection{Environnement système}
+\begin{itemize}
+    \item Serveur Linux (Ubuntu 20.04 ou supérieur recommandé)
+    \item Accès root ou sudo
+    \item Accès à un domaine Kerberos (facultatif, pour SSO)
+\end{itemize}
+
+\subsection{Composants nécessaires}
+\begin{itemize}
+    \item Node.js (v18.x recommandé)
+    \item npm ou yarn
+    \item Git
+    \item Prisma ORM
+    \item Base de données (MySQL, PostgreSQL, etc.)
+    \item Serveur LDAP/SSO (optionnel)
+    \item Serveur SMTP
+    \item PM2 pour la gestion des processus
+\end{itemize}
+
+\section{Installation de l'environnement}
+\subsection{Mise à jour du système}
+\begin{lstlisting}[language=bash]
+sudo apt update && sudo apt upgrade -y
+\end{lstlisting}
+
+\subsection{Installation de Node.js (via NodeSource)}
+\begin{lstlisting}[language=bash]
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v
+npm -v
+\end{lstlisting}
+
+\subsection{Installation de Git}
+\begin{lstlisting}[language=bash]
+sudo apt install git
+\end{lstlisting}
+
+\section{Clonage et installation de Spotly}
+\begin{lstlisting}[language=bash]
+git clone https://github.com/lowouis/spotly.git
+cd spotly
+npm install
+\end{lstlisting}
+
+\section{Configuration de l'application}
+\subsection{Fichier .env.local (exemple pour dev)}
+\begin{lstlisting}
+NODE_ENV="development"
+DATABASE_URL="mysql://root:password@localhost:3306/spotly"
+AUTH_SECRET="secret_key"
+LOGS_DIR="logs"
+\end{lstlisting}
+
+\subsection{Fichier .env (exemple production)}
+\textbf{Conseil:} Référez vous au fichier  \emph{.env.template} dans le dossier racine \texttt{/spotly}.
+\newline
+\begin{lstlisting}
+NODE_ENV="production"
+DATABASE_URL="mysql://intranetuser:motdepasse@127.0.0.1:3306/spotly"
+
+# Securite
+AUTH_SECRET="votre_cle_secrete_longue"
+LDAP_ENCRYPTION_KEY="valeur_secrete_production"
+
+# Deploiement sous un sous-chemin (ex: /spotly)
+NEXT_PUBLIC_BASE_PATH="/spotly"
+NEXT_PUBLIC_API_ENDPOINT="http://intranet:3000/spotly"
+NEXTAUTH_URL="http://intranet:3000/spotly"
+NEXT_PUBLIC_API_DOMAIN="intranet"
+\end{lstlisting}
+
+\section{Base de données et Prisma}
+\subsection{Création de la base de données}
+\begin{lstlisting}[language=bash]
+create database spotly;
+\end{lstlisting}
+
+\subsection{Synchronisation du schéma Prisma}
+\begin{lstlisting}[language=bash]
+npx prisma generate
+npx prisma db push
+\end{lstlisting}
+
+\section{Compilation et démarrage de l'application}
+\subsection{Environnement de développement}
+Pour lancer Spotly en mode développement, utilisez :
+\begin{lstlisting}[language=bash]
+npm run dev
+\end{lstlisting}
+
+\subsection{Environnement de production}
+Pour compiler et lancer Spotly en production :
+\begin{lstlisting}[language=bash]
+npm run build
+npm start
+\end{lstlisting}
+
+
+\section{Déploiement avec PM2}
+\begin{lstlisting}[language=bash]
+sudo npm install -g pm2
+pm2 start npm --name "spotly" -- start
+pm2 save
+pm2 startup
+\end{lstlisting}
+
+\section{Lancement du script cron}
+\begin{lstlisting}[language=bash]
+pm2 start scripts/cron.mjs --name spotly-cron
+pm2 logs spotly-cron
+\end{lstlisting}
+\newpage
+
+\section{Authentification SSO (Kerberos)}
+\subsection{SPN et Keytab}
+\begin{lstlisting}[language=bash]
+ktutil
+addent -password -p HTTP/spotly.example.local@EXAMPLE.LOCAL -k 1 -e aes256-cts-hmac-sha1-96
+wkt /etc/krb5.keytab
+quit
+\end{lstlisting}
+
+\subsection{Fichier krb5.conf}
+\begin{lstlisting}
+[libdefaults]
+  default_realm = EXAMPLE.LOCAL
+  dns_lookup_realm = false
+  dns_lookup_kdc = false
+  ticket_lifetime = 24h
+  forwardable = true
+  proxiable = true
+
+[realms]
+  EXAMPLE.LOCAL = {
+    kdc = kdc.example.local:88
+    admin_server = kdc.example.local:749
+    default_domain = example.local
+  }
+
+[domain_realm]
+  .example.local = EXAMPLE.LOCAL
+  example.local = EXAMPLE.LOCAL
+\end{lstlisting}
+
+\section{Configuration des navigateurs pour SSO}
+\subsection{Chrome}
+\begin{enumerate}
+    \item Aller sur \texttt{chrome://flags/}
+    \item Activer "Enable Negotiate Authentication"
+    \item Ajouter l'URL dans la liste autorisée
+\end{enumerate}
+
+\subsection{Firefox}
+\begin{enumerate}
+    \item Aller sur \texttt{about:config}
+    \item Modifier les clés \texttt{network.negotiate-auth.*}
+    \item Ajouter l'URL de l'application
+\end{enumerate}
+
+\newpage
+
+\section{Mettre à jour l'application}
+\label{sec:update}
+
+Cette procédure décrit la mise à jour de Spotly en production avec PM2 et Prisma.
+
+
+\subsection*{Étapes}
+\begin{enumerate}
+  \item Se connecter et se placer dans le dossier de l'application
+\begin{verbatim}
+ssh user@serveur
+cd /var/www/spotly
+\end{verbatim}
+
+  \item Sauvegarder l'environnement et la base
+\begin{verbatim}
+cp .env .env.backup.$(date +%F)
+# Exemple MySQL/MariaDB (adapter au SGBD utilisé)
+mysqldump --single-transaction --routines --triggers --events \
+  -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" \
+  > backup_$(date +%F).sql
+  
+\end{verbatim}
+
+  \item Récupérer les dernières modifications
+  (consulter les changeslogs de la version souhaité)
+\begin{verbatim}
+git fetch --all
+git checkout main
+git pull --ff-only
+\end{verbatim}
+
+  \item Installer les dépendances
+\begin{verbatim}
+npm ci
+\end{verbatim}
+
+  \item Appliquer le schéma Prisma
+\begin{verbatim}
+npx prisma generate
+npx prisma migrate deploy
+\end{verbatim}
+
+  \item Construire l'application
+\begin{verbatim}
+npm run build
+\end{verbatim}
+
+  \item Redémarrer avec PM2
+\begin{verbatim}
+pm2 start ecosystem.config.cjs --env production
+# ou, si pm2 est déjà lancé
+pm2 reload spotly
+pm2 save
+\end{verbatim}
+
+  \item Vérifier l'état
+\begin{verbatim}
+pm2 status
+tail -n 200 -f ~/.pm2/logs/spotly-out.log
+# Vérifier l'URL : https://votre-domaine/spotly
+\end{verbatim}
+\end{enumerate}
+
+\subsection*{Rollback (urgence)}
+\begin{enumerate}
+  \item Revenir au commit précédent ou à un tag
+\begin{verbatim}
+git log --oneline -n 5
+git checkout <commit_ou_tag_stable>
+npm ci && npm run build
+pm2 reload spotly
+\end{verbatim}
+  \item Si des migrations destructives ont été appliquées, restaurer la base à partir du dump
+\begin{verbatim}
+# Exemple MySQL/MariaDB (adapter au SGBD utilisé)
+mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < backup_YYYY-MM-DD.sql
+\end{verbatim}
+\end{enumerate}
+
+\subsection*{Notes}
+\begin{itemize}
+  \item En cas de modification des variables d'environnement, redémarrer PM2 après mise à jour du \texttt{.env}.
+  \item Pour les tâches planifiées, relancer le processus concerné si défini dans \texttt{ecosystem.config.cjs}.
+\end{itemize}
+
+\newpage
+
+\section{Support et contribution}
+\begin{itemize}
+    \item GitHub : \url{https://github.com/lowouis/spotly}
+        \item Youtube : \url{https://www.youtube.com/@ServiceSpotly}
+    \item Support : servicespotly@gmail.com
+
+\end{itemize}
+
+\end{document}
