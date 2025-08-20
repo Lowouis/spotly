@@ -77,6 +77,47 @@ const CountdownTimer = ({targetDate, textBefore = ""}) => {
     );
 };
 
+// Hook partagé: compte les réservations avant la nôtre entre maintenant et le début
+const useWaitlistCount = (entry) => {
+    const now = new Date();
+    const start = new Date(entry.startDate);
+    const enabled = now < start && !!entry.resource?.id;
+    const nowIso = now.toISOString();
+    const startIso = start.toISOString();
+
+    const {data, isLoading, isError} = useQuery({
+        queryKey: ['waitlist', entry.resource?.id, startIso],
+        enabled,
+        refetchInterval: 60000,
+        queryFn: async () => {
+            const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?resourceId=${entry.resource?.id}&startDate=${encodeURIComponent(nowIso)}&endDate=${encodeURIComponent(startIso)}`;
+            const res = await fetch(url, {credentials: 'include'});
+            if (!res.ok) throw new Error('Erreur de récupération des réservations');
+            const all = await res.json();
+            const relevant = (all || []).filter(e => ['ACCEPTED', 'USED', 'WAITING'].includes(e.moderate) && e.id !== entry.id);
+            return relevant.length;
+        }
+    });
+
+    return {count: data ?? 0, enabled, isLoading, isError};
+};
+
+// Composant liste d'attente: nombre de réservations entre maintenant et la récupération
+const WaitlistInfo = ({entry, isAble}) => {
+    console.log(isAble);
+    const {count, enabled, isLoading, isError} = useWaitlistCount(entry);
+    if (!enabled || isError) return null;
+    if (isLoading) return <span className="text-sm text-neutral-500">...</span>;
+    if (count === 0 && !isAble) {
+        return "Ressource non disponible";
+    }
+    return (
+        <div className="text-sm text-neutral-600 dark:text-neutral-400">
+            <span className="font-semibold">{count}</span> réservation{count > 1 ? 's' : ''} avant la vôtre
+        </div>
+    );
+};
+
 export default function ModalCheckingBooking({
                                                  entry,
                                                  adminMode = false,
@@ -100,9 +141,9 @@ export default function ModalCheckingBooking({
     const [otp, setOtp] = useState("");
     const [error, setError] = useState(null);
     const [resendTimer, setResendTimer] = useState(0);
-    // SUPPRIMÉ : const {isOpen: modalIsOpen, onOpen: onModalOpen, onOpenChange: onModalOpenChange} = useDisclosure();
     const [modalStepper, setModalStepper] = useState("main");
     const { mutate: sendEmail } = useEmail();
+    const [warnSent, setWarnSent] = useState(false);
 
     const {data: timeScheduleOptions, isLoading: isLoadingtimeScheduleOptions} = useQuery({
         queryKey: ['timeScheduleOptions'],
@@ -118,8 +159,54 @@ export default function ModalCheckingBooking({
                 ajustedStartDate: new Date(new Date(entry.startDate).getTime() - (data.onPickup || 0) * 60000).toISOString(),
                 ajustedEndDate: new Date(new Date(entry.endDate).getTime() + (data.onReturn || 0) * 60000).toISOString(),
             };
-        },
+        }
     });
+
+    // Reuse du comptage via hook partagé (évite la duplication de logique)
+    const {count: waitlistCount, enabled: waitEnabled} = useWaitlistCount(entry);
+
+    // Entrée précédente non restituée (si la ressource est indisponible à l'heure de départ)
+    const nowForPrev = new Date();
+    const startForPrev = new Date(entry.startDate);
+    const prevEnabled = nowForPrev >= startForPrev && !!entry.resource?.id;
+    const {data: previousNotReturned} = useQuery({
+        queryKey: ['prev-not-returned', entry.resource?.id, startForPrev.toISOString()],
+        enabled: prevEnabled,
+        refetchInterval: 60000,
+        queryFn: async () => {
+            const since = new Date(startForPrev.getTime() - 1000 * 60 * 60 * 24 * 30).toISOString(); // fenêtre 30j avant le début
+            const url = `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?resourceId=${entry.resource?.id}&startDate=${encodeURIComponent(since)}&endDate=${encodeURIComponent(startForPrev.toISOString())}`;
+            const res = await fetch(url, {credentials: 'include'});
+            if (!res.ok) throw new Error('Erreur récupération précédente');
+            const all = await res.json();
+            // Garder les entrées terminées avant le début de la réservation courante et non restituées, en excluant l'entrée courante
+            const candidates = (all || []).filter(e => new Date(e.endDate) < startForPrev && e.returned === false && e.id !== entry.id);
+            if (candidates.length === 0) return null;
+            // Prendre la plus récente
+            candidates.sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+            return candidates[0];
+        }
+    });
+    const hasBlockingPrevious = new Date(entry.startDate) <= new Date() && entry?.resource?.status === 'UNAVAILABLE' && !!previousNotReturned;
+
+    useEffect(() => {
+        if (warnSent) return;
+        if (!previousNotReturned) return;
+        if (new Date(previousNotReturned.endDate) >= new Date()) return;
+        sendEmail({
+            to: previousNotReturned.user.email,
+            subject: `Attention: Retard de restitution - ${entry.resource.name}`,
+            templateName: 'latePickupWarning',
+            data: {
+                offender: `${previousNotReturned.user.name} ${previousNotReturned.user.surname}`,
+                requester: `${entry.user.name} ${entry.user.surname}`,
+                resource: entry.resource.name,
+                endDate: previousNotReturned.endDate,
+            }
+        });
+        setWarnSent(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [previousNotReturned, warnSent]);
 
 
         
@@ -159,7 +246,10 @@ export default function ModalCheckingBooking({
         if (isLoadingtimeScheduleOptions || !timeScheduleOptions) {
             return false;
         }
-        return timeScheduleOptions.ajustedStartDate <= new Date().toISOString();
+        const nowIso = new Date().toISOString();
+        // Autoriser avant l'heure si pas de file d'attente et ressource disponible
+        const allowEarly = (entry?.resource?.status === 'AVAILABLE') && (!waitEnabled || waitlistCount === 0);
+        return allowEarly || (timeScheduleOptions.ajustedStartDate <= nowIso);
     }
 
     const entryAction = ()=> {
@@ -348,7 +438,13 @@ export default function ModalCheckingBooking({
     };
 
     const isAbleToPickUp = () => {
-        return (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && new Date(entry?.endDate) > new Date() && validDatesToPickup();
+        const resourceAvailable = entry?.resource?.status === 'AVAILABLE';
+        const noQueue = waitEnabled ? (waitlistCount === 0) : true;
+        return (entry.moderate === "ACCEPTED")
+            && new Date(entry?.endDate) > new Date()
+            && validDatesToPickup()
+            && resourceAvailable
+            && noQueue;
     }
 
     useEffect(() => {
@@ -441,6 +537,9 @@ export default function ModalCheckingBooking({
                                     )}
                                     {entry?.resource?.name}
                                 </ModalHeader>
+                                {previousNotReturned && new Date(previousNotReturned.endDate) < new Date() && (
+                                    <></>
+                                )}
                                 {modalStepper === "delete" && (
                                     <ModalBody>
                                         <div className="flex flex-col space-y-6">
@@ -650,12 +749,17 @@ export default function ModalCheckingBooking({
                                                             Confirmation
                                                         </h1>
                                                         <span>
-                                                            {entry.moderate !== "WAITING" && entry.moderate !== "REJECTED" ? "Accepté le " + formatDate(entry.lastUpdatedModerateStatus) : ""}
+                                                            {entry.moderate !== "WAITING" && entry.moderate !== "REJECTED"
+                                                                ? (
+                                                                    entry.resource?.moderate
+                                                                        ? `Accepté le ${formatDate(entry.lastUpdatedModerateStatus)}${entry.user ? `. ${entry.user.name} ${entry.user.surname}` : ''}`
+                                                                        : `Confirmé automatiquement`
+                                                                )
+                                                                : ''}
                                                         </span>
                                                         <span>
                                                             {entry.moderate === "WAITING" && "En attente de confirmation"}
                                                             {entry.moderate === "REJECTED" && "Refuser"}
-                                                            {handleOwnerReturn(entry) && ` par ${handleOwnerReturn(entry)}`}
                                                         </span>
                                                     </div>
                                                 }
@@ -671,45 +775,63 @@ export default function ModalCheckingBooking({
                                                         step={3}
                                                         content={
                                                             <div className="w-full space-y-2 ">
-                                                                <div className="flex items-center justify-between">
-                                                                    <h1 className="text-blue-900 dark:text-blue-300 text-lg">
-                                                                        <span>{entry.moderate === "USED" ? "En cours d'utilisation" : entry.moderate === "ACCEPTED" && new Date(entry?.endDate) < new Date() ? "Réservation expirée" : "Réservation"}</span>
-                                                                    </h1>
-                                                                </div>
+                                                                <h1 className="text-blue-900 dark:text-blue-300 text-lg">
+                                                                    <span>{entry.moderate === "USED" ? "En cours d'utilisation" : entry.moderate === "ACCEPTED" && new Date(entry?.endDate) < new Date() ? "Réservation expirée" : "Réservation"}</span>
+                                                                </h1>
+                                                                {entry.moderate === "USED" && (
+                                                                    <span
+                                                                        className="text-neutral-600 dark:text-neutral-400">
+                                                                        Récupéré le {formatDate(entry.updatedAt)}
+                                                                    </span>
+                                                                )}
 
-                                                                <div
-                                                                    className="flex flex-row justify-between items-center space-x-3">
-
-                                                                    <div className="flex flex-col gap-1">
-                                                                        <span
-                                                                            className="text-neutral-600 dark:text-neutral-400">
-                                                                            À partir du {formatDate(entry.startDate)}
-                                                                        </span>
-                                                                    </div>
-                                                                    {whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && new Date(entry?.startDate) < new Date() &&
-                                                                        <Button
-                                                                            isDisabled={!isAbleToPickUp()}
-                                                                            size="lg"
-                                                                            className="text-neutral-600 dark:text-neutral-400"
-                                                                            variant="flat"
-                                                                            onPress={() => handlePickUp(onClose)}
-                                                                            startContent={<HandRaisedIcon
-                                                                                className="w-5 h-5"/>}
-                                                                        >
-                                                                            {isAbleToPickUp() ? "Récupérer" :
-                                                                                <CountdownTimer
-                                                                                    targetDate={entry.startDate}
-                                                                                    textBefore={"dans :"}/>}
-                                                                        </Button>}
-                                                                </div>
-
-                                                                <CountdownTimer targetDate={entry.startDate}
-                                                                                textBefore={"dans :"}/>
-
-                                                                    
+                                                                {entry.moderate !== 'USED' && (
+                                                                    <>
+                                                                        <div
+                                                                            className="flex flex-row justify-between items-center space-x-3">
+                                                                            <div className="flex flex-col gap-1">
+                                                                                <span
+                                                                                    className="text-neutral-600 dark:text-neutral-400">
+                                                                                    {new Date(entry.startDate) > new Date()
+                                                                                        ? (isAbleToPickUp()
+                                                                                                ? `Récupération possible dès maintenant`
+                                                                                                : `${formatDate(entry.startDate)}`
+                                                                                        )
+                                                                                        : `Début le ${formatDate(entry.startDate)}`}
+                                                                                </span>
+                                                                                {new Date(entry.startDate) <= new Date() && entry?.resource?.status === 'UNAVAILABLE' && previousNotReturned && (
+                                                                                    <span
+                                                                                        className="text-sm text-orange-600 dark:text-orange-400">
+                                                                                        Emprunteur : {previousNotReturned.user?.name} {previousNotReturned.user?.surname}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            {whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && (
+                                                                                <Button
+                                                                                    isDisabled={!isAbleToPickUp() || hasBlockingPrevious}
+                                                                                    size="lg"
+                                                                                    className="text-neutral-600 dark:text-neutral-400"
+                                                                                    variant="flat"
+                                                                                    onPress={() => handlePickUp(onClose)}
+                                                                                    startContent={<HandRaisedIcon
+                                                                                        className="w-5 h-5"/>}
+                                                                                >
+                                                                                    {hasBlockingPrevious
+                                                                                        ? "Ressource non restituée"
+                                                                                        : isAbleToPickUp()
+                                                                                            ? "Récupérer"
+                                                                                            :
+                                                                                            <WaitlistInfo entry={entry}
+                                                                                                          isAble={isAbleToPickUp()}/>}
+                                                                                </Button>
+                                                                            )}
+                                                                        </div>
+                                                                    </>
+                                                                )}
+                                                                
                                                             </div>
                                                         }
-                                                        done={entry?.startDate <= new Date().toISOString() && entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
+                                                        done={entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
                                                         failed={entry.moderate === "REJECTED" || (new Date(entry.endDate) < new Date() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING"))}
                                                         adminMode={adminMode}
                                                     />
@@ -735,8 +857,7 @@ export default function ModalCheckingBooking({
                                                                             className="text-neutral-600 dark:text-neutral-400">
                                                                             {entry.returned
                                                                                 ? `Restitué le ${formatDate(entry?.updatedAt)}`
-                                                                                : `Le ${formatDate(entry?.endDate)}`
-                                                                            }
+                                                                                : `Le ${formatDate(entry?.endDate)}`}
                                                                         </span>
 
                                                                         {entry.moderate === "USED" && new Date(entry?.endDate) > new Date() && (

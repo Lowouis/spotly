@@ -336,7 +336,7 @@ const ReservationSearch = () => {
                 <div className="flex flex-col justify-center items-center h-full">
                     {searchMode === "search" && (
                         <div
-                            className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full"
+                            className="flex xl:w-11/12 sm:w-11/12 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full"
                             role="search">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
@@ -432,7 +432,7 @@ const ReservationSearch = () => {
                                     ) : (
                                         <FormProvider {...methods}>
                                             <Form onSubmit={methods.handleSubmit(onSubmit)}
-                                                  className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm mx-auto w-[90%] max-w-[1089px] p-4 shadow-lg rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50">
+                                                  className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm mx-auto w-[95%] max-w-[1180px] p-4 shadow-lg rounded-2xl border border-neutral-200/50 dark:border-neutral-700/50">
                                                 <div className="flex flex-row w-full">
                                                     <div className="flex flex-col order-1 w-full">
                                                         <div className="flex flex-col w-full">
@@ -498,10 +498,7 @@ const ReservationSearch = () => {
                                                                 </div>
                                                                 <div
                                                                     className="flex items-center gap-2 bg-neutral-50/50 dark:bg-neutral-800/20 px-3 py-2 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
-                                                                    <span
-                                                                        className="text-sm font-medium text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
-                                                                        Récurrent
-                                                                    </span>
+
                                                                     <Tooltip
                                                                         content={isRecurrentValid("hebdomadaire") ? "Cette option permet de faire plusieurs réservation de façon récurrente." : "Pour activer cette option, choisisez une période d'une semaine maximum."}
                                                                         color="foreground"
@@ -523,7 +520,9 @@ const ReservationSearch = () => {
                                                                                 wrapper: "bg-neutral-200/50 dark:bg-neutral-700/50",
                                                                                 thumb: "bg-white dark:bg-neutral-200"
                                                                             }}
-                                                                        />
+                                                                        >
+                                                                            Récurrent
+                                                                        </Switch>
                                                                     </Tooltip>
                                                                 </div>
                                                             </div>
@@ -685,7 +684,7 @@ const ReservationSearch = () => {
                     )}
                     {searchMode === "search" && (
                         <div
-                            className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
+                            className="flex xl:w-11/12 sm:w-11/12 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
                             <div className="h-full w-full space-y-5 p-2 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                     {availableResources && (

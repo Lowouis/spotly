@@ -32,6 +32,77 @@ const wrapInHtmlTemplate = (body, subject = "Spotly") => `
   </body>
 </html>
 `;
+
+// Sécurise les contenus texte
+const escapeHtml = (unsafe = '') => (
+    String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+);
+
+// Construit un module "Commentaires" stylé à insérer en fin d'email
+const buildCommentsModule = (data) => {
+    const hasSingleNotes = !!(data && (data.comment || data.adminNote));
+    const entryNotes = Array.isArray(data?.entries) ? data.entries.filter(e => e && (e.comment || e.adminNote)) : [];
+    const hasGroupNotes = entryNotes.length > 0;
+
+    if (!hasSingleNotes && !hasGroupNotes) return '';
+
+    const labelStyle = "margin:0 0 6px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;";
+    const chipStyle = "display:inline-block;padding:8px 12px;border-radius:8px;background:#f3f4f6;color:#111827;font-size:14px;line-height:1.4;";
+    const cardStyle = "padding:12px;border:1px solid #e5e7eb;border-radius:8px;background:#ffffff;margin:10px 0;";
+
+    let inner = '';
+
+    if (hasSingleNotes) {
+        if (data.comment) {
+            inner += `<div style="${cardStyle}">`
+                + `<p style="${labelStyle}">Commentaire de l'utilisateur</p>`
+                + `<div style="${chipStyle}">${escapeHtml(data.comment)}</div>`
+                + `</div>`;
+        }
+        if (data.adminNote) {
+            inner += `<div style="${cardStyle}">`
+                + `<p style="${labelStyle}">Note de l'administrateur</p>`
+                + `<div style="${chipStyle}">${escapeHtml(data.adminNote)}</div>`
+                + `</div>`;
+        }
+    }
+
+    if (hasGroupNotes) {
+        inner += entryNotes.map((entry, idx) => {
+            const blocks = [];
+            if (entry.comment) {
+                blocks.push(
+                    `<div style="${cardStyle}">`
+                    + `<p style="${labelStyle}">Réservation n°${idx + 1} — Commentaire utilisateur</p>`
+                    + `<div style="${chipStyle}">${escapeHtml(entry.comment)}</div>`
+                    + `</div>`
+                );
+            }
+            if (entry.adminNote) {
+                blocks.push(
+                    `<div style="${cardStyle}">`
+                    + `<p style="${labelStyle}">Réservation n°${idx + 1} — Note administrateur</p>`
+                    + `<div style="${chipStyle}">${escapeHtml(entry.adminNote)}</div>`
+                    + `</div>`
+                );
+            }
+            return blocks.join('');
+        }).join('');
+    }
+
+    return `
+      <section style="margin-top:24px;border-top:1px solid #e5e7eb;padding-top:16px;">
+        <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;">Commentaires</h3>
+        ${inner}
+      </section>
+    `;
+};
+
 const templates = {
     rejected: (data) => `
 # Refus de la demande de réservation
@@ -72,7 +143,6 @@ Nous vous confirmons que votre réservation pour la ressource **${data.resource}
 ### Détails de votre réservation :
 - **Date de début** : ${data.startDate}
 - **Date de fin**   : ${data.endDate}
-
 
 ---
 
@@ -156,14 +226,41 @@ Votre système de gestion des ressources.
     `, reservationDelayedAlert: (data) => `
 # Vous avez une réservation en retard 
 
-La ressource de votre réservation à été restitué avec succès. 
-Veuillez restitué dans les plus bref delais la ressource suivante : ${data.resource.name}
+Vous n'avez pas encore restitué la ressource réservée.
+Veuillez restituer dans les plus brefs délais la ressource suivante : **${data.resource.name}**
 
-Retard : ${formatDuration(new Date(data.endDate - new Date()))}
+Retard : ${formatDuration(new Date() - new Date(data.endDate))}
 
 ---
 Cordialement,  
 Votre système de gestion des ressources.
+    `,
+    latePickupWarning: (data) => `
+# Retard de restitution — tentative de récupération
+
+Bonjour **${data.offender}**,
+
+Un utilisateur tente actuellement de récupérer la ressource **${data.resource}**.
+
+Vous êtes en retard sur votre restitution.
+
+### Détails
+- **Demandeur** : ${data.requester}
+- **Ressource** : ${data.resource}
+- **Fin prévue de votre réservation** : ${new Date(data.endDate).toLocaleString("FR-fr", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric"
+    })}
+
+Merci de restituer la ressource dans les plus brefs délais.
+
+---
+Cordialement,  
+L'équipe de gestion des ressources 
     `,
     resentCode: (data) => `
 # Code de réservation
@@ -330,9 +427,20 @@ export const getEmailTemplate = (templateName, data) => {
         throw new Error(`Modèle d'email "${templateName}" introuvable.`);
     }
 
-    const markdown = templates[templateName](data);
+    // Empêcher l'inclusion de commentaires/notes dans le corps markdown
+    const sanitized = {
+        ...data,
+        comment: undefined,
+        adminNote: undefined,
+        entries: Array.isArray(data?.entries)
+            ? data.entries.map(e => ({...e, comment: undefined, adminNote: undefined}))
+            : data?.entries
+    };
 
+    const markdown = templates[templateName](sanitized);
     const htmlBody = marked(markdown);
+    const commentsModule = buildCommentsModule(data);
 
-    return wrapInHtmlTemplate(htmlBody, data.subject || "Spotly");};
+    return wrapInHtmlTemplate(htmlBody + commentsModule, data.subject || "Spotly");
+};
 

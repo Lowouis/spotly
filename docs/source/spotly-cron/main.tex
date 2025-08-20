@@ -1,0 +1,97 @@
+\documentclass{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titling}
+\hypersetup{colorlinks=true, linkcolor=black, urlcolor=blue}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+
+\title{Guide administrateur — Tâche cron Spotly}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Emplacement}
+\begin{itemize}[leftmargin=1.2em]
+  \item Fichier cron : \texttt{scripts/cron.mjs}
+  \item Fichiers de logs : \texttt{logs/cron-yyyy-mm-dd.log.}
+  \item Config PM2 : \texttt{ecosystem.config.cjs} (\texttt{spotly-cron})
+\end{itemize}
+
+\section*{Planification \& démarrage}
+\begin{itemize}[leftmargin=1.2em]
+  \item Fréquence : toutes les 30 minutes (\texttt{*/30 * * * *})
+  \item Démarrage/reload (sur le serveur) :
+\begin{verbatim}
+pm2 reload ecosystem.config.cjs --only spotly-cron --update-env
+pm2 logs spotly-cron --lines 100
+\end{verbatim}
+\end{itemize}
+
+\section*{Variables d'environnement}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{RUN\_AT\_START=1} : lance un cycle immédiatement au démarrage, puis selon la planification.
+  \item \textbf{RUN\_ONCE=1} : exécute un cycle unique puis quitte (test manuel).
+  \item \textbf{LOGS\_DIR} : répertoire des logs (optionnel). Par défaut \texttt{logs/} à la racine du projet.
+\end{itemize}
+
+\section*{Logs}
+\begin{itemize}[leftmargin=1.2em]
+  \item Dossier : \texttt{logs/} (ou la valeur de \texttt{LOGS\_DIR} dans le .env)
+  \item Fichiers : \texttt{cron-YYYY-MM-DD.log} (un par jour)
+  \item Consultation :
+\begin{verbatim}
+tail -n 200 "${LOGS_DIR:-logs}/cron-$(date +%F).log"
+pm2 logs spotly-cron --lines 200
+\end{verbatim}
+\end{itemize}
+
+\section*{Ce que fait chaque cycle}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Rattrapage (sécurité)} si la cron a été interrompue :
+  \begin{itemize}
+    \item Passe en \texttt{USED} les réservations \texttt{ACCEPTED} déjà commencées (auto-pickup).
+    \item Passe en \texttt{ENDED} + \texttt{returned=true} les \texttt{ACCEPTED} terminées (profil \texttt{FLUENT}).
+    \item Logue les \texttt{ACCEPTED} expirées non auto-terminables (ex. \texttt{HIGH\_TRUST}) pour traitement manuel.
+  \end{itemize}
+  \item \textbf{Auto-pickup} : \texttt{ACCEPTED} \(\rightarrow\) \texttt{USED} si période en cours (\texttt{FLUENT}/\texttt{HIGH\_TRUST}, priorité ressource > catégorie > domaine).
+  \item \textbf{Auto-return} : \texttt{USED} \(\rightarrow\) \texttt{ENDED} + \texttt{returned=true} si fin dépassée (\texttt{FLUENT}, même priorité).
+  \item \textbf{Info retard} : logue le nombre de réservations encore en \texttt{USED} dont la fin est dépassée.
+\end{itemize}
+
+
+\section*{Tests rapides}
+\begin{itemize}[leftmargin=1.2em]
+  \item Un cycle immédiat (unique) :
+\begin{verbatim}
+RUN_ONCE=1 node scripts/cron.mjs
+\end{verbatim}
+  \item Immédiat + planification 30 min :
+\begin{verbatim}
+RUN_AT_START=1 node scripts/cron.mjs
+\end{verbatim}
+\end{itemize}
+
+\section*{Dépannage}
+\begin{itemize}[leftmargin=1.2em]
+  \item \textbf{Pas de logs} : vérifier \texttt{pm2 logs}, droits d'écriture du dossier, valeur de \texttt{LOGS\_DIR}, app \texttt{spotly-cron} en ligne.
+  \item \textbf{Pas d'exécution au démarrage} : s'assurer que \texttt{RUN\_AT\_START=1} est bien défini dans PM2 et recharger avec \texttt{--update-env}.
+  \item \textbf{Fuseau horaire} : les timestamps sont ceux du serveur.
+\end{itemize}
+
+\section*{Dictionnaire}
+\begin{itemize}[leftmargin=1.2em]
+    \item \textbf{USED} : \texttt{UTILISÉ}
+    \item \textbf{ACCEPTED} : \texttt{ACCEPTÉ}
+    \item \textbf{ENDED} : \texttt{TERMINÉ}
+    \item \textbf{FLUENT} : \texttt{LIBRE}
+    \item \textbf{HIGH\_TRUST} : \texttt{PAR CLIQUE DE RESTITUTION}
+\end{itemize}
+
+\end{document}

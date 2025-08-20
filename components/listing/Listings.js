@@ -350,7 +350,7 @@ const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLas
                     {getStatusText(entry)}
                 </span>
                 {status !== "ended" && status !== "waiting" && status !== "expired" && status !== "rejected" && status !== "upcoming" && (
-                    <span className="ml-1 font-medium">({formatDuration(duration)})</span>
+                    <span className="ml-1 font-medium">{formatDuration(duration)}</span>
                 )}
             </div>
         );

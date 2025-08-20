@@ -10,10 +10,17 @@ dotenv.config();
 const prisma = new PrismaClient();
 
 
-const logsDir = process.env.LOGS_DIR || path.join(process.cwd(), 'logs');
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir);
+const logsDir = process.env.LOGS_DIR
+    ? path.resolve(process.env.LOGS_DIR)
+    : path.resolve(__dirname, '..', 'logs');
+try {
+    if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, {recursive: true});
+    }
+} catch (e) {
+    console.error('[cron] Unable to create logs directory:', logsDir, e.message);
 }
+console.log('[cron] Logs directory:', logsDir);
 
 const logToFile = (message) => {
     const now = new Date();
@@ -29,7 +36,12 @@ const logToFile = (message) => {
     const logFile = path.join(logsDir, `cron-${now.toISOString().split('T')[0]}.log`);
     const logMessage = `[${timestamp}] ${message}\n`;
 
-    fs.appendFileSync(logFile, logMessage);
+    try {
+        fs.appendFileSync(logFile, logMessage);
+    } catch (e) {
+        console.error('[cron] Failed to write log file:', e.message);
+    }
+    console.log(logMessage.trim());
 };
 
 const runCronCycle = async () => {
@@ -151,7 +163,6 @@ const runCronCycle = async () => {
         }
 
         // Mise à jour des ressources qui sont dont la réservation et le pickup sont automatisés avec priorité pickable > category > domains
-        // Cas 1 : priorité ressource
         const autoReservedEntriesResource = await prisma.entry.updateMany({
             data: {moderate: "USED"},
             where: {
@@ -163,8 +174,6 @@ const runCronCycle = async () => {
                 endDate: {gt: now}
             }
         });
-
-        // Cas 2 : priorité catégorie (seulement si resource.pickable est null)
         const autoReservedEntriesCategory = await prisma.entry.updateMany({
             data: {moderate: "USED"},
             where: {
@@ -177,8 +186,6 @@ const runCronCycle = async () => {
                 endDate: {gt: now}
             }
         });
-
-        // Cas 3 : priorité domaine (seulement si resource.pickable et category.pickable sont null)
         const autoReservedEntriesDomain = await prisma.entry.updateMany({
             data: {moderate: "USED"},
             where: {
@@ -192,11 +199,10 @@ const runCronCycle = async () => {
                 endDate: {gt: now}
             }
         });
-
         const totalAutoReserved = autoReservedEntriesResource.count + autoReservedEntriesCategory.count + autoReservedEntriesDomain.count;
         logToFile(`🔄 ${totalAutoReserved} réservations mis à jour en utilisées (USED)`);
-        // Mise à jour des ressources dont la réservation et la restitution est automatisée (priorité pickable > category > domains, uniquement FLUENT)
-        // Cas 1 : priorité ressource
+
+        // Auto-return FLUENT
         const autoReturnedEntriesResource = await prisma.entry.updateMany({
             data: {moderate: "ENDED", returned: true},
             where: {
@@ -210,8 +216,6 @@ const runCronCycle = async () => {
                 ]
             }
         });
-
-        // Cas 2 : priorité catégorie (seulement si resource.pickable est null)
         const autoReturnedEntriesCategory = await prisma.entry.updateMany({
             data: {moderate: "ENDED", returned: true},
             where: {
@@ -226,8 +230,6 @@ const runCronCycle = async () => {
                 ]
             }
         });
-
-        // Cas 3 : priorité domaine (seulement si resource.pickable et category.pickable sont null)
         const autoReturnedEntriesDomain = await prisma.entry.updateMany({
             data: {moderate: "ENDED", returned: true},
             where: {
@@ -243,14 +245,14 @@ const runCronCycle = async () => {
                 ]
             }
         });
-
         const totalAutoReturned = autoReturnedEntriesResource.count + autoReturnedEntriesCategory.count + autoReturnedEntriesDomain.count;
         logToFile(`🔄 ${totalAutoReturned} ressources mis à jour en terminé (ENDED)`);
 
-        // Mise à jour des réservations en retard (après auto-return)
+        // Information retard
         const lateEntriesCount = await prisma.entry.count({
             where: {
                 moderate: "USED",
+                returned: false,
                 endDate: {lt: now}
             }
         });
@@ -277,3 +279,48 @@ if (process.env.RUN_ONCE === '1') {
         .then(() => process.exit(0))
         .catch(() => process.exit(1));
 }
+
+// Vérification journalière des retards (alerte e-mail)
+const runDailyLateCheck = async () => {
+    try {
+        const now = new Date();
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const lateEntries = await prisma.entry.findMany({
+            where: {
+                moderate: 'USED',
+                returned: false,
+                endDate: {lt: now, gte: yesterday},
+            },
+            include: {
+                user: true,
+                resource: true,
+            },
+        });
+        if (!lateEntries.length) {
+            logToFile('📬 Daily late-check: aucun nouvel envoi');
+            return;
+        }
+        for (const e of lateEntries) {
+            try {
+                await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/mail/sendEmail`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        to: e.user.email,
+                        subject: `Retard de restitution - ${e.resource.name}`,
+                        templateName: 'reservationDelayedAlert',
+                        data: {resource: e.resource, endDate: e.endDate},
+                    }),
+                });
+                logToFile(`📧 Alerte retard envoyée à ${e.user.email} (${e.resource.name})`);
+            } catch (err) {
+                logToFile(`⚠️ Échec envoi e-mail retard à ${e.user.email}: ${err.message}`);
+            }
+        }
+    } catch (err) {
+        logToFile(`❌ Daily late-check error: ${err.message}`);
+    }
+};
+
+// Tous les jours à 07:00
+cron.schedule('0 7 * * *', runDailyLateCheck);

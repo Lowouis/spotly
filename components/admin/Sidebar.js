@@ -124,11 +124,11 @@ const sideItems = [
         "permission": "SUPERADMIN"
     },
     {
-        "title": "Tests",
+        "title": "Logs",
         "items": [
             {
-                "id": "tests",
-                "title": "Tests",
+                "id": "logs",
+                "title": "Logs",
                 "icon": <CiSettings/>,
                 "permission": "SUPERADMIN"
             }
@@ -185,9 +185,9 @@ const menuItems = [
         label: 'Localisations'
     },
     {
-        key: 'tests',
+        key: 'logs',
         icon: <CiCircleCheck className="w-5 h-5"/>,
-        label: 'Tests'
+        label: 'Logs'
     }
 ];
 

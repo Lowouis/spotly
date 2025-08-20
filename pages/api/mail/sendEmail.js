@@ -5,8 +5,8 @@ import {runMiddleware} from "@/lib/core";
 import {marked} from 'marked';
 import prisma from "@/prismaconf/init";
 import {decrypt} from '@/lib/security';
-import { htmlToText } from 'html-to-text';
-import { getEmailTemplate } from '@/utils/mails/templates';
+import {htmlToText} from 'html-to-text';
+import {getEmailTemplate} from '@/utils/mails/templates';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -70,8 +70,8 @@ export default async function handler(req, res) {
             text: textContent, 
             attachments: [
                 {
-                    filename: 'banner.png',
-                    path: path.resolve(process.cwd(), 'public/banner.png'),
+                    filename: 'banner_low.png',
+                    path: path.resolve(process.cwd(), 'public/banner_low.png'),
                     cid: 'bannerimg'
                 }
             ]

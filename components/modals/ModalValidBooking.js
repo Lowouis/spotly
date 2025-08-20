@@ -114,6 +114,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 minute: "numeric"
                             }),
                             owner: owner.name + " " + owner.surname,
+                            comment: firstEntry.comment,
                         }
                 });
 
@@ -148,6 +149,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 hour: "numeric",
                                 minute: "numeric"
                             }),
+                            comment: firstEntry.comment,
                         },
                 });
             } else {
@@ -165,7 +167,9 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                     startDate: entry.startDate,
                                     endDate: entry.endDate,
                                     returnedConfirmationCode: entry.returnedConfirmationCode,
-                                    isCode: lastestPickable(entry) !== "FLUENT" && lastestPickable(entry) !== "LOW_TRUST"
+                                    isCode: lastestPickable(entry) !== "FLUENT" && lastestPickable(entry) !== "LOW_TRUST",
+                                    comment: entry.comment,
+                                    adminNote: entry.adminNote,
                                 })),
                             }
                     });
@@ -173,7 +177,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
             }
             addToast({
                 title: "Nouvelle réservation",
-                description: `Votre ${firstEntry.moderate === "WAITING" ? "demande" : "réservation"} est bien enregistrée, un mail de confirmation a été envoyé à ${session.user.email}`,
+                description: `Votre ${firstEntry.moderate === "WAITING" ? "demande" : "réservation"} est bien enregistrée, un mail de confirmation a été envoyé à ${firstEntry.user.email}`,
                 color: "success"
             });
         },
@@ -362,7 +366,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                                             ? 'bg-success-100 dark:bg-success-900/50'
                                                                             : 'bg-danger-100 dark:bg-danger-900/50'
                                                                         }
-                                                                        `}>
+                                                                       `}>
                                                                             <svg
                                                                                 className={`w-5 h-5 ${slot.available ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'}`}
                                                                                 fill="none" stroke="currentColor"

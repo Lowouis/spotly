@@ -40,7 +40,7 @@ export async function middleware(req) {
         '/api',
         '/_next',
         '/favicon.ico',
-        '/spotly_logo.png',
+        '/banner_low.png',
         '/banner.png'
     ];
     
@@ -94,6 +94,6 @@ export async function middleware(req) {
 export const config = {
     matcher: [
         // Exclude all static resources
-        '/((?!_next/static|_next/image|favicon.ico|public/|spotly_logo.png|banner.png).*)',
+        '/((?!_next/static|_next/image|favicon.ico|public/|banner_low.png|banner.png).*)',
     ],
 };

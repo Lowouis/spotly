@@ -8,7 +8,7 @@ export default function MatchingEntriesTable({resources, entry, session, handleR
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
     const [currentResource, setCurrentResource] = useState(null);
     return (
-        <div className="mx-auto w-[90%]">
+        <div className="mx-auto w-[95%] max-w-[1180px]">
             <div className="w-full flex flex-col space-y-3">
                 {resources.length > 0 ? resources?.map((resource) => (
                     <div key={resource.id}

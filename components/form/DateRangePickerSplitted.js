@@ -101,7 +101,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                                 inputWrapper: "border-none",
                                 base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
                                 input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
-                                label: "text-neutral-800 dark:text-neutral-200 font-semibold",
+                                label: "text-neutral-800 dark:text-neutral-200 font-semibold whitespace-nowrap",
                                 calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
                             }}
                             calendarProps={{
@@ -132,6 +132,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                             value={startTime}
                             isInvalid={!!dateError}
                             maxValue={isSameDay(startDate, endDate) ? endTime : null}
+                            className="min-w-[180px]"
                         />
                     </div>
                     <div className="flex flex-1 flex-row gap-2">
@@ -171,7 +172,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                                 inputWrapper: "border-none",
                                 base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
                                 input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
-                                label: "text-neutral-800 dark:text-neutral-200 font-semibold",
+                                label: "text-neutral-800 dark:text-neutral-200 font-semibold whitespace-nowrap",
                                 calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
                             }}
                         />
@@ -183,6 +184,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                             isDisabled={!startDate || !endDate}
                             isInvalid={!!dateError}
                             minValue={isSameDay(startDate, endDate) ? startTime : null}
+                            className="min-w-[180px]"
                         />
                     </div>
                 </div>
