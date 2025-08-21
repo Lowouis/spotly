@@ -7,6 +7,16 @@ import {lastestPickable} from "@/global";
 export const useEntryActions = (entry, clientIP) => {
     const {mutate: sendEmail} = useEmail();
 
+    // IP Authorization check for HIGH_AUTH resources
+    const {data: isIPAuthorized = true} = useQuery({
+        queryKey: ['ip-authorization', clientIP, entry?.id],
+        enabled: !!clientIP && !!entry && lastestPickable(entry)?.name === "HIGH_AUTH",
+        queryFn: async () => {
+            return await checkIPAuthorization(clientIP);
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+
     // Time schedule options
     const {data: timeScheduleOptions, isLoading: isLoadingTSO} = useQuery({
         queryKey: ['timeScheduleOptions', entry?.id],
@@ -79,36 +89,27 @@ export const useEntryActions = (entry, clientIP) => {
         if (!entry) return false;
         const resourceAvailable = entry?.resource?.status === 'AVAILABLE';
         const noQueue = waitlistCount === 0;
+        const ipAuthorized = lastestPickable(entry)?.name === "HIGH_AUTH" ? isIPAuthorized : true;
+        
         return (entry.moderate === "ACCEPTED")
             && new Date(entry?.endDate) > new Date()
             && validDatesToPickup()
             && resourceAvailable
             && noQueue
-            && !hasBlockingPrevious;
+            && !hasBlockingPrevious
+            && ipAuthorized;
     };
 
     // Action handlers
     const handlePickUp = async (onClose, handleRefresh) => {
         try {
-            // Check IP authorization for HIGH_AUTH resources
-            if (lastestPickable(entry)?.name === "HIGH_AUTH") {
-                const isAuthorized = await checkIPAuthorization(clientIP);
-                if (!isAuthorized) {
-                    addToast({
-                        title: "Accès refusé",
-                        description: "Cette action n'est pas autorisée depuis cet appareil.",
-                        timeout: 5000,
-                        color: "danger"
-                    });
-                    return;
-                }
-            }
-
             // Enforce pickup constraints
             if (!isAbleToPickUp()) {
                 addToast({
                     title: "Indisponible",
-                    description: hasBlockingPrevious ? "Ressource non restituée par l'emprunteur précédent" : "Conditions de récupération non réunies (file d'attente, créneau ou disponibilité)",
+                    description: hasBlockingPrevious ? "Ressource non restituée par l'emprunteur précédent" :
+                        !isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH" ? "Accès interdit depuis cet appareil" :
+                            "Conditions de récupération non réunies (file d'attente, créneau ou disponibilité)",
                     timeout: 5000,
                     color: "warning"
                 });
@@ -200,6 +201,7 @@ export const useEntryActions = (entry, clientIP) => {
         previousNotReturned,
         hasBlockingPrevious,
         isAbleToPickUp,
+        isIPAuthorized,
         handlePickUp,
         handleReturn
     };

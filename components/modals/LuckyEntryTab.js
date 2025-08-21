@@ -38,6 +38,7 @@ export default function LuckyEntryTab({setSelected}) {
     const {
         hasBlockingPrevious,
         isAbleToPickUp,
+        isIPAuthorized,
         handlePickUp,
         handleReturn
     } = useEntryActions(entry, clientIP);
@@ -106,9 +107,6 @@ export default function LuckyEntryTab({setSelected}) {
                         </h2>
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
                             Entrez le code à 6 chiffres de votre réservation
-                        </p>
-                        <p>
-                            IP |{clientIP}
                         </p>
                     </div>
 
@@ -248,10 +246,13 @@ export default function LuckyEntryTab({setSelected}) {
                                                 size="lg"
                                                 isLoading={isActionLoading}
                                                 onPress={handleResourceAction}
-                                                isDisabled={!isAbleToPickUp()}
+                                                isDisabled={!isAbleToPickUp() || (!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH")}
                                                 startContent={<ArrowRightCircleIcon className="w-5 h-5"/>}
                                             >
-                                                {isAbleToPickUp() ? 'Récupérer la ressource' : (hasBlockingPrevious ? 'Ressource non restituée' : 'Indisponible pour le moment')}
+                                                {isAbleToPickUp() ? 'Récupérer la ressource' :
+                                                    hasBlockingPrevious ? 'Ressource non restituée' :
+                                                        !isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH" ? 'Appareil non autorisé' :
+                                                            'Indisponible pour le moment'}
                                             </Button>
                                         )}
 
@@ -262,9 +263,10 @@ export default function LuckyEntryTab({setSelected}) {
                                                 size="lg"
                                                 isLoading={isActionLoading}
                                                 onPress={handleResourceAction}
+                                                isDisabled={!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH"}
                                                 startContent={<ArrowLeftCircleIcon className="w-5 h-5"/>}
                                             >
-                                                Restituer la ressource
+                                                {!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH" ? 'Appareil non autorisé' : 'Restituer la ressource'}
                                             </Button>
                                         )}
                                     </div>
