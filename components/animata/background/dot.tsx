@@ -1,6 +1,7 @@
 'use client';
-import React from "react";
+import React, {useEffect, useState} from "react";
 import {useTheme} from "@/context/ThemeContext";
+
 interface DotProps {
     /**
      * Color of the dot
@@ -50,6 +51,41 @@ export default function Dot({
                             }: DotProps) {
 
     const {theme} = useTheme();
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Détecter si on est sur mobile
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth <= 768);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Sur mobile, utiliser un arrière-plan simplifié
+    if (isMobile) {
+        return (
+            <div
+                style={{
+                    ...style,
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    transition: "background-color 0.2s",
+                    width: "100%",
+                    height: "100%",
+                    backgroundColor: theme === "dark" ? "#1E201E" : "#F8FAFC",
+                    zIndex: -1,
+                }}
+                className={className}
+            >
+                {children ?? <Placeholder/>}
+            </div>
+        );
+    }
 
     return (
         <div

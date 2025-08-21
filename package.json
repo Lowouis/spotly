@@ -5,14 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "dev-turbo": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev --turbo",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "update prisma": "prisma db push",
     "run cron": "node scripts/cron.mjs",
     "erased": "node scripts/clean.mjs",
     "seed": "node scripts/seed.mjs",
-    "seed:prod": "NODE_ENV=production node prisma/seed.mjs -- --confirm-production"
+    "seed:prod": "NODE_ENV=production node prisma/seed.mjs -- --confirm-production",
+    "test-db": "node scripts/test-db.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.0",
