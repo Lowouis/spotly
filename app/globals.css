@@ -29,6 +29,10 @@ body {
   position: relative;
   margin: 0;
   font-family: var(--font-dm-sans), Arial, Helvetica, sans-serif;
+    /* Optimisations pour mobile */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 body::before {
@@ -55,5 +59,34 @@ body::before {
   .no-scrollbar {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+  }
+
+    /* Optimisations pour mobile */
+    .mobile-optimized {
+        will-change: auto;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+    }
+
+    /* Réduire les animations sur mobile */
+    @media (max-width: 768px) {
+        * {
+            animation-duration: 0.1s !important;
+            transition-duration: 0.1s !important;
+        }
+
+        /* Désactiver les animations complexes */
+        .animate-pulse,
+        .animate-spin,
+        .animate-bounce {
+            animation: none !important;
+        }
+    }
+
+    /* Optimisations pour les tablettes */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .tablet-optimized {
+            will-change: auto;
+        }
   }
 }
