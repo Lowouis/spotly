@@ -10,25 +10,67 @@ export default async function handler(req, res) {
 
     if (req.method === "PUT") {
         try {
-            const {moderate, returned, adminNote} = req.body;
+            const {moderate, returned, adminNote, startDate, endDate, resourceId, userId} = req.body;
+
+            // Si on modifie les horaires ou la ressource, vérifier la disponibilité
+            if (startDate || endDate || resourceId) {
+                const currentEntry = await prisma.entry.findUnique({
+                    where: {id: parseInt(id)},
+                    include: {resource: true}
+                });
+
+                const newStartDate = startDate || currentEntry.startDate;
+                const newEndDate = endDate || currentEntry.endDate;
+                const newResourceId = resourceId || currentEntry.resourceId;
+
+                // Vérifier les conflits (exclure la réservation actuelle)
+                const conflicts = await prisma.entry.findMany({
+                    where: {
+                        resourceId: parseInt(newResourceId),
+                        id: {not: parseInt(id)},
+                        moderate: {in: ['ACCEPTED', 'USED', 'WAITING']},
+                        OR: [
+                            {
+                                startDate: {lt: new Date(newEndDate)},
+                                endDate: {gt: new Date(newStartDate)}
+                            }
+                        ]
+                    }
+                });
+
+                if (conflicts.length > 0) {
+                    return res.status(409).json({
+                        error: "Conflit de réservation",
+                        message: "La ressource n'est pas disponible sur ces horaires"
+                    });
+                }
+            }
+
+            const updateData = {
+                ...(moderate && {moderate}),
+                ...(adminNote && {adminNote}),
+                ...(returned && {
+                    returned: returned,
+                    endDate: new Date()
+                }),
+                ...(startDate && {startDate: new Date(startDate)}),
+                ...(endDate && {endDate: new Date(endDate)}),
+                ...(resourceId && {resourceId: parseInt(resourceId)}),
+                ...(userId && {userId: parseInt(userId)})
+            };
 
             const entry = await prisma.entry.update({
                 where: {
                     id: parseInt(id)
                 },
-                data: {
-                    ...(moderate && { moderate }),
-                    ...(adminNote && {adminNote}),
-                    ...(returned && {
-                        returned: returned,
-                        endDate: new Date()
-                    })
-                },
+                data: updateData,
                 include: {
-                    resource: true
+                    resource: true,
+                    user: true
                 }
             });
 
+            // Mettre à jour le statut de la ressource si nécessaire
             if (moderate === "USED" || moderate === "ENDED") {
                 await prisma.resource.update({
                     where: {
