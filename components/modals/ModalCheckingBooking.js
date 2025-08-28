@@ -1,5 +1,8 @@
 import {
+    Autocomplete,
+    AutocompleteItem,
     Button,
+    Input,
     InputOtp,
     Modal,
     ModalBody,
@@ -10,20 +13,24 @@ import {
     Tooltip,
     useDisclosure
 } from "@heroui/react";
+
 import {
     ArrowLeftIcon,
     ArrowUturnLeftIcon,
-    ChevronRightIcon,
+    CheckIcon,
     HandRaisedIcon,
-    ShieldExclamationIcon
+    PencilIcon,
+    ShieldExclamationIcon,
+    XMarkIcon
 } from "@heroicons/react/24/outline";
 import Stepper from "@/components/utils/Stepper";
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useEmail} from "@/context/EmailContext";
 import {addToast} from "@heroui/toast";
 import EntryComments from "@/components/comments/EntryComments";
 import {useEntryActions} from "@/hooks/useEntryActions";
+import {useSession} from "next-auth/react";
 
 
 export const formatDate = (date) => {
@@ -105,12 +112,11 @@ const useWaitlistCount = (entry) => {
 
 // Composant liste d'attente: nombre de réservations entre maintenant et la récupération
 const WaitlistInfo = ({entry, isAble}) => {
-    console.log(isAble);
     const {count, enabled, isLoading, isError} = useWaitlistCount(entry);
     if (!enabled || isError) return null;
-    if (isLoading) return <span className="text-sm text-neutral-500">...</span>;
+    if (isLoading) return <Spinner size="sm" className="text-neutral-500" color="default"/>;
     if (count === 0 && !isAble) {
-        return "Ressource non disponible";
+        return "Non disponible";
     }
     return (
         <div className="text-sm text-neutral-600 dark:text-neutral-400">
@@ -145,6 +151,26 @@ export default function ModalCheckingBooking({
     const [modalStepper, setModalStepper] = useState("main");
     const { mutate: sendEmail } = useEmail();
     const [warnSent, setWarnSent] = useState(false);
+
+    // États pour la modification de réservation
+    const [isEditing, setIsEditing] = useState(false);
+    const [editData, setEditData] = useState({
+        startDate: null,
+        endDate: null,
+        startTime: null,
+        endTime: null,
+        resourceId: '',
+        userId: ''
+    });
+    const [availabilityCheck, setAvailabilityCheck] = useState({
+        isLoading: false,
+        isAvailable: false,
+        message: ''
+    });
+    const [availableResources, setAvailableResources] = useState([]);
+    const [availableUsers, setAvailableUsers] = useState([]);
+    const {data: session} = useSession();
+    const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPERADMIN';
 
     // Use the centralized hook
     const {
@@ -182,24 +208,6 @@ export default function ModalCheckingBooking({
         }
     });
 
-    useEffect(() => {
-        if (warnSent) return;
-        if (!previousNotReturned) return;
-        if (new Date(previousNotReturned.endDate) >= new Date()) return;
-        sendEmail({
-            to: previousNotReturned.user.email,
-            subject: `Attention: Retard de restitution - ${entry.resource.name}`,
-            templateName: 'latePickupWarning',
-            data: {
-                offender: `${previousNotReturned.user.name} ${previousNotReturned.user.surname}`,
-                requester: `${entry.user.name} ${entry.user.surname}`,
-                resource: entry.resource.name,
-                endDate: previousNotReturned.endDate,
-            }
-        });
-        setWarnSent(true);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [previousNotReturned, warnSent]);
 
 
         
@@ -392,7 +400,192 @@ export default function ModalCheckingBooking({
             }
     }
 
+    // Fonction pour obtenir le nom de l'utilisateur sélectionné
+    const getSelectedUserName = (userId) => {
+        if (!userId) return '';
+        const user = availableUsers.find(u => u.id.toString() === userId.toString());
+        return user ? `${user.name} ${user.surname}` : '';
+    };
+
     // Fonction pour gérer le renvoi du code
+    // Fonction pour initialiser les données d'édition
+    const initializeEditData = () => {
+        const startDate = new Date(entry.startDate);
+        const endDate = new Date(entry.endDate);
+
+        console.log('DEBUG - initializeEditData:', {
+            entryStartDate: entry.startDate,
+            entryEndDate: entry.endDate,
+            startDate: startDate,
+            endDate: endDate,
+            startDateType: typeof startDate,
+            endDateType: typeof endDate
+        });
+
+        setEditData({
+            startDate: startDate,
+            endDate: endDate,
+            startTime: startDate,
+            endTime: endDate,
+            resourceId: entry.resourceId?.toString() || '',
+            userId: entry.userId?.toString() || ''
+        });
+        setIsEditing(true);
+        setModalStepper("edit");
+    };
+
+    // Fonction pour charger les ressources disponibles
+    const loadAvailableResources = useCallback(async () => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/resources?categoryId=${entry.resource.categoryId}&domainId=${entry.resource.domainId}`, {
+                credentials: 'include'
+            });
+            if (response.ok) {
+                const resources = await response.json();
+                setAvailableResources(resources.filter(r => r.status === 'AVAILABLE'));
+            }
+        } catch (error) {
+            console.error('Erreur lors du chargement des ressources:', error);
+        }
+    }, [entry.resource.categoryId, entry.resource.domainId]);
+
+    // Fonction pour charger les utilisateurs (admin seulement)
+    const loadAvailableUsers = useCallback(async () => {
+        if (!isAdmin) return;
+
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/users`, {
+                credentials: 'include'
+            });
+            if (response.ok) {
+                const users = await response.json();
+                setAvailableUsers(users);
+            }
+        } catch (error) {
+            console.error('Erreur lors du chargement des utilisateurs:', error);
+        }
+    }, [isAdmin]);
+
+    // Fonction pour vérifier la disponibilité
+    const checkAvailability = useCallback(async () => {
+        setAvailabilityCheck({isLoading: true, isAvailable: false, message: ''});
+
+        try {
+            // Combiner date et heure pour créer les dates complètes
+            const startDateTime = editData.startDate && editData.startTime ?
+                new Date(editData.startDate.getFullYear(), editData.startDate.getMonth(), editData.startDate.getDate(),
+                    editData.startTime.getHours(), editData.startTime.getMinutes()) : null;
+            const endDateTime = editData.endDate && editData.endTime ?
+                new Date(editData.endDate.getFullYear(), editData.endDate.getMonth(), editData.endDate.getDate(),
+                    editData.endTime.getHours(), editData.endTime.getMinutes()) : null;
+
+            if (!startDateTime || !endDateTime) {
+                setAvailabilityCheck({
+                    isLoading: false,
+                    isAvailable: false,
+                    message: 'Veuillez sélectionner les dates et heures'
+                });
+                return;
+            }
+
+            // Vérification simplifiée : utiliser l'API de réservation
+            const params = new URLSearchParams({
+                startDate: startDateTime.toISOString(),
+                endDate: endDateTime.toISOString(),
+                categoryId: entry.resource.categoryId,
+                domainId: entry.resource.domainId
+            });
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/reservation?${params}`, {
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                const availableResources = await response.json();
+
+                // Si on garde la même ressource, c'est toujours disponible
+                if (editData.resourceId === entry.resourceId?.toString()) {
+                    setAvailabilityCheck({
+                        isLoading: false,
+                        isAvailable: true,
+                        message: 'Modification possible'
+                    });
+                } else {
+                    // Vérifier si la nouvelle ressource sélectionnée est dans les ressources disponibles
+                    const isAvailable = availableResources.some(r => r.id.toString() === editData.resourceId);
+
+                    setAvailabilityCheck({
+                        isLoading: false,
+                        isAvailable,
+                        message: isAvailable ? 'Modification possible' : 'Ressource indisponible sur ces horaires'
+                    });
+                }
+            } else {
+                setAvailabilityCheck({
+                    isLoading: false,
+                    isAvailable: false,
+                    message: 'Erreur lors de la vérification'
+                });
+            }
+        } catch (error) {
+            console.error('Erreur de vérification:', error);
+            setAvailabilityCheck({
+                isLoading: false,
+                isAvailable: false,
+                message: 'Erreur de connexion'
+            });
+        }
+    }, [editData, entry.resource.categoryId, entry.resource.domainId, entry.resourceId]);
+
+    // Fonction pour appliquer les modifications
+    const applyModifications = async () => {
+        try {
+            // Combiner date et heure pour créer les dates complètes
+            const startDateTime = new Date(editData.startDate.getFullYear(), editData.startDate.getMonth(), editData.startDate.getDate(),
+                editData.startTime.getHours(), editData.startTime.getMinutes());
+            const endDateTime = new Date(editData.endDate.getFullYear(), editData.endDate.getMonth(), editData.endDate.getDate(),
+                editData.endTime.getHours(), editData.endTime.getMinutes());
+
+            const updateData = {
+                startDate: startDateTime.toISOString(),
+                endDate: endDateTime.toISOString(),
+                resourceId: parseInt(editData.resourceId),
+                ...(isAdmin && {userId: parseInt(editData.userId)})
+            };
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/${entry.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updateData),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                addToast({
+                    title: "Modification réussie",
+                    description: "La réservation a été modifiée avec succès",
+                    color: "success",
+                    timeout: 5000
+                });
+
+                setIsEditing(false);
+                setModalStepper("main");
+                handleRefresh();
+            } else {
+                throw new Error('Échec de la modification');
+            }
+        } catch (error) {
+            addToast({
+                title: "Erreur",
+                description: "La modification a échoué",
+                color: "danger",
+                timeout: 5000
+            });
+        }
+    };
+
     const handleResendCode = () => {
         if (resendTimer > 0) return;
 
@@ -448,25 +641,43 @@ export default function ModalCheckingBooking({
         }
     }, [resendTimer]);
 
+    // Charger les données quand on entre en mode édition
+    useEffect(() => {
+        if (modalStepper === "edit") {
+            loadAvailableResources();
+            if (isAdmin) {
+                loadAvailableUsers();
+            }
+        }
+    }, [modalStepper, isAdmin, loadAvailableResources, loadAvailableUsers]);
+
+    // Vérifier la disponibilité quand les données changent
+    useEffect(() => {
+        if (modalStepper === "edit" && editData.startDate && editData.endDate && editData.startTime && editData.endTime && editData.resourceId) {
+            // Vérifier que les dates sont valides
+            const startDateTime = new Date(editData.startDate.getFullYear(), editData.startDate.getMonth(), editData.startDate.getDate(),
+                editData.startTime.getHours(), editData.startTime.getMinutes());
+            const endDateTime = new Date(editData.endDate.getFullYear(), editData.endDate.getMonth(), editData.endDate.getDate(),
+                editData.endTime.getHours(), editData.endTime.getMinutes());
+
+            if (startDateTime >= endDateTime) {
+                setAvailabilityCheck({
+                    isLoading: false,
+                    isAvailable: false,
+                    message: 'La date de fin doit être postérieure à la date de début'
+                });
+                return;
+            }
+
+            const timer = setTimeout(() => {
+                checkAvailability();
+            }, 500); // Délai pour éviter trop de requêtes
+            return () => clearTimeout(timer);
+        }
+    }, [editData.startDate, editData.endDate, editData.startTime, editData.endTime, editData.resourceId, modalStepper, checkAvailability]);
+
     return (
         <>
-            <Tooltip content="Consulter" color="foreground" size={adminMode ? 'sm' : undefined} showArrow>
-                <Button
-                    className={adminMode ? "font-medium underline underline-offset-4" : undefined}
-                    size={adminMode ? "sm" : "lg"}
-                    variant="flat"
-                    color="default"
-                    isIconOnly
-                    radius={adminMode ? "sm" : "lg"}
-                    onPress={onOpen}
-                >
-                    <ChevronRightIcon
-                        className="font-bold"
-                        width={adminMode ? "18" : "24"}
-                        height={adminMode ? "18" : "24"}
-                    />
-                </Button>
-            </Tooltip>
         <Modal
             isOpen={isOpen}
             onOpenChange={onOpenChange}
@@ -476,6 +687,7 @@ export default function ModalCheckingBooking({
                 setModalStepper("main");
                 setOtp("");
             }}
+            isDismissable={false}
             motionProps={{
                 variants: {
                     enter: {
@@ -497,7 +709,7 @@ export default function ModalCheckingBooking({
                 },
             }}
             classNames={{
-                closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-blue-400 rounded-full p-3 text-xl"
+                closeButton: "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded-full p-3 text-sm transition-all"
             }}
         >
             <ModalContent>
@@ -532,6 +744,231 @@ export default function ModalCheckingBooking({
                                 {previousNotReturned && new Date(previousNotReturned.endDate) < new Date() && (
                                     <></>
                                 )}
+                                {modalStepper === "edit" && (
+                                    <ModalBody>
+                                        <div className="flex flex-col space-y-6">
+                                            <div className="flex flex-col items-center text-center space-y-2">
+                                                <div className="p-3 rounded-full bg-neutral-50 dark:bg-neutral-900">
+                                                    <PencilIcon className="w-8 h-8 text-neutral-500"/>
+                                                </div>
+                                                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                                    Modifier la réservation
+                                                </h2>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                {/* Horaires */}
+                                                <div className="space-y-4">
+                                                    <div className="space-y-2">
+                                                        <label
+                                                            className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                            Dates et horaires
+                                                        </label>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            {/* Date et heure de début */}
+                                                            <div className="space-y-2">
+                                                                <label
+                                                                    className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                                    Début
+                                                                </label>
+                                                                <div className="space-y-2">
+                                                                    <Input
+                                                                        type="date"
+                                                                        value={editData.startDate ? editData.startDate.toISOString().split('T')[0] : ''}
+                                                                        onChange={(e) => {
+                                                                            const newDate = new Date(e.target.value);
+                                                                            setEditData(prev => ({
+                                                                                ...prev,
+                                                                                startDate: newDate
+                                                                            }));
+                                                                        }}
+                                                                        className="w-full"
+                                                                        variant="bordered"
+                                                                        size="sm"
+                                                                    />
+                                                                    <Input
+                                                                        type="time"
+                                                                        value={editData.startTime ? editData.startTime.toTimeString().slice(0, 5) : ''}
+                                                                        onChange={(e) => {
+                                                                            const [hours, minutes] = e.target.value.split(':');
+                                                                            const newTime = new Date();
+                                                                            newTime.setHours(parseInt(hours), parseInt(minutes));
+                                                                            setEditData(prev => ({
+                                                                                ...prev,
+                                                                                startTime: newTime
+                                                                            }));
+                                                                        }}
+                                                                        className="w-full"
+                                                                        variant="bordered"
+                                                                        size="sm"
+                                                                    />
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Date et heure de fin */}
+                                                            <div className="space-y-2">
+                                                                <label
+                                                                    className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                                    Fin
+                                                                </label>
+                                                                <div className="space-y-2">
+                                                                    <Input
+                                                                        type="date"
+                                                                        value={editData.endDate ? editData.endDate.toISOString().split('T')[0] : ''}
+                                                                        onChange={(e) => {
+                                                                            const newDate = new Date(e.target.value);
+                                                                            setEditData(prev => ({
+                                                                                ...prev,
+                                                                                endDate: newDate
+                                                                            }));
+                                                                        }}
+                                                                        className="w-full"
+                                                                        variant="bordered"
+                                                                        size="sm"
+                                                                    />
+                                                                    <Input
+                                                                        type="time"
+                                                                        value={editData.endTime ? editData.endTime.toTimeString().slice(0, 5) : ''}
+                                                                        onChange={(e) => {
+                                                                            const [hours, minutes] = e.target.value.split(':');
+                                                                            const newTime = new Date();
+                                                                            newTime.setHours(parseInt(hours), parseInt(minutes));
+                                                                            setEditData(prev => ({
+                                                                                ...prev,
+                                                                                endTime: newTime
+                                                                            }));
+                                                                        }}
+                                                                        className="w-full"
+                                                                        variant="bordered"
+                                                                        size="sm"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Ressource */}
+                                                <div>
+                                                    <label
+                                                        className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                                        Ressource
+                                                    </label>
+                                                    <Autocomplete
+                                                        selectedKey={editData.resourceId}
+                                                        onSelectionChange={(key) => {
+                                                            setEditData(prev => ({...prev, resourceId: key}));
+                                                        }}
+                                                        className="w-full"
+                                                        placeholder="Sélectionner une ressource"
+                                                        aria-label="Sélectionner une ressource"
+                                                        emptyContent="Aucune ressource disponible"
+                                                    >
+                                                        {availableResources.map((resource) => (
+                                                            <AutocompleteItem key={resource.id}
+                                                                              textValue={resource.name}>
+                                                                {resource.name}
+                                                            </AutocompleteItem>
+                                                        ))}
+                                                    </Autocomplete>
+                                                </div>
+
+                                                {/* Utilisateur (admin seulement) */}
+                                                {isAdmin && (
+                                                    <div>
+                                                        <label
+                                                            className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                                                            Utilisateur
+                                                        </label>
+                                                        <Autocomplete
+                                                            selectedKey={editData.userId}
+                                                            onSelectionChange={(key) => {
+                                                                setEditData(prev => ({...prev, userId: key}));
+                                                            }}
+                                                            className="w-full"
+                                                            placeholder="Rechercher un utilisateur"
+                                                            aria-label="Rechercher un utilisateur"
+                                                            defaultItems={availableUsers}
+                                                            emptyContent="Aucun utilisateur trouvé"
+                                                        >
+                                                            {availableUsers.map((user) => (
+                                                                <AutocompleteItem
+                                                                    key={user.id}
+                                                                    textValue={`${user.name} ${user.surname} ${user.email}`}
+                                                                >
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-medium">
+                                                                            {user.name} {user.surname}
+                                                                        </span>
+                                                                        <span className="text-sm text-neutral-500">
+                                                                            {user.email}
+                                                                        </span>
+                                                                    </div>
+                                                                </AutocompleteItem>
+                                                            ))}
+                                                        </Autocomplete>
+                                                    </div>
+                                                )}
+
+                                                {/* Statut de vérification */}
+                                                <div
+                                                    className="flex items-center justify-between p-3 rounded-lg border">
+                                                    <div className="flex items-center gap-2">
+                                                        {availabilityCheck.isLoading ? (
+                                                            <>
+                                                                <Spinner size="sm"/>
+                                                                <span
+                                                                    className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                                    Vérification en cours...
+                                                                </span>
+                                                            </>
+                                                        ) : availabilityCheck.isAvailable ? (
+                                                            <>
+                                                                <CheckIcon className="w-5 h-5 text-success-500"/>
+                                                                <span
+                                                                    className="text-sm text-success-600 dark:text-success-400">
+                                                                    {availabilityCheck.message}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <XMarkIcon className="w-5 h-5 text-danger-500"/>
+                                                                <span
+                                                                    className="text-sm text-danger-600 dark:text-danger-400">
+                                                                    {availabilityCheck.message}
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-row justify-end gap-2 pt-2">
+                                                <Button
+                                                    size="lg"
+                                                    color="default"
+                                                    variant="flat"
+                                                    onPress={() => {
+                                                        setIsEditing(false);
+                                                        setModalStepper("main");
+                                                    }}
+                                                >
+                                                    Annuler
+                                                </Button>
+                                                <Button
+                                                    size="lg"
+                                                    color="primary"
+                                                    variant="flat"
+                                                    onPress={applyModifications}
+                                                    isDisabled={!availabilityCheck.isAvailable || availabilityCheck.isLoading}
+                                                >
+                                                    {availabilityCheck.isAvailable ? "Appliquer les modifications" : "Indisponible"}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </ModalBody>
+                                )}
+
                                 {modalStepper === "delete" && (
                                     <ModalBody>
                                         <div className="flex flex-col space-y-6">
@@ -616,7 +1053,7 @@ export default function ModalCheckingBooking({
 
                                 {(modalStepper === "pickup" || modalStepper === "return") && (
                                     <ModalBody>
-                                        <div className="flex flex-col justify-center items-center space-y-6 py-4">
+                                        <div className="flex flex-col justify-center items-center space-y-6 py-2">
                                             {error !== null && (
                                                 <div
                                                     className="bg-red-100 dark:bg-red-900/20 p-3 rounded-lg w-full text-center">
@@ -724,23 +1161,27 @@ export default function ModalCheckingBooking({
                                                 step={1}
                                                 done={true}
                                                 content={
-                                                    <div className="w-full flex flex-col">
-                                                        <h1 className={"text-blue-900 dark:text-blue-300 text-lg"}>Création
+                                                    <div className="w-full flex flex-col space-y-1">
+                                                        <h1 className="text-neutral-900 dark:text-neutral-100 text-base sm:text-lg font-medium">Création
                                                             de la réservation</h1>
-                                                        <span>Confirmation par mail à <span
-                                                            className="font-semibold">{entry?.user.email}</span></span>
-                                                        <span>{formatDate(entry?.createdAt)}</span>
+                                                        <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                            <span>Confirmation par mail à </span>
+                                                            <span
+                                                                className="font-medium text-neutral-900 dark:text-neutral-100">{entry?.user.email}</span>
+                                                        </div>
+                                                        <div
+                                                            className="text-sm text-neutral-500 dark:text-neutral-500">{formatDate(entry?.createdAt)}</div>
                                                     </div>
                                                 }
                                             />
                                             <Stepper
                                                 step={2}
                                                 content={
-                                                    <div className="w-full">
-                                                        <h1 className={"text-blue-900 dark:text-blue-300  text-lg"}>
+                                                    <div className="w-full flex flex-col space-y-1">
+                                                        <h1 className="text-neutral-900 dark:text-neutral-100 text-base sm:text-lg font-medium">
                                                             Confirmation
                                                         </h1>
-                                                        <span>
+                                                        <div className="text-sm text-neutral-600 dark:text-neutral-400">
                                                             {entry.moderate !== "WAITING" && entry.moderate !== "REJECTED"
                                                                 ? (
                                                                     entry.resource?.moderate
@@ -748,11 +1189,11 @@ export default function ModalCheckingBooking({
                                                                         : `Confirmé automatiquement`
                                                                 )
                                                                 : ''}
-                                                        </span>
-                                                        <span>
+                                                        </div>
+                                                        <div className="text-sm text-neutral-600 dark:text-neutral-400">
                                                             {entry.moderate === "WAITING" && "En attente de confirmation"}
-                                                            {entry.moderate === "REJECTED" && "Refuser"}
-                                                        </span>
+                                                            {entry.moderate === "REJECTED" && "Refusé"}
+                                                        </div>
                                                     </div>
                                                 }
                                                 done={entry.moderate !== "WAITING" && entry.moderate !== "REJECTED"}
@@ -766,61 +1207,94 @@ export default function ModalCheckingBooking({
                                                     <Stepper
                                                         step={3}
                                                         content={
-                                                            <div className="w-full space-y-2 ">
-                                                                <h1 className="text-blue-900 dark:text-blue-300 text-lg">
-                                                                    <span>{entry.moderate === "USED" ? "En cours d'utilisation" : entry.moderate === "ACCEPTED" && new Date(entry?.endDate) < new Date() ? "Réservation expirée" : "Réservation"}</span>
+                                                            <div className="w-full flex flex-col space-y-2">
+                                                                <h1 className="text-neutral-900 dark:text-neutral-100 text-base sm:text-lg font-medium">
+                                                                    {entry.moderate === "USED" ? "En cours d'utilisation" : entry.moderate === "ACCEPTED" && new Date(entry?.endDate) < new Date() ? "Réservation expirée" : "Réservation"}
                                                                 </h1>
+
                                                                 {entry.moderate === "USED" && (
-                                                                    <span
-                                                                        className="text-neutral-600 dark:text-neutral-400">
+                                                                    <div
+                                                                        className="text-sm text-neutral-600 dark:text-neutral-400">
                                                                         Récupéré le {formatDate(entry.updatedAt)}
-                                                                    </span>
+                                                                    </div>
                                                                 )}
 
                                                                 {entry.moderate !== 'USED' && (
-                                                                    <>
-                                                                        <div
-                                                                            className="flex flex-row justify-between items-center space-x-3">
-                                                                            <div className="flex flex-col gap-1">
-                                                                                <span
-                                                                                    className="text-neutral-600 dark:text-neutral-400">
-                                                                                    {new Date(entry.startDate) > new Date()
-                                                                                        ? (localIsAbleToPickUp()
-                                                                                                ? `Récupération possible dès maintenant`
-                                                                                                : `${formatDate(entry.startDate)}`
-                                                                                        )
-                                                                                        : `Début le ${formatDate(entry.startDate)}`}
-                                                                                </span>
-                                                                                {new Date(entry.startDate) <= new Date() && entry?.resource?.status === 'UNAVAILABLE' && previousNotReturned && (
-                                                                                    <span
-                                                                                        className="text-sm text-orange-600 dark:text-orange-400">
-                                                                                        Emprunteur : {previousNotReturned.user?.name} {previousNotReturned.user?.surname}
-                                                                                    </span>
-                                                                                )}
+                                                                    <div
+                                                                        className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                                                                        <div className="flex flex-col space-y-1">
+                                                                            <div
+                                                                                className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                                                {new Date(entry.startDate) > new Date()
+                                                                                    ? (localIsAbleToPickUp()
+                                                                                            ? `Récupération possible dès maintenant`
+                                                                                            : `${formatDate(entry.startDate)}`
+                                                                                    )
+                                                                                    : `Début le ${formatDate(entry.startDate)}`}
                                                                             </div>
-                                                                            {whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && (
-                                                                                <Button
-                                                                                    isDisabled={!localIsAbleToPickUp() || hasBlockingPrevious}
-                                                                                    size="lg"
-                                                                                    className="text-neutral-600 dark:text-neutral-400"
-                                                                                    variant="flat"
-                                                                                    onPress={() => handlePickUp(onClose)}
-                                                                                    startContent={<HandRaisedIcon
-                                                                                        className="w-5 h-5"/>}
-                                                                                >
-                                                                                    {hasBlockingPrevious
-                                                                                        ? "Ressource non restituée"
-                                                                                        : localIsAbleToPickUp()
-                                                                                            ? "Récupérer"
-                                                                                            :
-                                                                                            <WaitlistInfo entry={entry}
-                                                                                                          isAble={localIsAbleToPickUp()}/>}
-                                                                                </Button>
+                                                                            {new Date(entry.startDate) <= new Date() && entry?.resource?.status === 'UNAVAILABLE' && previousNotReturned && (
+                                                                                <div
+                                                                                    className="text-sm text-orange-600 dark:text-orange-400">
+                                                                                    Emprunteur
+                                                                                    : {previousNotReturned.user?.name} {previousNotReturned.user?.surname}
+                                                                                </div>
                                                                             )}
                                                                         </div>
-                                                                    </>
+                                                                        {whichPickable() !== "FLUENT" && entry.moderate === "ACCEPTED" && new Date(entry?.endDate) > new Date() && (
+                                                                            <Button
+                                                                                isDisabled={!localIsAbleToPickUp() || hasBlockingPrevious}
+                                                                                size="md"
+                                                                                className="text-neutral-600 dark:text-neutral-400"
+                                                                                variant="flat"
+                                                                                onPress={() => handlePickUp(onClose)}
+                                                                                startContent={
+                                                                                    hasBlockingPrevious ? (
+                                                                                        <svg className="w-4 h-4"
+                                                                                             fill="none"
+                                                                                             stroke="currentColor"
+                                                                                             viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round"
+                                                                                                  strokeLinejoin="round"
+                                                                                                  strokeWidth={2}
+                                                                                                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"/>
+                                                                                        </svg>
+                                                                                    ) : localIsAbleToPickUp() ? (
+                                                                                        <HandRaisedIcon
+                                                                                            className="w-4 h-4"/>
+                                                                                    ) : waitlistCount > 0 ? (
+                                                                                        <svg className="w-4 h-4"
+                                                                                             fill="none"
+                                                                                             stroke="currentColor"
+                                                                                             viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round"
+                                                                                                  strokeLinejoin="round"
+                                                                                                  strokeWidth={2}
+                                                                                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                                                        </svg>
+                                                                                    ) : (
+                                                                                        <svg className="w-4 h-4"
+                                                                                             fill="none"
+                                                                                             stroke="currentColor"
+                                                                                             viewBox="0 0 24 24">
+                                                                                            <path strokeLinecap="round"
+                                                                                                  strokeLinejoin="round"
+                                                                                                  strokeWidth={2}
+                                                                                                  d="M6 18L18 6M6 6l12 12"/>
+                                                                                        </svg>
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                {hasBlockingPrevious
+                                                                                    ? "Ressource non restituée"
+                                                                                    : localIsAbleToPickUp()
+                                                                                        ? "Récupérer"
+                                                                                        :
+                                                                                        <WaitlistInfo entry={entry}
+                                                                                                      isAble={localIsAbleToPickUp()}/>}
+                                                                            </Button>
+                                                                        )}
+                                                                    </div>
                                                                 )}
-                                                                
                                                             </div>
                                                         }
                                                         done={entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
@@ -830,27 +1304,27 @@ export default function ModalCheckingBooking({
                                                     <Stepper
                                                         step={4}
                                                         content={
-                                                            <div className="w-full space-y-2">
+                                                            <div className="w-full flex flex-col space-y-2">
                                                                 <div className="flex items-center space-x-2">
-                                                                    <h1 className="text-blue-900 dark:text-blue-300 text-lg">
+                                                                    <h1 className="text-neutral-900 dark:text-neutral-100 text-base sm:text-lg font-medium">
                                                                         {entry.returned ? "Restitué" : "Restitution"}
                                                                     </h1>
                                                                     {entry.moderate === "USED" && new Date(entry?.endDate) < new Date() && (
                                                                         <span
-                                                                            className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-sm">
+                                                                            className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-xs">
                                                                             En retard
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                                 <div
-                                                                    className="flex flex-row justify-between items-center space-x-3">
-                                                                    <div className="flex flex-col gap-1">
-                                                                        <span
-                                                                            className="text-neutral-600 dark:text-neutral-400">
+                                                                    className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                                                                    <div className="flex flex-col space-y-1">
+                                                                        <div
+                                                                            className="text-sm text-neutral-600 dark:text-neutral-400">
                                                                             {entry.returned
                                                                                 ? `Restitué le ${formatDate(entry?.updatedAt)}`
                                                                                 : `Le ${formatDate(entry?.endDate)}`}
-                                                                        </span>
+                                                                        </div>
 
                                                                         {entry.moderate === "USED" && new Date(entry?.endDate) > new Date() && (
                                                                             <CountdownTimer targetDate={entry.endDate}
@@ -860,17 +1334,16 @@ export default function ModalCheckingBooking({
 
                                                                     {entry.moderate === "USED" && whichPickable() !== "FLUENT" && (
                                                                         <Button
-                                                                            size="lg"
+                                                                            size="md"
                                                                             variant="flat"
                                                                             onPress={handleReturn}
                                                                             startContent={<ArrowUturnLeftIcon
-                                                                                className="w-5 h-5"/>}
+                                                                                className="w-4 h-4"/>}
                                                                         >
                                                                             Restituer
                                                                         </Button>
                                                                     )}
                                                                 </div>
-
                                                             </div>
                                                         }
                                                         adminMode={adminMode}
@@ -884,8 +1357,8 @@ export default function ModalCheckingBooking({
                                                     step={3}
                                                     content={
                                                         <div
-                                                            className="w-full p-3 my-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                                            <p className="text-sm text-red-600 dark:text-red-400 ">
+                                                            className="w-full p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                                            <p className="text-sm text-red-600 dark:text-red-400">
                                                                 Cette ressource est bloquée
                                                                 jusqu&apos;au {formatDate(entry.endDate)}
                                                             </p>
@@ -903,22 +1376,37 @@ export default function ModalCheckingBooking({
                                     </ModalBody>
                                 )}
                                 <ModalFooter className='flex flex-row justify-between'>
-                                    {!adminMode && modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
-                                        <Tooltip color="danger" content="Annuler définitivement la réservation."
-                                                 showArrow placement="right">
-                                            <Button
-                                                size={"lg"}
-                                                color="danger"
-                                                variant="light"
-                                                onPress={() => {
-                                                    setModalStepper("delete")
-                                                }}
-                                            >
-                                                Annuler
-                                            </Button>
-                                        </Tooltip>
-                                    )}
+                                    <div className="flex gap-2">
+                                        {!adminMode && modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
+                                            <Tooltip color="danger" content="Annuler définitivement la réservation."
+                                                     showArrow placement="right">
+                                                <Button
+                                                    size="lg"
+                                                    color="danger"
+                                                    variant="light"
+                                                    onPress={() => {
+                                                        setModalStepper("delete")
+                                                    }}
+                                                >
+                                                    Annuler
+                                                </Button>
+                                            </Tooltip>
+                                        )}
+                                    </div>
 
+                                    <div className="flex gap-2">
+                                        {modalStepper === "main" && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && (
+                                            <Button
+                                                size="lg"
+                                                color="underline"
+                                                variant="flat"
+                                                onPress={initializeEditData}
+                                                className="hover:underline text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 dark:text-neutral-400 transition-all duration-300"
+                                            >
+                                                Modifier
+                                            </Button>
+                                        )}
+                                    </div>
                                 </ModalFooter>
                             </>
                         )}
