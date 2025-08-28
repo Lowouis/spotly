@@ -1,13 +1,27 @@
 import {Modal, ModalContent, ModalHeader,} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/components/form/ItemForm";
-import React from "react";
+import React, {useState} from "react";
 import {useRefreshContext} from "@/context/RefreshContext";
 import {postItem, updateItem} from "@/components/listing/ItemsOnTable.js";
 import {addToast} from "@heroui/toast";
+import ResourceStatusChangeModal from "@/components/modals/ResourceStatusChangeModal";
+
+// Fonction pour vérifier s'il y a des réservations futures
+const checkFutureReservations = async (resourceId) => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?resourceId=${resourceId}&future=true`);
+    if (!response.ok) {
+        throw new Error('Erreur lors de la vérification des réservations');
+    }
+    const reservations = await response.json();
+    return reservations.length > 0;
+};
 
 export default function ActionOnItem({isOpen, onOpenChange, action, defaultValues, formFields, model}) {
     const { refreshData } = useRefreshContext();
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [pendingStatusChange, setPendingStatusChange] = useState(null);
+
     const handleSuccess = () => {
         addToast({
             title: `${action === "create" ? "Création" : "Modification"} d'un élément`,
@@ -53,22 +67,57 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
         },
     });
 
+    const handleFormSubmit = async (data) => {
+        // Vérifier si c'est une modification de ressource et si le statut passe de AVAILABLE à UNAVAILABLE
+        if (action === "edit" && model === "resources" && defaultValues?.status === "AVAILABLE" && data.status === "UNAVAILABLE") {
+            try {
+                // Vérifier s'il y a des réservations futures
+                const hasFutureReservations = await checkFutureReservations(defaultValues.id);
 
-    const handleFormSubmit = (data) => {
+                if (hasFutureReservations) {
+                    // Afficher le modal de confirmation
+                    setPendingStatusChange(data);
+                    setShowStatusModal(true);
+                    return;
+                } else {
+                    // Pas de réservations futures, procéder directement
+                    submitData(data);
+                }
+            } catch (error) {
+                console.error("Erreur lors de la vérification des réservations:", error);
+                // En cas d'erreur, procéder directement
+                submitData(data);
+            }
+            return;
+        }
+
+        // Procéder normalement
+        submitData(data);
+    };
+
+    const submitData = (data) => {
         if(action === "create") {
             createMutation.mutate({data, model});
         } else {
             updateMutation.mutate({
-            data : {
-                id: defaultValues.id,
-                ...data
-            },
+                data: {
+                    id: defaultValues.id,
+                    ...data
+                },
                 model
             });
         }
     };
 
+    const handleStatusChangeConfirm = () => {
+        if (pendingStatusChange) {
+            submitData(pendingStatusChange);
+            setPendingStatusChange(null);
+        }
+    };
+
     return (
+        <>
             <Modal
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
@@ -95,7 +144,6 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
                         },
                     },
                 }}
-
             >
                 <ModalContent>
                     {(onClose) => (
@@ -115,6 +163,14 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
                     )}
                 </ModalContent>
             </Modal>
-        );
 
+            {/* Modal de changement de statut - affiché seulement s'il y a des réservations futures */}
+            <ResourceStatusChangeModal
+                isOpen={showStatusModal}
+                onOpenChange={setShowStatusModal}
+                resource={defaultValues}
+                onStatusChange={handleStatusChangeConfirm}
+            />
+        </>
+    );
 }

@@ -6,6 +6,7 @@ import {Button} from "@heroui/button";
 import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
+import {useConfigStatus} from "@/context/ConfigStatusContext";
 
 const SSO = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -13,6 +14,7 @@ const SSO = () => {
     const [errorMessage, setErrorMessage] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState(null);
     const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+    const {updateConfigStatus} = useConfigStatus();
 
     const [formData, setFormData] = useState({
         realm: "",
@@ -41,24 +43,20 @@ const SSO = () => {
                         serviceHost: data.serviceHost || "",
                         keytabPath: data.keytabPath || "",
                     }));
+
+                    // Si on a des données, on considère qu'il y a une config
+                    if (data.realm && data.kdc && data.adminServer && data.defaultDomain && data.serviceHost && data.keytabPath) {
+                        updateConfigStatus('sso', 'error'); // Par défaut en erreur jusqu'au test
+                    } else {
+                        updateConfigStatus('sso', 'none');
+                    }
                 } else {
-                    const errorData = await response.json();
-                    console.error("Erreur lors du chargement:", errorData);
-                    addToast({
-                        title: 'Chargement de la configuration',
-                        description: errorData.message || 'Erreur lors du chargement de la configuration',
-                        color: 'danger',
-                        duration: 5000,
-                    });
+                    // Pas de configuration existante, c'est normal pour une première utilisation
+                    updateConfigStatus('sso', 'none');
                 }
             } catch (error) {
-                console.error("Erreur lors du chargement de la configuration:", error);
-                addToast({
-                    title: 'Chargement de la configuration',
-                    description: 'Erreur lors du chargement de la configuration',
-                    color: 'danger',
-                    duration: 5000,
-                });
+                // Erreur de connexion, on continue avec les champs vides
+                updateConfigStatus('sso', 'none');
             } finally {
                 setIsLoadingConfig(false);
             }
@@ -97,6 +95,7 @@ const SSO = () => {
 
             if (response.ok) {
                 setConnectionStatus('success');
+                updateConfigStatus('sso', 'success');
                 addToast({
                     title: 'Test de connexion',
                     description: 'Connexion SSO réussie',
@@ -105,10 +104,12 @@ const SSO = () => {
                 });
             } else {
                 setConnectionStatus('error');
+                updateConfigStatus('sso', 'error');
                 throw new Error(result.message || 'Erreur de connexion');
             }
         } catch (error) {
             setConnectionStatus('error');
+            updateConfigStatus('sso', 'error');
             addToast({
                 title: 'Test de connexion',
                 description: error.message || 'Erreur lors du test de connexion',
@@ -144,6 +145,8 @@ const SSO = () => {
                 color: 'success',
                 duration: 5000,
             });
+            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
+            updateConfigStatus('sso', 'error');
         } catch (error) {
             addToast({
                 title: 'Configuration SSO',

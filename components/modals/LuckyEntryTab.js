@@ -92,7 +92,7 @@ export default function LuckyEntryTab({setSelected}) {
     return (
         <>
             <Form
-                className="flex flex-col space-y-6 justify-between items-center p-4 w-full"
+                className="space-y-6"
                 onSubmit={(e) => {
                     e.preventDefault();
                     if (ifl.otp.length === 6) {
@@ -100,46 +100,55 @@ export default function LuckyEntryTab({setSelected}) {
                     }
                 }}
             >
-                <div className="w-full">
-                    <div className="text-center mb-6">
-                        <h2 className="text-xl font-semibold mb-2 text-neutral-800 dark:text-neutral-200">
-                            Accéder à ma réservation
-                        </h2>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                            Entrez le code à 6 chiffres de votre réservation
-                        </p>
-                    </div>
+                {/* En-tête */}
+                <div className="text-center space-y-2 w-full">
+                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                        Accéder à ma réservation
+                    </h2>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Entrez le code à 6 chiffres de votre réservation
+                    </p>
+                </div>
 
-                    <div className="flex flex-col items-center space-y-6">
+                {/* Champ OTP */}
+                <div className="space-y-4 w-full">
+                    <div className="w-full flex justify-center">
                         <InputOtp
                             isRequired
                             name="lucky_otp"
-                            size="lg"
+                            size="sm"
                             length={6}
                             value={ifl.otp}
                             onChange={(e) => setIfl({...ifl, "otp": e.target.value})}
                             classNames={{
-                                input: "bg-neutral-50 dark:bg-neutral-900 border-2",
+                                input: "bg-transparent border-2 border-neutral-300 dark:border-neutral-600 text-sm focus:border-neutral-900 dark:focus:border-neutral-100 transition-colors duration-200",
+                                inputWrapper: "h-12",
+                                base: "gap-2"
                             }}
                         />
-
-                        <Button
-                            size="md"
-                            fullWidth
-                            type="submit"
-                            color="default"
-                            className="font-medium"
-                            isLoading={isLoading}
-                            isDisabled={ifl.otp.length !== 6}
-                        >Vérifier le code</Button>
                     </div>
+
+
+                    <Button
+                        size="md"
+                        fullWidth
+                        type="submit"
+                        color="default"
+                        className="h-11 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
+                        isLoading={isLoading}
+                        isDisabled={ifl.otp.length !== 6}
+                    >
+                        Vérifier le code
+                    </Button>
                 </div>
 
-                <div className="w-full border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                    <div className="flex justify-center items-center space-x-2">
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Je n&apos;ai pas de réservation
-                </span>
+                {/* Lien vers la connexion */}
+                <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 w-full">
+                    <div
+                        className="flex flex-col sm:flex-row justify-center items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                            Je n&apos;ai pas de réservation
+                        </span>
                         <Tooltip
                             color="foreground"
                             showArrow
@@ -152,7 +161,7 @@ export default function LuckyEntryTab({setSelected}) {
                                 size="sm"
                                 variant="light"
                                 radius="full"
-                                className="bg-neutral-100 dark:bg-neutral-800"
+                                className="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200"
                             >
                                 ?
                             </Button>
@@ -161,26 +170,27 @@ export default function LuckyEntryTab({setSelected}) {
                 </div>
             </Form>
 
+            {/* Modal des détails de réservation */}
             {entry !== null && (
                 <Modal
                     isOpen={isOpen}
                     onOpenChange={onOpenChange}
                     size="2xl"
                     classNames={{
-                        base: "bg-white dark:bg-neutral-900",
-                        header: "border-b border-neutral-200 dark:border-neutral-800",
+                        base: "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700",
+                        header: "border-b border-neutral-200 dark:border-neutral-700",
                         body: "py-6",
-                        footer: "border-t border-neutral-200 dark:border-neutral-800"
+                        footer: "border-t border-neutral-200 dark:border-neutral-700"
                     }}
                 >
                     <ModalContent>
                         {(onClose) => (
                             <>
-                                <ModalHeader className="flex flex-col gap-1">
-                                    <h3 className="text-xl font-semibold text-neutral-500">
+                                <ModalHeader className="flex flex-col gap-2">
+                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                                         {entry?.resource.name}
                                     </h3>
-                                    <p className="text-sm text-neutral-600">
+                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
                                         État : <span className={`font-medium ${
                                         new Date(entry.endDate) < new Date() && !entry.returned ? "text-red-500" :
                                             entry.moderate === "ACCEPTED" ? "text-green-500" :
@@ -199,10 +209,11 @@ export default function LuckyEntryTab({setSelected}) {
 
                                 <ModalBody>
                                     <div className="space-y-6">
+                                        {/* Timeline des dates */}
                                         <div className="flex flex-row w-full text-sm uppercase font-medium">
                                             <div className="flex-1 space-y-1">
                                                 <p className="text-neutral-500">Début</p>
-                                                <p className="text-neutral-900 dark:text-neutral-100">{new Date(entry?.startDate).toLocaleString("fr-FR", {
+                                                <p className="text-neutral-900 dark:text-neutral-100 text-sm">{new Date(entry?.startDate).toLocaleString("fr-FR", {
                                                     year: 'numeric',
                                                     month: 'long',
                                                     day: 'numeric',
@@ -210,17 +221,17 @@ export default function LuckyEntryTab({setSelected}) {
                                                     minute: '2-digit'
                                                 })}</p>
                                             </div>
-                                            <div className="w-20 flex items-center justify-center">
+                                            <div className="w-16 flex items-center justify-center">
                                                 <div className="relative">
                                                     <div
-                                                        className="animate-ping absolute inset-0 rounded-full bg-sky-400 opacity-20"></div>
+                                                        className="animate-ping absolute inset-0 rounded-full bg-neutral-400 opacity-20"></div>
                                                     <ArrowRightCircleIcon
-                                                        className="relative z-10 w-8 h-8 text-sky-500"/>
+                                                        className="relative z-10 w-6 h-6 text-neutral-500"/>
                                                 </div>
                                             </div>
                                             <div className="flex-1 text-right space-y-1">
                                                 <p className="text-neutral-500">Fin</p>
-                                                <p className="text-neutral-900 dark:text-neutral-100">{new Date(entry?.endDate).toLocaleString("fr-FR", {
+                                                <p className="text-neutral-900 dark:text-neutral-100 text-sm">{new Date(entry?.endDate).toLocaleString("fr-FR", {
                                                     year: 'numeric',
                                                     month: 'long',
                                                     day: 'numeric',
@@ -230,24 +241,27 @@ export default function LuckyEntryTab({setSelected}) {
                                             </div>
                                         </div>
 
+                                        {/* Alerte d'expiration */}
                                         {new Date(entry.endDate) < new Date() && !entry.returned && (
                                             <div
-                                                className="flex items-center justify-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                                <ClockIcon className="w-5 h-5 text-red-500 mr-2"/>
-                                                <span className="text-red-600 dark:text-red-400 font-medium">
-                                            Réservation expirée
-                                        </span>
+                                                className="flex items-center justify-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                                                <ClockIcon className="w-4 h-4 text-red-500 mr-2"/>
+                                                <span className="text-red-600 dark:text-red-400 font-medium text-sm">
+                                                    Réservation expirée
+                                                </span>
                                             </div>
                                         )}
+
+                                        {/* Boutons d'action */}
                                         {entry.moderate === "ACCEPTED" && new Date(entry.endDate) > new Date() && (
                                             <Button
                                                 color="default"
-                                                className="w-full font-medium bg-gradient-to-r from-blue-500 to-blue-600"
+                                                className="w-full font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200 h-12"
                                                 size="lg"
                                                 isLoading={isActionLoading}
                                                 onPress={handleResourceAction}
                                                 isDisabled={!isAbleToPickUp() || (!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH")}
-                                                startContent={<ArrowRightCircleIcon className="w-5 h-5"/>}
+                                                startContent={<ArrowRightCircleIcon className="w-4 h-4"/>}
                                             >
                                                 {isAbleToPickUp() ? 'Récupérer la ressource' :
                                                     hasBlockingPrevious ? 'Ressource non restituée' :
@@ -259,12 +273,12 @@ export default function LuckyEntryTab({setSelected}) {
                                         {entry.moderate === "USED" && (
                                             <Button
                                                 color="success"
-                                                className="w-full font-medium bg-gradient-to-r from-green-500 to-green-600"
+                                                className="w-full font-medium bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 h-12"
                                                 size="lg"
                                                 isLoading={isActionLoading}
                                                 onPress={handleResourceAction}
                                                 isDisabled={!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH"}
-                                                startContent={<ArrowLeftCircleIcon className="w-5 h-5"/>}
+                                                startContent={<ArrowLeftCircleIcon className="w-4 h-4"/>}
                                             >
                                                 {!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH" ? 'Appareil non autorisé' : 'Restituer la ressource'}
                                             </Button>
@@ -277,7 +291,7 @@ export default function LuckyEntryTab({setSelected}) {
                                         color="danger"
                                         variant="light"
                                         onPress={onClose}
-                                        className="font-medium"
+                                        className="font-medium h-10"
                                     >
                                         Fermer
                                     </Button>

@@ -37,9 +37,10 @@ export default function PopupDoubleCheckAction({onConfirm, title, message, isOpe
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>
+                            <ModalHeader
+                                className="flex flex-col gap-1 text-neutral-900 dark:text-neutral-100">{title}</ModalHeader>
                             <ModalBody>
-                                <p>
+                                <p className="text-neutral-900 dark:text-neutral-100">
                                     {message}
                                 </p>
                             </ModalBody>

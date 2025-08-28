@@ -68,55 +68,74 @@ export default function LoginTab() {
     }, [wrongCredentials, setWrongCredentials]);
 
     return (
-        <Form className="flex flex-col justify-center space-y-4">
-            {creditentials.map((input, index) => (
-                <div key={index} className="w-full">
-                    <p className=" text-small mb-2">{input.label}</p>
-                    <Input key={index}
-                           type={input.name === 'password' ? (isPasswordVisible ? 'text' : 'password') : input.type}
-                           placeholder={"Entrer votre " + input.label.toLowerCase()}
-                           className="mb-2"
-                           radius="sm"
-                           name={input.name}
-                           size="lg"
-                           onChange={(e) => handleChange(e, index)}
-                           endContent={
-                               input.name === 'password' && (
-                                   <button className="focus:outline-none" type="button"
-                                           onClick={() => setIsPasswordVisible(!isPasswordVisible)}>
-                                       {isPasswordVisible ? (
-                                           <EyeSlashIcon className="h-5 w-5 text-gray-400"/>
-                                       ) : (
-                                           <EyeIcon className="h-5 w-5 text-gray-400"/>
-                                       )}
-                                   </button>
-                               )
-                           }
-                    />
-                </div>
-            ))}
+        <Form className="space-y-5">
+            {/* Champs de connexion */}
+            <div className="space-y-4 w-full">
+                {creditentials.map((input, index) => (
+                    <div key={index} className="space-y-2">
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                            {input.label}
+                        </label>
+                        <Input
+                            type={input.name === 'password' ? (isPasswordVisible ? 'text' : 'password') : input.type}
+                            placeholder={`Entrer votre ${input.label.toLowerCase()}`}
+                            radius="md"
+                            size="md"
+                            variant="bordered"
+                            classNames={{
+                                input: "text-sm",
+                                inputWrapper: "h-11 bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200"
+                            }}
+                            onChange={(e) => handleChange(e, index)}
+                            endContent={
+                                input.name === 'password' && (
+                                    <button
+                                        className="focus:outline-none p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                                        type="button"
+                                        onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                                    >
+                                        {isPasswordVisible ? (
+                                            <EyeSlashIcon className="h-4 w-4 text-neutral-500"/>
+                                        ) : (
+                                            <EyeIcon className="h-4 w-4 text-neutral-500"/>
+                                        )}
+                                    </button>
+                                )
+                            }
+                        />
+                    </div>
+                ))}
+            </div>
 
-            <div className="w-full">
-                <p className="flex justify-center items-center m-1 p-2 text-sm">Vous n&#39;avez pas de compte ?&nbsp; <Link as={NextLink} underline="hover" size="sm" color="foreground"
-                                                href="/register">Créer
-                        un compte</Link></p>
-                <Button
-                    type={"submit"}
-                    fullWidth
-                    onPress={async () => {
-                        setConnectionLoading(true);
-                        await handleSubmit().then(r => {
-                        });
-                    }}
+            {/* Bouton de connexion */}
+            <Button
+                type="submit"
+                fullWidth
+                onPress={async () => {
+                    setConnectionLoading(true);
+                    await handleSubmit();
+                }}
+                color="default"
+                isLoading={connectionLoading}
+                size="md"
+                radius="md"
+                className="h-11 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
+            >
+                {!connectionLoading ? "Se connecter" : "Connexion en cours..."}
+            </Button>
 
-                    color="default"
-                    isLoading={connectionLoading}
-                    size="lg"
-                    radius="sm"
-                >
-                    {!connectionLoading ? "Connexion" : "En cours de connexion"}
-                </Button>
-               
+            {/* Lien vers l'inscription */}
+            <div className="text-center pt-2">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Vous n&apos;avez pas de compte ?{" "}
+                    <Link
+                        as={NextLink}
+                        href="/register"
+                        className="text-sm text-neutral-900 dark:text-neutral-100 font-medium hover:underline transition-all duration-200"
+                    >
+                        Créer un compte
+                    </Link>
+                </p>
             </div>
         </Form>
     );

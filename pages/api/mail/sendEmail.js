@@ -57,17 +57,20 @@ export default async function handler(req, res) {
             tls: {
                 rejectUnauthorized: false,
             },
+            charset: 'utf-8',
+            encoding: 'utf-8'
         });
 
         const info = await transporter.sendMail({
             headers: {
-                'Content-Type': 'multipart/related; charset=utf-8',
+                'Content-Type': 'text/html; charset=utf-8',
             },
             from: `"${decrypt(smtpConfig.fromName)}" <${decrypt(smtpConfig.fromEmail)}>`,
             to,
             subject,
             html: htmlContent,
-            text: textContent, 
+            text: textContent,
+            encoding: 'utf-8',
             attachments: [
                 {
                     filename: 'banner_low.png',

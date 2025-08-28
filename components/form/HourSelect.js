@@ -31,7 +31,7 @@ export default function HourSelect({
     return (
         <Select
             isRequired
-            defaultSelectedKeys={[defaultValue]}
+            selectedKeys={value ? [value] : []}
             label={label}
             items={hours}
             size="sm"
@@ -39,7 +39,7 @@ export default function HourSelect({
             isDisabled={isDisabled}
             isInvalid={isInvalid}
             disabledKeys={disabledKeys}
-            onChange={onChange}  
+            onChange={onChange}
             classNames={{
                 trigger: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
                 value: "text-neutral-900 dark:text-neutral-100 font-semibold",

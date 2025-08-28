@@ -32,6 +32,7 @@ import {MdOutlineCategory} from "react-icons/md";
 import {truncateString} from "@/global";
 import ActionOnItem from "@/components/actions/ActionOnItem";
 import {BsQuestion} from "react-icons/bs";
+import ModalCheckingBooking from "@/components/modals/ModalCheckingBooking";
 
 
 export const postItem = async ({data, model}) => {
@@ -430,6 +431,10 @@ export default function ItemsOnTable({
     const [page, setPage] = React.useState(1);
     const rowsPerPage = 10;
     const [sortConfig, setSortConfig] = useState({key: null, direction: 'asc'});
+
+    // États pour le modal de consultation des réservations
+    const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
+    const [selectedEntry, setSelectedEntry] = useState(null);
     // Obtenir les valeurs uniques disponibles pour chaque filtre
     const availableFilterValues = React.useMemo(() => {
         if (!items || !filters.length) return {};
@@ -532,6 +537,12 @@ export default function ItemsOnTable({
         } else {
             mutation.mutate({selectedItems: new Set([item]), model});
         }
+    };
+
+    // Fonction pour ouvrir le modal de consultation des réservations
+    const handleConsultEntry = (entry) => {
+        setSelectedEntry(entry);
+        setIsConsultModalOpen(true);
     };
 
     // Modifier le placeholder de l'input de recherche
@@ -768,21 +779,48 @@ export default function ItemsOnTable({
                                         ))}
                                         <TableCell key={`actions-${item.key}`}
                                                    className="text-content-primary dark:text-dark-content-primary">
-                                            <ActionMenuModerate
-                                                handleRefresh={() => refreshData([model])}
-                                                actions={actions}
-                                                onActionDelete={() => {
-                                                    setSelectedItems(new Set([item.id]));
-                                                    onOpenChangeDeleteConfirm();
-                                                }}
-                                                onActionEdit={() => {
-                                                    setCurrentAction("edit");
-                                                    setCurrentItem(item);
-                                                    onOpenOnItem();
-                                                }}
-                                                entry={item}
-                                                isOpen={isOpenDeleteConfirm}
-                                            />
+                                            <div className="flex items-center gap-2">
+                                                {/* Bouton Consulter (bouton pour admin seulement) */}
+                                                {model === "entry" && session?.user?.role !== 'USER' && (
+                                                    <Tooltip content="Consulter la réservation" color="foreground"
+                                                             showArrow>
+                                                        <Button
+                                                            isIconOnly
+                                                            size="sm"
+                                                            variant="flat"
+                                                            color="default"
+                                                            onPress={() => handleConsultEntry(item)}
+                                                            className="text-neutral-600 dark:text-neutral-400"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor"
+                                                                 viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round"
+                                                                      strokeWidth={2}
+                                                                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                                <path strokeLinecap="round" strokeLinejoin="round"
+                                                                      strokeWidth={2}
+                                                                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                            </svg>
+                                                        </Button>
+                                                    </Tooltip>
+                                                )}
+
+                                                <ActionMenuModerate
+                                                    handleRefresh={() => refreshData([model])}
+                                                    actions={actions}
+                                                    onActionDelete={() => {
+                                                        setSelectedItems(new Set([item.id]));
+                                                        onOpenChangeDeleteConfirm();
+                                                    }}
+                                                    onActionEdit={() => {
+                                                        setCurrentAction("edit");
+                                                        setCurrentItem(item);
+                                                        onOpenOnItem();
+                                                    }}
+                                                    entry={item}
+                                                    isOpen={isOpenDeleteConfirm}
+                                                />
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 );
@@ -796,6 +834,16 @@ export default function ItemsOnTable({
                 )}
             </Skeleton>
 
+            {/* Modal de consultation des réservations */}
+            {selectedEntry && (
+                <ModalCheckingBooking
+                    entry={selectedEntry}
+                    adminMode={session?.user?.role !== 'USER'}
+                    handleRefresh={() => refreshData([model])}
+                    isOpen={isConsultModalOpen}
+                    onOpenChange={setIsConsultModalOpen}
+                />
+            )}
         </div>
     );
 

@@ -7,7 +7,7 @@ export default function Stepper({step, done=false, last=false, content, handleRe
         <div className="flex flex-row">
             <div className="flex flex-col justify-center items-center">
                 <div
-                    className={`flex justify-center items-center w-[64px] h-[64px] rounded-full transition-all duration-300 ease-in-out
+                    className={`flex justify-center items-center w-12 h-12 sm:w-[64px] sm:h-[64px] rounded-full transition-all duration-300 ease-in-out
                         ${done && !failed ? "bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/30" :
                         failed ? "bg-gradient-to-br from-red-400 to-red-600 shadow-lg shadow-red-500/30" :
                             "bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800 shadow-lg shadow-neutral-500/10"}
@@ -16,24 +16,24 @@ export default function Stepper({step, done=false, last=false, content, handleRe
                 >
                     {!failed && done && (
                         <CheckIcon
-                            width={34}
-                            height={34}
-                            className="text-white animate-scale-check"
+                            width={24}
+                            height={24}
+                            className="text-white animate-scale-check sm:w-8 sm:h-8"
                         />
                     )}
                     {!failed && !done && (
-                        <h2 className="text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-300 dark:to-blue-500">
+                        <h2 className="text-lg sm:text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-300 dark:to-blue-500">
                             {step}
                         </h2>
                     )}
                     {failed && (
-                        <div className="text-3xl font-semibold">
+                        <div className="text-2xl sm:text-3xl font-semibold">
                             <IoCloseSharp/>
                         </div>
                     )}
                 </div>
                 {!last && (
-                    <div className={`h-[25px] w-[3px] my-1 rounded-full transition-all duration-300 ease-in-out
+                    <div className={`h-6 sm:h-[25px] w-[3px] my-1 rounded-full transition-all duration-300 ease-in-out
                         ${done && !failed ? "bg-gradient-to-b from-blue-400 to-blue-600" :
                         failed ? "bg-gradient-to-b from-red-400 to-red-600" :
                             "bg-gradient-to-b from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800"}

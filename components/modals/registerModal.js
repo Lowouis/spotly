@@ -1,10 +1,7 @@
 'use client';
 
-import Banner from "@/components/utils/banner";
 import React, {useState} from "react";
-import {Input} from "@heroui/input";
-import {Button} from "@heroui/button";
-import {Card, CardBody, CardFooter, CardHeader, Link, ScrollShadow} from "@heroui/react";
+import {Button, Input, Link} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import {addToast} from "@heroui/toast";
 import NextLink from "next/link";
@@ -33,7 +30,6 @@ export async function createUser(userData) {
 }
 
 export function RegisterModal({}) {
-    const [selected, setSelected] = useState("login");
     const [connectionLoading, setConnectionLoading] = useState(false);
     const [creditentials, setCreditentials] = useState([
         {
@@ -67,12 +63,13 @@ export function RegisterModal({}) {
             "type": "password"
         },
         {
-            "label": "Confirmer le mot de passe",
+            "label": "Confirmation du mot de passe",
             "name": "confirmPassword",
             "value": "",
             "type": "password"
         }
     ]);
+
     const mutation = useMutation({
         mutationFn: createUser,
         onError: () => {
@@ -116,79 +113,95 @@ export function RegisterModal({}) {
 
         mutation.mutate(userData);
     };
-    
-
 
     return (
-        <div className="w-full">
-            <Banner/>
-            <div className="w-full flex justify-center items-center mt-5 flex-col">
-                <form onSubmit={handleSubmit}>
-                    <Card fullWidth className="max-w-full w-[400px] h-[600px]" shadow="sm">
-                        <CardHeader>
-                            <p className="text-center text-2xl w-full">Créer un compte</p>
-                        </CardHeader>
-                        <CardBody>
-                            <ScrollShadow className="w-full h-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                <div className="flex flex-col justify-center space-y-4">
-                                    {creditentials.map((input, index) => (
-                                        <div key={index}>
-                                            <p className=" text-small mb-2">{input.label}</p>
-                                            <Input
-                                                key={index}
-                                                type={input.type}
-                                                placeholder={"Entrer votre " + input.label.toLowerCase()}
-                                                className="mb-2"
-                                                radius="sm"
-                                                isRequired={true}
-                                                name={input.name}
-                                                value={input.value}
-                                                onChange={(e) => {
-                                                    const newCreditentials = [...creditentials];
-                                                    newCreditentials[index].value = e.target.value;
-                                                    setCreditentials(newCreditentials);
-                                                }}
-                                                errorMessage={() => {
-                                                    if (input.type === "password" && input.value.length < 8) {
-                                                        return "Le mot de passe doit contenir au moins 8 caractères";
-                                                    } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
-                                                        return "Les mots de passe ne correspondent pas";
-                                                    }
-                                                    return "";
-                                                }}
-                                                validate={() => {
-                                                    if (input.type === "password" && input.value.length < 8) {
-                                                        return false;
-                                                    } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
-                                                        return false;
-                                                    }
-                                                    return true;
-                                                }}
-                                                size="lg"
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </ScrollShadow>
-                        </CardBody>
-                        <CardFooter className="pb-4">
-                            <div className="w-full mb-4">
-                                <p className="flex justify-center items-center m-1 p-2 text-sm">Vous avez deja un compte
-                                    ? &nbsp;<Link as={NextLink} underline="hover" size="sm" color="foreground" href="/login"> Se
-                                        connecter</Link></p>
-                                <Button
-                                    type={"submit"}
-                                    fullWidth
-                                    color="default"
-                                    isLoading={connectionLoading}
-                                    size="lg"
-                                    radius="sm"
-                                >
-                                    Créer mon compte
-                                </Button>
+        <div className="w-full max-w-md mx-auto">
+            {/* En-tête avec titre */}
+            <div className="text-center mb-8">
+                <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+                    Créer un compte
+                </h1>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Rejoignez notre plateforme de gestion de ressources
+                </p>
+            </div>
+
+            {/* Container principal avec bordure subtile */}
+            <div
+                className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-sm p-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Champs de formulaire */}
+                    <div className="space-y-4">
+                        {creditentials.map((input, index) => (
+                            <div key={index} className="space-y-2">
+                                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                    {input.label}
+                                </label>
+                                <Input
+                                    type={input.type}
+                                    placeholder={`Entrer votre ${input.label.toLowerCase()}`}
+                                    radius="md"
+                                    size="md"
+                                    variant="bordered"
+                                    isRequired={true}
+                                    name={input.name}
+                                    value={input.value}
+                                    classNames={{
+                                        input: "text-sm",
+                                        inputWrapper: "h-11 bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200"
+                                    }}
+                                    onChange={(e) => {
+                                        const newCreditentials = [...creditentials];
+                                        newCreditentials[index].value = e.target.value;
+                                        setCreditentials(newCreditentials);
+                                    }}
+                                    errorMessage={() => {
+                                        if (input.type === "password" && input.value.length < 8) {
+                                            return "Le mot de passe doit contenir au moins 8 caractères";
+                                        } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
+                                            return "Les mots de passe ne correspondent pas";
+                                        }
+                                        return "";
+                                    }}
+                                    validate={() => {
+                                        if (input.type === "password" && input.value.length < 8) {
+                                            return false;
+                                        } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
+                                            return false;
+                                        }
+                                        return true;
+                                    }}
+                                />
                             </div>
-                        </CardFooter>
-                    </Card>
+                        ))}
+                    </div>
+
+                    {/* Bouton de création de compte */}
+                    <Button
+                        type="submit"
+                        fullWidth
+                        color="default"
+                        isLoading={connectionLoading}
+                        size="md"
+                        radius="md"
+                        className="h-11 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
+                    >
+                        {!connectionLoading ? "Créer mon compte" : "Création en cours..."}
+                    </Button>
+
+                    {/* Lien vers la connexion */}
+                    <div className="text-center pt-2">
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                            Vous avez déjà un compte ?{" "}
+                            <Link
+                                as={NextLink}
+                                href="/login"
+                                className="text-sm text-neutral-900 dark:text-neutral-100 font-medium hover:underline transition-all duration-200"
+                            >
+                                Se connecter
+                            </Link>
+                        </p>
+                    </div>
                 </form>
             </div>
         </div>

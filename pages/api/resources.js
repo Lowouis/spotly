@@ -67,6 +67,7 @@ export default async function handler(req, res) {
                 name : name,
                 description : description,
                 moderate : moderate === "1",
+                status: "UNAVAILABLE", // Statut par défaut lors de la création
                 ...(pickable?.id && {
                     pickable: {
                         connect: {id: pickable.id}
@@ -87,7 +88,7 @@ export default async function handler(req, res) {
             }})
         return res.status(200).json(ressource);
     } else if (req.method === "PUT") {
-        const {id, name, description, moderate, domains, category, owner, pickable } = req.body;
+        const {id, name, description, moderate, domains, category, owner, pickable, status} = req.body;
 
         const ressource = await prisma.resource.update({
             where: {
@@ -96,6 +97,7 @@ export default async function handler(req, res) {
             data: {
                 name,
                 moderate: moderate === "1",
+                ...(status && {status: status}), // Le statut est maintenant directement une string
                 ...(pickable !== null && pickable !== undefined ? {
                     pickable: {
                         connect: {id: pickable.id}

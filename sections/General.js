@@ -3,9 +3,6 @@ import {CiCamera, CiCircleAlert, CiCircleCheck} from 'react-icons/ci';
 import {Button} from '@heroui/button';
 import {addToast} from "@heroui/toast";
 import Image from 'next/image';
-import {Form} from "@heroui/form";
-import {Skeleton, Slider} from "@heroui/react";
-import {useMutation, useQuery} from '@tanstack/react-query';
 import nextConfig from '../next.config.mjs';
 
 const basePath = nextConfig.basePath || '';
@@ -14,53 +11,6 @@ export const General = () => {
     const [uploadState, setUploadState] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const {data: timeScheduleOptions, refetch, isLoading: isLoadingtimeScheduleOptions} = useQuery({
-        queryKey: ['timeScheduleOptions'],
-        queryFn: async () => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/timeScheduleOptions`);
-            if (!response.ok) {
-                throw new Error('Erreur lors de la récupération des options de planification');
-            }
-            return response.json();
-        },
-    });
-
-    const mutation = useMutation({
-        mutationFn: async (newValue) => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/timeScheduleOptions`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(newValue),
-            });
-            if (!response.ok) {
-                throw new Error('Erreur lors de la mise à jour des options de planification');
-            }
-            return response.json();
-        },
-        onSuccess: () => {
-            addToast({
-                title: 'Mise à jour réussie',
-                description: 'Les options de planification ont été mises à jour avec succès',
-                color: 'success',
-                duration: 2000,
-            });
-            refetch();
-        },
-        onError: (error) => {
-            addToast({
-                title: 'Erreur de mise à jour',
-                description: error.message || 'Une erreur est survenue lors de la mise à jour',
-                color: 'danger',
-                duration: 2000,
-            });
-        }
-    });
-
-    const handleTimeScheduleChange = (newValue) => {
-        mutation.mutate(newValue);
-    };
 
     const handleBannerUpload = async (file) => {
         if (!file) return;
@@ -188,64 +138,6 @@ export const General = () => {
                         <span className="truncate">{uploadState.message}</span>
                     </div>
                 )}
-            </div>
-
-            <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-black dark:text-neutral-200">Tolérance des horaires</h3>
-
-                <div className="w-full max-w-md">
-                    {isLoadingtimeScheduleOptions ? (
-                        <div className="space-y-4">
-                            <Skeleton className="rounded-lg">
-                                <div className="h-8 rounded-lg bg-default-300"></div>
-                            </Skeleton>
-                            <Skeleton className="rounded-lg">
-                                <div className="h-8 rounded-lg bg-default-300"></div>
-                            </Skeleton>
-                        </div>
-                    ) : (
-                        <Form>
-                            <div className="space-y-6">
-                                <Slider
-                                    className="max-w-md text-neutral-500 dark:text-neutral-200"
-                                    showSteps={true}
-                                    defaultValue={timeScheduleOptions?.onPickup || 0}
-                                    label={`Récupération : ${Math.abs(timeScheduleOptions?.onPickup || 0)} minutes ${(timeScheduleOptions?.onPickup || 0) > 0 ? "avant" : "après"} l'heure de début.`}
-                                    maxValue={30}
-                                    minValue={0}
-                                    onChange={(newValue) => {
-                                        handleTimeScheduleChange({
-                                            onPickup: newValue
-                                        });
-                                    }}
-                                    fillOffset={0}
-                                    color="foreground"
-                                    size="sm"
-                                    step={5}
-                                    hideValue={true}
-                                />
-                                <Slider
-                                    className="max-w-md text-neutral-500 dark:text-neutral-200"
-                                    showSteps={true}
-                                    defaultValue={timeScheduleOptions?.onReturn || 0}
-                                    label={`Restitution : ${Math.abs(timeScheduleOptions?.onReturn || 0)} minutes ${(timeScheduleOptions?.onReturn || 0) > 0 ? "après" : "avant"} l'heure de fin.`}
-                                    maxValue={30}
-                                    minValue={0}
-                                    onChange={(newValue) => {
-                                        handleTimeScheduleChange({
-                                            onReturn: newValue
-                                        });
-                                    }}
-                                    fillOffset={0}
-                                    hideValue={true}
-                                    color="foreground"
-                                    size="sm"
-                                    step={5}
-                                />
-                            </div>
-                        </Form>
-                    )}
-                </div>
             </div>
         </div>
     );

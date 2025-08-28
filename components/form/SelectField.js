@@ -170,7 +170,6 @@ const SelectField = ({
                         value: "text-neutral-900 dark:text-neutral-100 font-semibold",
                         placeholder: "text-neutral-500 dark:text-neutral-400",
                         listbox: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg",
-                        popoverContent: "py-2",
                         item: "py-3 px-4 min-h-[48px] flex items-center transition-colors duration-150 cursor-pointer",
                         selectedItem: "bg-primary-700/20 dark:bg-primary-700/20 text-primary-400 dark:text-primary-300 font-bold",
                         highlightedItem: "bg-neutral-100 dark:bg-neutral-800",

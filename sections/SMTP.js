@@ -6,6 +6,7 @@ import {Button} from "@heroui/button";
 import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
 import {addToast} from "@heroui/toast";
+import {useConfigStatus} from "@/context/ConfigStatusContext";
 
 const SMTPSettings = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -13,6 +14,7 @@ const SMTPSettings = () => {
     const [errorMessage, setErrorMessage] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState(null);
     const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+    const {updateConfigStatus} = useConfigStatus();
 
     const [formData, setFormData] = useState({
         host: "",
@@ -42,24 +44,20 @@ const SMTPSettings = () => {
                         fromName: data.fromName || "",
                         secure: data.secure ?? true
                     }));
+
+                    // Si on a des données, on considère qu'il y a une config
+                    if (data.host && data.port && data.username) {
+                        updateConfigStatus('smtp', 'error'); // Par défaut en erreur jusqu'au test
+                    } else {
+                        updateConfigStatus('smtp', 'none');
+                    }
                 } else {
-                    const errorData = await response.json();
-                    console.error("Erreur lors du chargement:", errorData);
-                    addToast({
-                        title: 'Chargement de la configuration',
-                        description: errorData.message || 'Erreur lors du chargement de la configuration',
-                        color: 'danger',
-                        duration: 5000,
-                    });
+                    // Pas de configuration existante, c'est normal pour une première utilisation
+                    updateConfigStatus('smtp', 'none');
                 }
             } catch (error) {
-                console.error("Erreur lors du chargement de la configuration:", error);
-                addToast({
-                    title: 'Chargement de la configuration',
-                    description: 'Erreur lors du chargement de la configuration',
-                    color: 'danger',
-                    duration: 5000,
-                });
+                // Erreur de connexion, on continue avec les champs vides
+                updateConfigStatus('smtp', 'none');
             } finally {
                 setIsLoadingConfig(false);
             }
@@ -101,6 +99,7 @@ const SMTPSettings = () => {
 
             if (response.ok) {
                 setConnectionStatus('success');
+                updateConfigStatus('smtp', 'success');
                 addToast({
                     title: 'Test de connexion',
                     description: 'Connexion SMTP réussie',
@@ -109,10 +108,12 @@ const SMTPSettings = () => {
                 });
             } else {
                 setConnectionStatus('error');
+                updateConfigStatus('smtp', 'error');
                 throw new Error(result.message || 'Erreur de connexion');
             }
         } catch (error) {
             setConnectionStatus('error');
+            updateConfigStatus('smtp', 'error');
             addToast({
                 title: 'Test de connexion',
                 description: error.message || 'Erreur lors du test de connexion',
@@ -148,6 +149,8 @@ const SMTPSettings = () => {
                 color: 'success',
                 duration: 5000,
             });
+            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
+            updateConfigStatus('smtp', 'error');
         } catch (error) {
             addToast({
                 title: 'Configuration SMTP',

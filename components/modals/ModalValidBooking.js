@@ -38,6 +38,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
         cgu: false,
         substitute_user: null,
         makeUnavailable: false,
+        selectedSlots: [], // Nouveau: pour stocker les créneaux sélectionnés
     });
 
 
@@ -50,6 +51,46 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
             ...prevState,
             [name]: type === "checkbox" ? checked : value
         }));
+    };
+
+    // Initialiser les créneaux sélectionnés avec tous les créneaux disponibles
+    React.useEffect(() => {
+        if (entry?.resource?.availability) {
+            const availableSlots = entry.resource.availability
+                .map((slot, index) => ({...slot, index}))
+                .filter(slot => slot.available);
+
+            setFormData(prevState => ({
+                ...prevState,
+                selectedSlots: availableSlots
+            }));
+        }
+    }, [entry?.resource?.availability]);
+
+    const handleSlotSelection = (slot, index) => {
+        if (!slot.available) return; // Ne pas permettre la sélection des créneaux indisponibles
+
+        setFormData(prevState => {
+            const isSelected = prevState.selectedSlots.some(selectedSlot =>
+                selectedSlot.start === slot.start && selectedSlot.end === slot.end
+            );
+
+            if (isSelected) {
+                // Retirer le créneau
+                return {
+                    ...prevState,
+                    selectedSlots: prevState.selectedSlots.filter(selectedSlot =>
+                        !(selectedSlot.start === slot.start && selectedSlot.end === slot.end)
+                    )
+                };
+            } else {
+                // Ajouter le créneau
+                return {
+                    ...prevState,
+                    selectedSlots: [...prevState.selectedSlots, {...slot, index}]
+                };
+            }
+        });
     };
     const mutation = useMutation({
         mutationFn: async (newEntry) => {
@@ -192,9 +233,16 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
     });
 
     const handleSubmission = (onClose) => {
-        if (formData.cgu || formData.makeUnavailable) {
+        if ((formData.cgu && formData.selectedSlots.length > 0) || formData.makeUnavailable) {
+            // Utiliser seulement les créneaux sélectionnés
+            const selectedAvailabilities = formData.selectedSlots.map(slot => ({
+                start: slot.start,
+                end: slot.end,
+                available: slot.available
+            }));
+            
             mutation.mutate({
-                availabilities: entry.resource.availability,
+                availabilities: selectedAvailabilities,
                 resourceId: entry.resource.id,
                 userId: formData.substitute_user ? formData.substitute_user : session.user.id,
                 comment: formData.comment,
@@ -218,10 +266,10 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
             backdrop="blur"
             size="2xl"
             classNames={{
-                base: "bg-white dark:bg-neutral-900",
-                header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
-                body: "py-6",
-                footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4 sticky bottom-0 bg-white dark:bg-neutral-900 rounded-b-lg",
+                base: "bg-white dark:bg-neutral-900 mx-1",
+                header: "border-b border-neutral-200 dark:border-neutral-700 pb-3 sm:pb-4",
+                body: "py-3 sm:py-3",
+                footer: "border-t border-neutral-200 dark:border-neutral-700 pt-3 sm:pt-4 sticky bottom-0 bg-white dark:bg-neutral-900 rounded-b-lg",
                 wrapper: "overflow-hidden rounded-lg",
                 closeButton: "hidden"
             }}
@@ -257,7 +305,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 <Skeleton isLoaded={entry.resource}>
                                     <ModalHeader className="flex flex-col gap-1">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-2 sm:gap-3">
                                                 <Tooltip content="Retour" color="foreground" showArrow>
                                                     <Button
                                                         isIconOnly
@@ -266,23 +314,23 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                         onPress={onClose}
                                                         className="text-neutral-600 dark:text-neutral-400 -ml-2"
                                                     >
-                                                        <ArrowLeftIcon className="w-5 h-5"/>
+                                                        <ArrowLeftIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
                                                     </Button>
                                                 </Tooltip>
-                                                <div className="flex flex-col">
-                                                    <div className="flex items-center gap-2">
-                                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                                <div className="flex flex-col min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                                                             {entry && entry.resource ? entry.resource.name :
                                                                 <Spinner size="sm"/>}
                                                         </h2>
                                                         {entry?.resource?.moderate && (
                                                             <span
-                                                                className="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                                                                className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex-shrink-0">
                                                                 Modération requise
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                    <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 truncate">
                                                         {entry?.resource?.domains?.name}
                                                     </p>
                                                 </div>
@@ -292,32 +340,32 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                 </Skeleton>
 
                                 <Skeleton isLoaded={entry.resource}>
-                                    <ModalBody className="flex-1 overflow-y-auto max-h-[70vh]">
-                                        <div className="flex flex-col space-y-6">
+                                    <ModalBody className="flex-1 overflow-y-auto max-h-[60vh] sm:max-h-[70vh]">
+                                        <div className="flex flex-col space-y-4 sm:space-y-6">
                                             {/* Section Dates */}
-                                            <div className="space-y-4">
+                                            <div className="space-y-3 sm:space-y-4">
                                                 <div className="flex items-center justify-between">
                                                     <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                                                         Période de réservation
                                                     </h3>
                                                     {entry?.resource?.availability && (
                                                         <span
-                                                            className="text-xs px-2 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
-                                                            {entry.resource.availability.filter(slot => slot.available).length}/{entry.resource.availability.length} créneaux disponibles
+                                                            className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                                                            {formData.selectedSlots.length}/{entry.resource.availability.filter(slot => slot.available).length} créneaux sélectionnés
                                                         </span>
                                                     )}
                                                 </div>
 
                                                 <div
-                                                    className="max-h-[200px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                                                    className="max-h-[180px] sm:max-h-[200px] overflow-y-auto pr-2 space-y-1.5 sm:space-y-2 custom-scrollbar">
                                                     {entry.resource?.availability.length === 1 ? (
                                                         <div
-                                                            className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
-                                                            <div className="flex items-center gap-3">
+                                                            className="flex items-center justify-between p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                                                            <div className="flex items-center gap-2 sm:gap-3">
                                                                 <div
-                                                                    className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-700">
+                                                                    className="p-1.5 sm:p-2 rounded-full bg-neutral-100 dark:bg-neutral-700">
                                                                     <svg
-                                                                        className="w-5 h-5 text-neutral-600 dark:text-neutral-400"
+                                                                        className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-600 dark:text-neutral-400"
                                                                         fill="none" stroke="currentColor"
                                                                         viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round"
@@ -325,79 +373,84 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                                               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                                                     </svg>
                                                                 </div>
-                                                                <div className="flex flex-col">
+                                                                <div className="flex flex-col min-w-0 flex-1">
                                                                     <span
-                                                                        className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                                                                        className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
                                                                         {formatDate(entry.date.start)}
                                                                     </span>
                                                                     <span
-                                                                        className="text-xs text-neutral-500 dark:text-neutral-400">
+                                                                        className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                                                                         {formatDate(entry.date.end)}
                                                                     </span>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center gap-2">
+                                                            <div
+                                                                className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                                 <span
-                                                                    className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                                    className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
                                                                     {formatDuration(new Date(entry.date.end) - new Date(entry.date.start))}
                                                                 </span>
                                                                 <ArrowRightCircleIcon
-                                                                    className="w-5 h-5 text-neutral-400"/>
+                                                                    className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400"/>
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <div className="space-y-2">
-                                                            {entry.resource?.availability?.map((slot, index) => (
-                                                                <div
-                                                                    key={index}
-                                                                    className={`
-                                                                        flex items-center justify-between p-4 rounded-lg
-                                                                        ${slot.available
-                                                                        ? 'bg-success-50 dark:bg-success-950/30 border border-success-200 dark:border-success-800/30'
-                                                                        : 'bg-danger-50 dark:bg-danger-950/30 border border-danger-200 dark:border-danger-800/30'
-                                                                    }
-                                                                        transition-colors duration-200
-                                                                    `}
-                                                                >
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className={`
-                                                                            p-2 rounded-full
+                                                        <div className="space-y-1.5 sm:space-y-2">
+                                                            {entry.resource?.availability?.map((slot, index) => {
+                                                                const isSelected = formData.selectedSlots.some(selectedSlot =>
+                                                                    selectedSlot.start === slot.start && selectedSlot.end === slot.end
+                                                                );
+
+                                                                return (
+                                                                    <div
+                                                                        key={index}
+                                                                        className={`
+                                                                            flex items-center justify-between p-3 sm:p-4 rounded-lg cursor-pointer
                                                                             ${slot.available
-                                                                            ? 'bg-success-100 dark:bg-success-900/50'
-                                                                            : 'bg-danger-100 dark:bg-danger-900/50'
+                                                                            ? 'bg-success-50 dark:bg-success-950/30 border border-success-200 dark:border-success-800/30 hover:bg-success-100 dark:hover:bg-success-950/50'
+                                                                            : 'bg-danger-50 dark:bg-danger-950/30 border border-danger-200 dark:border-danger-800/30'
                                                                         }
-                                                                       `}>
-                                                                            <svg
-                                                                                className={`w-5 h-5 ${slot.available ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'}`}
-                                                                                fill="none" stroke="currentColor"
-                                                                                viewBox="0 0 24 24">
-                                                                                <path strokeLinecap="round"
-                                                                                      strokeLinejoin="round"
-                                                                                      strokeWidth={2}
-                                                                                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                                            </svg>
+                                                                            transition-colors duration-200
+                                                                        `}
+                                                                        onClick={() => handleSlotSelection(slot, index)}
+                                                                    >
+                                                                        <div
+                                                                            className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                                                                            <Checkbox
+                                                                                isSelected={isSelected}
+                                                                                isDisabled={!slot.available}
+                                                                                color={slot.available ? "success" : "danger"}
+                                                                                size="md"
+                                                                                className="flex-shrink-0"
+                                                                                onChange={() => handleSlotSelection(slot, index)}
+                                                                                onClick={(e) => e.stopPropagation()}
+                                                                            />
+                                                                            <div
+                                                                                className="flex flex-col min-w-0 flex-1">
+                                                                                <span
+                                                                                    className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                                                                                    {formatDate(slot.start)}
+                                                                                </span>
+                                                                                <span
+                                                                                    className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                                                                    {formatDate(slot.end)}
+                                                                                </span>
+                                                                            </div>
                                                                         </div>
-                                                                        <div className="flex flex-col">
+                                                                        <div
+                                                                            className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                                             <span
-                                                                                className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                                                                                {formatDate(slot.start)}
+                                                                                className={`text-xs sm:text-sm ${slot.available ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'}`}>
+                                                                                {slot.available ? 'Disponible' : 'Indisponible'}
                                                                             </span>
                                                                             <span
                                                                                 className="text-xs text-neutral-500 dark:text-neutral-400">
-                                                                                {formatDate(slot.end)}
+                                                                                {formatDuration(new Date(slot.end) - new Date(slot.start))}
                                                                             </span>
                                                                         </div>
                                                                     </div>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span
-                                                                            className={`text-sm ${slot.available ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'}`}>
-                                                                            {slot.available ? 'Disponible' : 'Indisponible'}
-                                                                        </span>
-                                                                        <ArrowRightCircleIcon
-                                                                            className={`w-5 h-5 ${slot.available ? 'text-success-400' : 'text-danger-400'}`}/>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </div>
                                                     )}
                                                 </div>
@@ -433,9 +486,9 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                     name="comment"
                                                     id="comment"
                                                     placeholder="Ajouter un commentaire à votre réservation..."
-                                                    size="lg"
+                                                    size="md"
                                                     variant="bordered"
-                                                    className="w-full min-h-[100px]"
+                                                    className="w-full min-h-[80px] sm:min-h-[100px]"
                                                     onChange={handleInputChange}
                                                     classNames={{
                                                         input: "text-sm",
@@ -527,13 +580,14 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                     <Divider className="bg-neutral-200 dark:bg-neutral-700"/>
                                                 </>
                                             )}
-                                            {!formData.makeUnavailable && 
-                                            <div className="space-y-4">
+                                            {!formData.makeUnavailable &&
+                                                <div className="space-y-3 sm:space-y-4">
                                                 <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                                                     Conditions d&apos;utilisation
                                                 </h3>
-                                                <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
-                                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+                                                    <div
+                                                        className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                                                        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mb-3 sm:mb-4">
                                                         {lastestPickable(entry)?.cgu}
                                                     </p>
                                                     <Checkbox
@@ -546,7 +600,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                         size="sm"
                                                         value={formData.cgu}
                                                         classNames={{
-                                                            label: "text-sm text-neutral-700 dark:text-neutral-300"
+                                                            label: "text-xs sm:text-sm text-neutral-700 dark:text-neutral-300"
                                                         }}
                                                     >
                                                         J&apos;accepte les conditions d&apos;utilisation
@@ -564,9 +618,9 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                 color="primary"
                                                 variant="flat"
                                                 type="submit"
-                                                size="lg"
-                                                className="font-medium"
-                                                isDisabled={!formData.cgu && !formData.makeUnavailable}
+                                                size="md"
+                                                className="font-medium w-full sm:w-auto"
+                                                isDisabled={(!formData.cgu || formData.selectedSlots.length === 0) && !formData.makeUnavailable}
                                             >
                                                 {!formData.makeUnavailable ? !entry.resource.moderate ? "Réserver" : "Demander" : "Bloquer"}
                                             </Button>

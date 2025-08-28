@@ -2,9 +2,10 @@ import {FormProvider, useForm} from 'react-hook-form';
 import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import {parseDate} from '@internationalized/date';
+import {I18nProvider} from 'react-aria';
 import SelectField from './SelectField';
-import React, {useEffect, useState} from "react";
-import {Form, Modal, ModalBody, ModalContent, ModalHeader, Switch, Tooltip} from "@heroui/react";
+import React, {useCallback, useEffect, useState} from "react";
+import {Drawer, DrawerBody, DrawerContent, DrawerHeader, Form, Switch, Tooltip} from "@heroui/react";
 import {AlternativeMenu} from "@/components/menu";
 import {MagnifyingGlassIcon} from "@heroicons/react/24/outline";
 import {Button} from "@heroui/button";
@@ -86,6 +87,14 @@ const ReservationSearch = () => {
 
     const {watch, setValue, formState: {errors}} = methods;
 
+    // Effet pour synchroniser l'état lors du changement de taille d'écran
+    useEffect(() => {
+        // Réinitialiser les erreurs lors du changement de layout
+        if (Object.keys(errors).length > 0) {
+            methods.clearErrors();
+        }
+    }, [isMobile, methods, errors]);
+
     const handleRefresh = ()=>{
         handleResetAllFilters();
         userEntriesRefetch();
@@ -107,14 +116,15 @@ const ReservationSearch = () => {
         const startDate = data.date.start.toISOString();
         const endDate = data.date.end.toISOString();
 
-
-        const limit = new Date(watch('recursive_limit'));
-        const reccurent = isRecurrent
-            ? `recurrent_limit=${limit ?? limit}&recurrent_unit=${watch('recursive_unit')?.name}&`
-            : '';
+        // Gestion des paramètres récurrents
+        let recurrentParams = '';
+        if (isRecurrent && data.recursive_unit && data.recursive_limit) {
+            const limit = new Date(data.recursive_limit);
+            recurrentParams = `recurrent_limit=${limit.toISOString()}&recurrent_unit=${data.recursive_unit.name}&`;
+        }
 
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/reservation?${reccurent}siteId=${data.site.id}&categoryId=${data.category.id}&domainId=${data.site.id}&startDate=${startDate}&endDate=${endDate}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
+            `${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/reservation?${recurrentParams}siteId=${data.site.id}&categoryId=${data.category.id}&domainId=${data.site.id}&startDate=${startDate}&endDate=${endDate}${data.resource !== null ? "&resourceId=" + data.resource.id : ""}`
         ).catch((error) => {
             console.error('Error fetching data:', error);
             throw error;
@@ -221,14 +231,18 @@ const ReservationSearch = () => {
     }
 
     const onSubmit = async (formData) => {
+        console.log('DEBUG - onSubmit called with formData:', formData);
+        
         // Vérifier si le formulaire est valide
         const isValid = await methods.trigger();
+        console.log('DEBUG - Form validation result:', isValid);
 
         if (!isValid) {
+            console.log('DEBUG - Form validation failed');
             addToast({
                 title: 'Formulaire invalide',
-                message: 'Veuillez remplir tous les champs requis',
-                type: 'warning',
+                description: 'Veuillez remplir tous les champs requis',
+                color: 'warning',
                 duration: 5000,
             });
             return;
@@ -236,10 +250,13 @@ const ReservationSearch = () => {
 
         // Si isRecurrent est true, vérifier que les champs récurrents sont remplis
         if (isRecurrent) {
-            if (!formData.recursive_unit || !formData.recursive_limit) {
+            const recursiveUnit = watch('recursive_unit');
+            const recursiveLimit = watch('recursive_limit');
+
+            if (!recursiveUnit || !recursiveLimit) {
                 addToast({
                     title: 'Champs manquants',
-                    message: 'Veuillez remplir la fréquence et la date de fin pour la récurrence',
+                    description: 'Veuillez remplir la fréquence et la date de fin pour la récurrence',
                     color: 'warning',
                     duration: 5000,
                 });
@@ -247,11 +264,26 @@ const ReservationSearch = () => {
             }
         }
 
-        setData(formData);
+        // Ajouter les champs récurrents au formData si nécessaire
+        const finalFormData = {
+            ...formData,
+            recursive_unit: isRecurrent ? watch('recursive_unit') : null,
+            recursive_limit: isRecurrent ? watch('recursive_limit') : null
+        };
+
+        console.log('DEBUG - Final form data:', finalFormData);
+        console.log('DEBUG - Setting isSubmitted to true');
+
+        setData(finalFormData);
         setIsSubmitted(true);
+
+        // Fermer le modal mobile et nettoyer les erreurs
         if (isMobile) {
             setIsModalOpen(false);
         }
+
+        // Nettoyer les erreurs de validation
+        methods.clearErrors();
     };
 
 
@@ -286,6 +318,12 @@ const ReservationSearch = () => {
         }
     };
 
+    const handleDateChangeCheck = useCallback(() => {
+        if (!isRecurrentValid("hebdomadaire") || !isRecurrentValid("jour")) {
+            setIsRecurrent(false);
+        }
+    }, [isRecurrentValid, setIsRecurrent]);
+
     const getOngoingAndDelayedEntries = () => {
         const ongoingEntries = userEntries?.filter((entry) => entry.moderate === "USED" || entry.moderate === "ACCEPTED" || entry.moderate === "WAITING");
         const delayedEntries = ongoingEntries?.filter((entry) => new Date(entry.endDate) < new Date());
@@ -306,20 +344,20 @@ const ReservationSearch = () => {
 
     const stepConfig = [
         {
-            icon: <IoEarthOutline size={50} color="#2563eb"/>,
+            icon: <IoEarthOutline size={50} color="#6b7280"/>,
             text: "Commencez par choisir un site"
         },
         {
-            icon: <BiCategory size={50} color="#935df0"/>,
+            icon: <BiCategory size={50} color="#6b7280"/>,
             text: "Choisissez une catégorie"
         },
         {
-            icon: <CiCalendarDate size={50} color="#f97316"/>,
+            icon: <CiCalendarDate size={50} color="#6b7280"/>,
             text: "Choisissez une date"
         },
         {
             icon: null,
-            text: "Vous pouvez commencer votre recherche"
+            text: "Commencer votre recherche"
         }
     ];
 
@@ -333,42 +371,85 @@ const ReservationSearch = () => {
                 selectedTab={searchMode}
             />
             <div className="flex flex-col md:w-full h-full">
-                <div className="flex flex-col justify-center items-center h-full">
+                <div className="flex flex-col justify-center items-center h-full w-full">
                     {searchMode === "search" && (
                         <div
-                            className="flex xl:w-11/12 sm:w-11/12 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full"
+                            className="flex w-full h-full"
                             role="search">
-                            <div className="h-full w-full space-y-5 p-2 rounded-lg">
+                            <div
+                                className="h-full w-full space-y-5 md:border-b-0 border-b border-neutral-200 dark:border-neutral-800">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                     {isMobile ? (
                                         <>
-                                            <Button
-                                                isIconOnly
-                                                size="lg"
-                                                radius="full"
-                                                color={"default"}
-                                                onPress={() => setIsModalOpen(true)}
-                                                className="ml-6"
-                                                shadow="md"
-                                                aria-label="Rechercher"
+                                            <div className="w-full ">
+                                                <div className="w-full flex justify-center items-center py-4 px-4">
+                                                    <div
+                                                        className="flex w-full flex-col justify-center items-center gap-3 space-x-3 px-6 py-3 transition-all duration-200 cursor-pointer"
+                                                        onClick={() => setIsModalOpen(true)}>
+                                                        <span
+                                                            className="flex justify-center items-center gap-2 opacity-50 font-medium">
+                                                            <MagnifyingGlassIcon
+                                                                className="w-8 h-8 text-neutral-600 dark:text-neutral-400"/>
+                                                            Rechercher
+
+                                                        </span>
+                                                        <svg
+                                                            className="w-8 h-8 text-neutral-600 dark:text-neutral-400"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            viewBox="0 0 24 24"
+                                                        >
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth={2}
+                                                                d="M21 12l-9 9m0 0l-9-9"
+                                                            />
+                                                        </svg>
+
+
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <Drawer
+                                                isOpen={isModalOpen}
+                                                onOpenChange={setIsModalOpen}
+                                                placement="top"
+                                                size="full"
+                                                classNames={{
+                                                    base: "bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700",
+                                                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
+                                                    body: "py-6 px-4",
+                                                    closeButton: "text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700 dark:text-neutral-400 rounded-full p-4 text-lg transition-all justify-end items-center"
+                                                }}
                                             >
-                                                <span className="flex justify-center items-center rounded-full">
-                                                    <MagnifyingGlassIcon width="32" height="32"
-                                                                         className="rounded-full"/>
-                                                </span>
-                                            </Button>
-                                            <Modal isOpen={isModalOpen} onOpenChange={setIsModalOpen}>
-                                                <ModalContent>
-                                                    <ModalHeader>Recherche de Réservation</ModalHeader>
-                                                    <ModalBody>
+                                                <DrawerContent>
+                                                    <DrawerHeader className="flex flex-col gap-2">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex flex-col gap-1">
+                                                                <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                                                    Recherche de Réservation
+                                                                </h2>
+
+                                                            </div>
+                                                        </div>
+                                                    </DrawerHeader>
+                                                    <DrawerBody>
                                                         <FormProvider {...methods}>
                                                             <form onSubmit={methods.handleSubmit(onSubmit)}
-                                                                  className="flex flex-col space-y-4">
+                                                                  className="flex flex-col space-y-6 h-full pb-20">
                                                                 <SelectField
                                                                     name="site"
                                                                     label="Site"
                                                                     options={"domains"}
                                                                     placeholder={"Choisir un site"}
+                                                                    classNames={{
+                                                                        label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                        trigger: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors h-12",
+                                                                        value: "text-neutral-800 dark:text-neutral-200",
+                                                                        placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                    }}
                                                                 />
                                                                 <SelectField
                                                                     name="category"
@@ -376,6 +457,12 @@ const ReservationSearch = () => {
                                                                     options={"categories"}
                                                                     onReset={handleResourceOnReset}
                                                                     placeholder={"Choisir une catégorie"}
+                                                                    classNames={{
+                                                                        label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                        trigger: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors h-12",
+                                                                        value: "text-neutral-800 dark:text-neutral-200",
+                                                                        placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                    }}
                                                                 />
                                                                 <SelectField
                                                                     name="resource"
@@ -385,49 +472,141 @@ const ReservationSearch = () => {
                                                                     isRequired={false}
                                                                     onReset={handleResourceOnReset}
                                                                     placeholder={"Toutes les ressources"}
+                                                                    classNames={{
+                                                                        label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                        trigger: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors h-12",
+                                                                        value: "text-neutral-800 dark:text-neutral-200",
+                                                                        placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                    }}
                                                                 />
                                                                 <DateRangePickerSplitted
-                                                                    setValue={setValue}/>
+                                                                    onChangeCheck={handleDateChangeCheck}
+                                                                    setValue={setValue}
+                                                                    classNames={{
+                                                                        label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                        input: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 text-sm focus:border-neutral-900 dark:focus:border-neutral-100 transition-colors duration-200",
+                                                                        value: "text-neutral-800 dark:text-neutral-200",
+                                                                        placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                    }}
+                                                                />
 
                                                                 <div
-                                                                    className="flex flex-col justify-center items-center">
-                                                                    <span
-                                                                        className="text-xs text-neutral-800 dark:text-neutral-200">Récurrent</span>
-                                                                    <Switch
-                                                                        size="sm"
-                                                                        name="allday"
-                                                                        id="allday"
-                                                                        color={isRecurrentValid("hebdomadaire") ? "primary" : "default"}
-                                                                        className="mb-2"
-                                                                        isSelected={isRecurrentValid("hebdomadaire") && isRecurrent}
-                                                                        onValueChange={(value) => {
-                                                                            if (isRecurrentValid("hebdomadaire")) {
+                                                                    className="flex items-center gap-2 bg-neutral-50 dark:bg-neutral-800 px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                                                                    <Tooltip
+                                                                        content={isRecurrentValid("hebdomadaire") ? "Cette option permet de faire plusieurs réservation de façon récurrente." : "Pour activer cette option, choisisez une période d'une semaine maximum."}
+                                                                        color="foreground"
+                                                                        showArrow
+                                                                        placement="top"
+                                                                    >
+                                                                        <Switch
+                                                                            size="sm"
+                                                                            name="allday"
+                                                                            id="allday"
+                                                                            isReadOnly={!isRecurrentValid("hebdomadaire")}
+                                                                            color={"primary"}
+                                                                            isSelected={isRecurrentValid("hebdomadaire") && isRecurrent}
+                                                                            onValueChange={(value) => {
                                                                                 setIsRecurrent(value);
-                                                                            }
-                                                                        }}
-                                                                    />
+                                                                            }}
+                                                                            classNames={{
+                                                                                wrapper: "bg-neutral-200 dark:bg-neutral-700",
+                                                                                thumb: "bg-white dark:bg-neutral-200"
+                                                                            }}
+                                                                        >
+                                                                            Récurrent
+                                                                        </Switch>
+                                                                    </Tooltip>
                                                                 </div>
+
                                                                 <div
-                                                                    className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 overflow-hidden'}`}>
-                                                                    <div className="flex flex-row space-x-2 w-full">
-                                                                        <SelectField
-                                                                            name="recursive_unit"
-                                                                            label="Fréquence"
-                                                                            options={"recursive_units"}
-                                                                            disabled={!isRecurrent}
-                                                                            isRequired={false}
-                                                                            className="mb-2"
-                                                                        />
+                                                                    className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-24' : 'opacity-0 max-h-0 overflow-hidden'}`}>
+                                                                    <div
+                                                                        className="flex gap-3 w-full bg-neutral-50 dark:bg-neutral-800 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700 flex-col">
+                                                                        <div className="flex items-center w-full">
+                                                                            <SelectField
+                                                                                onReset={handleResourceOnReset}
+                                                                                name="recursive_unit"
+                                                                                label="Fréquence"
+                                                                                options={"recursive_units"}
+                                                                                disabled={!isRecurrent}
+                                                                                isRequired={isRecurrent}
+                                                                                validates={{
+                                                                                    "0": isRecurrentValid("jour"),
+                                                                                    "1": isRecurrentValid("hebdomadaire"),
+                                                                                }}
+                                                                                classNames={{
+                                                                                    label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
+                                                                                    trigger: "bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 transition-colors h-10",
+                                                                                    value: "text-neutral-800 dark:text-neutral-200",
+                                                                                    placeholder: "text-neutral-500 dark:text-neutral-400"
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex items-center w-full">
+                                                                            <I18nProvider locale="fr-FR">
+                                                                                <DatePicker
+                                                                                    isRequired={isRecurrent}
+                                                                                    disabled={!isRecurrent}
+                                                                                    label="Jusqu'au"
+                                                                                    variant='bordered'
+                                                                                    size="sm"
+                                                                                    color="default"
+                                                                                    name="recursive_limit"
+                                                                                    isDisabled={watch('date')?.start === undefined}
+                                                                                    minValue={watch('date')?.end ? parseDate(watch('date').end.toISOString().split('T')[0]) : undefined}
+                                                                                    value={data?.recursive_limit ? parseDate(data.recursive_limit) : undefined}
+                                                                                    onChange={(value) => {
+                                                                                        setValue('recursive_limit', value.toString());
+                                                                                    }}
+                                                                                    isInvalid={!!errors.recursive_limit}
+                                                                                    errorMessage={errors.recursive_limit?.message}
+                                                                                    className='justify-center items-center'
+                                                                                    classNames={{
+                                                                                        inputWrapper: "border-none",
+                                                                                        base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
+                                                                                        input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
+                                                                                        label: "text-neutral-800 dark:text-neutral-200 font-semibold",
+                                                                                        calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
+                                                                                    }}
+                                                                                    calendarProps={{
+                                                                                        classNames: {
+                                                                                            base: "bg-background",
+                                                                                            headerWrapper: "pt-4 bg-background",
+                                                                                            prevButton: "border-1 border-default-200 rounded-small",
+                                                                                            nextButton: "border-1 border-default-200 rounded-small",
+                                                                                            gridHeader: "bg-background shadow-none border-b-1 border-default-100",
+                                                                                            cellButton: [
+                                                                                                "data-[today=true]:text-primary",
+                                                                                                "data-[selected=true]:bg-primary data-[selected=true]:text-black",
+                                                                                                "hover:bg-primary hover:text-primary-foreground",
+                                                                                                "rounded-small transition-colors",
+                                                                                                "data-[today=true]:font-semibold",
+                                                                                                "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
+                                                                                                "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
+                                                                                                "data-[in-range=true]:bg-primary/20",
+                                                                                            ],
+                                                                                        },
+                                                                                    }}
+                                                                                />
+                                                                            </I18nProvider>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                                <Button type="submit" color="primary" className="mt-4">
+
+                                                                <Button
+                                                                    onPress={() => methods.handleSubmit(onSubmit)()}
+                                                                    color="default"
+                                                                    size="lg"
+                                                                    radius="md"
+                                                                    className="fixed bottom-4 left-4 right-4 h-12 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200 z-50"
+                                                                >
                                                                     Rechercher
                                                                 </Button>
                                                             </form>
                                                         </FormProvider>
-                                                    </ModalBody>
-                                                </ModalContent>
-                                            </Modal>
+                                                    </DrawerBody>
+                                                </DrawerContent>
+                                            </Drawer>
                                         </>
                                     ) : (
                                         <FormProvider {...methods}>
@@ -482,11 +661,7 @@ const ReservationSearch = () => {
                                                             <div className='flex w-full items-center gap-3 mt-3'>
                                                                 <div className="flex-1">
                                                                     <DateRangePickerSplitted
-                                                                        onChangeCheck={() => {
-                                                                            if (!isRecurrentValid("hebdomadaire") || !setIsRecurrent("jour")) {
-                                                                                setIsRecurrent(false);
-                                                                            }
-                                                                        }}
+                                                                        onChangeCheck={handleDateChangeCheck}
                                                                         setValue={setValue}
                                                                         classNames={{
                                                                             label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
@@ -531,8 +706,8 @@ const ReservationSearch = () => {
                                                         <div
                                                             className={`transition-all duration-300 ease-in-out ${isRecurrent ? 'opacity-100 max-h-24 mt-3' : 'opacity-0 max-h-0 overflow-hidden'}`}>
                                                             <div
-                                                                className="flex gap-3 w-full bg-neutral-50/50 dark:bg-neutral-800/20 p-1 rounded-xl backdrop-blur-sm border border-neutral-100/50 dark:border-neutral-700/20">
-                                                                <div className="flex items-center w-3/4 mx-2">
+                                                                className="flex w-full backdrop-blur-sm ">
+                                                                <div className="flex items-center w-3/4">
                                                                     <SelectField
                                                                         onReset={handleResourceOnReset}
                                                                         name="recursive_unit"
@@ -608,9 +783,8 @@ const ReservationSearch = () => {
                                                             isIconOnly
                                                             size="lg"
                                                             radius="full"
-                                                            color="primary"
-                                                            type="submit"
-                                                            className="shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                                            color="default"
+                                                            onPress={() => methods.handleSubmit(onSubmit)()}
                                                             isLoading={isSubmitted}
                                                         >
                                                             <span
@@ -627,9 +801,10 @@ const ReservationSearch = () => {
                                     {!isSubmitted && !availableResources && !isMobile && (
                                         <div
                                             className="flex xl:w-3/5 sm:w-4/5 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full">
-                                            <div className="h-full w-full space-y-5 p-2 rounded-lg">
+                                            <div
+                                                className="h-full w-full flex items-center justify-center p-2 rounded-lg">
                                                 <div
-                                                    className={`rounded-lg flex justify-center items-center flex-col w-full`}>
+                                                    className="rounded-lg flex justify-center items-center flex-col w-full">
                                                     <AnimatePresence mode="wait" initial={false}>
                                                         <motion.div
                                                             key={step}
@@ -640,7 +815,7 @@ const ReservationSearch = () => {
                                                             className="flex flex-col items-center space-y-8 text-center max-w-md"
                                                         >
                                                             {stepConfig[step - 1].icon && <div
-                                                                className="w-16 h-16 rounded-full bg-primary-50/50 dark:bg-primary-900/10 flex items-center justify-center backdrop-blur-sm border border-primary-100 dark:border-primary-800/20">
+                                                                className="w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-sm">
                                                                 {stepConfig[step - 1].icon}
                                                             </div>}
                                                             <div className="space-y-3">
@@ -650,30 +825,6 @@ const ReservationSearch = () => {
                                                             </div>
                                                         </motion.div>
                                                     </AnimatePresence>
-                                                    <div
-                                                        className="w-full rounded-lg p-4 h-full flex flex-col items-center justify-center mt-8">
-                                                        <div
-                                                            className="flex flex-col items-center space-y-8 text-center max-w-md">
-                                                            <div
-                                                                className="flex flex-col items-center space-y-4 text-sm text-neutral-500 dark:text-neutral-500 bg-neutral-50/50 dark:bg-neutral-800/20 p-4 rounded-xl backdrop-blur-sm border border-neutral-100 dark:border-neutral-700/20">
-                                                                <div className="flex items-center space-x-3">
-                                                                    <div
-                                                                        className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
-                                                                    <span>Choisissez une ressource</span>
-                                                                </div>
-                                                                <div className="flex items-center space-x-3">
-                                                                    <div
-                                                                        className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
-                                                                    <span>Définissez une date</span>
-                                                                </div>
-                                                                <div className="flex items-center space-x-3">
-                                                                    <div
-                                                                        className="w-2 h-2 rounded-full bg-primary-400/80 dark:bg-primary-400/60"/>
-                                                                    <span>Vérifiez les disponibilités</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -684,8 +835,8 @@ const ReservationSearch = () => {
                     )}
                     {searchMode === "search" && (
                         <div
-                            className="flex xl:w-11/12 sm:w-11/12 md:w-full lg:w-full mx-2 shadow-none rounded-xl mt-4 h-full ">
-                            <div className="h-full w-full space-y-5 p-2 rounded-lg">
+                            className="flex w-full mx-2 shadow-none rounded-xl mt-4 h-full">
+                            <div className="h-full w-full space-y-5 p-1 rounded-lg">
                                 <div className={`rounded-lg flex justify-center items-center flex-col w-full`}>
                                     {availableResources && (
                                         <MatchingEntriesTable

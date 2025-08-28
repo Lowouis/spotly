@@ -18,7 +18,43 @@ export default async function handler(req, res) {
                 moderate,
                 returnedConfirmationCode,
                 owned,
+                future
             } = req.query;
+
+            if (resourceId && future === "true") {
+                // Récupérer les réservations futures d'une ressource
+                const currentDate = new Date();
+                const futureEntries = await prisma.entry.findMany({
+                    where: {
+                        resourceId: parseInt(resourceId),
+                        startDate: {
+                            gte: currentDate
+                        }
+                    },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                surname: true,
+                                email: true
+                            }
+                        },
+                        resource: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        startDate: 'asc'
+                    }
+                });
+
+                return res.status(200).json(futureEntries);
+            }
+
             const entries = await prisma.entry.findMany({
                 orderBy : {
                     startDate: "asc"
@@ -42,15 +78,17 @@ export default async function handler(req, res) {
                             })
                         },
                     }),
-                    ...(startDate && {
-                        startDate: {
-                            lte: endDate
-                        },
-                    }),
-                    ...(endDate && {
-                        endDate: {
-                            gte: startDate
-                        }
+                    ...(startDate && endDate && {
+                        OR: [
+                            {
+                                startDate: {
+                                    lte: new Date(endDate)
+                                },
+                                endDate: {
+                                    gte: new Date(startDate)
+                                }
+                            }
+                        ]
                     }),
                     ...(owned && {
                         resource: {

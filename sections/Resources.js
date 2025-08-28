@@ -55,9 +55,14 @@ const Resources = ({})=>{
             options: "ownerables",
             placeholder: "Choix par héritage.",
             watchValue: 'owner'
-
         },
-
+        {
+            required: true,
+            name: 'status',
+            type: 'status',
+            label: 'Statut',
+            hidden: true // Caché par défaut, visible seulement en mode édition
+        }
     ];
     const columnsGreatNames = [
         "Nom",

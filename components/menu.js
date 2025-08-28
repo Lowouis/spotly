@@ -3,15 +3,12 @@
 import {
     Badge,
     Button,
-    Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownTrigger,
     Form,
     Input,
     Modal,
     ModalBody,
     ModalContent,
+    ModalFooter,
     ModalHeader,
     Tab,
     Tabs,
@@ -23,7 +20,7 @@ import {ArrowPathIcon, BookmarkIcon, MagnifyingGlassCircleIcon} from "@heroicons
 import {signOut, useSession} from "next-auth/react";
 import React, {useEffect, useState} from "react";
 import {addToast} from "@heroui/toast";
-import {CiLogout, CiMenuBurger, CiMenuFries, CiSettings, CiUser} from "react-icons/ci";
+import {CiLogout, CiUser} from "react-icons/ci";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 import {useMediaQuery} from 'react-responsive';
 import {useRouter} from "next/navigation";
@@ -40,7 +37,12 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const router = useRouter();
     const {data: session, status} = useSession();
-    const [activeLogo, setActiveLogo] = useState(false);
+    const [activeLogo, setActiveLogo] = useState(true); // Activé par défaut
+
+    // États pour les modals de changement
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -74,146 +76,107 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
         }
     };
 
+    // Fonction pour changer l'email
+    const handleEmailChange = async (newEmail) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/users/update-email`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({email: newEmail}),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                addToast({
+                    title: "Email mis à jour",
+                    description: "Votre adresse email a été modifiée avec succès. Veuillez vous reconnecter pour voir les changements.",
+                    color: "success",
+                    timeout: 5000
+                });
+
+                setIsEmailModalOpen(false);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Erreur lors de la mise à jour');
+            }
+        } catch (error) {
+            addToast({
+                title: "Erreur",
+                description: error.message || "Impossible de mettre à jour l'email",
+                color: "danger",
+                timeout: 5000
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Fonction pour changer le mot de passe
+    const handlePasswordChange = async (newPassword) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/users/update-password`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({password: newPassword}),
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                addToast({
+                    title: "Mot de passe mis à jour",
+                    description: "Votre mot de passe a été modifié avec succès",
+                    color: "success",
+                    timeout: 5000
+                });
+
+                setIsPasswordModalOpen(false);
+            } else {
+                const error = await response.json();
+                throw new Error(error.message || 'Erreur lors de la mise à jour');
+            }
+        } catch (error) {
+            addToast({
+                title: "Erreur",
+                description: error.message || "Impossible de mettre à jour le mot de passe",
+                color: "danger",
+                timeout: 5000
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const menuItems = [
         {
             key: "search",
-            icon: <MagnifyingGlassCircleIcon className="w-5 h-5"/>,
+            icon: <MagnifyingGlassCircleIcon className="w-6 h-6"/>,
             label: "Chercher",
             badge: null,
-            badgeColor: "primary"
+            badgeColor: "foreground"
         },
         {
             key: "bookings",
-            icon: <BookmarkIcon className="w-5 h-5"/>,
+            icon: <BookmarkIcon className="w-6 h-6"/>,
             label: "Réservations",
             badge: userEntriesQuantity.total > 0 ? userEntriesQuantity.total : null,
-            badgeColor: userEntriesQuantity.delayed ? "danger" : "primary"
+            badgeColor: userEntriesQuantity.delayed ? "danger" : "foreground"
         }
     ];
 
-    const renderMobileMenu = () => (
-        <div className="fixed inset-0 z-50 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm"
-             style={{display: isMenuOpen ? 'block' : 'none'}}>
-            <div className="flex flex-col h-full bg-red-500">
-                <div
-                    className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
-                    <div
-                        className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
-                        Spotly
-                    </div>
-                    <Button
-                        isIconOnly
-                        variant="light"
-                        onPress={() => setIsMenuOpen(false)}
-                        className="text-neutral-600 dark:text-neutral-400"
-                    >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </Button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-4">
-                    <div className="space-y-2">
-                        {menuItems.map((item) => (
-                            <Button
-                                key={item.key}
-                                className={`w-full justify-start px-4 py-3 text-lg font-medium rounded-xl transition-all duration-200 overflow-visible ${
-                                    selectedTab === item.key
-                                        ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                                        : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                                }`}
-                                onPress={() => handleTabChange(item.key)}
-                            >
-                                <div className="flex items-center space-x-2 gap-3 overflow-visible">
-                                    {item.icon}
-                                    <span>{item.label}</span>
-                                    {item.badge && (
-                                        <Badge
-                                            content={item.badge}
-                                            color={item.badgeColor}
-                                            variant="shadow"
-                                            size="sm"
-                                            className="ml-2"
-                                        />
-                                    )}
-                                </div>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-                <div className="p-4 border-t border-neutral-200 dark:border-neutral-800">
-                    <div className="flex items-center justify-end">
-                        <Dropdown placement="top-end">
-                            <DropdownTrigger>
-                                <Button
-                                    variant="flat"
-                                    className="bg-neutral-100 dark:bg-neutral-800"
-                                    isIconOnly
-                                >
-                                    <CiSettings className="w-5 h-5"/>
-                                </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label="Paramètres utilisateur"
-                                          className="text-content-primary dark:text-dark-content-primary">
-                                <DropdownItem
-                                    key="profile"
-                                    textValue="Profil"
-                                    startContent={<CiUser className="w-4 h-4"/>}
-                                    onPress={onOpen}
-                                    className="text-content-primary dark:text-dark-content-primary"
-                                >
-                                    Profil
-                                </DropdownItem>
-                                {session.user.role !== 'USER' && (
-                                    <DropdownItem
-                                        key="admin"
-                                        textValue="Administration"
-                                        startContent={<BsWrench className="w-4 h-4"/>}
-                                        onPress={() => router.push('/admin')}
-                                        className="text-content-primary dark:text-dark-content-primary"
-                                    >
-                                        Administration
-                                    </DropdownItem>
-                                )}
-                                <DropdownItem
-                                    key="theme"
-                                    className="flex items-center justify-between text-content-primary dark:text-dark-content-primary"
-                                    endContent={<DarkModeSwitch/>}
-                                >
-                                    <span>Thème</span>
-                                </DropdownItem>
-                                <DropdownItem
-                                    key="logout"
-                                    className="text-danger"
-                                    color="danger"
-                                    textValue="Se déconnecter"
-                                    startContent={<CiLogout className="w-4 h-4"/>}
-                                    onPress={() => signOut().then(() => {
-                                        addToast({
-                                            title: 'Déconnexion',
-                                            message: 'Vous avez été déconnecté',
-                                            type: 'success',
-                                            duration: 5000,
-                                        });
-                                    })}
-                                >
-                                    Se déconnecter
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </Dropdown>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
 
     const renderDesktopMenu = () => (
         <div
             className="w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 mb-2">
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
-                    <div className="flex items-center h-full">
+                    {/* Logo à gauche */}
+                    <div className="flex items-center h-full w-1/4">
                         <div className="relative group h-full flex items-center">
                             {activeLogo && <div
                                 className="relative z-10 flex items-center hover:rotate-0 rotate-45 transition-all">
@@ -230,18 +193,19 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                         </div>
                     </div>
 
-                    <div className="hidden md:flex items-center h-full">
+                    {/* Tabs centrés */}
+                    <div className="flex-1 flex justify-center h-full w-2/4 ">
                         <Tabs
                             selectedKey={selectedTab}
                             onSelectionChange={handleTabChange}
-                            color="primary"
                             variant="underlined"
+                            color="default"
                             classNames={{
                                 base: "overflow-visible h-full flex items-center",
                                 tabList: "gap-8 h-full overflow-visible",
-                                cursor: "w-full bg-primary-500",
+                                cursor: "w-full",
                                 tab: "max-w-fit px-0 h-full flex items-center overflow-visible",
-                                tabContent: "group-data-[selected=true]:text-primary-500 text-sm whitespace-nowrap"
+                                tabContent: "text-sm whitespace-nowrap"
                             }}
                         >
                             {menuItems.map((item) => (
@@ -258,7 +222,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                                     color={item.badgeColor}
                                                     variant="flat"
                                                     size="sm"
-                                                    className="ml-3"
+
                                                 />
                                             )}
                                         </div>
@@ -268,51 +232,38 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                         </Tabs>
                     </div>
 
-                    <div className="flex items-center space-x-3 h-full ">
-                        <Dropdown
-                            size="lg"
-                            placement="bottom-end"
-                        >
-                            <DropdownTrigger size="lg">
+                    {/* Bouton dropdown à droite */}
+                    <div className="flex items-center h-full w-1/4 justify-end">
+                        <div className="flex items-center gap-2">
+                            <Tooltip content="Profil" placement="bottom" color="foreground" showArrow>
                                 <Button
-                                    variant="solid"
                                     size="lg"
-                                    className="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                                    isIconOnly
-                                >
-                                    <CiMenuBurger className="w-5 h-5"/>
-                                </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label="Paramètres utilisateur"
-                                          className="text-content-primary dark:text-dark-content-primary">
-                                <DropdownItem
-                                    size="lg"
-                                    key="profile"
-                                    textValue="Profil"
+                                    variant="light"
                                     startContent={<CiUser className="w-4 h-4"/>}
                                     onPress={onOpen}
                                     className="text-content-primary dark:text-dark-content-primary"
-                                >
-                                    Profil
-                                </DropdownItem>
-                                {session.user.role !== 'USER' && (
-                                    <DropdownItem
+                                    isIconOnly
+                                />
+                            </Tooltip>
+                            {session.user.role !== 'USER' && (
+                                <Tooltip content="Administration" placement="bottom" color="warning" showArrow>
+                                    <Button
                                         size="lg"
-                                        key="admin"
-                                        textValue="Administration"
-                                        startContent={<BsWrench className="w-4 h-4"/>}
+                                        variant="light"
+                                        startContent={<BsWrench className="w-4 h-4 text-warning-500"/>}
                                         onPress={() => router.push('/admin')}
                                         className="text-content-primary dark:text-dark-content-primary"
-                                    >
-                                        Administration
-                                    </DropdownItem>
-                                )}
-                                <DropdownItem
+                                        isIconOnly
+                                    />
+                                </Tooltip>
+                            )}
+                            <Tooltip content="Basculer le thème" placement="bottom" color="foreground" showArrow>
+                                <DarkModeSwitch size="lg"/>
+                            </Tooltip>
+                            <Tooltip content="Se déconnecter" placement="bottom-end" color="foreground" showArrow>
+                                <Button
                                     size="lg"
-                                    showDivider
-                                    key="logout"
-                                    textValue="Se déconnecter"
-                                    className="text-danger"
+                                    variant="flat"
                                     color="danger"
                                     startContent={<CiLogout className="w-4 h-4"/>}
                                     onPress={() => signOut().then(() => {
@@ -323,41 +274,89 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                             duration: 5000,
                                         });
                                     })}
-                                >
-                                    Se déconnecter
-                                </DropdownItem>
-                                <DropdownItem
-                                    size="lg"
-                                    key="theme"
-                                    textValue="Thème"
-                                    className="flex items-center justify-between text-content-primary dark:text-dark-content-primary"
-                                    endContent={<DarkModeSwitch size="sm"/>}
-                                    closeOnSelect={false}
-                                >
-                                    <span>Thème</span>
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </Dropdown>
-                        {isMobile && (
-                            <Button
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                                onPress={() => setIsMenuOpen(true)}
-                            >
-                                <CiMenuFries className="w-5 h-5"/>
-                            </Button>
-                        )}
+                                    className="text-danger"
+                                    isIconOnly
+                                />
+                            </Tooltip>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     );
 
+    const renderMobileMenu = () => (
+        <>
+            {/* Header mobile simplifié */}
+            <div
+                className="md:hidden w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800">
+                <div className="">
+                    <div className="flex items-center justify-between">
+                        {/* Bouton Profil à gauche */}
+                        <button
+                            onClick={onOpen}
+                            className="flex items-center space-x-2 p-6  transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full"
+                        >
+                            <div
+                                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                                <CiUser className="w-4 h-4 text-neutral-600 dark:text-neutral-400"/>
+                            </div>
+                            <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Profil</span>
+                        </button>
+
+
+                        {/* Bouton Déconnexion à droite */}
+                        <button
+                            onClick={() => signOut().then(() => {
+                                addToast({
+                                    title: 'Déconnexion',
+                                    message: 'Vous avez été déconnecté',
+                                    type: 'success',
+                                    duration: 5000,
+                                });
+                            })}
+                            className="flex items-center justify-end space-x-2 p-6 transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full"
+                        >
+                            <span
+                                className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Déconnexion</span>
+                            <div
+                                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
+                                <CiLogout className="w-4 h-4 text-neutral-600 dark:text-neutral-400"/>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Navigation mobile par tabs en bas */}
+            <div
+                className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 z-40">
+                <div className="flex items-center justify-center">
+                    {menuItems.map((item) => (
+                        <button
+                            key={item.key}
+                            onClick={() => handleTabChange(item.key)}
+                            className={`flex flex-col items-center px-1 py-7 gap-2 transition-all duration-200 w-full h-full ${
+                                selectedTab === item.key
+                                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+                            }`}
+                        >
+                            <div className="relative">
+                                {item.icon}
+                            </div>
+                            <span className="text-xs font-medium">{item.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+        </>
+    );
+
     return (
         <>
-            {renderDesktopMenu()}
-            {isMobile && renderMobileMenu()}
+            {!isMobile ? renderDesktopMenu() : renderMobileMenu()}
 
             <Modal
                 isOpen={isOpen}
@@ -366,10 +365,11 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                 radius="lg"
                 backdrop="blur"
                 classNames={{
-                    base: "bg-white dark:bg-neutral-900",
+                    base: "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700",
+                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
                     body: "py-6",
-                    footer: "border-t border-neutral-200 dark:border-neutral-800",
-                    closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full p-3 text-xl"
+                    footer: "border-t border-neutral-200 dark:border-neutral-700",
+                    closeButton: "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full p-2 transition-colors duration-200"
                 }}
                 motionProps={{
                     variants: {
@@ -395,24 +395,34 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                 <ModalContent>
                     {(onClose) => (
                         <>
-                            <ModalHeader className="flex flex-col gap-2 p-4">
+                            <ModalHeader className="flex flex-col gap-2 p-6">
                                 <div className="flex items-center justify-between gap-4">
+                                    <div className="flex flex-col gap-1">
+                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                            Profil
+                                        </h2>
+                                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                                            Gérez vos informations personnelles
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 pt-2">
                                     <User
                                         name={`${session.user?.name} ${session.user?.surname}`}
-                                        description={session.user?.email}
                                         color="default"
                                         classNames={{
                                             name: session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
-                                                ? 'text-orange-500 font-semibold'
-                                                : 'text-neutral-800 dark:text-neutral-100 font-semibold',
-                                            description: 'text-neutral-500 dark:text-neutral-400'
+                                                ? 'text-orange-500 font-semibold text-lg'
+                                                : 'text-neutral-800 dark:text-neutral-100 font-semibold text-lg',
+                                            description: 'text-neutral-500 dark:text-neutral-400 text-sm'
                                         }}
                                         avatarProps={{
                                             size: "lg",
-                                            className: `text-lg font-semibold text-white transition-transform duration-200 hover:scale-105 ${
+                                            className: `text-lg font-semibold text-white transition-transform duration-200 ${
                                                 session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
                                                     ? 'bg-orange-500'
-                                                    : 'bg-primary-500'
+                                                    : 'bg-neutral-900 dark:bg-neutral-100'
                                             }`,
                                             radius: "lg",
                                             showFallback: true,
@@ -422,72 +432,291 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                 </div>
                             </ModalHeader>
                             {!session.user?.external && (
-                                <ModalBody>
-                                    <Form className="w-full space-y-4" validationBehavior="native">
+                                <ModalBody className="px-6">
+                                    <Form className="w-full space-y-5" validationBehavior="native">
                                         <div className="flex flex-row justify-between items-end w-full gap-3">
                                             <Input
-                                                label="Email"
-                                                size="sm"
+
+                                                size="md"
                                                 value={session.user?.email}
                                                 labelPlacement="outside"
                                                 name="email"
                                                 placeholder="Votre email"
                                                 type="email"
+                                                readOnly={true}
                                                 variant="bordered"
                                                 classNames={{
-                                                    inputWrapper: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                                                    input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 text-sm",
-                                                    label: "text-neutral-800 dark:text-neutral-200 font-semibold text-sm",
+                                                    inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200 h-11",
+                                                    input: "text-sm text-neutral-800 dark:text-neutral-200",
+                                                    label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
                                                     errorMessage: "text-red-500 text-sm mt-1",
                                                 }}
-                                            />
-                                            <Tooltip content="Changer l'email" showArrow placement="top-end"
-                                                     color="primary">
-                                                <Button
-                                                    color="primary"
-                                                    variant="flat"
+                                                endContent={
+                                                    <Button
+                                                        color="default"
+                                                        variant="light"
                                                     isIconOnly
-                                                    size="sm"
-                                                    className="rounded-lg shadow-sm"
+                                                        size="md"
+                                                        onPress={() => setIsEmailModalOpen(true)}
+                                                        className="h-8 bg-transparent transition-colors duration-200"
+
                                                 >
-                                                    <ArrowPathIcon className="w-4 h-4"/>
-                                                </Button>
-                                            </Tooltip>
+                                                        <ArrowPathIcon
+                                                            className="w-4 h-4 text-neutral-600 dark:text-neutral-400"/>
+                                                    </Button>
+                                                }
+                                            />
+
                                         </div>
-                                        <div className="flex flex-row justify-between items-end w-full gap-3">
-                                            <Input
-                                                label="Mot de passe"
-                                                size="sm"
-                                                value=""
-                                                labelPlacement="outside"
-                                                name="password"
-                                                placeholder="Nouveau mot de passe"
-                                                type="password"
-                                                variant="bordered"
-                                                classNames={{
-                                                    inputWrapper: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                                                    input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 text-sm",
-                                                    label: "text-neutral-800 dark:text-neutral-200 font-semibold text-sm",
-                                                    errorMessage: "text-red-500 text-sm mt-1",
-                                                }}
-                                            />
-                                            <Tooltip content="Changer le mot de passe" showArrow placement="top-end"
-                                                     color="primary">
-                                                <Button
-                                                    color="primary"
-                                                    variant="flat"
-                                                    isIconOnly
-                                                    size="sm"
-                                                    disabled={session.user?.external}
-                                                    className="rounded-lg shadow-sm"
-                                                >
-                                                    <ArrowPathIcon className="w-4 h-4"/>
+                                        <div className="flex flex-row justify-between items-end w-full gap-2">
+                                            <Button
+                                                color="default"
+                                                variant="light"
+                                                fullWidth={true}
+                                                size="md"
+                                                disabled={session.user?.external}
+                                                onPress={() => setIsPasswordModalOpen(true)}
+                                                className="hover:underline h-11 border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-200"
+                                            >
+                                                Modifier le mot de passe
                                                 </Button>
-                                            </Tooltip>
                                         </div>
                                     </Form>
                                 </ModalBody>
                             )}
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
+
+            {/* Modal pour changer l'email */}
+            <Modal
+                isOpen={isEmailModalOpen}
+                onOpenChange={setIsEmailModalOpen}
+                size="md"
+                backdrop="blur"
+                classNames={{
+                    base: "bg-white dark:bg-neutral-900 mx-4",
+                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
+                    body: "py-6",
+                    footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4"
+                }}
+                motionProps={{
+                    variants: {
+                        enter: {
+                            y: 0,
+                            opacity: 1,
+                            transition: {
+                                duration: 0.2,
+                                ease: "easeOut",
+                            },
+                        },
+                        exit: {
+                            y: -20,
+                            opacity: 0,
+                            transition: {
+                                duration: 0.2,
+                                ease: "easeIn",
+                            },
+                        },
+                    },
+                }}
+                isDismissable={false}
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader>
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                                    Changer l&apos;adresse email
+                                </h3>
+                            </ModalHeader>
+                            <ModalBody>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label
+                                            className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                            Nouvelle adresse email
+                                        </label>
+                                        <Input
+                                            type="email"
+                                            placeholder="nouvelle.email@exemple.com"
+                                            variant="bordered"
+                                            size="lg"
+                                            id="newEmail"
+                                            classNames={{
+                                                inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200",
+                                                input: "text-sm text-neutral-800 dark:text-neutral-200"
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        <p>Votre adresse email actuelle : <span
+                                            className="font-medium">{session.user?.email}</span></p>
+                                    </div>
+                                </div>
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button
+                                    color="default"
+                                    variant="bordered"
+                                    onPress={onClose}
+                                    className="border-neutral-300 dark:border-neutral-600"
+                                >
+                                    Annuler
+                                </Button>
+                                <Button
+                                    color="primary"
+                                    variant="flat"
+                                    onPress={() => {
+                                        const newEmail = document.getElementById('newEmail').value;
+                                        if (newEmail && newEmail !== session.user?.email) {
+                                            handleEmailChange(newEmail);
+                                        } else {
+                                            addToast({
+                                                title: "Erreur",
+                                                description: "Veuillez saisir une nouvelle adresse email valide",
+                                                color: "danger",
+                                                timeout: 3000
+                                            });
+                                        }
+                                    }}
+                                    isLoading={isLoading}
+                                >
+                                    Confirmer
+                                </Button>
+                            </ModalFooter>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
+
+            {/* Modal pour changer le mot de passe */}
+            <Modal
+                isOpen={isPasswordModalOpen}
+                onOpenChange={setIsPasswordModalOpen}
+                size="md"
+                backdrop="blur"
+                classNames={{
+                    base: "bg-white dark:bg-neutral-900 mx-4",
+                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
+                    body: "py-6",
+                    footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4"
+                }}
+                motionProps={{
+                    variants: {
+                        enter: {
+                            y: 0,
+                            opacity: 1,
+                            transition: {
+                                duration: 0.2,
+                                ease: "easeOut",
+                            },
+                        },
+                        exit: {
+                            y: -20,
+                            opacity: 0,
+                            transition: {
+                                duration: 0.2,
+                                ease: "easeIn",
+                            },
+                        },
+                    },
+                }}
+                isDismissable={false}
+            >
+                <ModalContent>
+                    {(onClose) => (
+                        <>
+                            <ModalHeader>
+                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                                    Changer le mot de passe
+                                </h3>
+                            </ModalHeader>
+                            <ModalBody>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label
+                                            className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                            Nouveau mot de passe
+                                        </label>
+                                        <Input
+                                            type="password"
+                                            placeholder="Nouveau mot de passe"
+                                            variant="bordered"
+                                            size="lg"
+                                            id="newPassword"
+                                            classNames={{
+                                                inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200",
+                                                input: "text-sm text-neutral-800 dark:text-neutral-200"
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                                            Confirmer le mot de passe
+                                        </label>
+                                        <Input
+                                            type="password"
+                                            placeholder="Confirmer le mot de passe"
+                                            variant="bordered"
+                                            size="lg"
+                                            id="confirmPassword"
+                                            classNames={{
+                                                inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200",
+                                                input: "text-sm text-neutral-800 dark:text-neutral-200"
+                                            }}
+                                        />
+                                    </div>
+                                    <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                                        <p>Le mot de passe doit contenir au moins 8 caractères.</p>
+                                    </div>
+                                </div>
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button
+                                    color="default"
+                                    variant="bordered"
+                                    onPress={onClose}
+                                    className="border-neutral-300 dark:border-neutral-600"
+                                >
+                                    Annuler
+                                </Button>
+                                <Button
+                                    color="primary"
+                                    variant="flat"
+                                    onPress={() => {
+                                        const newPassword = document.getElementById('newPassword').value;
+                                        const confirmPassword = document.getElementById('confirmPassword').value;
+
+                                        if (!newPassword || newPassword.length < 8) {
+                                            addToast({
+                                                title: "Erreur",
+                                                description: "Le mot de passe doit contenir au moins 8 caractères",
+                                                color: "danger",
+                                                timeout: 3000
+                                            });
+                                            return;
+                                        }
+
+                                        if (newPassword !== confirmPassword) {
+                                            addToast({
+                                                title: "Erreur",
+                                                description: "Les mots de passe ne correspondent pas",
+                                                color: "danger",
+                                                timeout: 3000
+                                            });
+                                            return;
+                                        }
+
+                                        handlePasswordChange(newPassword);
+                                    }}
+                                    isLoading={isLoading}
+                                >
+                                    Confirmer
+                                </Button>
+                            </ModalFooter>
                         </>
                     )}
                 </ModalContent>

@@ -1,6 +1,6 @@
 'use client';
 
-import {ConnectionModal} from "@/components/modals/connectionModal";
+import ConnectionModal from "@/components/modals/connectionModal";
 import {useRouter, useSearchParams} from 'next/navigation';
 import {useSession} from 'next-auth/react';
 import React, {useEffect, useRef, useState} from 'react';
@@ -10,7 +10,6 @@ import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 import {Button, Spinner} from "@heroui/react";
 import {useSSO} from '@/hooks/useSSO';
 import {addToast} from "@heroui/toast";
-
 
 function LoginContent() {
     const router = useRouter();
@@ -25,6 +24,7 @@ function LoginContent() {
             router.replace("/");
         }
     }, [status, router]);
+
     const {
         isLoading: isSSOChecking,
         error: ssoError,
@@ -84,7 +84,6 @@ function LoginContent() {
         }
     };
 
-
     if (status === 'loading') {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -96,40 +95,60 @@ function LoginContent() {
     if (kerberosConfigExists && isSSOChecking) {
         return <SSOLoadingModal debugInfo={ssoDebug} error={ssoError}/>;
     }
+
     return (
-        <div className="flex flex-col items-center">
-            <div className="absolute top-4 right-4">
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col">
+            {/* Header avec switch de thème */}
+            <header className="flex justify-end p-4">
                 <DarkModeSwitch />
-            </div>
+            </header>
+
+            {/* Contenu principal centré */}
+            <main className="flex-1 flex items-center justify-center px-4 py-8">
+                <div className="w-full max-w-md">
             <ConnectionModal />
+
+                    {/* Bouton SSO */}
+                    {kerberosConfigExists && (
+                        <div className="mt-6">
             <Button
                 onPress={handleSSOClick}
-                color="secondary"
-                className="mx-auto m-2 w-[400px]"
-                size="lg"
-                radius="sm"
+                color="default"
+                variant="bordered"
+                fullWidth
+                size="md"
+                radius="md"
+                className="h-11 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
                 isDisabled={!kerberosConfigExists}
                 isLoading={isSSOChecking || status === "loading"}
             >
                 Connexion automatique
             </Button>
-            {ssoDebug && (
-                <div className="mt-4 p-4 bg-gray-100 rounded-lg max-w-lg w-full">
-                    <h3 className="text-lg font-semibold mb-2">Informations de débogage SSO</h3>
-                    {ssoError && (
-                        <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">
-                            {ssoError}
                         </div>
                     )}
-                    <pre className="text-sm overflow-auto">
+
+                    {/* Section de débogage SSO */}
+                    {ssoDebug && (
+                        <div
+                            className="mt-6 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                            <h3 className="text-sm font-semibold mb-3 text-neutral-900 dark:text-neutral-100">
+                                Informations de débogage SSO
+                            </h3>
+                            {ssoError && (
+                                <div
+                                    className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded border border-red-200 dark:border-red-800 text-xs">
+                                    {ssoError}
+                                </div>
+                            )}
+                            <pre
+                                className="text-xs text-neutral-600 dark:text-neutral-400 overflow-auto whitespace-pre-wrap">
                         {JSON.stringify(ssoDebug, null, 2)}
                     </pre>
                 </div>
             )}
-        
-        
+                </div>
+            </main>
         </div>
-
     );
 }
 

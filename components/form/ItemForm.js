@@ -4,6 +4,7 @@ import React from "react";
 import InputField from "@/components/form/InputField";
 import BooleanInput from "@/components/form/BooleanInput";
 import SelectField from "@/components/form/SelectField";
+import StatusInput from "@/components/form/StatusInput";
 import {addToast} from "@heroui/toast";
 
 
@@ -54,6 +55,12 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                             const rules = {
                                 required : field.required ? `${field.label} est requis` : false
                             }
+
+                            // Gérer l'affichage conditionnel des champs
+                            if (field.hidden && action === "create") {
+                                return null; // Ne pas afficher le champ en mode création
+                            }
+                            
                             switch (field.type) {
                                 case "text" :
                                     return (
@@ -110,6 +117,29 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                                 methods.trigger(field.name);
                                             }}
                                             inheritAttribute={field.name === "pickable" ? "distinguishedName" : "name"}
+                                        />
+                                    );
+                                case "select":
+                                    return (
+                                        <SelectField
+                                            key={field.name || index}
+                                            isRequired={field.required}
+                                            label={field.label}
+                                            name={field.name}
+                                            variant="solid"
+                                            options={field.options}
+                                            defaultValue={defaultValues ? defaultValues[field.name] : field.options[0]?.value}
+                                            placeholder={field.placeholder}
+                                        />
+                                    );
+                                case "status":
+                                    return (
+                                        <StatusInput
+                                            key={field.name || index}
+                                            required={field.required}
+                                            label={field.label}
+                                            name={field.name}
+                                            defaultValue={defaultValues ? defaultValues[field.name] : "UNAVAILABLE"}
                                         />
                                     );
                                 default:

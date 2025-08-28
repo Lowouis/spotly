@@ -8,12 +8,14 @@ import {formatDuration} from "@/global";
  */
 const wrapInHtmlTemplate = (body, subject = "Spotly") => `
 <!DOCTYPE html>
-<html>
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="fr" />
     <title>${subject}</title>
   </head>
-  <body style="margin:0;padding:0;">
+  <body style="margin:0;padding:0;font-family:Arial,sans-serif;">
     <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #fff; font-family: Arial, sans-serif;">
       <div style="width: 100%; text-align: center; margin-bottom: 20px;">
         <img 
@@ -24,7 +26,7 @@ const wrapInHtmlTemplate = (body, subject = "Spotly") => `
       </div>
       ${body}
       <footer style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666; border-top: 1px solid #eee; padding-top: 20px;">
-        <a href="${process.env.NEXTAUTH_URL}" style="color: #666; text-decoration: none;">Spotly</a>
+        <a href="${process.env.NEXTAUTH_URL || 'https://votre-app.vercel.app'}" style="color: #666; text-decoration: none;">Spotly</a>
         <p style="margin: 10px 0;">Merci d'utiliser notre service !</p>
         <p style="margin: 10px 0;">⚠️ Ce message est généré automatiquement, merci de ne pas y répondre.</p>
       </footer>
@@ -412,6 +414,65 @@ Merci de valider ou rejeter cette demande de réservation de groupe dans les plu
 ---
 Cordialement,  
 Votre système de gestion des ressources.
+`,
+
+    resourceUnavailable: (data) => `
+# Ressource indisponible - Réservation affectée
+
+Bonjour **${data.userName}**,
+
+Nous vous informons que la ressource **${data.resourceName}** (${data.resourceCategory} - ${data.resourceSite}) est devenue indisponible.
+
+### Votre réservation concernée :
+- **Date de début** : ${data.reservationStartDate}
+- **Date de fin** : ${data.reservationEndDate}
+
+### Raison de l'indisponibilité :
+${data.message}
+
+### Que faire maintenant ?
+1. **Connectez-vous à votre espace** pour voir si une ressource similaire vous a été automatiquement proposée
+2. **Contactez l'administrateur** si vous avez besoin d'aide pour trouver une alternative
+3. **Modifiez votre réservation** si nécessaire
+
+### Contact administrateur :
+Pour toute question, contactez : ${data.adminContact}
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources
+`,
+
+    resourceChanged: (data) => `
+# Changement de ressource - Réservation modifiée
+
+Bonjour **${data.userName}**,
+
+Votre réservation a été automatiquement modifiée suite à l'indisponibilité de la ressource **${data.oldResourceName}**.
+
+### Nouvelle ressource attribuée :
+- **Ressource** : ${data.newResourceName}
+- **Site** : ${data.newResourceSite}
+- **Catégorie** : ${data.newResourceCategory}
+
+### Détails de votre réservation :
+- **Date de début** : ${data.reservationStartDate}
+- **Date de fin** : ${data.reservationEndDate}
+
+
+### Que faire maintenant ?
+1. **Vérifiez** que la nouvelle ressource vous convient
+2. **Contactez l'administrateur** si vous souhaitez une autre ressource
+3. **Connectez-vous** à votre espace pour voir les détails
+
+### Contact administrateur :
+Pour toute question, contactez : ${data.adminContact}
+
+---
+
+Cordialement,  
+L'équipe de gestion des ressources
 `,
 
 };

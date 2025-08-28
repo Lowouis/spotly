@@ -2,7 +2,6 @@ import "./globals.css";
 import Providers from "@/providers/Providers";
 import React from "react";
 import Footer from "@/components/utils/Footer";
-import Dot from "@/components/animata/background/dot";
 import {DM_Sans} from 'next/font/google';
 import {metadata} from "@/app/metadata";
 
@@ -20,13 +19,9 @@ export default function RootLayout({ children }) {
             <title>{metadata.title}</title>
             <meta name="description" content={metadata.description} />
         </head>
-        <body className="antialiased flex flex-col min-h-screen">
+        <body className="antialiased flex flex-col min-h-screen bg-neutral-100 dark:bg-neutral-900">
         <main className="flex-1">
             <Providers>
-                <Dot
-                    size={1}
-                    spacing={70}
-                />
                 {children}
             </Providers>
         </main>

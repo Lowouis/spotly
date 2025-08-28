@@ -39,8 +39,8 @@ export default function ActionMenuModerate({actions, entry, onActionDelete, onAc
                         <Button
                         className="text-default-500 font-medium underline underline-offset-4"
                         size="sm"
-                        variant="flat"
-                        color="default"
+                        variant="fade"
+                        color="foreground"
                         isIconOnly
                         radius="sm"
                         onPress={()=>{

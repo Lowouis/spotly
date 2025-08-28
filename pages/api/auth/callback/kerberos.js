@@ -50,29 +50,58 @@ export default async function handler(req, res) {
                 emailDomain: ldapConfig.emailDomain ? decrypt(ldapConfig.emailDomain) : null
             };
 
-            // Rechercher l'utilisateur dans LDAP
-            // Rechercher l'utilisateur dans LDAP avec le mode SSO activé
-            const ldapResult = await findLdapUser(decryptedConfig, login, false, null, true);
-
-            if (!ldapResult.success || !ldapResult.user) {
-                console.error('Callback Kerberos: Aucun utilisateur trouvé dans l\'annuaire LDAP pour le login:', login);
-                return res.status(404).json({error: `Utilisateur non trouvé dans l'annuaire d'entreprise : ${login} : ${JSON.stringify(ldapResult) || "Utilisateur ou mot de passe incorrect"}`});
-            }
-
-            const ldapUser = ldapResult.user;
-            console.log('[DEBUG] Utilisateur trouvé dans LDAP:', JSON.stringify(ldapUser, null, 2));
-
-            // Créer l'utilisateur dans la base de données
-            user = await prisma.user.create({
-                data: {
-                    username: login,
-                    email: ldapUser.mail || (decryptedConfig.emailDomain ? `${login}@${decryptedConfig.emailDomain}` : null),
-                    name: ldapUser.givenName || '',
-                    surname: ldapUser.sn || '',
-                    external: true,
-                    password: null,
-                },
+            console.log(`[DEBUG] Callback Kerberos: Recherche LDAP pour ${login} avec config:`, {
+                serverUrl: decryptedConfig.serverUrl,
+                bindDn: decryptedConfig.bindDn,
+                adminDn: decryptedConfig.adminDn,
+                emailDomain: decryptedConfig.emailDomain
             });
+
+            // Rechercher l'utilisateur dans LDAP avec le mode SSO activé
+            try {
+                const ldapResult = await findLdapUser(decryptedConfig, login, false, null, true);
+
+                if (!ldapResult.success || !ldapResult.user) {
+                    console.error('Callback Kerberos: Aucun utilisateur trouvé dans l\'annuaire LDAP pour le login:', login);
+                    console.error('Callback Kerberos: Résultat LDAP:', ldapResult);
+                    return res.status(404).json({error: `Utilisateur non trouvé dans l'annuaire d'entreprise : ${login}`});
+                }
+
+                const ldapUser = ldapResult.user;
+                console.log('[DEBUG] Utilisateur trouvé dans LDAP:', JSON.stringify(ldapUser, null, 2));
+
+                // Créer l'utilisateur dans la base de données
+                user = await prisma.user.create({
+                    data: {
+                        username: login,
+                        email: ldapUser.mail || (decryptedConfig.emailDomain ? `${login}@${decryptedConfig.emailDomain}` : null),
+                        name: ldapUser.givenName || login,
+                        surname: ldapUser.sn || '',
+                        external: true,
+                        password: null,
+                    },
+                });
+
+                console.log(`[DEBUG] Utilisateur SSO créé avec données LDAP:`, user);
+            } catch (ldapError) {
+                console.error('Callback Kerberos: Erreur lors de la recherche LDAP:', ldapError);
+
+                // Fallback: créer l'utilisateur avec les informations de base
+                console.log(`[DEBUG] Fallback: Création d'utilisateur SSO basique pour: ${login}`);
+
+                user = await prisma.user.create({
+                    data: {
+                        username: login,
+                        email: decryptedConfig.emailDomain ? `${login}@${decryptedConfig.emailDomain}` : null,
+                        name: login,
+                        surname: '',
+                        external: true,
+                        password: null,
+                    },
+                });
+
+                console.log(`[DEBUG] Utilisateur SSO créé en fallback:`, user);
+            }
         }
 
         return res.status(200).json(user);

@@ -20,6 +20,7 @@ import {CiServer} from "react-icons/ci";
 import {TbCertificate} from "react-icons/tb";
 import {RiMailSettingsLine} from "react-icons/ri";
 import Logs from "@/sections/Logs";
+import {ConfigStatusProvider, useConfigStatus} from "@/context/ConfigStatusContext";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -35,14 +36,16 @@ export default function Admin(){
     return (
         <AdminProvider>
             <DataHandlerProvider>
-                <div className="flex h-screen overflow-hidden">
-                    <div className="flex flex-1">
-                        <Sidebar/>
-                        <main className="flex-1 overflow-y-auto">
-                            <Content />
-                        </main>
+                <ConfigStatusProvider>
+                    <div className="flex h-screen overflow-hidden">
+                        <div className="flex flex-1">
+                            <Sidebar/>
+                            <main className="flex-1 overflow-y-auto">
+                                <Content/>
+                            </main>
+                        </div>
                     </div>
-                </div>
+                </ConfigStatusProvider>
             </DataHandlerProvider>
         </AdminProvider>
     )
@@ -50,7 +53,8 @@ export default function Admin(){
 
 
 const Content = () => {
-    const { activeSection } = useAdminContext()
+    const {activeSection} = useAdminContext();
+    const {configStatuses, getStatusColor} = useConfigStatus();
 
     switch (activeSection) {
         case 'dashboard':
@@ -73,8 +77,8 @@ const Content = () => {
                     <div className="w-full max-w-2xl mx-auto">
                         <Tabs
                             aria-label="Options d'authentification"
-                            color="primary"
-                            variant="bordered"
+                            color="default"
+                            variant="underlined"
                             size="lg"
                         >
                             <Tab
@@ -83,6 +87,8 @@ const Content = () => {
                                     <div className="flex items-center space-x-2">
                                         <CiServer className="w-5 h-5"/>
                                         <span>LDAP</span>
+                                        <div
+                                            className={`w-2 h-2 rounded-full ${getStatusColor(configStatuses.ldap)}`}></div>
                                     </div>
                                 }
                             >
@@ -94,6 +100,8 @@ const Content = () => {
                                     <div className="flex items-center space-x-2">
                                         <TbCertificate className="w-5 h-5"/>
                                         <span>SSO</span>
+                                        <div
+                                            className={`w-2 h-2 rounded-full ${getStatusColor(configStatuses.sso)}`}></div>
                                     </div>
                                 }
                             >
@@ -105,6 +113,8 @@ const Content = () => {
                                     <div className="flex items-center space-x-2">
                                         <RiMailSettingsLine className="w-5 h-5"/>
                                         <span>SMTP</span>
+                                        <div
+                                            className={`w-2 h-2 rounded-full ${getStatusColor(configStatuses.smtp)}`}></div>
                                     </div>
                                 }
                             >

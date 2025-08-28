@@ -68,9 +68,12 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('SMTP config save error:', error);
+        console.error('Error stack:', error.stack);
         return res.status(500).json({
             message: 'Erreur lors de la sauvegarde de la configuration',
-            details: process.env.NODE_ENV === 'development' ? error.message : null
+            details: error.message,
+            stack: error.stack,
+            errorName: error.name
         });
     }
 } 
