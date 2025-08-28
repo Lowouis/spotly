@@ -47,7 +47,7 @@ const SMTPSettings = () => {
 
                     // Si on a des données, on considère qu'il y a une config
                     if (data.host && data.port && data.username) {
-                        updateConfigStatus('smtp', 'error'); // Par défaut en erreur jusqu'au test
+                        updateConfigStatus('smtp', 'valid'); // Config enregistrée = valide
                     } else {
                         updateConfigStatus('smtp', 'none');
                     }
@@ -99,7 +99,7 @@ const SMTPSettings = () => {
 
             if (response.ok) {
                 setConnectionStatus('success');
-                updateConfigStatus('smtp', 'success');
+                updateConfigStatus('smtp', 'valid');
                 addToast({
                     title: 'Test de connexion',
                     description: 'Connexion SMTP réussie',
@@ -108,12 +108,12 @@ const SMTPSettings = () => {
                 });
             } else {
                 setConnectionStatus('error');
-                updateConfigStatus('smtp', 'error');
+                updateConfigStatus('smtp', 'valid'); // Config reste valide même si le test échoue
                 throw new Error(result.message || 'Erreur de connexion');
             }
         } catch (error) {
             setConnectionStatus('error');
-            updateConfigStatus('smtp', 'error');
+            updateConfigStatus('smtp', 'valid'); // Config reste valide même si le test échoue
             addToast({
                 title: 'Test de connexion',
                 description: error.message || 'Erreur lors du test de connexion',
@@ -149,8 +149,8 @@ const SMTPSettings = () => {
                 color: 'success',
                 duration: 5000,
             });
-            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
-            updateConfigStatus('smtp', 'error');
+            // Après sauvegarde, la config est maintenant valide
+            updateConfigStatus('smtp', 'valid');
         } catch (error) {
             addToast({
                 title: 'Configuration SMTP',

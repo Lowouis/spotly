@@ -30,9 +30,7 @@ export const ConfigStatusProvider = ({children}) => {
         switch (status) {
             case 'none':
                 return 'bg-red-500';
-            case 'error':
-                return 'bg-orange-500';
-            case 'success':
+            case 'valid':
                 return 'bg-green-500';
             default:
                 return 'bg-red-500';

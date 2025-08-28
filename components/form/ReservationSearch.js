@@ -389,7 +389,7 @@ const ReservationSearch = () => {
                                                         <span
                                                             className="flex justify-center items-center gap-2 opacity-50 font-medium">
                                                             <MagnifyingGlassIcon
-                                                                className="w-8 h-8 text-neutral-600 dark:text-neutral-400"/>
+                                                                className="w-8 h-8 text-neutral-800 dark:text-neutral-400"/>
                                                             Rechercher
 
                                                         </span>

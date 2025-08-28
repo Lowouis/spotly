@@ -46,7 +46,7 @@ const SSO = () => {
 
                     // Si on a des données, on considère qu'il y a une config
                     if (data.realm && data.kdc && data.adminServer && data.defaultDomain && data.serviceHost && data.keytabPath) {
-                        updateConfigStatus('sso', 'error'); // Par défaut en erreur jusqu'au test
+                        updateConfigStatus('sso', 'valid'); // Config enregistrée = valide
                     } else {
                         updateConfigStatus('sso', 'none');
                     }
@@ -95,7 +95,7 @@ const SSO = () => {
 
             if (response.ok) {
                 setConnectionStatus('success');
-                updateConfigStatus('sso', 'success');
+                updateConfigStatus('sso', 'valid');
                 addToast({
                     title: 'Test de connexion',
                     description: 'Connexion SSO réussie',
@@ -104,12 +104,12 @@ const SSO = () => {
                 });
             } else {
                 setConnectionStatus('error');
-                updateConfigStatus('sso', 'error');
+                updateConfigStatus('sso', 'valid'); // Config reste valide même si le test échoue
                 throw new Error(result.message || 'Erreur de connexion');
             }
         } catch (error) {
             setConnectionStatus('error');
-            updateConfigStatus('sso', 'error');
+            updateConfigStatus('sso', 'valid'); // Config reste valide même si le test échoue
             addToast({
                 title: 'Test de connexion',
                 description: error.message || 'Erreur lors du test de connexion',
@@ -145,8 +145,8 @@ const SSO = () => {
                 color: 'success',
                 duration: 5000,
             });
-            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
-            updateConfigStatus('sso', 'error');
+            // Après sauvegarde, la config est maintenant valide
+            updateConfigStatus('sso', 'valid');
         } catch (error) {
             addToast({
                 title: 'Configuration SSO',

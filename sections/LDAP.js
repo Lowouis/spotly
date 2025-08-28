@@ -47,7 +47,7 @@ const LDAP = () => {
 
                     // Si on a des données, on considère qu'il y a une config
                     if (data.serverUrl && data.bindDn && data.adminCn && data.adminDn) {
-                        updateConfigStatus('ldap', 'error'); // Par défaut en erreur jusqu'au test
+                        updateConfigStatus('ldap', 'valid'); // Config enregistrée = valide
                     } else {
                         updateConfigStatus('ldap', 'none');
                     }
@@ -96,7 +96,7 @@ const LDAP = () => {
 
             if (response.ok) {
                 setConnectionStatus('success');
-                updateConfigStatus('ldap', 'success');
+                updateConfigStatus('ldap', 'valid');
                 addToast({
                     title: 'Test de connexion',
                     description: 'Connexion LDAP réussie',
@@ -105,12 +105,12 @@ const LDAP = () => {
                 });
             } else {
                 setConnectionStatus('error');
-                updateConfigStatus('ldap', 'error');
+                updateConfigStatus('ldap', 'valid'); // Config reste valide même si le test échoue
                 throw new Error(result.message || 'Erreur de connexion');
             }
         } catch (error) {
             setConnectionStatus('error');
-            updateConfigStatus('ldap', 'error');
+            updateConfigStatus('ldap', 'valid'); // Config reste valide même si le test échoue
             addToast({
                 title: 'Test de connexion',
                 description: error.message || 'Erreur lors du test de connexion',
@@ -146,8 +146,8 @@ const LDAP = () => {
                 color: 'success',
                 duration: 5000,
             });
-            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
-            updateConfigStatus('ldap', 'error');
+            // Après sauvegarde, la config est maintenant valide
+            updateConfigStatus('ldap', 'valid');
         } catch (error) {
             addToast({
                 title: 'Configuration LDAP',
