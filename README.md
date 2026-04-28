@@ -62,8 +62,7 @@ cd spotly
 npm install
 ```
 
-Configurez vos variables d’environnement dans `.env.local` et `.env` en copiant les fichiers `.env.local.template` et
-`.env.template`.
+Configurez vos variables d’environnement locales en copiant `.env.local.template` vers `.env.local`.
 
 ```bash
 npx prisma db push
@@ -175,8 +174,7 @@ cd spotly
 npm install
 ```
 
-Configure your environment variables in `.env.local` & `.env` by duplicating the `.env.local.template` & `.env.template`
-files.
+Configure local environment variables by copying `.env.local.template` to `.env.local`.
 
 ```bash
 npx prisma db push
