@@ -21,6 +21,9 @@
 .DS_Store
 *.pem
 
+# local experiments / unused assets
+/addons/Animations/MetallicPaint/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
