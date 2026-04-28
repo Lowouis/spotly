@@ -1,5 +1,5 @@
 import {getServerSession} from "next-auth/next";
-import prisma from '@/prismaconf/init';
+import db from "@/server/services/databaseService";
 
 // Configuration NextAuth
 const authConfig = {
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
         }
 
         // Vérifier si l'email est déjà utilisé par un autre utilisateur
-        const existingUser = await prisma.user.findFirst({
+        const existingUser = await db.user.findFirst({
             where: {
                 email: email
             }
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
         }
 
         // Mettre à jour l'email en utilisant l'email actuel
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await db.user.update({
             where: {email: session.user.email},
             data: {email: email}
         });

@@ -1,9 +1,9 @@
 import "./globals.css";
-import Providers from "@/providers/Providers";
+import Providers from "@/config/providers/Providers";
 import React from "react";
 import Footer from "@/components/utils/Footer";
 import {DM_Sans} from 'next/font/google';
-import {metadata} from "@/app/metadata";
+import {metadata} from "@/config/metadata";
 
 const dmSans = DM_Sans({
     subsets: ['latin'],

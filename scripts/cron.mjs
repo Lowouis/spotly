@@ -3,11 +3,13 @@ import {PrismaClient} from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
+import {fileURLToPath} from 'url';
 
 
 dotenv.config();
 
 const prisma = new PrismaClient();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 
 const logsDir = process.env.LOGS_DIR
@@ -284,12 +286,11 @@ if (process.env.RUN_ONCE === '1') {
 const runDailyLateCheck = async () => {
     try {
         const now = new Date();
-        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const lateEntries = await prisma.entry.findMany({
             where: {
                 moderate: 'USED',
                 returned: false,
-                endDate: {lt: now, gte: yesterday},
+                endDate: {lt: now},
             },
             include: {
                 user: true,
@@ -302,16 +303,22 @@ const runDailyLateCheck = async () => {
         }
         for (const e of lateEntries) {
             try {
-                await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/mail/sendEmail`, {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/mail/sendEmail`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(process.env.CRON_SECRET ? {Authorization: `Bearer ${process.env.CRON_SECRET}`} : {}),
+                    },
                     body: JSON.stringify({
                         to: e.user.email,
                         subject: `Retard de restitution - ${e.resource.name}`,
                         templateName: 'reservationDelayedAlert',
-                        data: {resource: e.resource, endDate: e.endDate},
+                        data: {entryId: e.id, resource: e.resource, endDate: e.endDate},
                     }),
                 });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 logToFile(`📧 Alerte retard envoyée à ${e.user.email} (${e.resource.name})`);
             } catch (err) {
                 logToFile(`⚠️ Échec envoi e-mail retard à ${e.user.email}: ${err.message}`);

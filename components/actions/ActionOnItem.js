@@ -2,7 +2,7 @@ import {Modal, ModalContent, ModalHeader,} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/components/form/ItemForm";
 import React, {useState} from "react";
-import {useRefreshContext} from "@/context/RefreshContext";
+import {useRefreshContext} from "@/features/shared/context/RefreshContext";
 import {postItem, updateItem} from "@/components/listing/ItemsOnTable.js";
 import {addToast} from "@heroui/toast";
 import ResourceStatusChangeModal from "@/components/modals/ResourceStatusChangeModal";

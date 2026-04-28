@@ -1,6 +1,7 @@
-import {runMiddleware} from '@/lib/core';
+import {runMiddleware} from '@/services/server/core';
 import fs from 'fs/promises';
 import path from 'path';
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -8,6 +9,7 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({message: 'Method not allowed'});
     }
+    if (!await requireAdmin(req, res)) return;
 
     const {date} = req.query;
 

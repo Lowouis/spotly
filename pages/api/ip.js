@@ -1,4 +1,4 @@
-import {runMiddleware} from "@/lib/core";
+import {runMiddleware} from "@/services/server/core";
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);

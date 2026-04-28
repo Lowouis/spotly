@@ -1,7 +1,19 @@
 {
   "compilerOptions": {
     "jsx": "react",
+    "baseUrl": ".",
     "paths": {
+      "@/sections/*": ["./features/admin/sections/*"],
+      "@/context/*": ["./features/shared/context/*"],
+      "@/providers/*": ["./config/providers/*"],
+      "@/prismaconf/*": ["./server/prisma/*"],
+      "@/lib/*": ["./services/server/*"],
+      "@/utils/*": ["./services/client/*"],
+      "@/config/*": ["./config/*"],
+      "@/features/*": ["./features/*"],
+      "@/server/*": ["./server/*"],
+      "@/services/*": ["./services/*"],
+      "@/types/*": ["./types/*"],
       "@/*": ["./*"]
     }
   }

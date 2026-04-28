@@ -1,7 +1,8 @@
 import {IncomingForm} from 'formidable';
 import fs from 'fs';
 import path from 'path';
-import {runMiddleware} from "@/lib/core";
+import {runMiddleware} from "@/services/server/core";
+import {requireAdmin} from '@/services/server/api-auth';
 
 // Désactiver le parsing automatique du body par Next.js
 export const config = {
@@ -18,6 +19,7 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({status: 'error', message: 'Méthode non autorisée'});
     }
+    if (!await requireAdmin(req, res)) return;
 
     try {
         // Utiliser formidable pour parser le FormData

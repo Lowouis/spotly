@@ -21,7 +21,7 @@ import {
 } from "@heroui/react";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {addToast} from "@heroui/toast";
-import {useRefreshContext} from "@/context/RefreshContext";
+import {useRefreshContext} from "@/features/shared/context/RefreshContext";
 
 // Fonction pour récupérer les réservations futures d'une ressource
 const fetchFutureReservations = async (resourceId) => {

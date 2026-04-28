@@ -1,19 +1,22 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import {PrismaAdapter} from '@next-auth/prisma-adapter';
-import prisma from '@/prismaconf/init';
+import db from "@/server/services/databaseService";
 import bycrypt from 'bcrypt';
-import nextConfig from '../../../next.config.mjs';
-import {decrypt} from '@/lib/security';
-import {findLdapUser} from '@/lib/ldap-utils';
+import {publicEnv} from '@/config/publicEnv';
+import {decrypt} from '@/services/server/security';
+import {findLdapUser} from '@/services/server/ldap-utils';
+import {validateKerberosTicket} from '@/services/server/kerberos-auth';
+import {sanitizeUser} from '@/services/server/user-sanitizer';
 
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
+const loginAttempts = new Map();
 
-const basePath = nextConfig.basePath || '';
+const basePath = publicEnv.basePath;
 
 // Fonction pour récupérer la configuration LDAP active
 async function getActiveLdapConfig() {
-    const config = await prisma.ldapConfig.findFirst({
+    const config = await db.ldapConfig.findFirst({
         where: {
             isActive: true
         },
@@ -29,30 +32,84 @@ async function getActiveLdapConfig() {
         bindDn: decrypt(config.bindDn),
         adminCn: decrypt(config.adminCn),
         adminDn : decrypt(config.adminDn),
-        adminPassword: decrypt(config.adminPassword)
+        adminPassword: decrypt(config.adminPassword),
+        emailDomain: config.emailDomain ? decrypt(config.emailDomain) : null,
     };
 }
 
-const authConfig = {
-    adapter: PrismaAdapter(prisma),
+async function getOrCreateKerberosUser(ticket) {
+    const validationResult = await validateKerberosTicket(ticket);
+
+    if (!validationResult?.success || !validationResult.username) {
+        throw new Error('Ticket Kerberos invalide');
+    }
+
+    const login = validationResult.username.split('@')[0];
+    const existingUser = await db.user.findUnique({where: {username: login}});
+
+    if (existingUser) {
+        return sanitizeUser(existingUser);
+    }
+
+    const ldapConfig = await getActiveLdapConfig();
+    const ldapResult = await findLdapUser(ldapConfig, login, false, null, true);
+
+    if (!ldapResult.success || !ldapResult.user) {
+        throw new Error(`Utilisateur non trouvé dans l'annuaire d'entreprise : ${login}`);
+    }
+
+    const ldapUser = ldapResult.user;
+    const createdUser = await db.user.create({
+        data: {
+            username: login,
+            email: ldapUser.mail || (ldapConfig.emailDomain ? `${login}@${ldapConfig.emailDomain}` : null),
+            name: ldapUser.givenName || login,
+            surname: ldapUser.sn || '',
+            external: true,
+            password: null,
+        },
+    });
+
+    return sanitizeUser(createdUser);
+}
+
+function assertLoginRateLimit(username) {
+    const key = String(username || '').toLowerCase();
+    const now = Date.now();
+    const windowMs = 60_000;
+    const limit = 10;
+    const bucket = loginAttempts.get(key) || {count: 0, resetAt: now + windowMs};
+
+    if (bucket.resetAt <= now) {
+        bucket.count = 0;
+        bucket.resetAt = now + windowMs;
+    }
+
+    bucket.count += 1;
+    loginAttempts.set(key, bucket);
+
+    if (bucket.count > limit) {
+        throw new Error('Trop de tentatives de connexion, veuillez réessayer plus tard');
+    }
+}
+
+export const authConfig = {
+    adapter: PrismaAdapter(db),
     secret: process.env.AUTH_SECRET,
-    debug: true,
+    debug: process.env.NODE_ENV !== 'production',
     
     providers: [
         CredentialsProvider({
             id: 'sso-login',
             name: 'SSO Login',
             credentials: {
-                username: { label: "Username", type: "text" }
+                ticket: { label: "Kerberos ticket", type: "text" }
             },
             async authorize(credentials) {
-                if (!credentials?.username) {
+                if (!credentials?.ticket) {
                     return null;
                 }
-                const user = await prisma.user.findUnique({
-                    where: { username: credentials.username }
-                });
-                return user;
+                return getOrCreateKerberosUser(credentials.ticket);
             }
         }),
         CredentialsProvider({
@@ -65,9 +122,10 @@ const authConfig = {
                 if (!credentials?.username) {
                     throw new Error("Nom d'utilisateur requis");
                 }
+                assertLoginRateLimit(credentials.username);
 
                 // Rechercher l'utilisateur dans la base de données
-                const user = await prisma.user.findUnique({
+                const user = await db.user.findUnique({
                     where: {
                         username: credentials.username
                     }
@@ -113,9 +171,10 @@ const authConfig = {
 
                     // Si l'utilisateur n'existe pas dans la base de données, le créer
                     if (!user) {
-                        const newUser = await prisma.user.create({
+                        const ldapUsername = ldapUser.sAMAccountName || ldapUser.uid || credentials.username;
+                        const newUser = await db.user.create({
                             data: {
-                                username: ldapUser.sAMAccountName,
+                                username: ldapUsername,
                                 email: ldapUser.mail,
                                 name: ldapUser.givenName || '',
                                 surname: ldapUser.sn || '',
@@ -123,11 +182,11 @@ const authConfig = {
                                 password: null,
                             }
                         });
-                        return newUser;
+                        return sanitizeUser(newUser);
                     }
 
                     // Sinon, mettre à jour l'utilisateur existant
-                    const updatedUser = await prisma.user.update({
+                    const updatedUser = await db.user.update({
                         where: {id: user.id},
                         data: {
                             email: ldapUser.mail,
@@ -136,7 +195,7 @@ const authConfig = {
                         }
                     });
 
-                    return updatedUser;
+                    return sanitizeUser(updatedUser);
                 } catch (error) {
                     console.error("Erreur d'authentification LDAP:", error);
                     throw new Error("Échec de l'authentification: " + error.message);
@@ -150,20 +209,21 @@ const authConfig = {
     },
     callbacks: {
         jwt: async ({ token, user }) => {
-            return {...token, ...user};
+            if (!user) return token;
+            return {...token, ...sanitizeUser(user)};
         },
         session: async ({ session, token }) => {
             session.user = token;
             return session;
         },
         redirect: async ({ url, baseUrl }) => {
-            const basePath = nextConfig.basePath || '';
+            const basePath = publicEnv.basePath;
             if (url.startsWith(baseUrl)) return url;
             if (basePath && url.startsWith(basePath)) {
                 return baseUrl + url.slice(basePath.length);
             }
             if (url.startsWith('/')) return baseUrl + url;
-            return url;
+            return baseUrl;
         },
     },
     pages: {

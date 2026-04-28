@@ -1,5 +1,6 @@
-import {ldapConnectionTest} from '@/lib/ldap-utils';
-import {runMiddleware} from "@/lib/core";
+import {ldapConnectionTest} from '@/services/server/ldap-utils';
+import {runMiddleware} from "@/services/server/core";
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -7,6 +8,7 @@ export default async function handler(req, res) {
     if(req.method === 'OPTIONS'){
         return res.status(200).json({message: 'OK'});
     }
+    if (!await requireAdmin(req, res)) return;
 
 
     const {serverUrl, bindDn, adminCn, adminDn, adminPassword} = req.body;

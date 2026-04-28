@@ -1,7 +1,7 @@
 import {getServerSession} from "next-auth/next";
 import authConfig from "../../auth/[...nextauth]";
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 
 export default async function handler(req, res) {
     try {
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
         if (req.method === "DELETE") {
             try {
-                const entries = await prisma.entry.findMany({
+                const entries = await db.entry.findMany({
                     where: {
                         recurringGroupId: parseInt(groupId)
                     },
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
                     return res.status(404).json({details: "Groupe de réservations non trouvé"});
                 }
 
-                const user = await prisma.user.findUnique({
+                const user = await db.user.findUnique({
                     where: {
                         email: session.user.email
                     }
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
 
                 // Supprimer toutes les entrées du groupe
-                await prisma.entry.deleteMany({
+                await db.entry.deleteMany({
                     where: {
                         recurringGroupId: parseInt(groupId)
                     }

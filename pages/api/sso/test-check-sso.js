@@ -1,4 +1,7 @@
 export default async function handler(req, res) {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(404).json({message: 'Not found'});
+    }
     // Log des infos de la requête entrante
     const debug = {
         method: req.method,

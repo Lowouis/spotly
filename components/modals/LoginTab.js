@@ -4,12 +4,10 @@ import React, {useEffect, useState} from "react";
 import {Button, Form, Input, Link} from "@heroui/react";
 import NextLink from "next/link";
 import {signIn} from "next-auth/react";
-import {useRouter} from 'next/navigation';
 import {addToast} from "@heroui/toast";
 import {EyeIcon, EyeSlashIcon} from "@heroicons/react/24/outline";
 
 export default function LoginTab() {
-    const router = useRouter();
     const [connectionLoading, setConnectionLoading] = useState(false);
     const [wrongCredentials, setWrongCredentials] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -29,19 +27,29 @@ export default function LoginTab() {
     ]);
 
     // Copy the handlers and effects related to login
-    const handleSubmit = async () => {
-        const result = await signIn('credentials', {
-            redirect: false,
-            username: creditentials[0].value,
-            password: creditentials[1].value,
-            callbackUrl: window.location.origin + window.location.pathname.replace('/login', '') + window.location.search
-        });
+    const handleSubmit = async (event) => {
+        event?.preventDefault();
+        setConnectionLoading(true);
 
-        if (result.ok) {
-            // Utiliser l'URL de callback fournie par NextAuth
-            router.push(result.url);
-        } else if (result.status === 401) {
+        try {
+            const callbackUrl = window.location.origin + window.location.pathname.replace('/login', '') + window.location.search;
+            const result = await signIn('credentials', {
+                redirect: false,
+                username: creditentials[0].value,
+                password: creditentials[1].value,
+                callbackUrl
+            });
+
+            if (result?.ok) {
+                window.location.assign(result.url || callbackUrl || '/');
+                return;
+            }
+
             setWrongCredentials(true);
+        } catch (error) {
+            setWrongCredentials(true);
+            console.error('Login error:', error);
+        } finally {
             setConnectionLoading(false);
         }
     };
@@ -68,7 +76,10 @@ export default function LoginTab() {
     }, [wrongCredentials, setWrongCredentials]);
 
     return (
-        <Form className="space-y-5">
+        <Form
+            className="space-y-5"
+            onSubmit={handleSubmit}
+        >
             {/* Champs de connexion */}
             <div className="space-y-4 w-full">
                 {creditentials.map((input, index) => (
@@ -111,10 +122,6 @@ export default function LoginTab() {
             <Button
                 type="submit"
                 fullWidth
-                onPress={async () => {
-                    setConnectionLoading(true);
-                    await handleSubmit();
-                }}
                 color="default"
                 isLoading={connectionLoading}
                 size="md"

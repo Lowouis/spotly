@@ -6,6 +6,7 @@ import {Alert, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader,
 import {useEffect, useState} from "react";
 import {TrashIcon} from "@heroicons/react/24/outline";
 import {useRouter, useSearchParams} from "next/navigation";
+import {getAutomaticReservationPhase} from "@/services/client/reservationModes";
 
 
 const STATUS_CONFIG = {
@@ -17,7 +18,7 @@ const STATUS_CONFIG = {
     ended: {
         label: "Terminé",
         color: "bg-slate-600",
-        text: (entry) => `Rendu le ${new Date(entry.updatedAt).toLocaleDateString("fr-FR", {
+        text: (entry) => `${getAutomaticReservationPhase(entry) === 'ended' ? 'Terminé' : 'Rendu'} le ${new Date(getAutomaticReservationPhase(entry) === 'ended' ? entry.endDate : entry.updatedAt).toLocaleDateString("fr-FR", {
             year: "numeric",
             month: "2-digit",
             day: "numeric",
@@ -80,6 +81,8 @@ const getEntryStatus = (entry) => {
     if (entry.moderate === "REJECTED") return "rejected";
     if (entry.moderate === "BLOCKED") return "blocked";
     if (entry.moderate === "WAITING") return "waiting";
+    const automaticPhase = getAutomaticReservationPhase(entry);
+    if (automaticPhase) return automaticPhase;
     if (entry.moderate === "ACCEPTED" && entry.startDate > new Date().toISOString()) return "upcoming";
     if (entry.moderate === "ENDED" && entry.returned) return "ended";
     if (entry.endDate < new Date().toISOString() && !entry.returned && entry.moderate === "USED") return "delayed";
@@ -251,7 +254,7 @@ const getStatusText = (entry) => {
         case "waiting":
             return "En attente depuis le " + formatDateTime(new Date(entry.createdAt));
         case "ended":
-            return `Terminée le ${formatDateTime(new Date(entry.updatedAt))}`;
+            return `Terminée le ${formatDateTime(new Date(getAutomaticReservationPhase(entry) === 'ended' ? entry.endDate : entry.updatedAt))}`;
         case "delayed":
             return "En retard";
         case "upcoming":
@@ -457,6 +460,7 @@ export default function ReservationUserListing({entries = [], handleRefresh, aut
     const [activeFilters, setActiveFilters] = useState({
         ongoing: true,    // En cours
         upcoming: true,   // À venir
+        begin: true,      // Disponible / récupérable
         waiting: true,    // En attente
         ended: false,     // Terminé
         delayed: true,    // En retard
@@ -477,6 +481,7 @@ export default function ReservationUserListing({entries = [], handleRefresh, aut
         setActiveFilters({
             ongoing: true,
             upcoming: true,
+            begin: true,
             waiting: true,
             ended: false,
             delayed: true,
@@ -608,6 +613,12 @@ export default function ReservationUserListing({entries = [], handleRefresh, aut
             label: "À venir",
             color: "bg-blue-500",
             count: entries.filter(e => getEntryStatus(e) === "upcoming").length
+        },
+        {
+            key: "begin",
+            label: "Disponible",
+            color: "bg-green-500",
+            count: entries.filter(e => getEntryStatus(e) === "begin").length
         },
         {
             key: "waiting",
@@ -877,6 +888,3 @@ export default function ReservationUserListing({entries = [], handleRefresh, aut
         </div>
     );
 }
-
-
-

@@ -50,6 +50,15 @@ const pickables = [
 ];
 
 const withTestData = process.argv.includes('--with-test-data');
+const isProduction = process.env.NODE_ENV === 'production';
+const hasProductionConfirmation = process.argv.includes('--confirm-production');
+const adminSeed = {
+    name: process.env.SEED_ADMIN_NAME || 'admin',
+    surname: process.env.SEED_ADMIN_SURNAME || 'admin',
+    username: process.env.SEED_ADMIN_USERNAME || 'admin',
+    email: process.env.SEED_ADMIN_EMAIL || 'admin@spotly.fr',
+    password: process.env.SEED_ADMIN_PASSWORD || 'admin',
+};
 
 const testDomains = Array.from({length: 10}, (_, i) => ({
     name: `Site Test ${i + 1}`
@@ -60,41 +69,137 @@ const testCategories = Array.from({length: 10}, (_, i) => ({
     description: `Description de la catégorie ${i + 1}`
 }));
 
-const testResources = Array.from({length: 30}, (_, i) => ({
-    name: `Ressource Test ${i + 1}`,
-    description: `Description de la ressource ${i + 1}`,
-    moderate: false
-}));
+const resourcesPerCategory = 6;
+
+const testUsers = [
+    {
+        name: "Alice",
+        surname: "Martin",
+        username: "alice",
+        email: "alice.martin@spotly.test",
+        role: "USER",
+    },
+    {
+        name: "Karim",
+        surname: "Benali",
+        username: "karim",
+        email: "karim.benali@spotly.test",
+        role: "USER",
+    },
+    {
+        name: "Sophie",
+        surname: "Durand",
+        username: "sophie",
+        email: "sophie.durand@spotly.test",
+        role: "ADMIN",
+    },
+    {
+        name: "Thomas",
+        surname: "Petit",
+        username: "thomas",
+        email: "thomas.petit@spotly.test",
+        role: "USER",
+    },
+    {
+        name: "Nadia",
+        surname: "Robert",
+        username: "nadia",
+        email: "nadia.robert@spotly.test",
+        role: "ADMIN",
+    },
+];
+
+const testLocations = [
+    {libelle: "Accueil", ip: "192.168.1.10"},
+    {libelle: "Salle informatique", ip: "192.168.1.20"},
+    {libelle: "Atelier", ip: "192.168.1.30"},
+];
+
+function addDays(date, days) {
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + days);
+    return nextDate;
+}
+
+async function upsertFirst(model, where, data) {
+    const existing = await prisma[model].findFirst({where});
+
+    if (existing) {
+        return prisma[model].update({
+            where: {id: existing.id},
+            data,
+        });
+    }
+
+    return prisma[model].create({data});
+}
+
+function assertProductionAdminSeed() {
+    const required = ['SEED_ADMIN_EMAIL', 'SEED_ADMIN_USERNAME', 'SEED_ADMIN_PASSWORD'];
+    const missing = required.filter((key) => !process.env[key]);
+
+    if (missing.length > 0) {
+        throw new Error(`Production seed requires ${missing.join(', ')}`);
+    }
+
+    if (adminSeed.password.length < 12) {
+        throw new Error('Production seed requires SEED_ADMIN_PASSWORD with at least 12 characters');
+    }
+}
+
+async function seedAdminUser() {
+    if (isProduction) {
+        assertProductionAdminSeed();
+    }
+
+    const existingUser = await prisma.user.findFirst({
+        where: {
+            OR: [
+                {email: adminSeed.email},
+                {username: adminSeed.username},
+            ],
+        },
+    });
+
+    if (existingUser) {
+        await prisma.user.update({
+            where: {id: existingUser.id},
+            data: {
+                name: adminSeed.name,
+                surname: adminSeed.surname,
+                username: adminSeed.username,
+                email: adminSeed.email,
+                role: 'SUPERADMIN',
+                external: false,
+            },
+        });
+        console.log('Admin user already exists, updated profile and role');
+        return;
+    }
+
+    const password = await bycrypt.hash(adminSeed.password, 10);
+
+    await prisma.user.create({
+        data: {
+            name: adminSeed.name,
+            email: adminSeed.email,
+            surname: adminSeed.surname,
+            username: adminSeed.username,
+            password,
+            role: 'SUPERADMIN',
+            external: false,
+        },
+    });
+    console.log('Admin user created successfully');
+}
 
 async function main() {
 
-    const existingUser = await prisma.user.findUnique({
-        where: {
-            email: "admin@spotly.fr"
-        }
-    });
-
-    if (!existingUser) {
-        const password = await bycrypt.hash("admin", 10);
-        try {
-            await prisma.user.create({
-                data: {
-                    name: "admin",
-                    email: "admin@spotly.fr",
-                    surname: "admin",
-                    username: "admin",
-                    password: password,
-                    role: "SUPERADMIN",
-                    external: false,
-                }
-            });
-            console.log("Admin user created successfully");
-        } catch (e) {
-            console.error("Error creating admin user:", e);
-        }
-    } else {
-        console.log("Admin user already exists, skipping creation");
+    if (isProduction && !hasProductionConfirmation) {
+        throw new Error('Production seed requires --confirm-production');
     }
+
+    await seedAdminUser();
 
     try {
         for (const pickable of pickables) {
@@ -120,45 +225,120 @@ async function main() {
 
     // Ajout des données de test si demandé
     if (withTestData) {
-        // Domains (sites)
-        for (const domain of testDomains) {
-            await prisma.domain.upsert({
-                where: {name: domain.name},
-                update: domain,
-                create: {...domain, pickableId: 1}, // pickableId arbitraire (doit exister)
+        const demoPassword = await bycrypt.hash("password", 10);
+
+        for (const user of testUsers) {
+            await prisma.user.upsert({
+                where: {username: user.username},
+                update: {
+                    ...user,
+                    external: false,
+                },
+                create: {
+                    ...user,
+                    password: demoPassword,
+                    external: false,
+                },
             });
         }
-        console.log("Données de test : sites créés");
+        console.log("Données de test : utilisateurs créés ou mis à jour");
+
+        for (const location of testLocations) {
+            await prisma.authorizedLocation.upsert({
+                where: {ip: location.ip},
+                update: location,
+                create: location,
+            });
+        }
+        console.log("Données de test : localisations autorisées créées ou mises à jour");
+
+        const fluentPickable = await prisma.pickable.findUnique({where: {name: "FLUENT"}});
+        const lowTrustPickable = await prisma.pickable.findUnique({where: {name: "LOW_TRUST"}});
+        const highAuthPickable = await prisma.pickable.findUnique({where: {name: "HIGH_AUTH"}});
+        const adminOwner = await prisma.user.findUnique({where: {username: "sophie"}});
+
+        // Domains (sites)
+        for (let i = 0; i < testDomains.length; i++) {
+            const domain = testDomains[i];
+            await upsertFirst('domain', {name: domain.name}, {
+                ...domain,
+                pickableId: i % 3 === 0 ? highAuthPickable.id : fluentPickable.id,
+                ownerId: i % 2 === 0 ? adminOwner.id : null,
+            });
+        }
+        console.log("Données de test : sites créés ou mis à jour");
 
         // Categories
-        for (const category of testCategories) {
-            await prisma.category.upsert({
-                where: {name: category.name},
-                update: category,
-                create: {...category, pickableId: 1}, // pickableId arbitraire (doit exister)
+        for (let i = 0; i < testCategories.length; i++) {
+            const category = testCategories[i];
+            await upsertFirst('category', {name: category.name}, {
+                ...category,
+                pickableId: i % 2 === 0 ? lowTrustPickable.id : fluentPickable.id,
+                ownerId: i % 3 === 0 ? adminOwner.id : null,
             });
         }
-        console.log("Données de test : catégories créées");
+        console.log("Données de test : catégories créées ou mises à jour");
 
         // Resources (liées à des sites et catégories existants)
         const allDomains = await prisma.domain.findMany();
         const allCategories = await prisma.category.findMany();
-        for (let i = 0; i < testResources.length; i++) {
-            const resource = testResources[i];
-            const domain = allDomains[i % allDomains.length];
-            const category = allCategories[i % allCategories.length];
-            await prisma.resource.upsert({
-                where: {name: resource.name},
-                update: resource,
-                create: {
-                    ...resource,
+        let resourceIndex = 0;
+        for (const category of allCategories) {
+            for (let i = 0; i < resourcesPerCategory; i++) {
+                resourceIndex += 1;
+                const domain = allDomains[resourceIndex % allDomains.length];
+                await upsertFirst('resource', {name: `${category.name} - Ressource ${i + 1}`}, {
+                    name: `${category.name} - Ressource ${i + 1}`,
+                    description: `Ressource de démonstration ${i + 1} pour ${category.name}`,
+                    moderate: false,
                     domainId: domain.id,
                     categoryId: category.id,
-                    status: "AVAILABLE"
+                    pickableId: resourceIndex % 5 === 0 ? highAuthPickable.id : null,
+                    ownerId: resourceIndex % 4 === 0 ? adminOwner.id : null,
+                    status: resourceIndex % 7 === 0 ? "UNAVAILABLE" : "AVAILABLE",
+                });
+            }
+        }
+        console.log("Données de test : ressources créées ou mises à jour");
+
+        const demoUsers = await prisma.user.findMany({
+            where: {username: {in: testUsers.map(user => user.username)}},
+        });
+        const demoResources = await prisma.resource.findMany({
+            where: {description: {startsWith: "Ressource de démonstration"}},
+            take: 10,
+            orderBy: {id: 'asc'},
+        });
+
+        for (let i = 0; i < Math.min(demoUsers.length, demoResources.length); i++) {
+            const startDate = addDays(new Date(), i + 1);
+            startDate.setHours(9 + (i % 4), 0, 0, 0);
+            const endDate = new Date(startDate);
+            endDate.setHours(startDate.getHours() + 2);
+
+            const existingEntry = await prisma.entry.findFirst({
+                where: {
+                    userId: demoUsers[i].id,
+                    resourceId: demoResources[i].id,
+                    startDate,
+                    endDate,
                 },
             });
+
+            if (!existingEntry) {
+                await prisma.entry.create({
+                    data: {
+                        userId: demoUsers[i].id,
+                        resourceId: demoResources[i].id,
+                        startDate,
+                        endDate,
+                        moderate: i % 3 === 0 ? "WAITING" : "ACCEPTED",
+                        comment: `Réservation fictive ${i + 1}`,
+                    },
+                });
+            }
         }
-        console.log("Données de test : ressources créées");
+        console.log("Données de test : réservations fictives créées");
     }
 
 

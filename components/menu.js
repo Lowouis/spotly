@@ -26,9 +26,9 @@ import {useMediaQuery} from 'react-responsive';
 import {useRouter} from "next/navigation";
 import Image from "next/image";
 import {BsWrench} from "react-icons/bs";
-import nextConfig from '../next.config.mjs';
+import {publicEnv} from '@/config/publicEnv';
 
-const basePath = nextConfig.basePath || '';
+const basePath = publicEnv.basePath;
 
 export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRefresh, selectedTab}) {
     const [mounted, setMounted] = useState(false);
@@ -724,5 +724,4 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
         </>
     );
 }
-
 

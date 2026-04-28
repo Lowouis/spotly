@@ -20,9 +20,9 @@ import {formatDuration, lastestPickable, whoIsOwner} from "@/global";
 import {ArrowLeftIcon, ArrowRightCircleIcon} from "@heroicons/react/24/solid";
 import React, {useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {useEmail} from "@/context/EmailContext";
+import {useEmail} from "@/features/shared/context/EmailContext";
 import {addToast} from "@heroui/toast";
-import {getAllUsers} from "@/utils/api"
+import {getAllUsers} from "@/services/client/api"
 
 
 export default function ModalValidBooking({entry, isOpen, onOpenChange, session, handleRefresh}) {

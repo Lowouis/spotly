@@ -1,10 +1,12 @@
-import prisma from '@/prismaconf/init';
+import db from "@/server/services/databaseService";
 import bcrypt from 'bcrypt';
+import {rateLimit} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
+    if (!rateLimit(req, res, {key: 'auth:register', limit: 5, windowMs: 60_000})) return;
 
     const { username, name, surname, email, password } = req.body;
 
@@ -14,7 +16,7 @@ export default async function handler(req, res) {
 
     try {
         // Vérifier si l'utilisateur existe déjà
-        const existingUser = await prisma.user.findFirst({
+        const existingUser = await db.user.findFirst({
             where: {
                 OR: [
                     { username: username },
@@ -31,7 +33,7 @@ export default async function handler(req, res) {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Créer l'utilisateur
-        const user = await prisma.user.create({
+        const user = await db.user.create({
             data: {
                 username,
                 name,

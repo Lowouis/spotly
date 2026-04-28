@@ -2,7 +2,7 @@ import {CheckIcon} from "@heroicons/react/24/outline";
 import React from "react";
 import {IoCloseSharp} from "react-icons/io5";
 
-export default function Stepper({step, done=false, last=false, content, handleReturnStep=null, adminMode=false, entry=null, returned, failed}) {
+export default function Stepper({step, done=false, active=false, last=false, content, handleReturnStep=null, adminMode=false, entry=null, returned, failed}) {
     return (
         <div className="flex flex-row">
             <div className="flex flex-col justify-center items-center">
@@ -11,7 +11,7 @@ export default function Stepper({step, done=false, last=false, content, handleRe
                         ${done && !failed ? "bg-gradient-to-br from-blue-400 to-blue-600 shadow-lg shadow-blue-500/30" :
                         failed ? "bg-gradient-to-br from-red-400 to-red-600 shadow-lg shadow-red-500/30" :
                             "bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-800 shadow-lg shadow-neutral-500/10"}
-                        ${!done && !failed ? "border-2 border-blue-400/30 dark:border-blue-500/30" : "border-none"}
+                        ${active && !done && !failed ? "border-2 border-blue-400/30 dark:border-blue-500/30" : !done && !failed ? "border-2 border-neutral-300 dark:border-neutral-700" : "border-none"}
                     `}
                 >
                     {!failed && done && (
@@ -22,7 +22,7 @@ export default function Stepper({step, done=false, last=false, content, handleRe
                         />
                     )}
                     {!failed && !done && (
-                        <h2 className="text-lg sm:text-2xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-300 dark:to-blue-500">
+                        <h2 className={`text-lg sm:text-2xl font-semibold ${active ? "bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-300 dark:to-blue-500" : "text-neutral-500 dark:text-neutral-400"}`}>
                             {step}
                         </h2>
                     )}

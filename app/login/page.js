@@ -35,7 +35,6 @@ function LoginContent() {
     } = useSSO({ssoParam, status});
 
     useEffect(() => {
-        console.log(`[DEBUG SSO Trigger Check] ssoParam: ${ssoParam}, kerberosConfigExists: ${kerberosConfigExists}, status: ${status}, autoSsoAttempted: ${autoSsoAttempted}`);
         // On attend que la session soit bien vérifiée, non authentifiée, et qu'on n'ait pas déjà tenté le SSO
         if (ssoParam === "1" && kerberosConfigExists && status === 'unauthenticated' && !autoSsoAttempted) {
             setAutoSsoAttempted(true); // Verrouiller pour ne pas retenter
@@ -47,7 +46,6 @@ function LoginContent() {
             router.replace(newUrl);
 
             ssoTimeoutRef.current = setTimeout(() => {
-                console.log('[DEBUG SSO Trigger] Déclenchement de handleSSOClick.');
                 handleSSOClick();
             }, 600);
         }
@@ -153,7 +151,7 @@ function LoginContent() {
 }
 
 export default function Page() {
-    const queryClient = new QueryClient();
+    const [queryClient] = useState(() => new QueryClient());
 
     return (
         <QueryClientProvider client={queryClient}>

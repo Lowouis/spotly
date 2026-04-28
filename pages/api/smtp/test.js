@@ -1,6 +1,7 @@
-import {validateSmtpConfig} from '@/lib/smtp-utils';
-import {runMiddleware} from "@/lib/core";
+import {validateSmtpConfig} from '@/services/server/smtp-utils';
+import {runMiddleware} from "@/services/server/core";
 import nodemailer from 'nodemailer';
+import {rateLimit, requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -8,6 +9,9 @@ export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
         return res.status(405).json({message: 'Method not allowed'});
     }
+    if (req.method === 'OPTIONS') return res.status(200).json({message: 'OK'});
+    if (!rateLimit(req, res, {key: 'smtp:test', limit: 10, windowMs: 60_000})) return;
+    if (!await requireAdmin(req, res)) return;
 
     const {host, port, username, password, secure} = req.body;
     if (!host || !port || !username || !password) {

@@ -1,7 +1,8 @@
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
-import {encrypt} from '@/lib/security';
-import {validateKerberosConfig} from '@/lib/kerberos-utils';
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
+import {encrypt} from '@/services/server/security';
+import {validateKerberosConfig} from '@/services/server/kerberos-utils';
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -9,6 +10,9 @@ export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
         return res.status(405).json({message: 'Method not allowed'});
     }
+    if (req.method === 'OPTIONS') return res.status(200).json({message: 'OK'});
+    const session = await requireAdmin(req, res);
+    if (!session) return;
 
     const {realm, kdc, adminServer, defaultDomain, serviceHost, keytabPath} = req.body;
     if (!realm || !kdc || !adminServer || !defaultDomain || !serviceHost || !keytabPath) {
@@ -45,17 +49,17 @@ export default async function handler(req, res) {
         };
 
         // 3. Désactiver toutes les configurations existantes
-        await prisma.kerberosConfig.updateMany({
+        await db.kerberosConfig.updateMany({
             where: {isActive: true},
             data: {isActive: false}
         });
 
         // 4. Sauvegarder la nouvelle configuration
-        const savedConfig = await prisma.kerberosConfig.create({
+        const savedConfig = await db.kerberosConfig.create({
             data: {
                 ...encryptedData,
                 lastUpdated: new Date(),
-                updatedBy: req.session?.user?.name || 'system'
+                updatedBy: session.user.name || session.user.username || 'system'
             }
         });
 

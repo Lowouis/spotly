@@ -1,5 +1,5 @@
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
         try {
             // Récupérer la ressource originale pour obtenir son site et sa catégorie
-            const originalResource = await prisma.resource.findUnique({
+            const originalResource = await db.resource.findUnique({
                 where: {id: parseInt(resourceId)},
                 include: {
                     domains: true,
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
             // Chercher une ressource similaire disponible
             // D'abord, récupérer toutes les ressources similaires
-            const similarResources = await prisma.resource.findMany({
+            const similarResources = await db.resource.findMany({
                 where: {
                     id: {not: parseInt(resourceId)}, // Exclure la ressource originale
                     status: "AVAILABLE",

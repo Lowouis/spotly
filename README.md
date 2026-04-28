@@ -16,7 +16,7 @@
 
 ### À qui s'adresse Spotly ?
 
-Spotly est destiné à toutes les organisations (entreprises, collectivités, établissements scolaires, associations...)
+Spotly est destiné à toutes les organisations (entreprises, collectivités, établissements scolaires, associations…)
 qui souhaitent gérer efficacement la réservation de ressources partagées : salles, équipements, véhicules, etc.  
 Il est particulièrement adapté aux structures multi-sites ou nécessitant une gestion fine des droits d’accès et de
 l’authentification.
@@ -25,7 +25,7 @@ l’authentification.
 
 Spotly est une application web open source de gestion et de réservation de ressources.  
 Elle permet de planifier, réserver et suivre l’utilisation de tout type de ressource partagée, avec une interface
-moderne, responsive et des fonctionnalités avancées (créneaux récurrents, gestion des droits, notifications, etc.).
+moderne et responsive, ainsi que des fonctionnalités avancées (créneaux récurrents, gestion des droits, notifications, etc.).
 
 L’objectif : simplifier la logistique interne, optimiser l’utilisation des ressources et offrir une expérience
 utilisateur fluide, sur desktop comme sur mobile.
@@ -39,11 +39,11 @@ utilisateur fluide, sur desktop comme sur mobile.
 - 📅 Réservation de ressources (salles, équipements, véhicules, etc.)
 - 🔄 Créneaux récurrents (quotidiens, hebdomadaires)
 - 👥 Gestion des utilisateurs, rôles et droits d’accès
-- 🏢 Multi-sites et multi-catégories avec une forte granularité
+- 🏢 Multisites et multicatégories avec une forte granularité
 - 🔒 Authentification sécurisée (LDAP, SSO, local)
 - 📱 Interface responsive (mobile & desktop)
 - 📊 Statistiques d’utilisation
-- 🔔 Notifications et rappels (email)
+- 🔔 Notifications et rappels (e-mail)
 
 ### Prérequis
 
@@ -52,7 +52,7 @@ utilisateur fluide, sur desktop comme sur mobile.
 - Prisma (ORM)
 - Base de données compatible (MySQL, PostgreSQL, MariaDB…)
 - Serveur LDAP/SSO (optionnel, pour l’intégration en entreprise)
-- Serveur SMTP pour l’envoi d’emails (optionnel mais recommandé)
+- Serveur SMTP pour l’envoi d’e-mails (optionnel mais recommandé)
 
 ### Installation rapide (développement)
 
@@ -62,7 +62,7 @@ cd spotly
 npm install
 ```
 
-Configurez vos variables d’environnement dans `.env.local` & `.env` en copiant les fichiers `.env.local.template` &
+Configurez vos variables d’environnement dans `.env.local` et `.env` en copiant les fichiers `.env.local.template` et
 `.env.template`.
 
 ```bash
@@ -71,6 +71,39 @@ npm run dev
 ```
 
 👉 **Pour une installation détaillée, consultez le manuel complet dans `docs/deployment.pdf`**
+
+### Déploiement Vercel
+
+Avant une mise en production, configurez les variables d'environnement Vercel suivantes :
+
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `LDAP_ENCRYPTION_KEY`
+- `NEXTAUTH_URL`
+- `NEXT_PUBLIC_API_ENDPOINT`
+- `CRON_SECRET` si un worker ou une cron externe appelle les endpoints internes
+
+Appliquez les migrations MySQL avant ou pendant la release avec :
+
+```bash
+npx prisma migrate deploy
+```
+
+N'exécutez le seed de production qu'après création manuelle d'un compte administrateur sécurisé :
+
+```bash
+npm run seed:prod
+```
+
+Le seed de production initialise uniquement le compte administrateur, les types de ressource et les options horaires par défaut. Il nécessite :
+
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_USERNAME`
+- `SEED_ADMIN_PASSWORD` avec au moins 12 caractères
+
+Optionnellement : `SEED_ADMIN_NAME` et `SEED_ADMIN_SURNAME`.
+
+Les tâches planifiées `node-cron` ne tournent pas comme processus permanent sur Vercel. Utilisez un worker séparé ou des routes Vercel Cron dédiées.
 
 ### Licence
 
@@ -83,7 +116,7 @@ Développé et maintenu par **Louis GURITA** :
 
 - [GitHub](https://github.com/lowouis)
 - [LinkedIn](https://www.linkedin.com/in/louisgurita/)
-- Contact: louisguritapro@gmail.com
+- Contact : louisguritapro@gmail.com
 
 ### Contribuer
 
@@ -151,6 +184,39 @@ npm run dev
 ```
 
 👉 **For a detailed setup, see the full manual in `docs/deployment.pdf`**
+
+### Vercel Deployment
+
+Before production deployment, configure these Vercel environment variables:
+
+- `DATABASE_URL`
+- `AUTH_SECRET`
+- `LDAP_ENCRYPTION_KEY`
+- `NEXTAUTH_URL`
+- `NEXT_PUBLIC_API_ENDPOINT`
+- `CRON_SECRET` if an external worker or cron calls internal endpoints
+
+Apply MySQL migrations before or during the release with:
+
+```bash
+npx prisma migrate deploy
+```
+
+Only run the production seed after creating a secure administrator account manually:
+
+```bash
+npm run seed:prod
+```
+
+The production seed only initializes the administrator account, resource types, and default schedule options. It requires:
+
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_USERNAME`
+- `SEED_ADMIN_PASSWORD` with at least 12 characters
+
+Optional: `SEED_ADMIN_NAME` and `SEED_ADMIN_SURNAME`.
+
+The `node-cron` scheduled jobs do not run as a permanent process on Vercel. Use a separate worker or dedicated Vercel Cron routes.
 
 ### License
 

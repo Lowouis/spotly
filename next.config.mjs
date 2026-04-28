@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
+import {env} from './config/env.mjs';
 
 
 
 const nextConfig = {
-    basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+    basePath: env.basePath,
+    outputFileTracingRoot: process.cwd(),
     images: {
-        domains: [
-            process.env.NEXT_PUBLIC_API_DOMAIN || 'localhost',
-            'localhost'
-        ].filter(Boolean),
+        remotePatterns: [env.apiDomain, 'localhost'].filter(Boolean).map((hostname) => ({hostname})),
     }
 }
 

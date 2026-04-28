@@ -1,7 +1,8 @@
-import {validateKerberosTicket} from "@/lib/kerberos-auth";
-import prisma from "@/prismaconf/init";
-import {decrypt} from "@/lib/security";
-import {findLdapUser} from '@/lib/ldap-utils';
+import {validateKerberosTicket} from "@/services/server/kerberos-auth";
+import db from "@/server/services/databaseService";
+import {decrypt} from "@/services/server/security";
+import {findLdapUser} from '@/services/server/ldap-utils';
+import {sanitizeUser} from '@/services/server/user-sanitizer';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
@@ -25,13 +26,13 @@ export default async function handler(req, res) {
         const login = validationResult.username.split('@')[0];
 
         // Rechercher l'utilisateur dans la base de données
-        let user = await prisma.user.findUnique({
+        let user = await db.user.findUnique({
             where: {username: login},
         });
 
         if (!user) {
             // Charger la config LDAP
-            const ldapConfig = await prisma.ldapConfig.findFirst({
+            const ldapConfig = await db.ldapConfig.findFirst({
                 where: {isActive: true},
                 orderBy: {lastUpdated: 'desc'}
             });
@@ -71,7 +72,7 @@ export default async function handler(req, res) {
                 console.log('[DEBUG] Utilisateur trouvé dans LDAP:', JSON.stringify(ldapUser, null, 2));
 
                 // Créer l'utilisateur dans la base de données
-                user = await prisma.user.create({
+                user = await db.user.create({
                     data: {
                         username: login,
                         email: ldapUser.mail || (decryptedConfig.emailDomain ? `${login}@${decryptedConfig.emailDomain}` : null),
@@ -89,7 +90,7 @@ export default async function handler(req, res) {
                 // Fallback: créer l'utilisateur avec les informations de base
                 console.log(`[DEBUG] Fallback: Création d'utilisateur SSO basique pour: ${login}`);
 
-                user = await prisma.user.create({
+                user = await db.user.create({
                     data: {
                         username: login,
                         email: decryptedConfig.emailDomain ? `${login}@${decryptedConfig.emailDomain}` : null,
@@ -104,7 +105,7 @@ export default async function handler(req, res) {
             }
         }
 
-        return res.status(200).json(user);
+        return res.status(200).json(sanitizeUser(user));
 
     } catch (error) {
         console.error("Erreur majeure dans le callback Kerberos:", error);

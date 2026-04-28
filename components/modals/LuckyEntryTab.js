@@ -17,7 +17,7 @@ import {ArrowLeftCircleIcon, ArrowRightCircleIcon, ClockIcon} from "@heroicons/r
 import {useQuery} from "@tanstack/react-query";
 import {lastestPickable} from "@/global";
 import {addToast} from "@heroui/toast";
-import {fetchIP} from '@/utils/api';
+import {fetchIP} from '@/services/client/api';
 import {useEntryActions} from "@/hooks/useEntryActions";
 
 export default function LuckyEntryTab({setSelected}) {

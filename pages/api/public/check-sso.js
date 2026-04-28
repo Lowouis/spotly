@@ -1,6 +1,7 @@
-import {runMiddleware} from "@/lib/core";
-import {initializeKerberos} from "@/lib/kerberos-auth";
-import prisma from "@/prismaconf/init";
+import {runMiddleware} from "@/services/server/core";
+import {initializeKerberos} from "@/services/server/kerberos-auth";
+import db from "@/server/services/databaseService";
+import {getTestSsoTicket, isTestAuthServiceEnabled} from '@/services/server/test-auth-service';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -12,7 +13,11 @@ export default async function handler(req, res) {
     }
 
     try {
-        const config = await prisma.kerberosConfig.findFirst({
+        if (isTestAuthServiceEnabled()) {
+            return res.status(200).json({ticket: getTestSsoTicket(req.query?.username || 'admin')});
+        }
+
+        const config = await db.kerberosConfig.findFirst({
             where: {isActive: true},
             orderBy: {lastUpdated: 'desc'}
         });

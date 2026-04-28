@@ -1,12 +1,14 @@
 'use server';
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from 'next/server';
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
+    if (req.method !== 'GET' && req.method !== 'OPTIONS' && !await requireAdmin(req, res)) return;
     if(req.method === "GET"){
-        const domains = await prisma.domain.findMany({
+        const domains = await db.domain.findMany({
             include: {
                 owner: true,
                 pickable: true
@@ -16,7 +18,7 @@ export default async function handler(req, res) {
     } else if (req.method === "POST"){
         const {name, owner, pickable} = req.body;
 
-        const domain = await prisma.domain.create({
+        const domain = await db.domain.create({
             data: {
                 name,
                 pickable: pickable?.id ? {
@@ -32,7 +34,7 @@ export default async function handler(req, res) {
         const {id, name, owner, pickable} = req.body;
         console.log("PUT", {id, name, owner, pickable});
         if (owner === undefined) {
-            const resources = await prisma.resource.findMany({
+            const resources = await db.resource.findMany({
                 where: {
                     domainId: id,
                     moderate: true,
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
                 });
             }
         }
-        const domain = await prisma.domain.update({
+        const domain = await db.domain.update({
             where: {
                 id: id,
             },
@@ -81,7 +83,7 @@ export default async function handler(req, res) {
         }
 
         try {
-            const domains = await prisma.domain.deleteMany({
+            const domains = await db.domain.deleteMany({
                 where: {
                     id: {
                         in: ids,

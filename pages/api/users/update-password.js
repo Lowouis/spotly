@@ -1,5 +1,5 @@
 import {getServerSession} from "next-auth/next";
-import prisma from '@/prismaconf/init';
+import db from "@/server/services/databaseService";
 import bcrypt from "bcrypt";
 
 // Configuration NextAuth
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         const hashedPassword = await bcrypt.hash(password, 12);
 
         // Mettre à jour le mot de passe en utilisant l'email
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await db.user.update({
             where: {email: session.user.email},
             data: {password: hashedPassword}
         });

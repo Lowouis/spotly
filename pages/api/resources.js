@@ -1,10 +1,12 @@
 'use server';
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from "next/server";
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
+    if (req.method !== 'GET' && req.method !== 'OPTIONS' && !await requireAdmin(req, res)) return;
     if (req.method === "DELETE"){
         const { ids } = req.body;
 
@@ -13,7 +15,7 @@ export default async function handler(req, res) {
         }
 
         try {
-            const resourcesCategories = await prisma.resource.deleteMany({
+            const resourcesCategories = await db.resource.deleteMany({
                 where: {
                     id: {
                         in: ids,
@@ -34,7 +36,7 @@ export default async function handler(req, res) {
 
         const {categoryId, domainId, status} = req.query;
 
-        const resources = await prisma.resource.findMany({
+        const resources = await db.resource.findMany({
             where: {
                 ...(categoryId && {categoryId : parseInt(categoryId)}),
                 ...(domainId && {domainId : parseInt(domainId)}),
@@ -62,7 +64,7 @@ export default async function handler(req, res) {
         return res.status(200).json(sanitizedResources);
     } else if(req.method === "POST"){
         const {name, description, moderate, domains, category, owner, pickable } = req.body;
-        const ressource = await prisma.resource.create({
+        const ressource = await db.resource.create({
             data : {
                 name : name,
                 description : description,
@@ -90,7 +92,7 @@ export default async function handler(req, res) {
     } else if (req.method === "PUT") {
         const {id, name, description, moderate, domains, category, owner, pickable, status} = req.body;
 
-        const ressource = await prisma.resource.update({
+        const ressource = await db.resource.update({
             where: {
                 id: id,
             },

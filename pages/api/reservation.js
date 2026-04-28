@@ -1,5 +1,5 @@
-import {runMiddleware} from "@/lib/core";
-import prisma from "@/prismaconf/init";
+import {runMiddleware} from "@/services/server/core";
+import db from "@/server/services/databaseService";
 
 export default async function reservation(req, res) {
     await runMiddleware(req, res);
@@ -40,7 +40,7 @@ export default async function reservation(req, res) {
                 }
             }
 
-            const timeScheduleOptions = await prisma.timeScheduleOptions.findMany({
+            const timeScheduleOptions = await db.timeScheduleOptions.findMany({
                 where: {
                     id: 1
                 }
@@ -95,7 +95,7 @@ export default async function reservation(req, res) {
                 [{start: ajustedStartDate, end: ajustedEndDate, available: true}];
 
             // Récupérer les ressources disponibles
-            const resources = await prisma.resource.findMany({
+            const resources = await db.resource.findMany({
                 where: {
                     ...(resourceId && {id: parseInt(resourceId)}),
                     ...(siteId && categoryId && {
@@ -115,7 +115,7 @@ export default async function reservation(req, res) {
                 res.status(204).json({message: "No resources available for these dates"});
             } else {
                 // Optimisation : Regrouper toutes les ressources en une seule requête
-                const allConflictingEntries = await prisma.entry.findMany({
+                const allConflictingEntries = await db.entry.findMany({
                     where: {
                         AND: [
                             {

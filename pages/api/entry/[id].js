@@ -1,20 +1,30 @@
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from 'next/server';
+import {isAdminSession, requireAuth} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
 
     await runMiddleware(req, res);
+    const session = req.method === 'OPTIONS' ? null : await requireAuth(req, res);
+    if (req.method !== 'OPTIONS' && !session) return;
 
     const { id } = req.query;
 
     if (req.method === "PUT") {
         try {
             const {moderate, returned, adminNote, startDate, endDate, resourceId, userId} = req.body;
+            const currentEntryForAuth = await db.entry.findUnique({where: {id: parseInt(id)}});
+            if (!currentEntryForAuth) return res.status(404).json({error: 'Entry not found'});
+
+            const adminOnlyChange = adminNote || startDate || endDate || resourceId || userId;
+            if (!isAdminSession(session) && (currentEntryForAuth.userId !== Number(session.user.id) || adminOnlyChange)) {
+                return res.status(403).json({message: 'Accès interdit'});
+            }
 
             // Si on modifie les horaires ou la ressource, vérifier la disponibilité
             if (startDate || endDate || resourceId) {
-                const currentEntry = await prisma.entry.findUnique({
+                const currentEntry = await db.entry.findUnique({
                     where: {id: parseInt(id)},
                     include: {resource: true}
                 });
@@ -24,7 +34,7 @@ export default async function handler(req, res) {
                 const newResourceId = resourceId || currentEntry.resourceId;
 
                 // Vérifier les conflits (exclure la réservation actuelle)
-                const conflicts = await prisma.entry.findMany({
+                const conflicts = await db.entry.findMany({
                     where: {
                         resourceId: parseInt(newResourceId),
                         id: {not: parseInt(id)},
@@ -59,7 +69,7 @@ export default async function handler(req, res) {
                 ...(userId && {userId: parseInt(userId)})
             };
 
-            const entry = await prisma.entry.update({
+            const entry = await db.entry.update({
                 where: {
                     id: parseInt(id)
                 },
@@ -72,7 +82,7 @@ export default async function handler(req, res) {
 
             // Mettre à jour le statut de la ressource si nécessaire
             if (moderate === "USED" || moderate === "ENDED") {
-                await prisma.resource.update({
+                await db.resource.update({
                     where: {
                         id: entry.resource.id
                     },
@@ -91,7 +101,7 @@ export default async function handler(req, res) {
         const { id } = req.query;
 
         // Récupérer la réservation avant suppression pour connaître la ressource
-        const entry = await prisma.entry.findUnique({
+        const entry = await db.entry.findUnique({
             where: {
                 id: parseInt(id)
             },
@@ -103,11 +113,14 @@ export default async function handler(req, res) {
         if (!entry) {
             return res.status(404).json({error: "Entry not found"});
         }
+        if (!isAdminSession(session) && entry.userId !== Number(session.user.id)) {
+            return res.status(403).json({message: 'Accès interdit'});
+        }
 
         const resourceId = entry.resourceId;
 
         // Supprimer la réservation
-        await prisma.entry.delete({
+        await db.entry.delete({
             where: {
                 id: parseInt(id)
             }
@@ -116,7 +129,7 @@ export default async function handler(req, res) {
         // Mettre à jour le statut de la ressource après suppression
         if (resourceId) {
             // Si on supprime une réservation, la ressource redevient automatiquement disponible
-            await prisma.resource.update({
+            await db.resource.update({
                 where: {
                     id: resourceId
                 },

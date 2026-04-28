@@ -1,30 +1,37 @@
 'use server';
-import path from 'path';
 import nodemailer from 'nodemailer';
-import {runMiddleware} from "@/lib/core";
-import {marked} from 'marked';
-import prisma from "@/prismaconf/init";
-import {decrypt} from '@/lib/security';
-import {htmlToText} from 'html-to-text';
-import {getEmailTemplate} from '@/utils/mails/templates';
+import {runMiddleware} from "@/services/server/core";
+import db from "@/server/services/databaseService";
+import {decrypt} from '@/services/server/security';
+import {buildEmailMessage, shouldSendDailyNotification} from '@/services/server/mails/mailer';
+import {rateLimit, requireAuth} from '@/services/server/api-auth';
+
+function isAuthorizedServiceRequest(req) {
+    const expectedSecret = process.env.CRON_SECRET;
+    const authorization = req.headers.authorization || '';
+
+    return Boolean(expectedSecret) && authorization === `Bearer ${expectedSecret}`;
+}
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
+    if (req.method === 'OPTIONS') {
+        return res.status(200).json({message: 'OK'});
+    }
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
         return res.status(405).json({message: 'Method not allowed'});
     }
+    if (!rateLimit(req, res, {key: 'mail:send', limit: 30, windowMs: 60_000})) return;
+    if (!isAuthorizedServiceRequest(req) && !await requireAuth(req, res)) return;
     const {to, subject, templateName, data} = req.body;
 
-    const htmlContent = getEmailTemplate(templateName, data);
-
-    const textContent = htmlToText(htmlContent, {
-        wordwrap: 130,
-
-    });
+    if (!to || !subject || !templateName || !data) {
+        return res.status(400).json({message: 'to, subject, templateName et data sont obligatoires'});
+    }
 
     try {
         // Récupérer la configuration SMTP active
-        const smtpConfig = await prisma.smtpConfig.findFirst({
+        const smtpConfig = await db.smtpConfig.findFirst({
             where: {
                 isActive: true
             },
@@ -35,6 +42,16 @@ export default async function handler(req, res) {
 
         if (!smtpConfig) {
             throw new Error('Aucune configuration SMTP active trouvée');
+        }
+
+        const delivery = await shouldSendDailyNotification(db, {templateName, to, data});
+        if (!delivery.allowed) {
+            return res.status(200).json({
+                message: 'Email already sent for this notification today.',
+                skipped: true,
+                contextKey: delivery.contextKey,
+                dateKey: delivery.dateKey,
+            });
         }
 
         // Décrypter les données sensibles
@@ -56,29 +73,16 @@ export default async function handler(req, res) {
             },
             tls: {
                 rejectUnauthorized: false,
-            },
-            charset: 'utf-8',
-            encoding: 'utf-8'
+            }
         });
 
-        const info = await transporter.sendMail({
-            headers: {
-                'Content-Type': 'text/html; charset=utf-8',
-            },
+        const info = await transporter.sendMail(buildEmailMessage({
             from: `"${decrypt(smtpConfig.fromName)}" <${decrypt(smtpConfig.fromEmail)}>`,
             to,
             subject,
-            html: htmlContent,
-            text: textContent,
-            encoding: 'utf-8',
-            attachments: [
-                {
-                    filename: 'banner_low.png',
-                    path: path.resolve(process.cwd(), 'public/banner_low.png'),
-                    cid: 'bannerimg'
-                }
-            ]
-        });
+            templateName,
+            data,
+        }));
 
         return res.status(200).json({message: 'Email sent successfully!', info});
     } catch (error) {

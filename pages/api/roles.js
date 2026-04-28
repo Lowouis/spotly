@@ -1,8 +1,8 @@
-import { role } from '@prisma/client';
-import {runMiddleware} from "@/lib/core";
+import {runMiddleware} from "@/services/server/core";
+import {listRoles} from '@/server/services/roleService';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
-    const roles = Object.values(role).map((role, index) => ({ id: index + 1, name: role }));
+    const roles = listRoles();
     res.status(200).json(roles);
 }

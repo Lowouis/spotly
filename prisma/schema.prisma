@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -194,4 +194,16 @@ model SmtpConfig {
   lastUpdated DateTime @updatedAt
   updatedBy   String
   isActive    Boolean  @default(true)
+}
+
+model EmailNotificationLog {
+  id           Int      @id @default(autoincrement())
+  templateName String
+  recipient    String
+  contextKey   String
+  dateKey      String
+  createdAt    DateTime @default(now())
+
+  @@unique([templateName, recipient, contextKey, dateKey])
+  @@index([createdAt])
 }

@@ -1,0 +1,71 @@
+dn: uid=alice,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: alice
+cn: Alice Martin
+sn: Martin
+givenName: Alice
+mail: alice@dev.local
+userPassword: password
+
+dn: uid=karim,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: karim
+cn: Karim Benali
+sn: Benali
+givenName: Karim
+mail: karim@dev.local
+userPassword: password
+
+dn: uid=sophie,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: sophie
+cn: Sophie Durand
+sn: Durand
+givenName: Sophie
+mail: sophie@dev.local
+userPassword: password
+
+dn: uid=thomas,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: thomas
+cn: Thomas Petit
+sn: Petit
+givenName: Thomas
+mail: thomas@dev.local
+userPassword: password
+
+dn: uid=nadia,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: nadia
+cn: Nadia Robert
+sn: Robert
+givenName: Nadia
+mail: nadia@dev.local
+userPassword: password
+
+dn: uid=ldap.user,dc=dev,dc=local
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+uid: ldap.user
+cn: LDAP User
+sn: User
+givenName: LDAP
+mail: ldap.user@dev.local
+userPassword: password

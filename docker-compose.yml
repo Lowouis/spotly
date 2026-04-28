@@ -1,0 +1,59 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: spotly-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: spotly
+      MYSQL_USER: spotly
+      MYSQL_PASSWORD: spotly
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - spotly-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  ldap:
+    image: osixia/openldap:1.5.0
+    container_name: dev-ldap
+    environment:
+      LDAP_ORGANISATION: "Dev Org"
+      LDAP_DOMAIN: "dev.local"
+      LDAP_ADMIN_PASSWORD: "admin"
+    ports:
+      - "389:389"
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: dev-phpldapadmin
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: ldap
+      PHPLDAPADMIN_HTTPS: "false"
+    ports:
+      - "8081:80"
+    depends_on:
+      - ldap
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: dev-keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ldap
+
+volumes:
+  spotly-mysql-data:
+  ldap_data:
+  ldap_config:

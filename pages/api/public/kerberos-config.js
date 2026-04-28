@@ -1,6 +1,4 @@
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
-import {decrypt} from '@/lib/security';
+import {runMiddleware} from "@/services/server/core";
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -9,40 +7,5 @@ export default async function handler(req, res) {
         return res.status(405).json({message: 'Method not allowed'});
     }
 
-    try {
-        // Récupérer la dernière configuration active
-        const config = await prisma.kerberosConfig.findFirst({
-            where: {
-                isActive: true
-            },
-            orderBy: {
-                lastUpdated: 'desc'
-            }
-        });
-
-        if (!config) {
-            return res.status(200).json({
-                message: 'Aucune configuration Kerberos trouvée'
-            });
-        }
-
-        // Décrypter les données sensibles
-        const decryptedConfig = {
-            realm: decrypt(config.realm),
-            kdc: decrypt(config.kdc),
-            adminServer: decrypt(config.adminServer),
-            defaultDomain: decrypt(config.defaultDomain),
-            serviceHost: decrypt(config.serviceHost),
-            keytabPath: decrypt(config.keytabPath)
-        };
-
-        return res.status(200).json(decryptedConfig);
-
-    } catch (error) {
-        console.error('Kerberos config fetch error:', error);
-        return res.status(500).json({
-            message: 'Erreur lors de la récupération de la configuration',
-            details: process.env.NODE_ENV === 'development' ? error.message : null
-        });
-    }
+    return res.status(410).json({message: 'Configuration Kerberos publique désactivée'});
 } 

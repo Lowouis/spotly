@@ -1,7 +1,7 @@
 import {useQuery} from "@tanstack/react-query";
-import {useEmail} from "@/context/EmailContext";
+import {useEmail} from "@/features/shared/context/EmailContext";
 import {addToast} from "@heroui/toast";
-import {checkIPAuthorization} from '@/utils/api';
+import {checkIPAuthorization} from '@/services/client/api';
 import {lastestPickable} from "@/global";
 
 export const useEntryActions = (entry, clientIP) => {

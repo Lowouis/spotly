@@ -1,21 +1,25 @@
-import {runMiddleware} from '@/lib/core';
-import {PrismaClient} from '@prisma/client';
+import {runMiddleware} from '@/services/server/core';
+import db from '@/server/services/databaseService';
 import {NextResponse} from 'next/server';
-
-const prisma = new PrismaClient();
+import {requireAdmin, requireAuth} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
+    if (req.method === 'GET') {
+        if (!await requireAuth(req, res)) return;
+    } else if (req.method !== 'OPTIONS') {
+        if (!await requireAdmin(req, res)) return;
+    }
 
     switch (req.method) {
         case 'GET':
-            const options = await prisma.timeScheduleOptions.findFirst();
+            const options = await db.timeScheduleOptions.findFirst();
             res.json(options);
             break;
 
         case 'PUT':
             const {onPickup, onReturn, authorizedDelay} = req.body;
-            const updatedOptions = await prisma.timeScheduleOptions.upsert({
+            const updatedOptions = await db.timeScheduleOptions.upsert({
                 where: {id: 1},
                 update: {
                     onPickup: onPickup !== undefined ? onPickup : undefined,

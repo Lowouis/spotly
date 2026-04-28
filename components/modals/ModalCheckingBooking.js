@@ -26,11 +26,20 @@ import {
 import Stepper from "@/components/utils/Stepper";
 import React, {useCallback, useEffect, useState} from "react";
 import {useMutation, useQuery} from "@tanstack/react-query";
-import {useEmail} from "@/context/EmailContext";
+import {useEmail} from "@/features/shared/context/EmailContext";
 import {addToast} from "@heroui/toast";
 import EntryComments from "@/components/comments/EntryComments";
 import {useEntryActions} from "@/hooks/useEntryActions";
 import {useSession} from "next-auth/react";
+import {
+    canConfirmWithCode,
+    getAutomaticReservationPhase,
+    getEffectivePickableName,
+    getPickupControlMode,
+    requiresPickupCode,
+    requiresReturnCode,
+    RESERVATION_CONTROL_MODE
+} from '@/services/client/reservationModes';
 
 
 export const formatDate = (date) => {
@@ -214,7 +223,7 @@ export default function ModalCheckingBooking({
     const handlePickUp = (onClose)=>{
         setError(null);
         setOtp("");
-        if (whichPickable() === "DIGIT" || whichPickable() === "HIGH_AUTH" || whichPickable() === "LOW_AUTH") {
+        if (requiresPickupCode(entry)) {
             setModalStepper("pickup")
         } else {
             hookHandlePickUp(onClose, handleRefresh);
@@ -226,7 +235,7 @@ export default function ModalCheckingBooking({
         setError(null);
         setOtp("");
 
-        if (whichPickable() === "DIGIT" || whichPickable() === "HIGH_AUTH" || whichPickable() === "LOW_AUTH") {
+        if (requiresReturnCode(entry)) {
             setModalStepper("return")
         } else {
             hookHandleReturn(null, handleRefresh);
@@ -234,13 +243,11 @@ export default function ModalCheckingBooking({
     }
     const whichPickable = () => {
 
-        if (entry.resource.pickable !== undefined && entry.resource.pickable !== null) {
-            return entry.resource.pickable.name;
-        } else if (entry.resource.category.pickable !== undefined && entry.resource.category.pickable !== null) {
-            return entry.resource.category.pickable.name;
-        }
-        return entry.resource.domains.pickable.name;
+        return getEffectivePickableName(entry);
     }
+    const automaticPhase = getAutomaticReservationPhase(entry);
+    const isAutomaticOngoing = automaticPhase === 'ongoing';
+    const isAutomaticEnded = automaticPhase === 'ended';
 
     const validDatesToPickup = () => {
         if (isLoadingTSO || !timeScheduleOptions) {
@@ -253,7 +260,7 @@ export default function ModalCheckingBooking({
     }
 
     const entryAction = ()=> {
-        if (whichPickable(entry) === "LOW_TRUST" || whichPickable(entry) === "FLUENT") {
+        if (getPickupControlMode(entry) !== RESERVATION_CONTROL_MODE.CODE) {
             return "NODIGIT";
         } else {
             return "DIGIT"
@@ -382,7 +389,7 @@ export default function ModalCheckingBooking({
     }
 
     const handleUpdateEntity = () => {
-        if(otp === entry.returnedConfirmationCode){
+        if(canConfirmWithCode(entry, otp)){
             modalStepper === "return" ? handleReturnUpdate({ entry }) : handlePickUpUpdate({ entry });
         } else {
             setError("Le code ne correspond pas, veuillez réessayer");
@@ -598,6 +605,7 @@ export default function ModalCheckingBooking({
             subject: "Code de réservation pour : " + entry.resource.name,
             templateName: "resentCode",
             data: {
+                entryId: entry.id,
                 user: entry.user.name + " " + entry.user.surname,
                 resource: entry.resource.name,
                 startDate: new Date(entry.startDate).toLocaleString("FR-fr", {
@@ -1197,6 +1205,7 @@ export default function ModalCheckingBooking({
                                                     </div>
                                                 }
                                                 done={entry.moderate !== "WAITING" && entry.moderate !== "REJECTED"}
+                                                active={entry.moderate === "WAITING"}
                                                 failed={entry.moderate === "REJECTED"}
                                                 adminMode={adminMode}
                                                 entry={entry}
@@ -1208,9 +1217,9 @@ export default function ModalCheckingBooking({
                                                         step={3}
                                                         content={
                                                             <div className="w-full flex flex-col space-y-2">
-                                                                <h1 className="text-neutral-900 dark:text-neutral-100 text-base sm:text-lg font-medium">
-                                                                    {entry.moderate === "USED" ? "En cours d'utilisation" : entry.moderate === "ACCEPTED" && new Date(entry?.endDate) < new Date() ? "Réservation expirée" : "Réservation"}
-                                                                </h1>
+                                                                    <h1 className="text-neutral-900 dark:text-neutral-100 text-base sm:text-lg font-medium">
+                                                                        {entry.moderate === "USED" || isAutomaticOngoing ? "En cours d'utilisation" : entry.moderate === "ACCEPTED" && new Date(entry?.endDate) < new Date() && !isAutomaticEnded ? "Réservation expirée" : "Réservation"}
+                                                                    </h1>
 
                                                                 {entry.moderate === "USED" && (
                                                                     <div
@@ -1219,7 +1228,14 @@ export default function ModalCheckingBooking({
                                                                     </div>
                                                                 )}
 
-                                                                {entry.moderate !== 'USED' && (
+                                                                {isAutomaticOngoing && (
+                                                                    <div
+                                                                        className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                                        En cours depuis le {formatDate(entry.startDate)}
+                                                                    </div>
+                                                                )}
+
+                                                                {entry.moderate !== 'USED' && !isAutomaticOngoing && (
                                                                     <div
                                                                         className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
                                                                         <div className="flex flex-col space-y-1">
@@ -1297,8 +1313,9 @@ export default function ModalCheckingBooking({
                                                                 )}
                                                             </div>
                                                         }
-                                                        done={entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED"}
-                                                        failed={entry.moderate === "REJECTED" || (new Date(entry.endDate) < new Date() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING"))}
+                                                        done={entry.moderate === "ENDED" || entry.moderate === "DELAYED" || entry.moderate === "REJECTED" || entry.moderate === "USED" || isAutomaticEnded}
+                                                        active={!isAutomaticEnded && (isAutomaticOngoing || (entry.moderate === "ACCEPTED" && new Date(entry.startDate) <= new Date() && new Date(entry.endDate) > new Date()))}
+                                                        failed={entry.moderate === "REJECTED" || (new Date(entry.endDate) < new Date() && (entry.moderate === "ACCEPTED" || entry.moderate === "WAITING") && !isAutomaticEnded)}
                                                         adminMode={adminMode}
                                                     />
                                                     <Stepper
@@ -1307,9 +1324,9 @@ export default function ModalCheckingBooking({
                                                             <div className="w-full flex flex-col space-y-2">
                                                                 <div className="flex items-center space-x-2">
                                                                     <h1 className="text-neutral-900 dark:text-neutral-100 text-base sm:text-lg font-medium">
-                                                                        {entry.returned ? "Restitué" : "Restitution"}
+                                                                        {entry.returned || isAutomaticEnded ? "Restitué" : "Restitution"}
                                                                     </h1>
-                                                                    {entry.moderate === "USED" && new Date(entry?.endDate) < new Date() && (
+                                                                        {(entry.moderate === "USED" || isAutomaticOngoing) && new Date(entry?.endDate) < new Date() && (
                                                                         <span
                                                                             className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-full text-xs">
                                                                             En retard
@@ -1323,10 +1340,12 @@ export default function ModalCheckingBooking({
                                                                             className="text-sm text-neutral-600 dark:text-neutral-400">
                                                                             {entry.returned
                                                                                 ? `Restitué le ${formatDate(entry?.updatedAt)}`
+                                                                                : isAutomaticEnded
+                                                                                    ? `Terminé le ${formatDate(entry?.endDate)}`
                                                                                 : `Le ${formatDate(entry?.endDate)}`}
                                                                         </div>
 
-                                                                        {entry.moderate === "USED" && new Date(entry?.endDate) > new Date() && (
+                                                                        {(entry.moderate === "USED" || isAutomaticOngoing) && new Date(entry?.endDate) > new Date() && (
                                                                             <CountdownTimer targetDate={entry.endDate}
                                                                                             textBefore={"dans :"}/>
                                                                         )}
@@ -1347,7 +1366,8 @@ export default function ModalCheckingBooking({
                                                             </div>
                                                         }
                                                         adminMode={adminMode}
-                                                        done={entry.moderate === "ENDED" && entry.returned}
+                                                        done={(entry.moderate === "ENDED" && entry.returned) || isAutomaticEnded}
+                                                        active={entry.moderate === "USED" || isAutomaticEnded}
                                                         failed={entry?.returned === false && entry.endDate <= new Date().toISOString() && entry.moderate === "USED" || entry.moderate === "REJECTED"}
                                                         last={true}
                                                     />

@@ -1,6 +1,7 @@
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
-import {decrypt} from '@/lib/security';
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
+import {decrypt} from '@/services/server/security';
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -8,10 +9,11 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') {
         return res.status(405).json({message: 'Method not allowed'});
     }
+    if (!await requireAdmin(req, res)) return;
 
     try {
         // Récupérer la dernière configuration active
-        const config = await prisma.smtpConfig.findFirst({
+        const config = await db.smtpConfig.findFirst({
             where: {
                 isActive: true
             },

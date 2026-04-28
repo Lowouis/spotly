@@ -1,26 +1,26 @@
 'use client'
-import Dashboard from "@/sections/Dashboard";
-import Domains from "@/sections/Domains";
-import {AdminProvider, useAdminContext} from "@/context/Admin";
-import Categories from "@/sections/Categories";
-import Resources from "@/sections/Resources";
-import Users from "@/sections/Users";
-import Entries from "@/sections/Entries";
-import LDAP from "@/sections/LDAP";
-import SSO from "@/sections/SSO";
+import Dashboard from "@/features/admin/sections/Dashboard";
+import Domains from "@/features/admin/sections/Domains";
+import {AdminProvider, useAdminContext} from "@/features/shared/context/Admin";
+import Categories from "@/features/admin/sections/Categories";
+import Resources from "@/features/admin/sections/Resources";
+import Users from "@/features/admin/sections/Users";
+import Entries from "@/features/admin/sections/Entries";
+import LDAP from "@/features/admin/sections/LDAP";
+import SSO from "@/features/admin/sections/SSO";
 import {useEffect, useState} from "react";
-import {DataHandlerProvider} from "@/context/DataHandler";
+import {DataHandlerProvider} from "@/features/shared/context/DataHandler";
 import Sidebar from "@/components/admin/Sidebar";
-import SMTPSettings from "@/sections/SMTP";
-import {General} from "@/sections/General";
-import Localisations from "@/sections/Localisations";
-import {useAuth} from "@/context/AuthContext";
+import SMTPSettings from "@/features/admin/sections/SMTP";
+import {General} from "@/features/admin/sections/General";
+import Localisations from "@/features/admin/sections/Localisations";
+import {useAuth} from "@/features/shared/context/AuthContext";
 import {Tab, Tabs} from "@heroui/react";
 import {CiServer} from "react-icons/ci";
 import {TbCertificate} from "react-icons/tb";
 import {RiMailSettingsLine} from "react-icons/ri";
-import Logs from "@/sections/Logs";
-import {ConfigStatusProvider, useConfigStatus} from "@/context/ConfigStatusContext";
+import Logs from "@/features/admin/sections/Logs";
+import {ConfigStatusProvider, useConfigStatus} from "@/features/shared/context/ConfigStatusContext";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);

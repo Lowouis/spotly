@@ -26,7 +26,7 @@ import {useSession} from "next-auth/react";
 import EntryDTO from "@/components/utils/DTO";
 import PopupDoubleCheckAction from "@/components/modals/PopupDoubleCheckAction";
 import {addToast} from "@heroui/toast";
-import {useRefreshContext} from "@/context/RefreshContext";
+import {useRefreshContext} from "@/features/shared/context/RefreshContext";
 import {IoMdGlobe} from "react-icons/io";
 import {MdOutlineCategory} from "react-icons/md";
 import {truncateString} from "@/global";

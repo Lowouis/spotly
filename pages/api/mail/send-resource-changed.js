@@ -1,14 +1,16 @@
 'use server';
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 import nodemailer from 'nodemailer';
-import {decrypt} from '@/lib/security';
+import {decrypt} from '@/services/server/security';
 import {htmlToText} from 'html-to-text';
-import {getEmailTemplate} from '@/utils/mails/templates';
+import {getEmailTemplate} from '@/services/server/mails/templates';
 import path from 'path';
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
+    if (!await requireAdmin(req, res)) return;
 
     if (req.method === "POST") {
         const {reservationId, oldResourceId, newResourceId, reason} = req.body;
@@ -19,7 +21,7 @@ export default async function handler(req, res) {
 
         try {
             // Récupérer les informations de la réservation
-            const reservation = await prisma.entry.findUnique({
+            const reservation = await db.entry.findUnique({
                 where: {id: parseInt(reservationId)},
                 include: {
                     user: true,
@@ -37,7 +39,7 @@ export default async function handler(req, res) {
             }
 
             // Récupérer les informations de l'ancienne ressource
-            const oldResource = await prisma.resource.findUnique({
+            const oldResource = await db.resource.findUnique({
                 where: {id: parseInt(oldResourceId)},
                 include: {
                     domains: true,
@@ -52,7 +54,7 @@ export default async function handler(req, res) {
             // Envoyer l'email de notification
             if (reservation.user?.email) {
                 // Récupérer la configuration SMTP active
-                const smtpConfig = await prisma.smtpConfig.findFirst({
+                const smtpConfig = await db.smtpConfig.findFirst({
                     where: {
                         isActive: true
                     },
@@ -74,7 +76,7 @@ export default async function handler(req, res) {
                     secure: smtpConfig.secure
                 };
 
-                const transporter = nodemailer.createTransporter({
+                const transporter = nodemailer.createTransport({
                     host: decryptedConfig.host,
                     port: parseInt(decryptedConfig.port),
                     secure: decryptedConfig.secure,
@@ -129,7 +131,7 @@ export default async function handler(req, res) {
             });
         } catch (error) {
             console.error("Erreur lors de l'envoi de l'email:", error);
-            return res.status(500).json({message: "Erreur lors de l'envoi de l'email", error: error.message});
+            return res.status(500).json({message: "Erreur lors de l'envoi de l'email"});
         }
     } else {
         res.setHeader("Allow", ["POST"]);

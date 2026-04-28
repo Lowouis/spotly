@@ -1,11 +1,14 @@
 'use server';
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from "next/server";
+import {isAdminSession, isSameUser, requireAuth} from '@/services/server/api-auth';
 
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
+    const session = req.method === 'OPTIONS' ? null : await requireAuth(req, res);
+    if (req.method !== 'OPTIONS' && !session) return;
     try {
         if(req.method === "GET"){
             const {
@@ -21,12 +24,17 @@ export default async function handler(req, res) {
                 future
             } = req.query;
 
+            if (!isAdminSession(session) && userId && !isSameUser(session, userId)) {
+                return res.status(403).json({message: 'Accès interdit'});
+            }
+
             if (resourceId && future === "true") {
                 // Récupérer les réservations futures d'une ressource
                 const currentDate = new Date();
-                const futureEntries = await prisma.entry.findMany({
+                const futureEntries = await db.entry.findMany({
                     where: {
                         resourceId: parseInt(resourceId),
+                        ...(!isAdminSession(session) && {userId: Number(session.user.id)}),
                         startDate: {
                             gte: currentDate
                         }
@@ -55,13 +63,13 @@ export default async function handler(req, res) {
                 return res.status(200).json(futureEntries);
             }
 
-            const entries = await prisma.entry.findMany({
+            const entries = await db.entry.findMany({
                 orderBy : {
                     startDate: "asc"
                 },
                 where: {
                     ...(moderate && {moderate : moderate}),
-                    ...(userId && {userId : parseInt(userId)}),
+                    ...(isAdminSession(session) ? (userId && {userId : parseInt(userId)}) : {userId: Number(session.user.id)}),
                     ...(resourceId && {
                         resourceId: parseInt(resourceId)
                     }),
@@ -188,6 +196,10 @@ export default async function handler(req, res) {
                 });
             }
 
+            if (!isAdminSession(session) && !isSameUser(session, parsedUserId)) {
+                return res.status(403).json({message: 'Accès interdit'});
+            }
+
             // Validation des dates et filtrage des disponibilités
             const validAvailabilities = availabilities.filter(entry => {
                 if (!entry.available) return false;
@@ -217,7 +229,7 @@ export default async function handler(req, res) {
 
             const newEntries = [];
 
-            const maxReccurringGroupId = await prisma.entry.groupBy({
+            const maxReccurringGroupId = await db.entry.groupBy({
                 by: ['recurringGroupId'],
                 _max: {
                     recurringGroupId: true,
@@ -231,7 +243,7 @@ export default async function handler(req, res) {
 
             try {
                 for (const availabilityEntry of validAvailabilities) {
-                    const entry = await prisma.entry.create({
+                    const entry = await db.entry.create({
                         data: {
                             startDate: new Date(availabilityEntry.start),
                             endDate: new Date(availabilityEntry.end),
@@ -293,11 +305,21 @@ export default async function handler(req, res) {
                     });
                 }
 
-                const deletedEntries = await prisma.entry.deleteMany({
+                if (!isAdminSession(session)) {
+                    const ownedCount = await db.entry.count({
+                        where: {id: {in: parsedIds}, userId: Number(session.user.id)}
+                    });
+                    if (ownedCount !== parsedIds.length) {
+                        return res.status(403).json({message: 'Accès interdit'});
+                    }
+                }
+
+                const deletedEntries = await db.entry.deleteMany({
                     where: {
                         id: {
                             in: parsedIds
-                        }
+                        },
+                        ...(!isAdminSession(session) && {userId: Number(session.user.id)})
                     }
                 });
 

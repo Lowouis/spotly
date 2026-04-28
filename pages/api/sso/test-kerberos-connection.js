@@ -1,6 +1,8 @@
-import {runMiddleware} from "@/lib/core";
+import {runMiddleware} from "@/services/server/core";
 import {exec} from 'child_process';
 import {promisify} from 'util';
+import {isMockKerberosConfig} from '@/services/server/test-auth-service';
+import {requireAdmin} from '@/services/server/api-auth';
 
 const execPromise = promisify(exec);
 
@@ -10,6 +12,8 @@ export default async function handler(req, res) {
     if (req.method !== 'POST' && req.method !== 'OPTIONS') {
         return res.status(405).json({message: 'Method not allowed'});
     }
+    if (req.method === 'OPTIONS') return res.status(200).json({message: 'OK'});
+    if (!await requireAdmin(req, res)) return;
 
     const {realm, kdc, adminServer, defaultDomain, serviceHost, keytabPath} = req.body;
     if (!realm || !kdc || !adminServer || !defaultDomain || !serviceHost || !keytabPath) {
@@ -17,6 +21,12 @@ export default async function handler(req, res) {
     }
 
     try {
+        if (isMockKerberosConfig({realm, serviceHost})) {
+            return res.status(200).json({
+                message: 'Connexion Kerberos de test réussie'
+            });
+        }
+
         const principal = `HTTP/${serviceHost}@${realm}`;
         const kinitCommand = `kinit -k -t ${keytabPath} ${principal}`;
 

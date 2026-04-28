@@ -1,11 +1,14 @@
 import nodemailer from 'nodemailer';
-import {runMiddleware} from "@/lib/core";
+import {runMiddleware} from "@/services/server/core";
+import {rateLimit, requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
     }
+    if (!rateLimit(req, res, {key: 'mail:test', limit: 10, windowMs: 60_000})) return;
+    if (!await requireAdmin(req, res)) return;
 
     const { smtpConfig, user} = req.body;
     const transporter = nodemailer.createTransport({

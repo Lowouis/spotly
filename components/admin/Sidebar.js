@@ -2,7 +2,7 @@
 import React, {useState} from 'react'
 import {signOut, useSession} from "next-auth/react";
 import {useRouter} from "next/navigation";
-import {useAdminContext} from "@/context/Admin";
+import {useAdminContext} from "@/features/shared/context/Admin";
 import {Skeleton} from "@heroui/react";
 import {
     MdArrowForwardIos,

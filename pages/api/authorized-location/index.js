@@ -1,17 +1,17 @@
-import {PrismaClient} from '@prisma/client';
-import {runMiddleware} from '@/lib/core';
+import db from '@/server/services/databaseService';
+import {runMiddleware} from '@/services/server/core';
 import {NextResponse} from 'next/server';
-
-const prisma = new PrismaClient();
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
 
     await runMiddleware(req, res);
+    if (req.method !== 'OPTIONS' && !await requireAdmin(req, res)) return;
 
     switch (req.method) {
         case 'GET':
             try {
-                const locations = await prisma.authorizedLocation.findMany({
+                const locations = await db.authorizedLocation.findMany({
                     orderBy: {
                         createdAt: 'desc'
                     }
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         case 'POST':
             try {
                 const {libelle, ip} = req.body;
-                const location = await prisma.authorizedLocation.create({
+                const location = await db.authorizedLocation.create({
                     data: {
                         libelle,
                         ip
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         case 'PUT':
             try {
                 const {id, libelle, ip} = req.body;
-                const location = await prisma.authorizedLocation.update({
+                const location = await db.authorizedLocation.update({
                     where: {id: parseInt(id)},
                     data: {
                         libelle,
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
         case 'DELETE':
             try {
                 const {ids} = req.body;
-                await prisma.authorizedLocation.deleteMany({
+                await db.authorizedLocation.deleteMany({
                     where: {
                         id: {
                             in: ids.map(id => parseInt(id))

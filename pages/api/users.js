@@ -1,14 +1,16 @@
 'use server';
-import prisma from "@/prismaconf/init";
+import db from "@/server/services/databaseService";
 import bycrypt from 'bcrypt';
-import {runMiddleware} from "@/lib/core";
+import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from 'next/server';
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
+    if (req.method !== 'OPTIONS' && !await requireAdmin(req, res)) return;
     if(req.method === "GET"){
         const { id } = req.body;
-        const users = await prisma.user.findMany({
+        const users = await db.user.findMany({
             where: {
                 OR: [
                     { role: "ADMIN" },
@@ -29,7 +31,7 @@ export default async function handler(req, res) {
             return res.status(400).json({error: "Username is required"});
         }
 
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await db.user.findUnique({
             where: { username }
         });
 
@@ -39,7 +41,7 @@ export default async function handler(req, res) {
 
         const hashedPassword = await bycrypt.hash(password, 10);
 
-        const user = await prisma.user.create({
+        const user = await db.user.create({
             data: {
                 email,
                 name,
@@ -58,7 +60,7 @@ export default async function handler(req, res) {
 
         const hashedPassword = await bycrypt.hash(password, 10);
 
-        const user = await prisma.user.update({
+        const user = await db.user.update({
             where: {
                 id: id,
             },
@@ -78,7 +80,7 @@ export default async function handler(req, res) {
 
     } else if (req.method === "DELETE") {
         const { ids } = req.body;
-        await prisma.user.deleteMany({
+        await db.user.deleteMany({
             where: {
                 id: {
                     in: ids,

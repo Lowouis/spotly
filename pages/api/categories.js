@@ -1,14 +1,16 @@
 'use server';
-import prisma from "@/prismaconf/init";
-import {runMiddleware} from "@/lib/core";
+import db from "@/server/services/databaseService";
+import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from 'next/server';
+import {requireAdmin} from '@/services/server/api-auth';
 
 export default async function handler(req, res) {
 
     await runMiddleware(req, res);
+    if (req.method !== 'GET' && req.method !== 'OPTIONS' && !await requireAdmin(req, res)) return;
 
     if(req.method === "GET"){
-        const categories = await prisma.category.findMany(
+        const categories = await db.category.findMany(
             {
                 include: {
                     owner: true,
@@ -19,7 +21,7 @@ export default async function handler(req, res) {
         res.status(200).json(categories);
     } else if (req.method === "POST"){
         const {name, description, owner, pickable } = req.body;
-        const category = await prisma.category.create({
+        const category = await db.category.create({
             data: {
                 name,
                 description,
@@ -33,7 +35,7 @@ export default async function handler(req, res) {
         const {id, name, description, owner, pickable } = req.body;
         // if owner is undefined, check if any resource with moderate to true who has this category has an owner or it domain has one
         if (owner === undefined) {
-            const resources = await prisma.resource.findMany({
+            const resources = await db.resource.findMany({
                 where: {
                     categoryId: id,
                     moderate: true,
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
                 });
             }
         }
-        const category = await prisma.category.update({
+        const category = await db.category.update({
             where: {
                 id: id,
             },
@@ -76,7 +78,7 @@ export default async function handler(req, res) {
         }
 
         try {
-            const deletedCategories = await prisma.category.deleteMany({
+            const deletedCategories = await db.category.deleteMany({
                 where: {
                     id: {
                         in: ids,

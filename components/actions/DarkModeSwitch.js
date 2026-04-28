@@ -1,5 +1,5 @@
 import {Button} from "@heroui/react";
-import {useTheme} from "@/context/ThemeContext";
+import {useTheme} from "@/features/shared/context/ThemeContext";
 import {LuSunDim} from "react-icons/lu";
 import {IoMoonOutline} from "react-icons/io5";
 

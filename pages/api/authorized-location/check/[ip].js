@@ -1,5 +1,5 @@
-import {runMiddleware} from "@/lib/core";
-import prisma from "@/prismaconf/init";
+import {runMiddleware} from "@/services/server/core";
+import db from "@/server/services/databaseService";
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const authorizedLocation = await prisma.authorizedLocation.findFirst({
+        const authorizedLocation = await db.authorizedLocation.findFirst({
             where: {
                 ip: ip,
             }
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
             return res.status(401).json({error: 'IP not authorized'});
         }
 
-        return res.status(200).json(authorizedLocation);
+        return res.status(200).json({authorized: true, libelle: authorizedLocation.libelle});
     } catch (error) {
         console.error('Error checking authorized location:', error);
         return res.status(500).json({error: 'Internal server error'});

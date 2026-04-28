@@ -161,6 +161,7 @@ const ReservationSearch = () => {
 
     const { data: userEntries, refetch : userEntriesRefetch } = useQuery({
         queryKey: ['userEntries', session?.user?.id],
+        enabled: !!session?.user?.id,
         queryFn: async ({ queryKey }) => {
             const userId = queryKey[1];
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?userId=${userId}`, {
@@ -271,9 +272,6 @@ const ReservationSearch = () => {
             recursive_limit: isRecurrent ? watch('recursive_limit') : null
         };
 
-        console.log('DEBUG - Final form data:', finalFormData);
-        console.log('DEBUG - Setting isSubmitted to true');
-
         setData(finalFormData);
         setIsSubmitted(true);
 
@@ -287,7 +285,7 @@ const ReservationSearch = () => {
     };
 
 
-    const isRecurrentValid = (unit) => {
+    const isRecurrentValid = useCallback((unit) => {
         const startDate = watch('date')?.start;
         const endDate = watch('date')?.end;
 
@@ -316,7 +314,7 @@ const ReservationSearch = () => {
             default:
                 return false;
         }
-    };
+    }, [watch]);
 
     const handleDateChangeCheck = useCallback(() => {
         if (!isRecurrentValid("hebdomadaire") || !isRecurrentValid("jour")) {

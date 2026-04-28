@@ -2,9 +2,9 @@
 
 
 import {Image} from "@heroui/react";
-import nextConfig from '../../next.config.mjs';
+import {publicEnv} from '@/config/publicEnv';
 
-const basePath = nextConfig.basePath || '';
+const basePath = publicEnv.basePath;
 
 export default function Banner() {
     return (
@@ -19,4 +19,3 @@ export default function Banner() {
         </div>
     );
 }
-
