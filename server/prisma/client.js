@@ -8,6 +8,6 @@ const globalForPrisma = globalThis
 const cachedPrisma = globalForPrisma.prisma
 const prisma = cachedPrisma && cachedPrisma.resourceEvent && cachedPrisma.conversation ? cachedPrisma : new PrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+globalForPrisma.prisma = prisma
 
 export default prisma

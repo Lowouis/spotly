@@ -144,6 +144,9 @@ model resource {
   pickableId  Int?
   favorites   favorite[]
   events      resourceEvent[]
+
+  @@index([domainId, categoryId, status])
+  @@index([ownerId, status])
 }
 
 model resourceEventType {
@@ -283,6 +286,11 @@ model entry {
   messages                  entryMessage[]
   system                    Boolean        @default(false)
   recurringGroupId          Int?           @default(0)
+
+  @@index([resourceId, startDate, endDate])
+  @@index([userId, startDate])
+  @@index([moderate, startDate])
+  @@index([recurringGroupId])
 }
 
 model entryMessage {

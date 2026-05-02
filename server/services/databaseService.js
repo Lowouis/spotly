@@ -24,7 +24,7 @@ function getPrismaClient() {
     if (cached?.resourceEvent && cached?.conversation) return registerMiddlewares(cached);
 
     const prisma = registerMiddlewares(new PrismaClient());
-    if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
+    globalThis.prisma = prisma;
     return prisma;
 }
 
