@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "dev-turbo": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev --turbo -p 3001",
-    "build": "npm run validate-env && prisma generate && next build --no-lint",
+    "build": "npm run validate-env && prisma generate && prisma migrate deploy && next build --no-lint",
     "start": "next start",
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
