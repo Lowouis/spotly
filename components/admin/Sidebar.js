@@ -1,380 +1,230 @@
-'use client'
-import React, {useState} from 'react'
-import {signOut, useSession} from "next-auth/react";
-import {useRouter} from "next/navigation";
-import {useAdminContext} from "@/features/shared/context/Admin";
-import {Skeleton} from "@heroui/react";
+'use client';
+
+import * as React from 'react';
+import {signOut, useSession} from 'next-auth/react';
+import {useRouter} from 'next/navigation';
+import {BarChart3, BookmarkCheck, ChevronRight, HardHat, Wrench} from 'lucide-react';
+import {MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from 'react-icons/md';
+import {CiLocationOn, CiLogout, CiServer, CiSettings} from 'react-icons/ci';
+import {IoInformationCircleOutline} from 'react-icons/io5';
+import {IoMdGlobe} from 'react-icons/io';
+import {GrResources} from 'react-icons/gr';
+import {RiApps2Line, RiMailSettingsLine} from 'react-icons/ri';
+import {FaRegUser} from 'react-icons/fa';
+import {TbShieldCog} from 'react-icons/tb';
+import {Badge} from '@/components/ui/badge';
+import {Button} from '@/components/ui/button';
+import {Collapsible, CollapsibleContent, CollapsibleTrigger} from '@/components/ui/collapsible';
 import {
-    MdArrowForwardIos,
-    MdBookmarkBorder,
-    MdCategory,
-    MdDashboard,
-    MdDevices,
-    MdDomain,
-    MdEventNote,
-    MdLocationOn,
-    MdOutlineCategory,
-    MdOutlineSpaceDashboard,
-    MdPeople,
-    MdSecurity,
-    MdSettings
-} from "react-icons/md";
-import {CiCircleCheck, CiLocationOn, CiLogout, CiServer, CiSettings} from "react-icons/ci";
-import UserInitialsIcon from "@/components/utils/UserInitialsIcon";
-import {addToast} from "@heroui/toast";
-import {IoMdGlobe} from "react-icons/io";
-import {GrResources} from "react-icons/gr";
-import {RiApps2Line} from "react-icons/ri";
-import {FaRegUser} from "react-icons/fa";
-import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
+    Sidebar as AdminSidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
+} from '@/components/ui/sidebar';
+import DarkModeSwitch from '@/components/actions/DarkModeSwitch';
+import UserInitialsIcon from '@/components/utils/UserInitialsIcon';
+import SnakeLogo from '@/components/utils/SnakeLogo';
+import {useAdminContext} from '@/features/shared/context/Admin';
+import {useDataHandlerContext} from '@/features/shared/context/DataHandler';
+import {addToast} from '@/lib/toast';
+import {cn} from '@/lib/utils';
 
 const sideItems = [
     {
-        "title": "Administration",
-        "items": [
-            {
-                "title": "Tableau de bord",
-                "id" : "dashboard",
-                "icon": <MdOutlineSpaceDashboard />,
-                "permission": "ADMIN"
-            },
+        title: 'Administration',
+        permission: 'ADMIN',
+        items: [
+            {id: 'dashboard', title: 'Tableau de bord', icon: MdOutlineSpaceDashboard, permission: 'ADMIN'},
         ],
-        "permission": "ADMIN"
     },
     {
-        "title": "Global",
-        "items": [
-            {
-                "id": "general",
-                "title": "Général",
-                "icon": <CiSettings/>,
-                "permission": "SUPERADMIN"
-
-            }
+        title: 'Données',
+        permission: 'ADMIN',
+        items: [
+            {id: 'domains', title: 'Sites', icon: IoMdGlobe, permission: 'ADMIN'},
+            {id: 'categories', title: 'Catégories', icon: MdOutlineCategory, permission: 'ADMIN'},
+            {id: 'resources', title: 'Ressources', icon: GrResources, permission: 'ADMIN'},
         ],
-        "permission": "SUPERADMIN"
     },
     {
-        "title": "Données",
-        "items": [
-            {
-                "id" : "domains",
-                "title": "Sites",
-                "icon": <IoMdGlobe />,
-                "permission": "ADMIN"
-            },
-            {
-                "id" : "categories",
-                "title": "Catégories",
-                "icon": <MdOutlineCategory />,
-                "permission": "ADMIN"
-
-            },
-            {
-                "id" : "resources",
-                "title": "Ressources",
-                "icon": <GrResources />,
-                "permission": "ADMIN"
-            }
+        title: 'Activité',
+        permission: 'ADMIN',
+        items: [
+            {id: 'users', title: 'Utilisateurs', icon: FaRegUser, permission: 'SUPERADMIN'},
+            {id: 'entries', title: 'Réservations', icon: MdBookmarkBorder, permission: 'ADMIN'},
+            {id: 'waitingEntries', title: 'En attente', icon: BookmarkCheck, permission: 'ADMIN', badge: 'waitingEntries'},
+            {id: 'maintenance', title: 'Maintenance', icon: Wrench, permission: 'ADMIN', badge: 'maintenance'},
         ],
-        "permission": "ADMIN"
     },
     {
-        "title": "Utilisateurs",
-        "items": [
-            {
-                "id" : "users",
-                "title": "Utilisateurs",
-                "icon": <FaRegUser />,
-                "permission": "SUPERADMIN"
-
-            },
-            {
-                "id" : "entries",
-                "title": "Réservations",
-                "icon": <MdBookmarkBorder />,
-                "permission": "ADMIN"
-            }
+        title: 'Configuration',
+        permission: 'SUPERADMIN',
+        items: [
+            {id: 'reservationSettings', title: 'Paramètres', icon: CiSettings, permission: 'SUPERADMIN'},
+            {id: 'auth', title: 'Liaisons', icon: CiServer, permission: 'SUPERADMIN'},
+            {id: 'mailConfig', title: 'Notifications e-mail', icon: RiMailSettingsLine, permission: 'SUPERADMIN'},
+            {id: 'protectionLevels', title: 'Protections', icon: TbShieldCog, permission: 'SUPERADMIN'},
+            {id: 'locations', title: 'Localisations', icon: CiLocationOn, permission: 'SUPERADMIN'},
         ],
-        "permission": "ADMIN"
     },
     {
-        "title": "Liaisons",
-        "items": [
-            {
-                "id": "auth",
-                "title": "Configuration",
-                "icon": <CiServer />,
-                "permission": "SUPERADMIN"
-            }
+        title: 'Aide',
+        permission: 'ADMIN',
+        items: [
+            {id: 'about', title: 'À propos', icon: IoInformationCircleOutline, permission: 'ADMIN'},
+            {id: 'migration', title: 'Migration', icon: CiSettings, permission: 'ADMIN'},
         ],
-        "permission": "SUPERADMIN"
     },
-    {
-        "title": "Restriction",
-        "items": [
-            {
-                "id": "locations",
-                "title": "Localisations",
-                "icon": <CiLocationOn/>,
-                "permission": "SUPERADMIN"
-
-            }
-        ],
-        "permission": "SUPERADMIN"
-    },
-    {
-        "title": "Logs",
-        "items": [
-            {
-                "id": "logs",
-                "title": "Logs",
-                "icon": <CiSettings/>,
-                "permission": "SUPERADMIN"
-            }
-        ],
-        "permission": "SUPERADMIN"
-    }
-
 ];
 
-const menuItems = [
-    {
-        key: 'dashboard',
-        icon: <MdDashboard className="w-5 h-5"/>,
-        label: 'Tableau de bord'
-    },
-    {
-        key: 'domains',
-        icon: <MdDomain className="w-5 h-5"/>,
-        label: 'Domaines'
-    },
-    {
-        key: 'general',
-        icon: <MdSettings className="w-5 h-5"/>,
-        label: 'Général'
-    },
-    {
-        key: 'categories',
-        icon: <MdCategory className="w-5 h-5"/>,
-        label: 'Catégories'
-    },
-    {
-        key: 'resources',
-        icon: <MdDevices className="w-5 h-5"/>,
-        label: 'Ressources'
-    },
-    {
-        key: 'users',
-        icon: <MdPeople className="w-5 h-5"/>,
-        label: 'Utilisateurs'
-    },
-    {
-        key: 'entries',
-        icon: <MdEventNote className="w-5 h-5"/>,
-        label: 'Réservations'
-    },
-    {
-        key: 'auth',
-        icon: <MdSecurity className="w-5 h-5"/>,
-        label: 'Authentification'
-    },
-    {
-        key: 'locations',
-        icon: <MdLocationOn className="w-5 h-5"/>,
-        label: 'Localisations'
-    },
-    {
-        key: 'logs',
-        icon: <CiCircleCheck className="w-5 h-5"/>,
-        label: 'Logs'
-    }
-];
+const canAccess = (role, permission) => role === permission || role === 'SUPERADMIN';
 
 export default function Sidebar() {
-    const [isOpen, setIsOpen] = useState(true)
     const {data: session, status} = useSession();
     const router = useRouter();
-    const {setActiveSection} = useAdminContext();
-    const toggleSidebar = () => setIsOpen(!isOpen)
+    const {activeSection, setActiveSection, dashboardView, setDashboardView} = useAdminContext();
+    const {activitiesStats, waitingEntries} = useDataHandlerContext();
 
-    // Si la session n'est pas chargée ou l'utilisateur n'est pas défini, on ne rend rien
-    if (status === "loading" || !session?.user) {
-        return <></>;
-    }
+    if (status === 'loading' || !session?.user) return null;
 
+    const roleLabel = session.user.role === 'SUPERADMIN' ? 'Administrateur' : 'Manager';
+    const visibleGroups = sideItems
+        .filter((group) => canAccess(session.user.role, group.permission))
+        .map((group) => ({
+            ...group,
+            items: group.items.filter((item) => canAccess(session.user.role, item.permission)),
+        }))
+        .filter((group) => group.items.length > 0);
 
+    const handleSignOut = () => {
+        signOut().then(() => {
+            router.push('/');
+            addToast({
+                title: 'Déconnexion',
+                message: 'Vous avez été déconnecté avec succès',
+                color: 'success',
+                duration: 5000,
+            });
+        });
+    };
 
     return (
-        <div
-            className={`
-        flex flex-col h-screen bg-white dark:border-neutral-700 dark:bg-neutral-900  border-r border-gray-200
-        transition-all duration-300
-        ${isOpen ? 'w-64' : 'w-14'} 
-      `}
-        >
-            <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-600">
-                <div
-                    className="text-lg font-semibold text-gray-900 dark:text-gray-200 mr-auto flex items-center overflow-hidden">
-                        <span
-                            className={`
-                  transition-all duration-300
-                  overflow-hidden whitespace-nowrap
-                  ${isOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}
-                `}
-                        >
-                            Spotly
-              </span>
-
-                </div>
-
-                <button
-                    onClick={toggleSidebar}
-                    className="p-1 text-gray-500 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:ring-gray-700"
-                >
-                    <MdArrowForwardIos className={`${isOpen ? "rotate-180" : "rotate-0"} transition-all duration-400`} size={18} />
+        <AdminSidebar className="relative w-64 bg-white dark:bg-neutral-950">
+            <SidebarHeader className="space-y-4">
+                <button type="button" onClick={() => setActiveSection('dashboard')} className="flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-muted">
+                    <SnakeLogo className="h-9 w-9" />
+                    <span className="min-w-0">
+                        <span className="block truncate text-lg font-black text-[#111827] dark:text-neutral-100">Spotly</span>
+                        <span className="block text-xs font-semibold text-muted-foreground">Administration</span>
+                    </span>
                 </button>
-            </div>
-            <nav className="flex-1 mt-2 overflow-y-auto max-h-[calc(100vh-13rem)]">
-                {session?.user && sideItems.map((group, index) => {
-                    return (session.user.role === group.permission || session.user.role === "SUPERADMIN") && (
-                        <div className="space-y-2 mb-2" key={index}>
-                            <SectionTitle title={group.title} isOpen={isOpen}/>
-                            <div className="space-y-2">
-                                {group.items.map((item, index) => {
-                                    return (session.user.role === item.permission || session.user.role === "SUPERADMIN") && (
-                                        <NavItem
-                                            key={index}
-                                            id={item.id}
-                                            icon={item.icon}
-                                            label={item.title}
-                                            isOpen={isOpen}
-                                            action={() => setActiveSection(item.id)}
-                                        />
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    )
-                })}
-            </nav>
-            <div className={`
-                px-4 py-2 transition-all duration-100 flex items-center
-                ${isOpen ? 'justify-between' : 'justify-center'}
-                border-t border-neutral-200 dark:border-gray-500
-            `}>
-                <span className={`
-                    text-sm text-gray-600 dark:text-gray-300
-                    transition-all duration-100
-                    ${isOpen ? 'opacity-100 w-auto' : 'opacity-0 w-0'}
-                    overflow-hidden whitespace-nowrap
-                `}>
-                    Thème
-                </span>
-                <DarkModeSwitch size={'md'}/>
-            </div>
-            <div className="border-t border-neutral-200 dark:border-gray-500">
-                <NavItem
-                    icon={<RiApps2Line />}
-                    label="Spotly"
-                    isOpen={isOpen}
-                    action={()=>router.push("/")}
-                />
-                <NavItem
-                    icon={<CiLogout />}
-                    label="Se deconnecter"
-                    isOpen={isOpen}
 
-                    action={() => signOut().then(() => {
-                        router.push("/");
-                        addToast({
-                            title: "Déconnexion",
-                            message: "Vous avez été déconnecté avec succès",
-                            color: "success",
-                            duration: 5000,
-                        });
-                    })}
-                />
-
-
-                <div className="flex p-2 items-center mt-4 overflow-hidden">
-                    {/* Avatar toujours visible */}
-                    <Skeleton className="rounded-lg bg-black" isLoaded={!!session}>
-                        <UserInitialsIcon user={session?.user} />
-                    </Skeleton>
-                    {/* Bloc texte animé */}
-                    <div
-                        className={`
-              ml-2 transition-all duration-300
-              ${isOpen ? 'opacity-100 max-w-[200px]' : 'opacity-0 max-w-0'}
-              overflow-hidden
-            `}
-                    >
-                        <Skeleton className="rounded-lg bg-neutral-100 w-full"
-                                  isLoaded={!!session}
-                        >
-                            <p className="text-sm font-medium text-gray-900 whitespace-nowrap text-black dark:text-white">
-                                {session?.user?.name && `${session.user.name[0].toUpperCase()}${session.user.name.slice(1)} ${session.user.surname.toUpperCase()}`}
-                            </p>
-                            <p className="text-sm text-gray-500 whitespace-nowrap">
-                                {session?.user?.role === "SUPERADMIN" ? "Administrateur" : "Manager"}
-                            </p>
-                        </Skeleton>
+                <div className="flex items-center gap-3 rounded-xl border bg-card p-3">
+                    <UserInitialsIcon user={session.user} />
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold">
+                            {[session.user?.name, session.user?.surname].filter(Boolean).join(' ') || session.user?.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{roleLabel}</p>
                     </div>
+                    <DarkModeSwitch size="md" />
                 </div>
+            </SidebarHeader>
+
+            <SidebarContent className="gap-0">
+                {visibleGroups.map((group) => (
+                    <Collapsible key={group.title} defaultOpen className="group/collapsible">
+                        <SidebarGroup>
+                            <SidebarGroupLabel asChild className="group/label text-sm hover:bg-muted hover:text-foreground">
+                                <CollapsibleTrigger className="text-left">
+                                    {group.title}
+                                    <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                                </CollapsibleTrigger>
+                            </SidebarGroupLabel>
+                            <CollapsibleContent>
+                                <SidebarGroupContent>
+                                    <SidebarMenu>
+                                        {group.items.map((item) => {
+                                            const Icon = item.icon;
+                                            const waitingCount = waitingEntries?.length || 0;
+                                            const maintenanceCount = activitiesStats?.maintenance?.metrics?.openDiscussions || 0;
+
+                                            const isDashboard = item.id === 'dashboard';
+                                            const isActive = activeSection === item.id;
+
+                                            if (isDashboard) {
+                                                return (
+                                                    <SidebarMenuItem key={item.id}>
+                                                        <SidebarMenuButton asChild isActive={isActive} className="relative text-left">
+                                                            <div role="button" tabIndex={0} onClick={() => setActiveSection(item.id)} onKeyDown={(event) => event.key === 'Enter' && setActiveSection(item.id)}>
+                                                                <Icon className="h-4 w-4 shrink-0" />
+                                                                <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                                                                {isActive && (
+                                                                    <span className="ml-auto flex shrink-0 rounded-lg border bg-background p-0.5 shadow-sm" onClick={(event) => event.stopPropagation()}>
+                                                                        <button type="button" onClick={() => setDashboardView('activity')} aria-label="Vue activité" className={cn('flex h-6 w-6 items-center justify-center rounded-md transition-colors', dashboardView === 'activity' ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>
+                                                                            <BarChart3 className="h-3.5 w-3.5" />
+                                                                        </button>
+                                                                        <button type="button" onClick={() => setDashboardView('maintenance')} aria-label="Vue maintenance" className={cn('flex h-6 w-6 items-center justify-center rounded-md transition-colors', dashboardView === 'maintenance' ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted hover:text-foreground')}>
+                                                                            <HardHat className="h-3.5 w-3.5" />
+                                                                        </button>
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </SidebarMenuButton>
+                                                    </SidebarMenuItem>
+                                                );
+                                            }
+
+                                            return (
+                                                <SidebarMenuItem key={item.id}>
+                                                    <SidebarMenuButton
+                                                        type="button"
+                                                        isActive={isActive}
+                                                        onClick={() => setActiveSection(item.id)}
+                                                        className="relative text-left"
+                                                    >
+                                                        <Icon className="h-4 w-4 shrink-0" />
+                                                        <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                                                        {item.badge === 'waitingEntries' && waitingCount > 0 && (
+                                                            <Badge variant="warning" className="ml-auto px-2 text-[10px]">
+                                                                {waitingCount}
+                                                            </Badge>
+                                                        )}
+                                                        {item.badge === 'maintenance' && maintenanceCount > 0 && (
+                                                            <Badge variant="warning" className="ml-auto px-2 text-[10px]">
+                                                                {maintenanceCount}
+                                                            </Badge>
+                                                        )}
+                                                    </SidebarMenuButton>
+                                                </SidebarMenuItem>
+                                            );
+                                        })}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </CollapsibleContent>
+                        </SidebarGroup>
+                    </Collapsible>
+                ))}
+            </SidebarContent>
+
+            <div className="border-t p-2">
+                <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => router.push('/')}>
+                    <RiApps2Line className="h-4 w-4" />
+                    Spotly
+                </Button>
+                <Button variant="ghost" className={cn('w-full justify-start gap-2 text-red-600 hover:text-red-700')} onClick={handleSignOut}>
+                    <CiLogout className="h-4 w-4" />
+                    Se déconnecter
+                </Button>
             </div>
-        </div>
-    )
-}
 
-
-function SectionTitle({ title, isOpen }) {
-    return (
-        <h2
-            className={`
-        px-4 mb-2 text-xs font-semibold text-gray-400 uppercase
-        transition-all duration-300
-        ${isOpen ? 'opacity-100 max-h-6' : 'opacity-0 max-h-0'}
-        overflow-hidden
-      `}
-        >
-            {title}
-        </h2>
-    )
-}
-
-
-function NavItem({
-                     icon,
-                     label,
-                     isOpen,
-                     badge,
-                     id,
-                     color="bg-gray-200",
-                     action
-                 }) {
-    const {activeSection, setActiveSection} = useAdminContext();
-    return (
-        <a
-            onClick={action}
-            href="#"
-            className={`flex transition-all items-center text-gray-700 dark:text-gray-200 ${color && "hover:" + color + " hover:dark:bg-neutral-700"} px-1 py-2 ${activeSection === id && "bg-gray-200 dark:bg-gray-700 "}`}
-        >
-            <div className={`text-xl transition-all ml-3 ${isOpen && 'mr-2' }`}>{icon}</div>
-
-            <div
-                className={`
-          flex items-center
-          overflow-hidden
-          transition-all duration-300
-          ${isOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0'}
-        `}
-            >
-                <span className="whitespace-nowrap">{label}</span>
-                {badge && (
-                    <span className="px-2 ml-auto text-sm text-gray-500">{badge}</span>
-                )}
-            </div>
-        </a>
-    )
+            <SidebarRail />
+        </AdminSidebar>
+    );
 }

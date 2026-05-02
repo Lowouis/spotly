@@ -1,12 +1,21 @@
 'use client';
 
-import {Card, CardBody, CardHeader, Divider} from "@heroui/react";
-import {Input} from "@heroui/input";
-import {Button} from "@heroui/button";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardHeader} from "@/components/ui/card";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
 import React, {useEffect, useState} from "react";
-import {ArrowPathIcon, CheckCircleIcon, EyeIcon, EyeSlashIcon, XCircleIcon} from "@heroicons/react/24/outline";
-import {addToast} from "@heroui/toast";
+import {ArrowPathIcon, ArrowUpTrayIcon, CheckCircleIcon, EyeIcon, EyeSlashIcon, XCircleIcon} from "@heroicons/react/24/outline";
+import {addToast} from "@/lib/toast";
 import {useConfigStatus} from "@/features/shared/context/ConfigStatusContext";
+
+const AdminField = ({label, error, children}) => (
+    <div className="space-y-2">
+        <Label>{label}</Label>
+        {children}
+        {error && <p className="text-sm text-red-500">{error}</p>}
+    </div>
+);
 
 const LDAP = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -196,146 +205,79 @@ const LDAP = () => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <Card className="w-full ">
+            <Card className="w-full">
                 <CardHeader className="flex gap-3">
                     <div className="flex flex-col">
                         <p className="text-xl font-semibold">Configuration LDAP</p>
-                        <p className="text-small text-default-500">Configurez votre serveur LDAP pour
+                        <p className="text-sm text-muted-foreground">Configurez votre serveur LDAP pour
                             l&apos;authentification</p>
                     </div>
                 </CardHeader>
-                <Divider/>
-                <CardBody>
+                <CardContent className="border-t pt-6">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                        <Input
-                            required
-                            name="serverUrl"
-                            label="URL du serveur LDAP"
-                            labelPlacement="outside"
-                            placeholder="ldap://example.com"
-                            value={formData.serverUrl}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.serverUrl}
-                            errorMessage={errorMessage && !formData.serverUrl ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                        <AdminField label="URL du serveur LDAP" error={errorMessage && !formData.serverUrl ? "Ce champ est requis" : ""}>
+                            <Input required name="serverUrl" placeholder="ldap://example.com" value={formData.serverUrl} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                        </AdminField>
 
-                        <Input
-                            required
-                            name="bindDn"
-                            label="Base DN"
-                            labelPlacement="outside"
-                            placeholder="dc=example,dc=com"
-                            value={formData.bindDn}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.bindDn}
-                            errorMessage={errorMessage && !formData.bindDn ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                        <AdminField label="Base DN" error={errorMessage && !formData.bindDn ? "Ce champ est requis" : ""}>
+                            <Input required name="bindDn" placeholder="dc=example,dc=com" value={formData.bindDn} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                        </AdminField>
 
-                        <Input
-                            required
-                            name="adminCn"
-                            label="Nom d'utilisateur administrateur"
-                            labelPlacement="outside"
-                            placeholder="cn=admin"
-                            value={formData.adminCn}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.adminCn}
-                            errorMessage={errorMessage && !formData.adminCn ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                        <AdminField label="Nom d'utilisateur administrateur" error={errorMessage && !formData.adminCn ? "Ce champ est requis" : ""}>
+                            <Input required name="adminCn" placeholder="cn=admin" value={formData.adminCn} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                        </AdminField>
 
-                        <Input
-                            required
-                            name="adminDn"
-                            label="DN de l'administrateur"
-                            labelPlacement="outside"
-                            placeholder="cn=admin,dc=example,dc=com"
-                            value={formData.adminDn}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.adminDn}
-                            errorMessage={errorMessage && !formData.adminDn ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                        <AdminField label="DN de l'administrateur" error={errorMessage && !formData.adminDn ? "Ce champ est requis" : ""}>
+                            <Input required name="adminDn" placeholder="cn=admin,dc=example,dc=com" value={formData.adminDn} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                        </AdminField>
 
-                        <Input
-                            name="emailDomain"
-                            label="Domaine de messagerie"
-                            labelPlacement="outside"
-                            placeholder="example.com"
-                            value={formData.emailDomain}
-                            onChange={handleInputChange}
-                            isDisabled={isLoadingConfig}
-                        />
+                        <AdminField label="Domaine de messagerie">
+                            <Input name="emailDomain" placeholder="example.com" value={formData.emailDomain} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                        </AdminField>
 
-                        <Input
-                            required
-                            name="adminPassword"
-                            label="Mot de passe administrateur"
-                            labelPlacement="outside"
-                            type={isVisible ? "text" : "password"}
-                            value={formData.adminPassword}
-                            onChange={handleInputChange}
-                            placeholder="••••••••"
-                            isInvalid={!!errorMessage && !formData.adminPassword}
-                            errorMessage={errorMessage && !formData.adminPassword ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                            endContent={
-                                <Button
-                                    type="button"
-                                    isIconOnly
-                                    radius="full"
-                                    variant="light"
-                                    onPress={() => setIsVisible(!isVisible)}
-                                    aria-label={isVisible ? "Cacher le mot de passe" : "Afficher le mot de passe"}
-                                    isDisabled={isLoadingConfig}
-                                >
+                        <AdminField label="Mot de passe administrateur" error={errorMessage && !formData.adminPassword ? "Ce champ est requis" : ""}>
+                            <div className="relative">
+                                <Input required name="adminPassword" type={isVisible ? "text" : "password"} value={formData.adminPassword} onChange={handleInputChange} placeholder="Mot de passe" disabled={isLoadingConfig} className="pr-10"/>
+                                <Button type="button" size="icon" variant="ghost" className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full" onClick={() => setIsVisible(!isVisible)} aria-label={isVisible ? "Cacher le mot de passe" : "Afficher le mot de passe"} disabled={isLoadingConfig}>
                                     {isVisible ? <EyeSlashIcon className="h-5 w-5"/> : <EyeIcon className="h-5 w-5"/>}
                                 </Button>
-                            }
-                        />
+                            </div>
+                        </AdminField>
 
                         <div className="flex justify-end gap-4 mt-4">
                             <Button
                                 type="button"
-                                color="primary"
-                                variant="flat"
-                                onPress={importUsers}
-                                isLoading={isImporting}
-                                isDisabled={isLoadingConfig || isTesting || isLoading}
-                                startContent={!isImporting && <ArrowPathIcon className="h-5 w-5"/>}
+                                variant="secondary"
+                                onClick={importUsers}
+                                disabled={isLoadingConfig || isTesting || isLoading || isImporting}
                             >
+                                {!isImporting && <ArrowUpTrayIcon className="h-5 w-5"/>}
                                 Importer les utilisateurs LDAP
                             </Button>
                             <Button
-                                color="default"
-                                variant="flat"
-                                onPress={testConnection}
-                                isLoading={isTesting}
-                                isDisabled={isLoadingConfig}
-                                startContent={!isTesting && connectionStatus === 'success' ?
-                                    <CheckCircleIcon className="h-5 w-5 text-success"/> :
-                                    !isTesting && connectionStatus === 'error' ?
-                                        <XCircleIcon className="h-5 w-5 text-danger"/> : null}
+                                type="button"
+                                variant="outline"
+                                onClick={testConnection}
+                                disabled={isLoadingConfig || isTesting}
                             >
+                                {!isTesting && connectionStatus === 'success' ?
+                                    <CheckCircleIcon className="h-5 w-5 text-green-500"/> :
+                                    !isTesting && connectionStatus === 'error' ?
+                                        <XCircleIcon className="h-5 w-5 text-red-500"/> : null}
                                 {isTesting ? "Test en cours..." :
                                     connectionStatus === 'success' ? "Connexion réussie" :
                                         connectionStatus === 'error' ? "Échec de connexion" : "Tester la connexion"}
                             </Button>
                             <Button
                                 type="submit"
-                                color="primary"
-                                variant="flat"
-                                isLoading={isLoading}
-                                isDisabled={isLoadingConfig}
-                                startContent={!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
+                                disabled={isLoadingConfig || isLoading}
                             >
+                                {!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
                                 Sauvegarder
                             </Button>
                         </div>
                     </form>
-                </CardBody>
+                </CardContent>
             </Card>
         </div>
     );

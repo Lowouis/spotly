@@ -1,11 +1,11 @@
-import {Modal, ModalContent, ModalHeader,} from "@heroui/react";
 import {useMutation} from "@tanstack/react-query";
 import ItemForm from "@/components/form/ItemForm";
 import React, {useState} from "react";
 import {useRefreshContext} from "@/features/shared/context/RefreshContext";
 import {postItem, updateItem} from "@/components/listing/ItemsOnTable.js";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import ResourceStatusChangeModal from "@/components/modals/ResourceStatusChangeModal";
+import {Dialog, DialogContent, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 
 // Fonction pour vérifier s'il y a des réservations futures
 const checkFutureReservations = async (resourceId) => {
@@ -118,51 +118,21 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
 
     return (
         <>
-            <Modal
-                isOpen={isOpen}
-                onOpenChange={onOpenChange}
-                isDismissable={false}
-                backdrop="blur"
-                isKeyboardDismissDisabled={true}
-                motionProps={{
-                    variants: {
-                        enter: {
-                            y: 0,
-                            opacity: 1,
-                            transition: {
-                                duration: 0.15,
-                                ease: "easeOut",
-                            },
-                        },
-                        exit: {
-                            y: -20,
-                            opacity: 0,
-                            transition: {
-                                duration: 0.15,
-                                ease: "easeIn",
-                            },
-                        },
-                    },
-                }}
-            >
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader className="flex flex-col gap-1 text-gray-900 dark:text-gray-200">
-                                {action === "create" && "Créer"}
-                                {action === "edit" && "Modifier"}
-                            </ModalHeader>
+            <Dialog open={isOpen} onOpenChange={onOpenChange}>
+                <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto p-4 sm:p-6">
+                    <DialogHeader className="pr-6">
+                        <DialogTitle>{action === "create" ? "Créer" : "Modifier"}</DialogTitle>
+                    </DialogHeader>
                             <ItemForm
+                                key={`${action}-${defaultValues?.id || "new"}`}
                                 defaultValues={action==="edit" ? defaultValues : null}
                                 onSubmit={handleFormSubmit}
-                                onClose={onClose}
+                                onClose={() => onOpenChange(false)}
                                 action={action}
                                 fields={formFields}
                             />
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
+                </DialogContent>
+            </Dialog>
 
             {/* Modal de changement de statut - affiché seulement s'il y a des réservations futures */}
             <ResourceStatusChangeModal

@@ -1,7 +1,8 @@
 'use client';
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 
 export default function ModalCancelGroup({isOpen, onOpenChange, entries, handleRefresh}) {
     const queryClient = useQueryClient();
@@ -40,74 +41,21 @@ export default function ModalCancelGroup({isOpen, onOpenChange, entries, handleR
     };
 
     return (
-        <Modal
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            size="md"
-            backdrop="blur"
-            classNames={{
-                base: "bg-white dark:bg-neutral-900",
-                header: "border-b border-neutral-200 dark:border-neutral-700",
-                footer: "border-t border-neutral-200 dark:border-neutral-700"
-            }}
-            motionProps={{
-                variants: {
-                    enter: {
-                        y: 0,
-                        opacity: 1,
-                        transition: {
-                            duration: 0.15,
-                            ease: "easeOut",
-                        },
-                    },
-                    exit: {
-                        y: -20,
-                        opacity: 0,
-                        transition: {
-                            duration: 0.15,
-                            ease: "easeIn",
-                        },
-                    },
-                },
-            }}
-        >
-            <ModalContent>
-                {(onClose) => (
-                    <>
-                        <ModalHeader className="flex flex-col gap-1">
-                            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                                Annuler le groupe de réservations
-                            </h2>
-                        </ModalHeader>
-                        <ModalBody>
-                            <p className="text-neutral-600 dark:text-neutral-400">
-                                Êtes-vous sûr de vouloir annuler toutes les réservations de ce groupe ?
-                                Cette action est irréversible et
-                                annulera {entries.length} réservation{entries.length > 1 ? 's' : ''}.
-                            </p>
-                        </ModalBody>
-                        <ModalFooter>
-                            <div className="flex gap-2 justify-end w-full">
-                                <Button
-                                    color="default"
-                                    variant="light"
-                                    onPress={onClose}
-                                >
-                                    Retour
-                                </Button>
-                                <Button
-                                    color="danger"
-                                    variant="flat"
-                                    onPress={handleCancel}
-                                    isLoading={mutation.isPending}
-                                >
-                                    Annuler le groupe
-                                </Button>
-                            </div>
-                        </ModalFooter>
-                    </>
-                )}
-            </ModalContent>
-        </Modal>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Annuler le groupe de réservations</DialogTitle>
+                </DialogHeader>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                    Êtes-vous sûr de vouloir annuler toutes les réservations de ce groupe ? Cette action est irréversible et annulera {entries.length} réservation{entries.length > 1 ? 's' : ''}.
+                </p>
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Retour</Button>
+                    <Button type="button" variant="destructive" onClick={handleCancel} disabled={mutation.isPending}>
+                        {mutation.isPending ? "Annulation..." : "Annuler le groupe"}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
-} 
+}

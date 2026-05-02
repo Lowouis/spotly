@@ -100,11 +100,15 @@ npm run start
 
 Ou redemarrer le service systemd, le conteneur Docker, PM2 ou Coolify.
 
-Redemarrer aussi le worker cron si utilise :
+Verifier aussi la planification cron systeme :
 
 ```bash
+crontab -l
 npm run "run cron"
+npm run "run cron:daily"
 ```
+
+Les commandes cron sont ponctuelles et ne doivent pas etre redemarrees comme un worker permanent.
 
 ## 10. Verification post-update
 

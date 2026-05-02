@@ -65,14 +65,11 @@ const Resources = ({})=>{
         }
     ];
     const columnsGreatNames = [
+        "",
         "Nom",
-        "Description",
-        "Confirmation",
-        "Status",
-        "Site",
-        "Catégorie",
+        "Conf.",
         "Propriétaire",
-        "Niveau de protection",
+        "Protection",
     ]
 
     const searchParams = [
@@ -97,9 +94,9 @@ const Resources = ({})=>{
                 isLoading={isLoading}
                 items={items}
                 name={"Ressources"}
-                actions={['edit', 'delete']}
+                actions={['edit', 'maintenance', 'delete']}
                 columnsGreatNames={columnsGreatNames}
-                filter={['updatedAt', 'id', 'ownerId', 'domainId', 'categoryId', 'createdAt', 'pickableId']}
+                filter={['description', 'updatedAt', 'id', 'ownerId', 'domainId', 'categoryId', 'createdAt', 'pickableId']}
                 filters={filters}
                 searchBy={searchParams}
             />

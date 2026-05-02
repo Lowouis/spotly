@@ -1,14 +1,20 @@
 'use client';
 
 import React, {useEffect, useState} from "react";
-import {Button, Form, Input, Link} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Spinner} from "@/components/ui/spinner";
 import NextLink from "next/link";
 import {signIn} from "next-auth/react";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {EyeIcon, EyeSlashIcon} from "@heroicons/react/24/outline";
+import SnakeLogo from "@/components/utils/SnakeLogo";
+import {useRouter} from "next/navigation";
 
 export default function LoginTab() {
+    const router = useRouter();
     const [connectionLoading, setConnectionLoading] = useState(false);
+    const [showLoginTransition, setShowLoginTransition] = useState(false);
     const [wrongCredentials, setWrongCredentials] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [creditentials, setCreditentials] = useState([
@@ -29,6 +35,7 @@ export default function LoginTab() {
     // Copy the handlers and effects related to login
     const handleSubmit = async (event) => {
         event?.preventDefault();
+        let didStartTransition = false;
         setConnectionLoading(true);
 
         try {
@@ -41,7 +48,11 @@ export default function LoginTab() {
             });
 
             if (result?.ok) {
-                window.location.assign(result.url || callbackUrl || '/');
+                didStartTransition = true;
+                setShowLoginTransition(true);
+                setTimeout(() => {
+                    router.replace(result.url || callbackUrl || '/');
+                }, 1800);
                 return;
             }
 
@@ -50,7 +61,7 @@ export default function LoginTab() {
             setWrongCredentials(true);
             console.error('Login error:', error);
         } finally {
-            setConnectionLoading(false);
+            if (!didStartTransition) setConnectionLoading(false);
         }
     };
 
@@ -76,7 +87,9 @@ export default function LoginTab() {
     }, [wrongCredentials, setWrongCredentials]);
 
     return (
-        <Form
+        <>
+        {showLoginTransition && <LoginTransition />}
+        <form
             className="space-y-5"
             onSubmit={handleSubmit}
         >
@@ -87,33 +100,28 @@ export default function LoginTab() {
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                             {input.label}
                         </label>
-                        <Input
-                            type={input.name === 'password' ? (isPasswordVisible ? 'text' : 'password') : input.type}
-                            placeholder={`Entrer votre ${input.label.toLowerCase()}`}
-                            radius="md"
-                            size="md"
-                            variant="bordered"
-                            classNames={{
-                                input: "text-sm",
-                                inputWrapper: "h-11 bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200"
-                            }}
-                            onChange={(e) => handleChange(e, index)}
-                            endContent={
-                                input.name === 'password' && (
-                                    <button
-                                        className="focus:outline-none p-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
-                                        type="button"
-                                        onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                                    >
-                                        {isPasswordVisible ? (
-                                            <EyeSlashIcon className="h-4 w-4 text-neutral-500"/>
-                                        ) : (
-                                            <EyeIcon className="h-4 w-4 text-neutral-500"/>
-                                        )}
-                                    </button>
-                                )
-                            }
-                        />
+                        <div className="relative">
+                            <Input
+                                type={input.name === 'password' ? (isPasswordVisible ? 'text' : 'password') : input.type}
+                                placeholder={`Entrer votre ${input.label.toLowerCase()}`}
+                                className="h-11 border-neutral-300 bg-transparent pr-10 text-sm dark:border-neutral-600 dark:text-neutral-200"
+                                onChange={(e) => handleChange(e, index)}
+                            />
+                        {input.name === 'password' && (
+                            <button
+                                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                                type="button"
+                                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                                aria-label={isPasswordVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                            >
+                                {isPasswordVisible ? (
+                                    <EyeSlashIcon className="h-4 w-4 text-neutral-500"/>
+                                ) : (
+                                    <EyeIcon className="h-4 w-4 text-neutral-500"/>
+                                )}
+                            </button>
+                        )}
+                        </div>
                     </div>
                 ))}
             </div>
@@ -121,13 +129,10 @@ export default function LoginTab() {
             {/* Bouton de connexion */}
             <Button
                 type="submit"
-                fullWidth
-                color="default"
-                isLoading={connectionLoading}
-                size="md"
-                radius="md"
-                className="h-11 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
+                disabled={connectionLoading || showLoginTransition}
+                className="h-11 w-full font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
             >
+                {connectionLoading && <Spinner size="sm" className="text-current"/>}
                 {!connectionLoading ? "Se connecter" : "Connexion en cours..."}
             </Button>
 
@@ -135,15 +140,29 @@ export default function LoginTab() {
             <div className="text-center pt-2">
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     Vous n&apos;avez pas de compte ?{" "}
-                    <Link
-                        as={NextLink}
+                    <NextLink
                         href="/register"
                         className="text-sm text-neutral-900 dark:text-neutral-100 font-medium hover:underline transition-all duration-200"
                     >
                         Créer un compte
-                    </Link>
+                    </NextLink>
                 </p>
             </div>
-        </Form>
+        </form>
+        </>
+    );
+}
+
+function LoginTransition() {
+    return (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background text-foreground">
+            <div className="relative flex h-32 w-32 items-center justify-center">
+                <div className="login-transition-ring absolute inset-0 rounded-full border border-neutral-300 dark:border-neutral-700" />
+                <SnakeLogo className="login-transition-logo h-20 w-20" title="Connexion à Spotly" />
+            </div>
+            <p className="login-transition-text mt-6 text-sm font-medium text-muted-foreground">
+                Ouverture de votre espace...
+            </p>
+        </div>
     );
 }

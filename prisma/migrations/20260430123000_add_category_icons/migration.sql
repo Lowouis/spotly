@@ -1,0 +1,3 @@
+ALTER TABLE `category`
+    ADD COLUMN `iconKey` VARCHAR(191) NULL,
+    ADD COLUMN `iconSvg` TEXT NULL;

@@ -143,10 +143,12 @@ pm2 save
 pm2 startup
 \end{lstlisting}
 
-\section{Lancement du script cron}
+\section{Planification du script cron}
 \begin{lstlisting}[language=bash]
-pm2 start scripts/cron.mjs --name spotly-cron
-pm2 logs spotly-cron
+crontab -e
+
+*/30 * * * * cd /path/to/spotly && npm run "run cron"
+0 7 * * * cd /path/to/spotly && npm run "run cron:daily"
 \end{lstlisting}
 \newpage
 

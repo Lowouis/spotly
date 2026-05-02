@@ -24,6 +24,7 @@ const Categories = ({})=>{
     const CategoryFields = [
         { required: true, name: 'name', type: 'text', label: 'Nom', placeholder : "ex : vidéo-projecteur, ordinateur" },
         { required: false, name: 'description', type: 'text', label: 'Description', placeholder : "ex : ordinateur 4gb ram & 500gb" },
+        { required: false, name: 'iconKey', type: 'categoryIcon', label: 'Icône', defaultValue: 'generic', iconName: 'iconKey', svgName: 'iconSvg' },
         {
             required: false,
             name: 'pickable',
@@ -71,7 +72,7 @@ const Categories = ({})=>{
                 name={"Catégories"}
                 columnsGreatNames={columnsGreatNames}
                 actions={['edit', 'delete']}
-                filter={['updatedAt', 'id', 'ownerId', 'createdAt', 'pickableId']}
+                filter={['updatedAt', 'id', 'ownerId', 'createdAt', 'pickableId', 'iconKey', 'iconSvg']}
                 filters={filters}
                 searchBy={searchParams}
             />

@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
-import {Radio, RadioGroup, Tooltip} from "@heroui/react";
+import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import {Controller, useFormContext} from "react-hook-form";
 
 
@@ -43,32 +44,32 @@ export default function BooleanInput({label, name, value, required, dependsOn = 
                 defaultValue={value !== undefined ? String(value) === "1" || value === true ? "1" : "0" : "0"}
                 rules={{required: required ? "Ce champ est requis" : false}}
                 render={({field}) => (
-                    <Tooltip showArrow isDisabled={!disabled}
-                             content={"Pour modifier cette valeur, veuillez vérifié que la catégorie ou le site possède un propriétaire."}
-                             color="warning">
-                        <RadioGroup
-                            id={name}
-                            label={<span className="text-neutral-900 dark:text-neutral-100">{label}</span>}
-                            isDisabled={disabled}
-                            className={`form-input ${formErrors[name] ? 'input-error' : ''}`}
-                            value={field.value}
-                            color="default"
-                            onChange={field.onChange}
-                        >
-                            <Radio
-                                value="1"
-                                description={<span className="text-neutral-500 dark:text-neutral-400">Un modérateur doit valider la réservation pour cette ressource</span>}
-                            >
-                                Oui
-                            </Radio>
-                            <Radio
-                                value="0"
-                                description={<span className="text-neutral-500 dark:text-neutral-400">La ressource est en libre disposition</span>}
-                            >
-                                Non
-                            </Radio>
-                        </RadioGroup>
-                    </Tooltip>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <fieldset className={`form-input space-y-3 ${formErrors[name] ? 'input-error' : ''}`} disabled={disabled}>
+                                    <legend className="mb-2 text-sm font-medium text-neutral-900 dark:text-neutral-100">{label}</legend>
+                                    <RadioGroup value={field.value} onValueChange={field.onChange} className="gap-3">
+                                        <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm">
+                                            <RadioGroupItem value="1" />
+                                            <span>
+                                                <span className="block font-medium text-foreground">Oui</span>
+                                                <span className="text-neutral-500 dark:text-neutral-400">Un modérateur doit valider la réservation pour cette ressource</span>
+                                            </span>
+                                        </label>
+                                        <label className="flex items-start gap-3 rounded-lg border border-border p-3 text-sm">
+                                            <RadioGroupItem value="0" />
+                                            <span>
+                                                <span className="block font-medium text-foreground">Non</span>
+                                                <span className="text-neutral-500 dark:text-neutral-400">La ressource est en libre disposition</span>
+                                            </span>
+                                        </label>
+                                    </RadioGroup>
+                                </fieldset>
+                            </TooltipTrigger>
+                            {disabled && <TooltipContent>Pour modifier cette valeur, veuillez vérifier que la catégorie ou le site possède un propriétaire.</TooltipContent>}
+                        </Tooltip>
+                    </TooltipProvider>
                 )}
             />
             {formErrors[name] && (

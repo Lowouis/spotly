@@ -2,6 +2,10 @@ import db from "@/server/services/databaseService";
 import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from 'next/server';
 import {isAdminSession, requireAuth} from '@/services/server/api-auth';
+import {createEntryMessage} from '@/services/server/entry-messages';
+import {requiresLocationCheck} from '@/services/server/entry-control';
+import {getAuthorizedLocationForRequest} from '@/services/server/client-ip';
+import {canPickupEntryNow} from '@/services/server/pickup-availability';
 
 export default async function handler(req, res) {
 
@@ -14,12 +18,33 @@ export default async function handler(req, res) {
     if (req.method === "PUT") {
         try {
             const {moderate, returned, adminNote, startDate, endDate, resourceId, userId} = req.body;
-            const currentEntryForAuth = await db.entry.findUnique({where: {id: parseInt(id)}});
+            const currentEntryForAuth = await db.entry.findUnique({
+                where: {id: parseInt(id)},
+                include: {
+                    resource: {
+                        include: {
+                            pickable: true,
+                            category: {include: {pickable: true}},
+                            domains: {include: {pickable: true}},
+                        },
+                    },
+                },
+            });
             if (!currentEntryForAuth) return res.status(404).json({error: 'Entry not found'});
 
             const adminOnlyChange = adminNote || startDate || endDate || resourceId || userId;
             if (!isAdminSession(session) && (currentEntryForAuth.userId !== Number(session.user.id) || adminOnlyChange)) {
                 return res.status(403).json({message: 'Accès interdit'});
+            }
+
+            if (!isAdminSession(session) && ['USED', 'ENDED'].includes(moderate) && requiresLocationCheck(currentEntryForAuth)) {
+                const {authorizedLocation} = await getAuthorizedLocationForRequest(req);
+                if (!authorizedLocation) return res.status(403).json({message: 'Appareil non autorisé'});
+            }
+
+            if (!isAdminSession(session) && moderate === 'USED') {
+                const pickupAvailability = await canPickupEntryNow(db, currentEntryForAuth);
+                if (!pickupAvailability.allowed) return res.status(409).json({message: pickupAvailability.reason});
             }
 
             // Si on modifie les horaires ou la ressource, vérifier la disponibilité
@@ -57,7 +82,7 @@ export default async function handler(req, res) {
             }
 
             const updateData = {
-                ...(moderate && {moderate}),
+                ...(moderate && {moderate, lastUpdatedModerateStatus: new Date()}),
                 ...(adminNote && {adminNote}),
                 ...(returned && {
                     returned: returned,
@@ -79,6 +104,14 @@ export default async function handler(req, res) {
                     user: true
                 }
             });
+
+            if (adminNote && adminNote !== currentEntryForAuth.adminNote) {
+                await createEntryMessage({
+                    entryId: entry.id,
+                    userId: session.user.id,
+                    content: adminNote,
+                });
+            }
 
             // Mettre à jour le statut de la ressource si nécessaire
             if (moderate === "USED" || moderate === "ENDED") {

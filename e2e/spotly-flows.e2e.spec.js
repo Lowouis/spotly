@@ -1,5 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {PrismaClient} from '@prisma/client';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import {
     getPickupControlMode,
@@ -10,6 +11,7 @@ import {
 dotenv.config();
 
 const prisma = new PrismaClient();
+const passwordHash = bcrypt.hashSync('password', 10);
 
 const state = {};
 
@@ -39,11 +41,16 @@ async function recreateFixtures() {
         ensurePickable('HIGH_AUTH', 'RESTRICTION PAR IP'),
     ]);
 
-    const password = '$2b$10$k8WVVQXmQk2Gfb9xv0Qvu.36V4YuCM21sXxH8x4Yt2ZLzpi16h7We'; // password
     const user = await prisma.user.upsert({
         where: {username: 'e2e.user'},
-        update: {name: 'E2E', surname: 'User', email: 'e2e.user@spotly.test', role: 'USER', external: false},
-        create: {username: 'e2e.user', name: 'E2E', surname: 'User', email: 'e2e.user@spotly.test', role: 'USER', external: false, password},
+        update: {name: 'E2E', surname: 'User', email: 'e2e.user@spotly.test', role: 'USER', external: false, password: passwordHash},
+        create: {username: 'e2e.user', name: 'E2E', surname: 'User', email: 'e2e.user@spotly.test', role: 'USER', external: false, password: passwordHash},
+    });
+
+    const admin = await prisma.user.upsert({
+        where: {username: 'e2e.flow.admin'},
+        update: {name: 'E2E', surname: 'Admin', email: 'e2e.flow.admin@spotly.test', role: 'SUPERADMIN', external: false, password: passwordHash},
+        create: {username: 'e2e.flow.admin', name: 'E2E', surname: 'Admin', email: 'e2e.flow.admin@spotly.test', role: 'SUPERADMIN', external: false, password: passwordHash},
     });
 
     const domain = await prisma.domain.create({
@@ -76,7 +83,23 @@ async function recreateFixtures() {
         data: {libelle: 'E2E Authorized Device', ip: '10.10.10.10'},
     });
 
-    Object.assign(state, {user, domain, category, fluentResource, lowTrustResource, digitResource, highAuthResource, moderatedResource, authorizedLocation});
+    Object.assign(state, {user, admin, domain, category, fluentResource, lowTrustResource, digitResource, highAuthResource, moderatedResource, authorizedLocation});
+}
+
+async function authenticateRequest(request) {
+    const csrfResponse = await request.get('/api/auth/csrf');
+    expect(csrfResponse.status()).toBe(200);
+    const {csrfToken} = await csrfResponse.json();
+
+    const loginResponse = await request.post('/api/auth/callback/credentials?json=true', {
+        form: {
+            csrfToken,
+            username: 'e2e.flow.admin',
+            password: 'password',
+            callbackUrl: '/',
+        },
+    });
+    expect(loginResponse.status()).toBe(200);
 }
 
 async function createReservation(request, resource, comment) {
@@ -117,6 +140,10 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
     await prisma.$disconnect();
+});
+
+test.beforeEach(async ({request}) => {
+    await authenticateRequest(request);
 });
 
 test('services de test LDAP et SSO', async ({request}) => {
@@ -275,15 +302,15 @@ test('modes de récupération et restitution: automatique, clic, code et IP', as
     const highAuthEntry = await getEntryWithRelations((await createReservation(request, state.highAuthResource, 'E2E mode code IP')).id);
     expect(getPickupControlMode(highAuthEntry)).toBe(RESERVATION_CONTROL_MODE.CODE);
     expect(getReturnControlMode(highAuthEntry)).toBe(RESERVATION_CONTROL_MODE.CODE);
-    expect((await request.get('/api/authorized-location/check/10.10.10.10')).status()).toBe(200);
-    expect((await request.get('/api/authorized-location/check/10.10.10.11')).status()).toBe(401);
+    expect((await request.get('/api/authorized-location/check/current', {headers: {'x-forwarded-for': '10.10.10.10'}})).status()).toBe(200);
+    expect((await request.get('/api/authorized-location/check/current', {headers: {'x-forwarded-for': '10.10.10.11'}})).status()).toBe(401);
 });
 
 test('blocage et autorisation par IP', async ({request}) => {
-    const authorizedResponse = await request.get('/api/authorized-location/check/10.10.10.10');
+    const authorizedResponse = await request.get('/api/authorized-location/check/current', {headers: {'x-forwarded-for': '10.10.10.10'}});
     expect(authorizedResponse.status()).toBe(200);
     expect((await authorizedResponse.json()).libelle).toBe('E2E Authorized Device');
 
-    const blockedResponse = await request.get('/api/authorized-location/check/10.10.10.11');
+    const blockedResponse = await request.get('/api/authorized-location/check/current', {headers: {'x-forwarded-for': '10.10.10.11'}});
     expect(blockedResponse.status()).toBe(401);
 });

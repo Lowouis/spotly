@@ -1,9 +1,11 @@
 'use client';
 
 import React, {useState} from "react";
-import {Button, Input, Link} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Spinner} from "@/components/ui/spinner";
 import {useMutation} from "@tanstack/react-query";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import NextLink from "next/link";
 
 export async function createUser(userData) {
@@ -140,38 +142,22 @@ export function RegisterModal({}) {
                                 <Input
                                     type={input.type}
                                     placeholder={`Entrer votre ${input.label.toLowerCase()}`}
-                                    radius="md"
-                                    size="md"
-                                    variant="bordered"
-                                    isRequired={true}
+                                    required={true}
                                     name={input.name}
                                     value={input.value}
-                                    classNames={{
-                                        input: "text-sm",
-                                        inputWrapper: "h-11 bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200"
-                                    }}
+                                    className="h-11 bg-transparent border-neutral-300 text-sm dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 transition-colors duration-200"
                                     onChange={(e) => {
                                         const newCreditentials = [...creditentials];
                                         newCreditentials[index].value = e.target.value;
                                         setCreditentials(newCreditentials);
                                     }}
-                                    errorMessage={() => {
-                                        if (input.type === "password" && input.value.length < 8) {
-                                            return "Le mot de passe doit contenir au moins 8 caractères";
-                                        } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
-                                            return "Les mots de passe ne correspondent pas";
-                                        }
-                                        return "";
-                                    }}
-                                    validate={() => {
-                                        if (input.type === "password" && input.value.length < 8) {
-                                            return false;
-                                        } else if (input.name === "confirmPassword" && input.value !== creditentials.find(cred => cred.name === "password").value) {
-                                            return false;
-                                        }
-                                        return true;
-                                    }}
                                 />
+                                {input.type === "password" && input.value.length > 0 && input.value.length < 8 && (
+                                    <p className="text-sm text-red-500">Le mot de passe doit contenir au moins 8 caractères</p>
+                                )}
+                                {input.name === "confirmPassword" && input.value && input.value !== creditentials.find(cred => cred.name === "password").value && (
+                                    <p className="text-sm text-red-500">Les mots de passe ne correspondent pas</p>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -179,13 +165,10 @@ export function RegisterModal({}) {
                     {/* Bouton de création de compte */}
                     <Button
                         type="submit"
-                        fullWidth
-                        color="default"
-                        isLoading={connectionLoading}
-                        size="md"
-                        radius="md"
-                        className="h-11 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
+                        disabled={connectionLoading}
+                        className="h-11 w-full font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
                     >
+                        {connectionLoading && <Spinner size="sm" className="text-current"/>}
                         {!connectionLoading ? "Créer mon compte" : "Création en cours..."}
                     </Button>
 
@@ -193,13 +176,12 @@ export function RegisterModal({}) {
                     <div className="text-center pt-2">
                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
                             Vous avez déjà un compte ?{" "}
-                            <Link
-                                as={NextLink}
+                            <NextLink
                                 href="/login"
                                 className="text-sm text-neutral-900 dark:text-neutral-100 font-medium hover:underline transition-all duration-200"
                             >
                                 Se connecter
-                            </Link>
+                            </NextLink>
                         </p>
                     </div>
                 </form>
@@ -207,6 +189,4 @@ export function RegisterModal({}) {
         </div>
     );
 }
-
-
 

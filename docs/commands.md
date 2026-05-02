@@ -110,20 +110,24 @@ npm run test:mail:send
 
 Envoie tous les templates vers le destinataire de smoke test. Utiliser seulement avec un SMTP/catcher de test.
 
-## Cron local ou worker dedie
+## Cron systeme
 
 ```bash
 npm run "run cron"
+npm run "run cron:daily"
+npm run "run cron:all"
 ```
 
-Lance le worker `node-cron`. Ne pas utiliser comme mecanisme principal sur Vercel, qui n'execute pas de processus permanent.
+`run cron` execute le cycle principal, `run cron:daily` execute l'alerte quotidienne de retard, et `run cron:all` execute les deux pour un lancement manuel. Chaque commande execute une passe ponctuelle puis quitte. A planifier avec le cron systeme, pas comme processus permanent.
 
-Options utiles :
+Exemple crontab :
 
 ```bash
-RUN_ONCE=1 npm run "run cron"
-RUN_AT_START=1 npm run "run cron"
+*/30 * * * * cd /path/to/spotly && npm run "run cron"
+0 7 * * * cd /path/to/spotly && npm run "run cron:daily"
 ```
+
+Utiliser le chemin absolu du dossier de deploiement et verifier que l'environnement charge par cron contient les variables requises (`DATABASE_URL`, `NEXT_PUBLIC_API_ENDPOINT`, etc.).
 
 ## Deploiement Vercel manuel
 

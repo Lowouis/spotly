@@ -7,7 +7,7 @@
       "@/context/*": ["./features/shared/context/*"],
       "@/providers/*": ["./config/providers/*"],
       "@/prismaconf/*": ["./server/prisma/*"],
-      "@/lib/*": ["./services/server/*"],
+      "@/lib/*": ["./lib/*"],
       "@/utils/*": ["./services/client/*"],
       "@/config/*": ["./config/*"],
       "@/features/*": ["./features/*"],

@@ -7,9 +7,10 @@ import React, {useEffect, useRef, useState} from 'react';
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import SSOLoadingModal from "@/components/modals/SSOLoadingModal";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
-import {Button, Spinner} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {Spinner} from "@/components/ui/spinner";
 import {useSSO} from '@/hooks/useSSO';
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 
 function LoginContent() {
     const router = useRouter();
@@ -85,7 +86,7 @@ function LoginContent() {
     if (status === 'loading') {
         return (
             <div className="flex justify-center items-center h-screen">
-                <Spinner label="Chargement..." color="primary" />
+                <Spinner label="Chargement..." />
             </div>
         );
     }
@@ -110,17 +111,13 @@ function LoginContent() {
                     {kerberosConfigExists && (
                         <div className="mt-6">
             <Button
-                onPress={handleSSOClick}
-                color="default"
-                variant="bordered"
-                fullWidth
-                size="md"
-                radius="md"
+                type="button"
+                onClick={handleSSOClick}
+                variant="outline"
                 className="h-11 border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
-                isDisabled={!kerberosConfigExists}
-                isLoading={isSSOChecking || status === "loading"}
+                disabled={!kerberosConfigExists || isSSOChecking || status === "loading"}
             >
-                Connexion automatique
+                {isSSOChecking || status === "loading" ? "Connexion..." : "Connexion automatique"}
             </Button>
                         </div>
                     )}

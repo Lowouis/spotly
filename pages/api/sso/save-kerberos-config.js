@@ -15,6 +15,17 @@ export default async function handler(req, res) {
     if (!session) return;
 
     const {realm, kdc, adminServer, defaultDomain, serviceHost, keytabPath} = req.body;
+    const isActive = req.body?.isActive !== false;
+
+    if (!isActive && (!realm || !kdc || !adminServer || !defaultDomain || !serviceHost || !keytabPath)) {
+        await db.kerberosConfig.updateMany({
+            where: {isActive: true},
+            data: {isActive: false},
+        });
+
+        return res.status(200).json({message: 'Configuration Kerberos désactivée'});
+    }
+
     if (!realm || !kdc || !adminServer || !defaultDomain || !serviceHost || !keytabPath) {
         return res.status(400).json({message: 'Tous les champs sont requis'});
     }
@@ -30,12 +41,14 @@ export default async function handler(req, res) {
             keytabPath
         };
 
-        const validationResult = await validateKerberosConfig(config);
-        if (!validationResult.success) {
-            return res.status(401).json({
-                message: 'Configuration Kerberos invalide',
-                details: validationResult.error
-            });
+        if (isActive) {
+            const validationResult = await validateKerberosConfig(config);
+            if (!validationResult.success) {
+                return res.status(401).json({
+                    message: 'Configuration Kerberos invalide',
+                    details: validationResult.error
+                });
+            }
         }
 
         // 2. Chiffrement des données sensibles
@@ -58,6 +71,7 @@ export default async function handler(req, res) {
         const savedConfig = await db.kerberosConfig.create({
             data: {
                 ...encryptedData,
+                isActive,
                 lastUpdated: new Date(),
                 updatedBy: session.user.name || session.user.username || 'system'
             }

@@ -1,12 +1,22 @@
 'use client';
 
-import {Card, CardBody, CardHeader, Divider} from "@heroui/react";
-import {Input} from "@heroui/input";
-import {Button} from "@heroui/button";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardHeader} from "@/components/ui/card";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Switch} from "@/components/ui/switch";
 import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {useConfigStatus} from "@/features/shared/context/ConfigStatusContext";
+
+const AdminField = ({label, error, children}) => (
+    <div className="space-y-2">
+        <Label>{label}</Label>
+        {children}
+        {error && <p className="text-sm text-red-500">{error}</p>}
+    </div>
+);
 
 const SSO = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -23,13 +33,14 @@ const SSO = () => {
         defaultDomain: "",
         serviceHost: "",
         keytabPath: "",
+        isActive: true,
     });
 
     useEffect(() => {
         const loadConfig = async () => {
             setIsLoadingConfig(true);
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/public/kerberos-config`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/sso/kerberos-config`);
 
                 if (response.ok) {
                     const data = await response.json();
@@ -42,10 +53,13 @@ const SSO = () => {
                         defaultDomain: data.defaultDomain || "",
                         serviceHost: data.serviceHost || "",
                         keytabPath: data.keytabPath || "",
+                        isActive: data.isActive !== false,
                     }));
 
                     // Si on a des données, on considère qu'il y a une config
-                    if (data.realm && data.kdc && data.adminServer && data.defaultDomain && data.serviceHost && data.keytabPath) {
+                    if (!data.isActive) {
+                        updateConfigStatus('sso', 'none');
+                    } else if (data.realm && data.kdc && data.adminServer && data.defaultDomain && data.serviceHost && data.keytabPath) {
                         updateConfigStatus('sso', 'error'); // Par défaut en erreur jusqu'au test
                     } else {
                         updateConfigStatus('sso', 'none');
@@ -71,7 +85,16 @@ const SSO = () => {
         setConnectionStatus(null);
     };
 
+    const handleActiveChange = (checked) => {
+        setFormData(prev => ({...prev, isActive: checked}));
+        setErrorMessage(null);
+        setConnectionStatus(null);
+        if (!checked) updateConfigStatus('sso', 'none');
+    };
+
     const validateForm = () => {
+        if (!formData.isActive) return true;
+
         if (!formData.realm || !formData.kdc || !formData.adminServer || !formData.defaultDomain || !formData.serviceHost || !formData.keytabPath) {
             setErrorMessage("Tous les champs sont obligatoires");
             return false;
@@ -81,6 +104,15 @@ const SSO = () => {
 
     const testConnection = async () => {
         if (!validateForm()) return;
+        if (!formData.isActive) {
+            addToast({
+                title: 'Test de connexion',
+                description: 'Activez le SSO Kerberos avant de tester la connexion',
+                color: 'warning',
+                duration: 5000,
+            });
+            return;
+        }
 
         setIsTesting(true);
         setConnectionStatus(null);
@@ -146,7 +178,7 @@ const SSO = () => {
                 duration: 5000,
             });
             // Après sauvegarde, on considère que la config est en erreur jusqu'au test
-            updateConfigStatus('sso', 'error');
+            updateConfigStatus('sso', formData.isActive ? 'error' : 'none');
         } catch (error) {
             addToast({
                 title: 'Configuration SSO',
@@ -164,124 +196,77 @@ const SSO = () => {
             <Card className="w-full">
                 <CardHeader className="flex gap-3">
                     <div className="flex flex-col">
-                        <p className="text-xl font-semibold">Configuration SSO (Kerberos)</p>
-                        <p className="text-small text-default-500">Configurez votre serveur Kerberos pour
+                        <p className="text-xl font-semibold">Configuration SSO</p>
+                        <p className="text-sm text-muted-foreground">Configurez votre serveur Kerberos pour
                             l&apos;authentification SSO</p>
                     </div>
                 </CardHeader>
-                <Divider/>
-                <CardBody>
+                <CardContent className="border-t pt-6">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                        <Input
-                            required
-                            name="realm"
-                            label="Realm Kerberos"
-                            labelPlacement="outside"
-                            placeholder="EXAMPLE.COM"
-                            value={formData.realm}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.realm}
-                            errorMessage={errorMessage && !formData.realm ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                        <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="space-y-1">
+                                <Label htmlFor="kerberos-active">Activer le SSO Kerberos</Label>
+                                <p className="text-sm text-muted-foreground">Désactive les tentatives Kerberos et libère les ressources associées.</p>
+                            </div>
+                            <Switch id="kerberos-active" checked={formData.isActive} onCheckedChange={handleActiveChange} disabled={isLoadingConfig || isLoading}/>
+                        </div>
 
-                        <Input
-                            required
-                            name="kdc"
-                            label="Serveur KDC"
-                            labelPlacement="outside"
-                            placeholder="kdc.example.com:88"
-                            value={formData.kdc}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.kdc}
-                            errorMessage={errorMessage && !formData.kdc ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                        {formData.isActive && (
+                            <>
+                                <AdminField label="Realm Kerberos" error={errorMessage && !formData.realm ? "Ce champ est requis" : ""}>
+                                    <Input required name="realm" placeholder="EXAMPLE.COM" value={formData.realm} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                                </AdminField>
 
-                        <Input
-                            required
-                            name="adminServer"
-                            label="Serveur Admin"
-                            labelPlacement="outside"
-                            placeholder="admin.example.com:749"
-                            value={formData.adminServer}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.adminServer}
-                            errorMessage={errorMessage && !formData.adminServer ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                                <AdminField label="Serveur KDC" error={errorMessage && !formData.kdc ? "Ce champ est requis" : ""}>
+                                    <Input required name="kdc" placeholder="kdc.example.com:88" value={formData.kdc} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                                </AdminField>
 
-                        <Input
-                            required
-                            name="defaultDomain"
-                            label="Domaine par défaut"
-                            labelPlacement="outside"
-                            placeholder="example.com"
-                            value={formData.defaultDomain}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.defaultDomain}
-                            errorMessage={errorMessage && !formData.defaultDomain ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                                <AdminField label="Serveur Admin" error={errorMessage && !formData.adminServer ? "Ce champ est requis" : ""}>
+                                    <Input required name="adminServer" placeholder="admin.example.com:749" value={formData.adminServer} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                                </AdminField>
 
-                        <Input
-                            required
-                            name="serviceHost"
-                            label="Nom d'hôte du service HTTP"
-                            labelPlacement="outside"
-                            placeholder="sso.intranet.fhm.local"
-                            value={formData.serviceHost}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.serviceHost}
-                            errorMessage={errorMessage && !formData.serviceHost ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                                <AdminField label="Domaine par défaut" error={errorMessage && !formData.defaultDomain ? "Ce champ est requis" : ""}>
+                                    <Input required name="defaultDomain" placeholder="example.com" value={formData.defaultDomain} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                                </AdminField>
 
-                        <Input
-                            required
-                            name="keytabPath"
-                            label="Chemin du fichier keytab"
-                            labelPlacement="outside"
-                            placeholder="/etc/apache2/fhm.keytab"
-                            value={formData.keytabPath}
-                            onChange={handleInputChange}
-                            isInvalid={!!errorMessage && !formData.keytabPath}
-                            errorMessage={errorMessage && !formData.keytabPath ? "Ce champ est requis" : ""}
-                            isDisabled={isLoadingConfig}
-                        />
+                                <AdminField label="Nom d'hôte du service HTTP" error={errorMessage && !formData.serviceHost ? "Ce champ est requis" : ""}>
+                                    <Input required name="serviceHost" placeholder="sso.intranet.fhm.local" value={formData.serviceHost} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                                </AdminField>
+
+                                <AdminField label="Chemin du fichier keytab" error={errorMessage && !formData.keytabPath ? "Ce champ est requis" : ""}>
+                                    <Input required name="keytabPath" placeholder="/etc/apache2/filename.keytab" value={formData.keytabPath} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                                </AdminField>
+                            </>
+                        )}
 
                         <div className="flex justify-end gap-4 mt-4">
                             <Button
-                                color="default"
-                                variant="flat"
-                                onPress={testConnection}
-                                isLoading={isTesting}
-                                isDisabled={isLoadingConfig}
-                                startContent={!isTesting && connectionStatus === 'success' ?
-                                    <CheckCircleIcon className="h-5 w-5 text-success"/> :
-                                    !isTesting && connectionStatus === 'error' ?
-                                        <XCircleIcon className="h-5 w-5 text-danger"/> : null}
+                                type="button"
+                                variant="outline"
+                                onClick={testConnection}
+                                disabled={isLoadingConfig || isTesting || !formData.isActive}
                             >
+                                {!isTesting && connectionStatus === 'success' ?
+                                    <CheckCircleIcon className="h-5 w-5 text-green-500"/> :
+                                    !isTesting && connectionStatus === 'error' ?
+                                        <XCircleIcon className="h-5 w-5 text-red-500"/> : null}
                                 {isTesting ? "Test en cours..." :
                                     connectionStatus === 'success' ? "Connexion réussie" :
                                         connectionStatus === 'error' ? "Échec de connexion" : "Tester la connexion"}
                             </Button>
                             <Button
                                 type="submit"
-                                color="primary"
-                                variant="flat"
-                                isLoading={isLoading}
-                                isDisabled={isLoadingConfig}
-                                startContent={!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
+                                disabled={isLoadingConfig || isLoading}
                             >
+                                {!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
                                 Sauvegarder
                             </Button>
                         </div>
                     </form>
-                </CardBody>
+                </CardContent>
             </Card>
         </div>
     );
 };
 
-export default SSO; 
+export default SSO;

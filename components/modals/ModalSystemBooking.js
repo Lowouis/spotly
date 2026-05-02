@@ -1,12 +1,13 @@
-import {Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {formatDuration} from "@/global";
 import {CalendarIcon, ClockIcon, ShieldExclamationIcon, TrashIcon, UserIcon} from "@heroicons/react/24/outline";
 import {useState} from "react";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {useMutation} from "@tanstack/react-query";
 
 export default function ModalSystemBooking({entry, isOpen, onOpenChange, handleRefresh}) {
-    const {isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose} = useDisclosure();
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const startDate = new Date(entry.startDate);
     const endDate = new Date(entry.endDate);
@@ -23,7 +24,7 @@ export default function ModalSystemBooking({entry, isOpen, onOpenChange, handleR
             return response.json();
         },
         onSuccess: () => {
-            onConfirmClose();
+            setIsConfirmOpen(false);
             onOpenChange(false);
             addToast({
                 title: "Blocage supprimé",
@@ -53,60 +54,26 @@ export default function ModalSystemBooking({entry, isOpen, onOpenChange, handleR
 
     return (
         <>
-            <Modal
-                isOpen={isOpen}
-                onOpenChange={onOpenChange}
-                size="md"
-                backdrop="blur"
-                classNames={{
-                    base: "bg-white dark:bg-neutral-900",
-                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
-                    body: "py-6",
-                    footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4",
-                    closeButton: "text-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full p-3 text-xl"
-                }}
-                motionProps={{
-                    variants: {
-                        enter: {
-                            y: 0,
-                            opacity: 1,
-                            transition: {
-                                duration: 0.15,
-                                ease: "easeOut",
-                            },
-                        },
-                        exit: {
-                            y: -20,
-                            opacity: 0,
-                            transition: {
-                                duration: 0.15,
-                                ease: "easeIn",
-                            },
-                        },
-                    },
-                }}
-            >
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader className="flex flex-col gap-1">
+            <Dialog open={isOpen} onOpenChange={onOpenChange}>
+                <DialogContent>
+                            <DialogHeader className="flex flex-col gap-1 border-b border-neutral-200 pb-4 dark:border-neutral-700">
                                 <div className="flex items-center gap-2">
                                     <div className="p-2 rounded-full bg-danger-100 dark:bg-danger-900/30">
                                         <ShieldExclamationIcon
                                             className="w-5 h-5 text-danger-600 dark:text-danger-400"/>
                                     </div>
                                     <div>
-                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                        <DialogTitle className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                                             Ressource bloquée
-                                        </h2>
+                                        </DialogTitle>
                                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
                                             {entry.resource?.name}
                                         </p>
                                     </div>
                                 </div>
-                            </ModalHeader>
+                            </DialogHeader>
 
-                            <ModalBody>
+                            <div className="py-6">
                                 <div className="space-y-6">
                                     {/* Informations sur le blocage */}
                                     <div
@@ -223,88 +190,71 @@ export default function ModalSystemBooking({entry, isOpen, onOpenChange, handleR
                                         )}
                                     </div>
                                 </div>
-                            </ModalBody>
+                            </div>
 
-                            <ModalFooter className="flex justify-between">
+                            <DialogFooter className="flex justify-between border-t border-neutral-200 pt-4 dark:border-neutral-700 sm:justify-between">
                                 <Button
-                                    color="danger"
-                                    variant="flat"
-                                    onPress={handleDelete}
-                                    isLoading={isDeleting}
-                                    startContent={<TrashIcon className="w-4 h-4"/>}
+                                    type="button"
+                                    variant="destructive"
+                                    onClick={() => setIsConfirmOpen(true)}
+                                    disabled={isDeleting}
                                     className="font-medium"
                                 >
+                                    <TrashIcon className="w-4 h-4"/>
                                     Supprimer le blocage
                                 </Button>
                                 <Button
-                                    color="default"
-                                    variant="light"
-                                    onPress={onClose}
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => onOpenChange(false)}
                                     className="font-medium"
                                 >
                                     Fermer
                                 </Button>
-                            </ModalFooter>
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
+                            </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Modal de confirmation */}
-            <Modal
-                isOpen={isConfirmOpen}
-                onOpenChange={onConfirmClose}
-                size="sm"
-                backdrop="blur"
-                classNames={{
-                    base: "bg-white dark:bg-neutral-900",
-                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
-                    body: "py-6",
-                    footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4",
-                }}
-            >
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader>
+            <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+                <DialogContent>
+                            <DialogHeader className="border-b border-neutral-200 pb-4 dark:border-neutral-700">
                                 <div className="flex items-center gap-2">
                                     <div className="p-2 rounded-full bg-danger-100 dark:bg-danger-900/30">
                                         <TrashIcon className="w-5 h-5 text-danger-600 dark:text-danger-400"/>
                                     </div>
-                                    <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                    <DialogTitle className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                                         Confirmer la suppression
-                                    </h2>
+                                    </DialogTitle>
                                 </div>
-                            </ModalHeader>
-                            <ModalBody>
+                            </DialogHeader>
+                            <div className="py-6">
                                 <p className="text-neutral-600 dark:text-neutral-400">
                                     Êtes-vous sûr de vouloir supprimer ce blocage administratif ? Cette action est
                                     irréversible.
                                 </p>
-                            </ModalBody>
-                            <ModalFooter>
+                            </div>
+                            <DialogFooter className="border-t border-neutral-200 pt-4 dark:border-neutral-700">
                                 <Button
-                                    color="default"
-                                    variant="light"
-                                    onPress={onClose}
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => setIsConfirmOpen(false)}
                                     className="font-medium"
                                 >
                                     Annuler
                                 </Button>
                                 <Button
-                                    color="danger"
-                                    variant="flat"
-                                    onPress={handleDelete}
-                                    isLoading={isDeleting}
+                                    type="button"
+                                    variant="destructive"
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
                                     className="font-medium"
                                 >
                                     Supprimer
                                 </Button>
-                            </ModalFooter>
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
+                            </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
-} 
+}

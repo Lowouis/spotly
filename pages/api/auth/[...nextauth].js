@@ -6,7 +6,7 @@ import bycrypt from 'bcrypt';
 import {publicEnv} from '@/config/publicEnv';
 import {decrypt} from '@/services/server/security';
 import {findLdapUser} from '@/services/server/ldap-utils';
-import {validateKerberosTicket} from '@/services/server/kerberos-auth';
+import {initializeKerberos, validateKerberosTicket} from '@/services/server/kerberos-auth';
 import {sanitizeUser} from '@/services/server/user-sanitizer';
 
 const SESSION_EXPIRATION_TIME = 60 * 20; // 20 minutes
@@ -37,7 +37,23 @@ async function getActiveLdapConfig() {
     };
 }
 
+async function getActiveKerberosConfig() {
+    const config = await db.kerberosConfig.findFirst({
+        where: {isActive: true},
+        orderBy: {lastUpdated: 'desc'},
+    });
+
+    if (!config) {
+        throw new Error('Aucune configuration Kerberos active trouvée');
+    }
+
+    return config;
+}
+
 async function getOrCreateKerberosUser(ticket) {
+    const kerberosConfig = await getActiveKerberosConfig();
+    await initializeKerberos(kerberosConfig);
+
     const validationResult = await validateKerberosTicket(ticket);
 
     if (!validationResult?.success || !validationResult.username) {

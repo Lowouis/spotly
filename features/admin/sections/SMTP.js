@@ -1,12 +1,21 @@
 'use client';
 
-import {Card, CardBody, CardHeader, Divider, Switch} from "@heroui/react";
-import {Input} from "@heroui/input";
-import {Button} from "@heroui/button";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardHeader} from "@/components/ui/card";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
 import React, {useEffect, useState} from "react";
 import {ArrowPathIcon, CheckCircleIcon, XCircleIcon} from "@heroicons/react/24/outline";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {useConfigStatus} from "@/features/shared/context/ConfigStatusContext";
+
+const AdminField = ({label, error, children}) => (
+    <div className="space-y-2">
+        <Label>{label}</Label>
+        {children}
+        {error && <p className="text-sm text-red-500">{error}</p>}
+    </div>
+);
 
 const SMTPSettings = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -169,102 +178,51 @@ const SMTPSettings = () => {
                 <CardHeader className="flex gap-3">
                     <div className="flex flex-col">
                         <p className="text-xl font-semibold">Configuration SMTP</p>
-                        <p className="text-small text-default-500">Configurez votre serveur SMTP pour l&apos;envoi
+                        <p className="text-sm text-muted-foreground">Configurez votre serveur SMTP pour l&apos;envoi
                             d&apos;emails</p>
                     </div>
                 </CardHeader>
-                <Divider/>
-                <CardBody>
+                <CardContent className="border-t pt-6">
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                isRequired
-                                name="host"
-                                label="Serveur SMTP"
-                                labelPlacement="outside"
-                                placeholder="smtp.example.com"
-                                value={formData.host}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.host}
-                                errorMessage={errorMessage && !formData.host ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                            <AdminField label="Serveur SMTP" error={errorMessage && !formData.host ? "Ce champ est requis" : ""}>
+                                <Input required name="host" placeholder="smtp.example.com" value={formData.host} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                            </AdminField>
 
-                            <Input
-                                isRequired
-                                name="port"
-                                label="Port"
-                                labelPlacement="outside"
-                                placeholder="587"
-                                value={formData.port}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.port}
-                                errorMessage={errorMessage && !formData.port ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                            <AdminField label="Port" error={errorMessage && !formData.port ? "Ce champ est requis" : ""}>
+                                <Input required name="port" placeholder="587" value={formData.port} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                            </AdminField>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                required
-                                name="username"
-                                label="Nom d'utilisateur"
-                                labelPlacement="outside"
-                                placeholder="user@example.com"
-                                value={formData.username}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.username}
-                                errorMessage={errorMessage && !formData.username ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                            <AdminField label="Nom d'utilisateur" error={errorMessage && !formData.username ? "Ce champ est requis" : ""}>
+                                <Input required name="username" placeholder="user@example.com" value={formData.username} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                            </AdminField>
 
-                            <Input
-                                isRequired
-                                type="password"
-                                name="password"
-                                label="Mot de passe"
-                                labelPlacement="outside"
-                                placeholder="••••••••"
-                                value={formData.password}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.password}
-                                errorMessage={errorMessage && !formData.password ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                            <AdminField label="Mot de passe" error={errorMessage && !formData.password ? "Ce champ est requis" : ""}>
+                                <Input required type="password" name="password" placeholder="Mot de passe" value={formData.password} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                            </AdminField>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <Input
-                                isRequired
-                                name="fromEmail"
-                                label="Email d'expédition"
-                                labelPlacement="outside"
-                                placeholder="noreply@example.com"
-                                value={formData.fromEmail}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.fromEmail}
-                                errorMessage={errorMessage && !formData.fromEmail ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                            <AdminField label="Email d'expédition" error={errorMessage && !formData.fromEmail ? "Ce champ est requis" : ""}>
+                                <Input required name="fromEmail" placeholder="noreply@example.com" value={formData.fromEmail} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                            </AdminField>
 
-                            <Input
-                                isRequired
-                                name="fromName"
-                                label="Nom d'expédition"
-                                labelPlacement="outside"
-                                placeholder="Spotly"
-                                value={formData.fromName}
-                                onChange={handleInputChange}
-                                isInvalid={!!errorMessage && !formData.fromName}
-                                errorMessage={errorMessage && !formData.fromName ? "Ce champ est requis" : ""}
-                                isDisabled={isLoadingConfig}
-                            />
+                            <AdminField label="Nom d'expédition" error={errorMessage && !formData.fromName ? "Ce champ est requis" : ""}>
+                                <Input required name="fromName" placeholder="Spotly" value={formData.fromName} onChange={handleInputChange} disabled={isLoadingConfig}/>
+                            </AdminField>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <Switch
-                                isSelected={formData.secure}
-                                onValueChange={(checked) => {
+                            <label className="flex items-center gap-3 text-sm font-medium">
+                                <input
+                                    type="checkbox"
+                                    name="secure"
+                                    checked={formData.secure}
+                                    disabled={isLoadingConfig}
+                                    onChange={(event) => {
+                                    const checked = event.target.checked;
                                     if( checked && formData.port !== "465" ) {
                                         addToast({
                                             title: 'Connexion sécurisée',
@@ -276,42 +234,37 @@ const SMTPSettings = () => {
                                     }
                                     setFormData(prev => ({...prev, secure: checked}))
                                 }}
-                                isDisabled={isLoadingConfig}
-                                size="sm"
-                            >
+                                    className="h-4 w-4 rounded border-neutral-300"
+                                />
                                 Connexion sécurisée (TLS/SSL)
-                            </Switch>
+                            </label>
                         </div>
 
                         <div className="flex justify-end gap-4 mt-4">
                             <Button
-                                color="default"
-                                variant="flat"
-                                onPress={testConnection}
-                                isLoading={isTesting}
-                                isDisabled={isLoadingConfig}
-                                startContent={!isTesting && connectionStatus === 'success' ?
-                                    <CheckCircleIcon className="h-5 w-5 text-success"/> :
-                                    !isTesting && connectionStatus === 'error' ?
-                                        <XCircleIcon className="h-5 w-5 text-danger"/> : null}
+                                type="button"
+                                variant="outline"
+                                onClick={testConnection}
+                                disabled={isLoadingConfig || isTesting}
                             >
+                                {!isTesting && connectionStatus === 'success' ?
+                                    <CheckCircleIcon className="h-5 w-5 text-green-500"/> :
+                                    !isTesting && connectionStatus === 'error' ?
+                                        <XCircleIcon className="h-5 w-5 text-red-500"/> : null}
                                 {isTesting ? "Test en cours..." :
                                     connectionStatus === 'success' ? "Connexion réussie" :
                                         connectionStatus === 'error' ? "Échec de connexion" : "Tester la connexion"}
                             </Button>
                             <Button
                                 type="submit"
-                                color="primary"
-                                variant="flat"
-                                isLoading={isLoading}
-                                isDisabled={isLoadingConfig}
-                                startContent={!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
+                                disabled={isLoadingConfig || isLoading}
                             >
+                                {!isLoading && <ArrowPathIcon className="h-5 w-5"/>}
                                 Sauvegarder
                             </Button>
                         </div>
                     </form>
-                </CardBody>
+                </CardContent>
             </Card>
         </div>
     );

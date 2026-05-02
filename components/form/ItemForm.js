@@ -1,12 +1,29 @@
 import {FormProvider, useForm} from "react-hook-form";
-import {Button, ModalBody, ModalFooter} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {DialogFooter} from "@/components/ui/dialog";
 import React from "react";
 import InputField from "@/components/form/InputField";
 import BooleanInput from "@/components/form/BooleanInput";
 import SelectField from "@/components/form/SelectField";
 import StatusInput from "@/components/form/StatusInput";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
+import CategoryIconInput from "@/components/form/CategoryIconInput";
 
+const getDefaultFieldValue = (defaultValues, field) => {
+    if (!defaultValues) return field.type === 'object' ? null : (field.defaultValue ?? '');
+    if (defaultValues[field.name] !== undefined) {
+        return typeof defaultValues[field.name] === "boolean"
+            ? (defaultValues[field.name] ? "1" : "0")
+            : defaultValues[field.name];
+    }
+
+    if (field.type !== 'object') return field.defaultValue ?? '';
+
+    const idField = field.name === 'domains' ? 'domainId' : `${field.name}Id`;
+    return defaultValues[idField] !== undefined && defaultValues[idField] !== null
+        ? {id: defaultValues[idField]}
+        : null;
+};
 
 export default function ItemForm({ onSubmit, onClose, action, fields, defaultValues }) {
     // Log à chaque render d'ItemForm
@@ -14,13 +31,11 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
         type: "onSubmit",
         defaultValues: defaultValues
             ? fields.reduce((acc, field) => {
-                acc[field.name] = defaultValues[field.name] !== undefined
-                    ? (typeof defaultValues[field.name] === "boolean" ? (defaultValues[field.name] ? "1" : "0") : defaultValues[field.name] )
-                    : field.type === 'object' ? null : '';
+                acc[field.name] = getDefaultFieldValue(defaultValues, field);
                 return acc;
             }, {})
             : Object.fromEntries(
-                fields.map(field => [field.name, field.type === 'object' ? null : ''])
+                fields.map(field => [field.name, field.type === 'object' ? null : (field.defaultValue ?? '')])
             )
     });
 
@@ -49,7 +64,7 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
     return (
         <FormProvider {...methods}>
             <form onSubmit={methods.handleSubmit(handleSubmit)}>
-                <ModalBody>
+                <div className="px-6 py-4">
                     <div className="flex flex-col space-y-3">
                         {fields.map((field, index) => {
                             const rules = {
@@ -142,6 +157,14 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                                             defaultValue={defaultValues ? defaultValues[field.name] : "UNAVAILABLE"}
                                         />
                                     );
+                                case "categoryIcon":
+                                    return (
+                                        <CategoryIconInput
+                                            key={field.name || index}
+                                            iconName={field.iconName || "iconKey"}
+                                            svgName={field.svgName || "iconSvg"}
+                                        />
+                                    );
                                 default:
                                     return (
                                         <div key={index} className="text-red-500">
@@ -151,23 +174,21 @@ export default function ItemForm({ onSubmit, onClose, action, fields, defaultVal
                             }
                         })}
                     </div>
-                </ModalBody>
-                <ModalFooter>
+                </div>
+                <DialogFooter className="border-t px-6 py-4">
                     <Button
-                        color="default"
-                        variant="light"
-                        onPress={onClose}
+                        type="button"
+                        variant="ghost"
+                        onClick={onClose}
                     >
                         Annuler
                     </Button>
                     <Button
-                        color="default"
                         type="submit"
-                        variant="flat"
-                     >
+                      >
                         {action === "create" ? "Créer" : "Modifier"}
                     </Button>
-                </ModalFooter>
+                </DialogFooter>
             </form>
         </FormProvider>
     );

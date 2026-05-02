@@ -14,7 +14,7 @@ const statusMapping = {
     "BLOCKED": "Bloqué"
 };
 
-const Entries = ({})=>{
+const Entries = ({waitingOnly = false})=>{
     const { isRefreshing } = useRefreshContext();
     const [selectedStatus, setSelectedStatus] = useState(new Set([]));
     
@@ -33,19 +33,21 @@ const Entries = ({})=>{
 
     // Filtrer les items en fonction du status sélectionné
     const filteredItems = items?.filter(item => {
+        if (waitingOnly) return item.moderate === "WAITING";
         if (selectedStatus.size === 0) return true;
         return selectedStatus.has(item.moderate);
     });
 
-    const columnsGreatNames = [
-        "Status",
-        "Dernière modification",
-        "Date de début",
-        "Date de fin",
-        "Restitué",
-        "Code",
+    const columnsGreatNames = waitingOnly ? [
+        "Créneau",
         "Utilisateur",
         "Ressource",
+    ] : [
+        "Status",
+        "Créneau",
+        "Utilisateur",
+        "Ressource",
+        "Code",
     ]
 
     const searchConfig = [
@@ -67,11 +69,12 @@ const Entries = ({})=>{
                 create_hidden={true}
                 isLoading={isLoading}
                 items={filteredItems}
-                name={"Réservations"}
+                name={waitingOnly ? "Réservations en attente" : "Réservations"}
                 columnsGreatNames={columnsGreatNames}
-                actions={['delete', 'view']}
+                actions={waitingOnly ? ['view', 'confirm', 'reject'] : ['delete', 'view']}
                 filter={['createdAt', 'updatedAt', 'id', 'comment', 'adminNote', 'recurringGroupId', 'system']}
                 model={"entry"}
+                variant={waitingOnly ? "waiting" : "default"}
                 searchBy={searchConfig}
                 filters={filters}
             />

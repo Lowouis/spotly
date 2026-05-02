@@ -58,7 +58,7 @@ export function buildNotificationContextKey({templateName, to, data = {}}) {
 }
 
 export async function shouldSendDailyNotification(db, {templateName, to, data, date = new Date()}) {
-    if (!['reservationDelayedAlert', 'resentCode'].includes(templateName)) {
+    if (!['reservationDelayedAlert'].includes(templateName)) {
         return {allowed: true, contextKey: null, dateKey: null};
     }
 

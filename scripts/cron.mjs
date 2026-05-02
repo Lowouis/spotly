@@ -1,4 +1,3 @@
-import cron from 'node-cron';
 import {PrismaClient} from '@prisma/client';
 import fs from 'fs';
 import path from 'path';
@@ -46,6 +45,51 @@ const logToFile = (message) => {
     console.log(logMessage.trim());
 };
 
+const deleteInactiveEntryMessages = async (inactiveDays = 7, now = new Date()) => {
+    const days = Number.isInteger(Number(inactiveDays)) ? Number(inactiveDays) : 7;
+    const safeDays = Math.min(Math.max(days, 1), 365);
+    const cutoff = new Date(now.getTime() - safeDays * 24 * 60 * 60 * 1000);
+    const staleEntries = await prisma.entry.findMany({
+        where: {
+            messages: {some: {}},
+            NOT: {
+                messages: {
+                    some: {
+                        createdAt: {gte: cutoff},
+                    },
+                },
+            },
+        },
+        select: {id: true},
+    });
+
+    if (!staleEntries.length) return {count: 0, days: safeDays};
+
+    const result = await prisma.entryMessage.deleteMany({
+        where: {
+            entryId: {in: staleEntries.map((entry) => entry.id)},
+        },
+    });
+
+    return {count: result.count, days: safeDays};
+};
+
+const archiveResolvedConversations = async (resolvedDays = 7, now = new Date()) => {
+    const days = Number.isInteger(Number(resolvedDays)) ? Number(resolvedDays) : 7;
+    const safeDays = Math.min(Math.max(days, 1), 365);
+    const cutoff = new Date(now.getTime() - safeDays * 24 * 60 * 60 * 1000);
+    const result = await prisma.conversation.updateMany({
+        where: {
+            status: 'RESOLVED',
+            updatedAt: {lte: cutoff},
+            messages: {none: {createdAt: {gt: cutoff}}},
+        },
+        data: {status: 'ARCHIVED'},
+    });
+
+    return {count: result.count, days: safeDays};
+};
+
 const runCronCycle = async () => {
     logToFile('⏳ Vérification des mises à jour...');
 
@@ -58,6 +102,14 @@ const runCronCycle = async () => {
             hour: '2-digit',
             minute: '2-digit'
         })}`);
+
+        const settings = await prisma.appSettings.findFirst();
+        const conversationAutoDeleteDays = settings?.conversationAutoDeleteDays ?? 7;
+        const conversationAutoArchiveResolvedDays = settings?.conversationAutoArchiveResolvedDays ?? 7;
+        const deletedConversations = await deleteInactiveEntryMessages(conversationAutoDeleteDays, now);
+        logToFile(`🧹 ${deletedConversations.count} message(s) de discussion inactifs depuis ${deletedConversations.days} jour(s) supprimé(s)`);
+        const archivedConversations = await archiveResolvedConversations(conversationAutoArchiveResolvedDays, now);
+        logToFile(`📦 ${archivedConversations.count} discussion(s) résolue(s) sans intervention depuis ${archivedConversations.days} jour(s) archivée(s)`);
 
         // Sécurité rétroactive si la cron a été interrompue
         // 1) Passer en USED les réservations ACCEPTED éligibles à l'auto-pickup dont la période a déjà commencé
@@ -266,22 +318,6 @@ const runCronCycle = async () => {
     }
 };
 
-// Planification horaire
-const task = cron.schedule('*/30 * * * *', runCronCycle);
-
-// Exécution immédiate au démarrage si demandé
-if (process.env.RUN_AT_START === '1') {
-    runCronCycle().catch(() => {
-    });
-}
-
-// Exécution unique pour test rapide
-if (process.env.RUN_ONCE === '1') {
-    runCronCycle()
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
-}
-
 // Vérification journalière des retards (alerte e-mail)
 const runDailyLateCheck = async () => {
     try {
@@ -329,5 +365,33 @@ const runDailyLateCheck = async () => {
     }
 };
 
-// Tous les jours à 07:00
-cron.schedule('0 7 * * *', runDailyLateCheck);
+const main = async () => {
+    const command = process.argv[2] || 'cycle';
+
+    if (command === 'cycle') {
+        await runCronCycle();
+        return;
+    }
+
+    if (command === 'daily') {
+        await runDailyLateCheck();
+        return;
+    }
+
+    if (command === 'all') {
+        await runCronCycle();
+        await runDailyLateCheck();
+        return;
+    }
+
+    throw new Error(`Commande cron inconnue: ${command}. Utiliser cycle, daily ou all.`);
+};
+
+main()
+    .catch((error) => {
+        logToFile(`❌ Cron failed: ${error.message}`);
+        process.exitCode = 1;
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });

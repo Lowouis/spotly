@@ -1,36 +1,30 @@
 import React from "react";
-import {Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger,} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
 
 export default function TableDropDown({icon, items}) {
     return (
-        <Dropdown>
-            <DropdownTrigger>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
                 <Button
-                    variant="flat"
-                    isIconOnly
+                    variant="secondary"
+                    size="icon"
                 >
                     {icon}
                 </Button>
-            </DropdownTrigger>
-            <DropdownMenu
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
                 aria-label="filterBy"
-                variant="flat"
-                closeOnSelect={false}
-                disallowEmptySelection
-                selectionMode="multiple"
-                items={items}
-
             >
-                {(item) => (
-                    <DropdownItem
+                {items.map((item) => (
+                    <DropdownMenuCheckboxItem
                         key={item.key}
-                        className={item.key === "delete" ? "text-danger" : ""}
-                        color={item.key === "delete" ? "danger" : "default"}
+                        className={item.key === "delete" ? "text-red-500" : ""}
                     >
                         {item.label}
-                    </DropdownItem>
-                )}
-            </DropdownMenu>
-        </Dropdown>
+                    </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }

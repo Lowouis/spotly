@@ -5,7 +5,8 @@ dotenv.config();
 
 const globalForPrisma = globalThis
 
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
+const cachedPrisma = globalForPrisma.prisma
+const prisma = cachedPrisma && cachedPrisma.resourceEvent && cachedPrisma.conversation ? cachedPrisma : new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 

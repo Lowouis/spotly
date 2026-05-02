@@ -7,7 +7,8 @@ const default_time_options = [{
     id: 1,
     onPickup: 0,
     onReturn: 0,
-    authorizedDelay: 0
+    authorizedDelay: 0,
+    maxEarlyPickupMinutes: 0
 }]
 
 const pickables = [

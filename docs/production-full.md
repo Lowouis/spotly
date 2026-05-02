@@ -9,7 +9,7 @@ Cette procedure vise un environnement complet, pas une simple demo Vercel.
 - Annuaire LDAP accessible par l'application.
 - SSO Kerberos si l'infrastructure le permet.
 - SMTP externe pour l'envoi d'e-mails.
-- Worker cron permanent ou taches planifiees equivalentes.
+- Cron systeme executant les taches planifiees Spotly.
 - Reverse proxy HTTPS : Nginx, Traefik ou Caddy.
 
 Pour un deploiement Docker complet, un VPS avec Docker Compose ou Coolify est plus adapte que Vercel.
@@ -27,7 +27,7 @@ NEXT_PUBLIC_API_ENDPOINT=https://spotly.example.com
 NEXT_PUBLIC_API_DOMAIN=spotly.example.com
 ```
 
-Si un worker cron appelle des endpoints internes :
+Si une tache planifiee appelle des endpoints internes :
 
 ```bash
 CRON_SECRET=CHANGE_ME_LONG_RANDOM_SECRET
@@ -108,13 +108,18 @@ Le script `scripts/cron.mjs` assure :
 - le passage automatique des reservations `FLUENT` terminees vers `ENDED` ;
 - l'envoi quotidien des alertes de retard.
 
-Sur un VPS ou un conteneur permanent :
+Sur un VPS ou un serveur avec cron systeme :
 
 ```bash
-npm run "run cron"
+crontab -e
+
+*/30 * * * * cd /path/to/spotly && npm run "run cron"
+0 7 * * * cd /path/to/spotly && npm run "run cron:daily"
 ```
 
-Sur une plateforme serverless, transformer ces traitements en routes cron protegees par `CRON_SECRET` ou utiliser un worker externe.
+Les commandes cron sont ponctuelles : elles executent leur traitement puis quittent. Ne pas les lancer comme worker permanent avec PM2/systemd.
+
+Sur une plateforme serverless, transformer ces traitements en routes cron protegees par `CRON_SECRET`.
 
 ## Deploiement applicatif
 

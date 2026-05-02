@@ -1,7 +1,8 @@
 'use client';
 
-import {Modal, ModalBody, ModalContent, Spinner} from "@heroui/react";
 import {useEffect, useState} from "react";
+import {Spinner} from "@/components/ui/spinner";
+import {Dialog, DialogContent, DialogTitle} from "@/components/ui/dialog";
 
 export default function SSOLoadingModal({debugInfo}) {
     const [loadingTime, setLoadingTime] = useState(0);
@@ -16,18 +17,11 @@ export default function SSOLoadingModal({debugInfo}) {
     }, []);
 
     return (
-        <Modal
-            isOpen={true} 
-            hideCloseButton={true}
-            isDismissable={false}
-            classNames={{
-                base: "bg-background/80 backdrop-blur-md mx-4 sm:mx-0",
-                wrapper: "bg-background/80 backdrop-blur-md"
-            }}
-        >
-            <ModalContent>
-                <ModalBody className="flex flex-col items-center justify-center py-6 sm:py-8 text-neutral-500">
-                    <Spinner size="lg" color="warning"/>
+        <Dialog open>
+            <DialogContent className="bg-background/95 backdrop-blur-md mx-4 sm:mx-0" hideCloseButton>
+                <DialogTitle className="sr-only">Authentification SSO en cours</DialogTitle>
+                <div className="flex flex-col items-center justify-center py-6 sm:py-8 text-neutral-500">
+                    <Spinner className="h-8 w-8 text-amber-500"/>
                     <p className="mt-3 sm:mt-4 text-base sm:text-lg text-center">Authentification SSO en cours...</p>
                     <p className="mt-2 text-xs sm:text-sm text-center">
                         Temps d&apos;attente: {loadingTime} secondes
@@ -59,8 +53,8 @@ export default function SSOLoadingModal({debugInfo}) {
                             Vérifiez la console du navigateur pour plus d&apos;informations.
                         </p>
                     )}
-                </ModalBody>
-            </ModalContent>
-        </Modal>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
-} 
+}

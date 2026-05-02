@@ -1,28 +1,28 @@
 'use client';
-import {Button} from "@heroui/button";
-import {
-    Autocomplete,
-    AutocompleteItem,
-    Checkbox,
-    Divider,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Skeleton,
-    Spinner,
-    Textarea,
-    Tooltip
-} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {Accordion, AccordionContent, AccordionItem, AccordionTrigger} from "@/components/ui/accordion";
+import {Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList} from "@/components/ui/combobox";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Checkbox} from "@/components/ui/checkbox";
+import {ProgressDemo} from "@/components/ui/progress";
+import {Spinner} from "@/components/ui/spinner";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import {formatDate} from "@/components/modals/ModalCheckingBooking";
-import {formatDuration, lastestPickable, whoIsOwner} from "@/global";
+import {formatDuration, whoIsOwner} from "@/global";
 import {ArrowLeftIcon, ArrowRightCircleIcon} from "@heroicons/react/24/solid";
 import React, {useState} from "react";
 import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
 import {useEmail} from "@/features/shared/context/EmailContext";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {getAllUsers} from "@/services/client/api"
+import {getEffectivePickable, requiresPickupCode} from "@/services/client/reservationModes";
+
+const ModalTooltip = ({content, children}) => (
+    <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent>{content}</TooltipContent>
+    </Tooltip>
+);
 
 
 export default function ModalValidBooking({entry, isOpen, onOpenChange, session, handleRefresh}) {
@@ -34,7 +34,6 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
     });
     
     const [formData, setFormData] = useState({
-        comment: "",
         cgu: false,
         substitute_user: null,
         makeUnavailable: false,
@@ -54,18 +53,37 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
     };
 
     // Initialiser les créneaux sélectionnés avec tous les créneaux disponibles
-    React.useEffect(() => {
-        if (entry?.resource?.availability) {
-            const availableSlots = entry.resource.availability
-                .map((slot, index) => ({...slot, index}))
-                .filter(slot => slot.available);
+    const availabilitySignature = React.useMemo(() => {
+        if (!entry?.resource?.availability) return "";
 
-            setFormData(prevState => ({
+        return entry.resource.availability
+            .map((slot) => `${slot.start}-${slot.end}-${slot.available}`)
+            .join("|");
+    }, [entry?.resource?.availability]);
+
+    React.useEffect(() => {
+        if (!isOpen || !entry?.resource?.availability) return;
+
+        const availableSlots = entry.resource.availability
+            .map((slot, index) => ({...slot, index}))
+            .filter(slot => slot.available);
+
+        setFormData(prevState => {
+            const currentSignature = prevState.selectedSlots
+                .map((slot) => `${slot.start}-${slot.end}-${slot.available}`)
+                .join("|");
+            const nextSignature = availableSlots
+                .map((slot) => `${slot.start}-${slot.end}-${slot.available}`)
+                .join("|");
+
+            if (currentSignature === nextSignature) return prevState;
+
+            return {
                 ...prevState,
                 selectedSlots: availableSlots
-            }));
-        }
-    }, [entry?.resource?.availability]);
+            };
+        });
+    }, [availabilitySignature, entry?.resource?.availability, isOpen]);
 
     const handleSlotSelection = (slot, index) => {
         if (!slot.available) return; // Ne pas permettre la sélection des créneaux indisponibles
@@ -208,7 +226,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                     startDate: entry.startDate,
                                     endDate: entry.endDate,
                                     returnedConfirmationCode: entry.returnedConfirmationCode,
-                                    isCode: lastestPickable(entry) !== "FLUENT" && lastestPickable(entry) !== "LOW_TRUST",
+                                    isCode: requiresPickupCode(entry),
                                     comment: entry.comment,
                                     adminNote: entry.adminNote,
                                 })),
@@ -245,7 +263,6 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                 availabilities: selectedAvailabilities,
                 resourceId: entry.resource.id,
                 userId: formData.substitute_user ? formData.substitute_user : session.user.id,
-                comment: formData.comment,
                 moderate: entry.resource.moderate && !formData.makeUnavailable ? "WAITING" : "ACCEPTED",
                 system: !!formData.makeUnavailable,
             }, {
@@ -257,100 +274,70 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
     };
 
     return (
-        <Modal
-            scrollBehavior="inside"
-            isDismissable={true}
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
-            placement="center"
-            backdrop="blur"
-            size="2xl"
-            classNames={{
-                base: "bg-white dark:bg-neutral-900 mx-1",
-                header: "border-b border-neutral-200 dark:border-neutral-700 pb-3 sm:pb-4",
-                body: "py-3 sm:py-3",
-                footer: "border-t border-neutral-200 dark:border-neutral-700 pt-3 sm:pt-4 sticky bottom-0 bg-white dark:bg-neutral-900 rounded-b-lg",
-                wrapper: "overflow-hidden rounded-lg",
-                closeButton: "hidden"
-            }}
-            motionProps={{
-                variants: {
-                    enter: {
-                        y: 0,
-                        opacity: 1,
-                        transition: {
-                            duration: 0.15,
-                            ease: "easeOut",
-                        },
-                    },
-                    exit: {
-                        y: -20,
-                        opacity: 0,
-                        transition: {
-                            duration: 0.15,
-                            ease: "easeIn",
-                        },
-                    },
-                },
-            }}
-        >
-            <ModalContent>
-                {(onClose) => (
+        <TooltipProvider>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="mx-1 max-w-2xl overflow-hidden border border-[#e2e8f0] bg-white p-0 shadow-2xl dark:border-neutral-800 dark:bg-neutral-950">
+                <DialogTitle className="sr-only">
+                    {entry?.resource?.name ? `Réservation ${entry.resource.name}` : 'Réservation'}
+                </DialogTitle>
+                {(() => {
+                    const onClose = () => onOpenChange(false);
+                    return (
                     <>
                         {!submitted && (
                             <form onSubmit={(e)=> {
                                 e.preventDefault();
                                 handleSubmission(onClose);
                             }} className="flex flex-col h-full">
-                                <Skeleton isLoaded={entry.resource}>
-                                    <ModalHeader className="flex flex-col gap-1">
+                                {entry.resource ? (
+                                    <DialogHeader className="flex flex-col gap-1 border-b border-[#e2e8f0] bg-white px-6 py-3 pr-12 dark:border-neutral-800 dark:bg-neutral-950 sm:py-4">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2 sm:gap-3">
-                                                <Tooltip content="Retour" color="foreground" showArrow>
+                                                <ModalTooltip content="Retour">
                                                     <Button
-                                                        isIconOnly
-                                                        size="sm"
-                                                        variant="light"
-                                                        onPress={onClose}
-                                                        className="text-neutral-600 dark:text-neutral-400 -ml-2"
+                                                        type="button"
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={onClose}
+                                                        className="-ml-2 text-[#4b5563] hover:bg-[#f4f7fb] hover:text-[#111827] dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-100"
                                                     >
                                                         <ArrowLeftIcon className="w-4 h-4 sm:w-5 sm:h-5"/>
                                                     </Button>
-                                                </Tooltip>
+                                                </ModalTooltip>
                                                 <div className="flex flex-col min-w-0 flex-1">
                                                     <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
-                                                        <h2 className="text-lg sm:text-xl font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                                                        <h2 className="truncate text-lg font-black text-[#111827] dark:text-neutral-100 sm:text-xl">
                                                             {entry && entry.resource ? entry.resource.name :
                                                                 <Spinner size="sm"/>}
                                                         </h2>
                                                         {entry?.resource?.moderate && (
                                                             <span
-                                                                className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex-shrink-0">
+                                                                 className="flex-shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-xs font-bold text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800/40 sm:px-2 sm:py-1">
                                                                 Modération requise
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 truncate">
+                                                     <p className="truncate text-xs font-medium text-[#6b7585] dark:text-neutral-400 sm:text-sm">
                                                         {entry?.resource?.domains?.name}
                                                     </p>
                                                 </div>
                                             </div>
                                         </div>
-                                    </ModalHeader>
-                                </Skeleton>
+                                    </DialogHeader>
+                                ) : <div className="m-4 flex h-16 items-center justify-center"><ProgressDemo /></div>}
 
-                                <Skeleton isLoaded={entry.resource}>
-                                    <ModalBody className="flex-1 overflow-y-auto max-h-[60vh] sm:max-h-[70vh]">
+                                {entry.resource ? (
+                                    <div className="max-h-[60vh] flex-1 overflow-y-auto bg-[#fbfcff] px-6 py-3 dark:bg-neutral-950 sm:max-h-[70vh] sm:py-4">
                                         <div className="flex flex-col space-y-4 sm:space-y-6">
                                             {/* Section Dates */}
                                             <div className="space-y-3 sm:space-y-4">
                                                 <div className="flex items-center justify-between">
-                                                    <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                     <h3 className="text-base font-bold text-[#3f4652] dark:text-neutral-200">
                                                         Période de réservation
                                                     </h3>
                                                     {entry?.resource?.availability && (
                                                         <span
-                                                            className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                                                             className="rounded-full bg-[#f1f3f6] px-2.5 py-1 text-xs font-bold text-[#5f6b7a] dark:bg-neutral-900 dark:text-neutral-300">
                                                             {formData.selectedSlots.length}/{entry.resource.availability.filter(slot => slot.available).length} créneaux sélectionnés
                                                         </span>
                                                     )}
@@ -360,12 +347,12 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                     className="max-h-[180px] sm:max-h-[200px] overflow-y-auto pr-2 space-y-1.5 sm:space-y-2 custom-scrollbar">
                                                     {entry.resource?.availability.length === 1 ? (
                                                         <div
-                                                            className="flex items-center justify-between p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                                                             className="flex items-center justify-between rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 sm:p-4">
                                                             <div className="flex items-center gap-2 sm:gap-3">
                                                                 <div
-                                                                    className="p-1.5 sm:p-2 rounded-full bg-neutral-100 dark:bg-neutral-700">
+                                                                     className="rounded-full bg-[#f1f3f6] p-1.5 dark:bg-neutral-900 sm:p-2">
                                                                     <svg
-                                                                        className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-600 dark:text-neutral-400"
+                                                                         className="h-4 w-4 text-[#6b7585] dark:text-neutral-400 sm:h-5 sm:w-5"
                                                                         fill="none" stroke="currentColor"
                                                                         viewBox="0 0 24 24">
                                                                         <path strokeLinecap="round"
@@ -375,11 +362,11 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                                 </div>
                                                                 <div className="flex flex-col min-w-0 flex-1">
                                                                     <span
-                                                                        className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                                                                         className="truncate text-xs font-bold text-[#111827] dark:text-neutral-100 sm:text-sm">
                                                                         {formatDate(entry.date.start)}
                                                                     </span>
                                                                     <span
-                                                                        className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                                                         className="truncate text-xs font-medium text-[#6b7585] dark:text-neutral-400">
                                                                         {formatDate(entry.date.end)}
                                                                     </span>
                                                                 </div>
@@ -387,11 +374,11 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                             <div
                                                                 className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                                 <span
-                                                                    className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                                                                     className="text-xs font-medium text-[#6b7585] dark:text-neutral-400 sm:text-sm">
                                                                     {formatDuration(new Date(entry.date.end) - new Date(entry.date.start))}
                                                                 </span>
                                                                 <ArrowRightCircleIcon
-                                                                    className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400"/>
+                                                                     className="h-4 w-4 text-[#8a94a6] sm:h-5 sm:w-5"/>
                                                             </div>
                                                         </div>
                                                     ) : (
@@ -407,32 +394,30 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                                         className={`
                                                                             flex items-center justify-between p-3 sm:p-4 rounded-lg cursor-pointer
                                                                             ${slot.available
-                                                                            ? 'bg-success-50 dark:bg-success-950/30 border border-success-200 dark:border-success-800/30 hover:bg-success-100 dark:hover:bg-success-950/50'
-                                                                            : 'bg-danger-50 dark:bg-danger-950/30 border border-danger-200 dark:border-danger-800/30'
+                                                                            ? `${isSelected ? 'border-emerald-300 bg-emerald-50/70 ring-1 ring-emerald-100 dark:border-emerald-800/60 dark:bg-emerald-950/20 dark:ring-emerald-900/30' : 'border-[#e2e8f0] bg-white hover:border-emerald-200 hover:bg-[#fbfcff] dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-emerald-900/50 dark:hover:bg-neutral-900'}`
+                                                                            : 'border-[#e2e8f0] bg-[#f8fafc] opacity-75 dark:border-neutral-800 dark:bg-neutral-900/60'
                                                                         }
-                                                                            transition-colors duration-200
+                                                                            border shadow-sm transition-colors duration-200
                                                                         `}
                                                                         onClick={() => handleSlotSelection(slot, index)}
                                                                     >
                                                                         <div
                                                                             className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                                                             <Checkbox
-                                                                                isSelected={isSelected}
-                                                                                isDisabled={!slot.available}
-                                                                                color={slot.available ? "success" : "danger"}
-                                                                                size="md"
+                                                                                checked={isSelected}
+                                                                                disabled={!slot.available}
                                                                                 className="flex-shrink-0"
-                                                                                onChange={() => handleSlotSelection(slot, index)}
+                                                                                onCheckedChange={() => handleSlotSelection(slot, index)}
                                                                                 onClick={(e) => e.stopPropagation()}
                                                                             />
                                                                             <div
                                                                                 className="flex flex-col min-w-0 flex-1">
                                                                                 <span
-                                                                                    className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                                                                                     className="truncate text-xs font-bold text-[#111827] dark:text-neutral-100 sm:text-sm">
                                                                                     {formatDate(slot.start)}
                                                                                 </span>
                                                                                 <span
-                                                                                    className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                                                                     className="truncate text-xs font-medium text-[#6b7585] dark:text-neutral-400">
                                                                                     {formatDate(slot.end)}
                                                                                 </span>
                                                                             </div>
@@ -440,11 +425,11 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                                         <div
                                                                             className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                                             <span
-                                                                                className={`text-xs sm:text-sm ${slot.available ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'}`}>
+                                                                                 className={`text-xs font-bold sm:text-sm ${slot.available ? 'text-emerald-600 dark:text-emerald-400' : 'text-[#5f6b7a] dark:text-neutral-400'}`}>
                                                                                 {slot.available ? 'Disponible' : 'Indisponible'}
                                                                             </span>
                                                                             <span
-                                                                                className="text-xs text-neutral-500 dark:text-neutral-400">
+                                                                                 className="text-xs font-medium text-[#6b7585] dark:text-neutral-400">
                                                                                 {formatDuration(new Date(slot.end) - new Date(slot.start))}
                                                                             </span>
                                                                         </div>
@@ -475,163 +460,109 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                 }
                                             `}</style>
 
-                                            <Divider className="bg-neutral-200 dark:bg-neutral-700"/>
-
-                                            {/* Section Commentaire */}
-                                            <div className="space-y-2">
-                                                <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                                    Commentaire
-                                                </h3>
-                                                <Textarea
-                                                    name="comment"
-                                                    id="comment"
-                                                    placeholder="Ajouter un commentaire à votre réservation..."
-                                                    size="md"
-                                                    variant="bordered"
-                                                    className="w-full min-h-[80px] sm:min-h-[100px]"
-                                                    onChange={handleInputChange}
-                                                    classNames={{
-                                                        input: "text-sm",
-                                                        label: "text-sm font-medium"
-                                                    }}
-                                                />
-                                            </div>
-
                                             {/* Section Options Admin */}
                                             {session?.user?.role === "SUPERADMIN" && (
                                                 <>
-                                                    <div className="space-y-4">
-                                                        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                                                            Options administrateur
-                                                        </h3>
-
-                                                        {!formData.makeUnavailable && (
-                                                            <div className="space-y-2">
-                                                                <label
-                                                                    className="text-sm text-neutral-600 dark:text-neutral-400">
-                                                                    Réserver pour un autre utilisateur
-                                                                </label>
-                                                                <Autocomplete
-                                                                    placeholder="Rechercher par nom ou prénom"
-                                                                    className="w-full"
-                                                                    size="lg"
-                                                                    radius="sm"
-                                                                    defaultItems={users}
-                                                                    isLoading={isLoading}
-                                                                    variant="bordered"
-                                                                    onSelectionChange={(substitute_user) => {
-                                                                        setFormData(prevState => ({
-                                                                            ...prevState,
-                                                                            substitute_user
-                                                                        }));
-                                                                    }}
-                                                                    labelPlacement="outside"
-                                                                    isVirtualized={false}
-                                                                    inputProps={{
-                                                                        classNames: {
-                                                                            input: "text-sm",
-                                                                            label: "text-sm font-medium"
-                                                                        }
-                                                                    }}
-                                                                    onInputChange={(value) => {
-                                                                        const searchText = value.toLowerCase();
-                                                                        return users.filter(user =>
-                                                                            user.name.toLowerCase().includes(searchText) ||
-                                                                            user.surname.toLowerCase().includes(searchText) ||
-                                                                            user.email.toLowerCase().includes(searchText) ||
-                                                                            `${user.name} ${user.surname}`.toLowerCase().includes(searchText)
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    {(user) => (
-                                                                        <AutocompleteItem
-                                                                            key={user.id}
-                                                                            textValue={`${user.name} ${user.surname}`}
-                                                                        >
-                                                                            <div className="flex flex-col">
-                                                                                <span className="text-sm font-medium">
-                                                                                    {user.name} {user.surname}
-                                                                                </span>
-                                                                                <span
-                                                                                    className="text-xs text-neutral-500">
-                                                                                    {user.email}
-                                                                                </span>
-                                                                            </div>
-                                                                        </AutocompleteItem>
+                                                    <Accordion>
+                                                        <AccordionItem>
+                                                            <AccordionTrigger>Options administrateur</AccordionTrigger>
+                                                            <AccordionContent>
+                                                                <div className="space-y-4">
+                                                                    {!formData.makeUnavailable && (
+                                                                        <div className="space-y-2">
+                                                                            <label className="text-sm text-neutral-600 dark:text-neutral-400">
+                                                                                Réserver pour un autre utilisateur
+                                                                            </label>
+                                                                            <Combobox
+                                                                                items={isLoading ? [] : users}
+                                                                                value={formData.substitute_user || ""}
+                                                                                onValueChange={(userId) => setFormData(prevState => ({
+                                                                                    ...prevState,
+                                                                                    substitute_user: userId || null
+                                                                                }))}
+                                                                                itemToValue={(user) => user.id.toString()}
+                                                                                itemToString={(user) => `${user.name} ${user.surname} - ${user.email}`}
+                                                                            >
+                                                                                <ComboboxInput placeholder="Rechercher par nom ou prénom" />
+                                                                                <ComboboxContent>
+                                                                                    <ComboboxEmpty>Aucun utilisateur trouvé</ComboboxEmpty>
+                                                                                    <ComboboxList>
+                                                                                        {(user) => (
+                                                                                            <ComboboxItem key={user.id} value={user.id.toString()}>
+                                                                                                {user.name} {user.surname} - {user.email}
+                                                                                            </ComboboxItem>
+                                                                                        )}
+                                                                                    </ComboboxList>
+                                                                                </ComboboxContent>
+                                                                            </Combobox>
+                                                                        </div>
                                                                     )}
-                                                                </Autocomplete>
-                                                            </div>
-                                                        )}
 
-                                                        <div
-                                                            className="flex items-center p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
-                                                            <Checkbox
-                                                                size="sm"
-                                                                color="danger"
-                                                                className="text-sm"
-                                                                checked={formData.makeUnavailable}
-                                                                onChange={handleInputChange}
-                                                                name="makeUnavailable"
-                                                            >
-                                                                Bloquer la ressource
-                                                            </Checkbox>
-                                                        </div>
-                                                    </div>
-                                                    <Divider className="bg-neutral-200 dark:bg-neutral-700"/>
+                                                                    <div className="flex items-center rounded-xl border border-[#e2e8f0] bg-white p-3 dark:border-neutral-800 dark:bg-neutral-950">
+                                                                        <label className="flex items-center gap-2 text-sm font-medium text-[#3f4652] dark:text-neutral-200">
+                                                                            <Checkbox
+                                                                                checked={formData.makeUnavailable}
+                                                                                onCheckedChange={(checked) => handleInputChange({target: {name: "makeUnavailable", type: "checkbox", checked: Boolean(checked)}})}
+                                                                                name="makeUnavailable"
+                                                                            />
+                                                                            Bloquer la ressource
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                            </AccordionContent>
+                                                        </AccordionItem>
+                                                    </Accordion>
+                                                     <div className="h-px bg-[#e2e8f0] dark:bg-neutral-800"/>
                                                 </>
                                             )}
                                             {!formData.makeUnavailable &&
                                                 <div className="space-y-3 sm:space-y-4">
-                                                <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                                                <h3 className="text-base font-bold text-[#3f4652] dark:text-neutral-200">
                                                     Conditions d&apos;utilisation
                                                 </h3>
                                                     <div
-                                                        className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
-                                                        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mb-3 sm:mb-4">
-                                                        {lastestPickable(entry)?.cgu}
+                                                         className="rounded-xl border border-[#e2e8f0] bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 sm:p-5">
+                                                         <p className="mb-0 text-sm font-medium leading-7 text-[#5f6b7a] dark:text-neutral-400 sm:text-base">
+                                                        {getEffectivePickable(entry)?.cgu}
                                                     </p>
-                                                    <Checkbox
-                                                        id="cgu"
-                                                        name="cgu"
-                                                        required
-                                                        onChange={handleInputChange}
-                                                        radius="sm"
-                                                        color="default"
-                                                        size="sm"
-                                                        value={formData.cgu}
-                                                        classNames={{
-                                                            label: "text-xs sm:text-sm text-neutral-700 dark:text-neutral-300"
-                                                        }}
-                                                    >
-                                                        J&apos;accepte les conditions d&apos;utilisation
-                                                    </Checkbox>
-                                                </div>
-                                            </div>}
-                                        </div>
-                                    </ModalBody>
-                                </Skeleton>
+                                                 </div>
+                                             </div>}
+                                         </div>
+                                     </div>
+                                 ) : <div className="mx-4 flex h-80 items-center justify-center"><ProgressDemo /></div>}
 
-                                <ModalFooter>
-                                    <Skeleton isLoaded={entry.resource}>
-                                        <div className="flex flex-row gap-2">
-                                            <Button
-                                                color="primary"
-                                                variant="flat"
-                                                type="submit"
-                                                size="md"
-                                                className="font-medium w-full sm:w-auto"
-                                                isDisabled={(!formData.cgu || formData.selectedSlots.length === 0) && !formData.makeUnavailable}
-                                            >
+                                <DialogFooter className="sticky bottom-0 border-t border-[#e2e8f0] bg-white px-6 py-3 dark:border-neutral-800 dark:bg-neutral-950 sm:py-4">
+                                     {entry.resource ? (
+                                         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                             {!formData.makeUnavailable ? (
+                                                  <label className="flex items-center gap-2 text-xs font-medium text-[#3f4652] dark:text-neutral-300 sm:text-sm">
+                                                     <Checkbox
+                                                         id="cgu"
+                                                         name="cgu"
+                                                         required
+                                                         checked={formData.cgu}
+                                                         onCheckedChange={(checked) => handleInputChange({target: {name: "cgu", type: "checkbox", checked: Boolean(checked)}})}
+                                                     />
+                                                     J&apos;accepte les conditions d&apos;utilisation
+                                                 </label>
+                                             ) : <span />}
+                                             <Button
+                                                 type="submit"
+                                                  className="h-11 w-full rounded-xl bg-[#111827] px-6 font-bold text-white hover:bg-[#1f2937] dark:bg-neutral-100 dark:text-neutral-950 dark:hover:bg-neutral-200 sm:w-auto"
+                                                 disabled={(!formData.cgu || formData.selectedSlots.length === 0) && !formData.makeUnavailable}
+                                             >
                                                 {!formData.makeUnavailable ? !entry.resource.moderate ? "Réserver" : "Demander" : "Bloquer"}
                                             </Button>
                                         </div>
-                                    </Skeleton>
-                                </ModalFooter>
+                                    ) : <div className="flex h-10 w-32 items-center justify-center"><ProgressDemo /></div>}
+                                </DialogFooter>
                             </form>
                         )}
                     </>
-                )}
-            </ModalContent>
-        </Modal>
+                    );
+                })()}
+            </DialogContent>
+        </Dialog>
+        </TooltipProvider>
     );
 }

@@ -1,7 +1,8 @@
 import {getServerSession} from "next-auth/next";
-import authConfig from "../../auth/[...nextauth]";
+import {authConfig} from "../../auth/[...nextauth]";
 import db from "@/server/services/databaseService";
 import {runMiddleware} from "@/services/server/core";
+import {isAdminSession} from "@/services/server/api-auth";
 
 export default async function handler(req, res) {
     try {
@@ -19,11 +20,59 @@ export default async function handler(req, res) {
             return res.status(400).json({details: "ID du groupe manquant"});
         }
 
+        const parsedGroupId = parseInt(groupId);
+
+        if (Number.isNaN(parsedGroupId) || parsedGroupId <= 0) {
+            return res.status(400).json({details: "ID du groupe invalide"});
+        }
+
+        if (req.method === "PUT") {
+            if (!isAdminSession(session)) {
+                return res.status(403).json({details: "Non autorisé à modérer ce groupe"});
+            }
+
+            const {moderate} = req.body;
+            if (!['ACCEPTED', 'REJECTED'].includes(moderate)) {
+                return res.status(400).json({details: "Statut de modération invalide"});
+            }
+
+            const entries = await db.entry.findMany({
+                where: {
+                    recurringGroupId: parsedGroupId,
+                    moderate: 'WAITING'
+                },
+                include: {
+                    user: true,
+                    resource: true
+                }
+            });
+
+            if (!entries.length) {
+                return res.status(404).json({details: "Aucune réservation en attente trouvée pour ce groupe"});
+            }
+
+            await db.entry.updateMany({
+                where: {
+                    id: {in: entries.map((entry) => entry.id)}
+                },
+                data: {
+                    moderate,
+                    lastUpdatedModerateStatus: new Date()
+                }
+            });
+
+            return res.status(200).json({
+                message: moderate === 'ACCEPTED' ? "Groupe de réservations accepté" : "Groupe de réservations refusé",
+                count: entries.length,
+                entries
+            });
+        }
+
         if (req.method === "DELETE") {
             try {
                 const entries = await db.entry.findMany({
                     where: {
-                        recurringGroupId: parseInt(groupId)
+                        recurringGroupId: parsedGroupId
                     },
                     include: {
                         user: true,
@@ -61,7 +110,7 @@ export default async function handler(req, res) {
                 // Supprimer toutes les entrées du groupe
                 await db.entry.deleteMany({
                     where: {
-                        recurringGroupId: parseInt(groupId)
+                        recurringGroupId: parsedGroupId
                     }
                 });
 
@@ -95,4 +144,4 @@ export default async function handler(req, res) {
             error: error.message
         });
     }
-} 
+}

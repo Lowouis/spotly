@@ -7,6 +7,7 @@ import {htmlToText} from 'html-to-text';
 import {getEmailTemplate} from '@/services/server/mails/templates';
 import path from 'path';
 import {requireAdmin} from '@/services/server/api-auth';
+import {isEmailTemplateEnabled} from '@/services/server/mails/settings';
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
@@ -20,6 +21,15 @@ export default async function handler(req, res) {
         }
 
         try {
+            const templateEnabled = await isEmailTemplateEnabled(db, 'resourceChanged');
+            if (!templateEnabled) {
+                return res.status(200).json({
+                    message: "Email désactivé par la configuration mail",
+                    skipped: true,
+                    disabledByConfig: true,
+                });
+            }
+
             // Récupérer les informations de la réservation
             const reservation = await db.entry.findUnique({
                 where: {id: parseInt(reservationId)},

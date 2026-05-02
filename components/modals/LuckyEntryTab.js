@@ -1,56 +1,50 @@
 'use client';
 
 import React, {useState} from "react";
-import {
-    Button,
-    Form,
-    InputOtp,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Tooltip,
-    useDisclosure
-} from "@heroui/react";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import {ArrowLeftCircleIcon, ArrowRightCircleIcon, ClockIcon} from "@heroicons/react/24/outline";
-import {useQuery} from "@tanstack/react-query";
 import {lastestPickable} from "@/global";
-import {addToast} from "@heroui/toast";
-import {fetchIP} from '@/services/client/api';
-import {useEntryActions} from "@/hooks/useEntryActions";
+import {addToast} from "@/lib/toast";
+import {getURL} from "@/services/client/api";
 
 export default function LuckyEntryTab({setSelected}) {
     const [ifl, setIfl] = useState({"username": "", "otp": ""});
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const {data: clientIP} = useQuery({
-        queryKey: ['clientIP'],
-        queryFn: fetchIP,
-        staleTime: 1000 * 60 * 5,
-    });
+    const [isOpen, setIsOpen] = useState(false);
 
     const [entry, setEntry] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isActionLoading, setIsActionLoading] = useState(false);
 
-    // Use the centralized hook
-    const {
-        hasBlockingPrevious,
-        isAbleToPickUp,
-        isIPAuthorized,
-        handlePickUp,
-        handleReturn
-    } = useEntryActions(entry, clientIP);
-
     const handleResourceAction = async () => {
         setIsActionLoading(true);
         try {
             if (entry.moderate === "ACCEPTED") {
-                await handlePickUp(onOpenChange, () => fetchEntry());
+                const response = await fetch(getURL('/api/entry/code-action'), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({code: ifl.otp, action: 'pickup'}),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.message || 'Récupération impossible');
+                setEntry(payload);
+                addToast({title: 'Récupération', description: 'La récupération de la ressource a bien été prise en compte.', color: 'success', timeout: 5000});
             } else if (entry.moderate === "USED") {
-                await handleReturn(onOpenChange, () => fetchEntry());
+                const response = await fetch(getURL('/api/entry/code-action'), {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({code: ifl.otp, action: 'return'}),
+                });
+                const payload = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(payload.message || 'Restitution impossible');
+                setEntry(payload);
+                setIsOpen(false);
+                addToast({title: 'Restitution', description: 'La ressource a bien été retournée.', color: 'success', timeout: 5000});
             }
+        } catch (error) {
+            addToast({title: 'Erreur', description: error.message || 'Action impossible.', color: 'danger', timeout: 5000});
         } finally {
             setIsActionLoading(false);
         }
@@ -59,7 +53,7 @@ export default function LuckyEntryTab({setSelected}) {
     const fetchEntry = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry?returnedConfirmationCode=${ifl.otp}`);
+            const response = await fetch(getURL(`/api/entry?returnedConfirmationCode=${ifl.otp}`));
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -68,7 +62,7 @@ export default function LuckyEntryTab({setSelected}) {
 
             if (result && (lastestPickable(result)?.name === "HIGH_AUTH" || lastestPickable(result)?.name === "LOW_AUTH")) {
                 setEntry(result);
-                onOpen();
+                setIsOpen(true);
             } else {
                 addToast({
                     title: "Erreur d'authentification",
@@ -91,7 +85,7 @@ export default function LuckyEntryTab({setSelected}) {
 
     return (
         <>
-            <Form
+            <form
                 className="space-y-6"
                 onSubmit={(e) => {
                     e.preventDefault();
@@ -113,33 +107,26 @@ export default function LuckyEntryTab({setSelected}) {
                 {/* Champ OTP */}
                 <div className="space-y-4 w-full">
                     <div className="w-full flex justify-center">
-                        <InputOtp
-                            isRequired
+                        <Input
+                            required
                             name="lucky_otp"
-                            size="sm"
-                            length={6}
+                            maxLength={6}
                             value={ifl.otp}
-                            onChange={(e) => setIfl({...ifl, "otp": e.target.value})}
-                            classNames={{
-                                input: "bg-transparent border-2 border-neutral-300 dark:border-neutral-600 text-sm focus:border-neutral-900 dark:focus:border-neutral-100 transition-colors duration-200",
-                                inputWrapper: "h-12",
-                                base: "gap-2"
-                            }}
+                            onChange={(e) => setIfl({...ifl, "otp": e.target.value.replace(/\D/g, '').slice(0, 6)})}
+                            className="h-12 max-w-48 text-center tracking-[0.5em] bg-transparent border-2 border-neutral-300 dark:border-neutral-600 text-sm focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 transition-colors duration-200"
                         />
                     </div>
 
 
-                    <Button
-                        size="md"
-                        fullWidth
-                        type="submit"
-                        color="default"
-                        className="h-11 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
-                        isLoading={isLoading}
-                        isDisabled={ifl.otp.length !== 6}
-                    >
-                        Vérifier le code
-                    </Button>
+                    <div className="flex w-full justify-center">
+                        <Button
+                            type="submit"
+                            className="h-11 min-w-44 font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200"
+                            disabled={isLoading || ifl.otp.length !== 6}
+                        >
+                            {isLoading ? "Vérification..." : "Vérifier le code"}
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Lien vers la connexion */}
@@ -149,65 +136,54 @@ export default function LuckyEntryTab({setSelected}) {
                         <span className="text-sm text-neutral-600 dark:text-neutral-400">
                             Je n&apos;ai pas de réservation
                         </span>
-                        <Tooltip
-                            color="foreground"
-                            showArrow
-                            content={<span>Pour réserver une ressource rendez-vous dans la section <span
-                                className="italic">Se connecter</span>.</span>}
-                        >
-                            <Button
-                                onPress={() => setSelected("login")}
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                                radius="full"
-                                className="bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200"
-                            >
-                                ?
-                            </Button>
-                        </Tooltip>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        onClick={() => setSelected("login")}
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-8 w-8 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-200"
+                                    >
+                                        ?
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <span>Pour réserver une ressource rendez-vous dans la section <span className="italic">Se connecter</span>.</span>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                 </div>
-            </Form>
+            </form>
 
             {/* Modal des détails de réservation */}
             {entry !== null && (
-                <Modal
-                    isOpen={isOpen}
-                    onOpenChange={onOpenChange}
-                    size="2xl"
-                    classNames={{
-                        base: "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700",
-                        header: "border-b border-neutral-200 dark:border-neutral-700",
-                        body: "py-6",
-                        footer: "border-t border-neutral-200 dark:border-neutral-700"
-                    }}
-                >
-                    <ModalContent>
-                        {(onClose) => (
-                            <>
-                                <ModalHeader className="flex flex-col gap-2">
-                                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                    <DialogContent className="max-w-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
+                                <DialogHeader className="flex flex-col gap-2 border-b border-neutral-200 pb-4 dark:border-neutral-700">
+                                    <DialogTitle className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                                         {entry?.resource.name}
-                                    </h3>
+                                    </DialogTitle>
                                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                        État : <span className={`font-medium ${
+                                        État : <span className={`font-semibold ${
                                         new Date(entry.endDate) < new Date() && !entry.returned ? "text-red-500" :
-                                            entry.moderate === "ACCEPTED" ? "text-green-500" :
+                                            entry.moderate === "ACCEPTED" ? "text-amber-600" :
                                                 entry.moderate === "USED" ? "text-blue-500" :
                                                     entry.moderate === "ENDED" ? "text-neutral-500" :
                                                         "text-neutral-500"
                                     }`}>
                                     {new Date(entry.endDate) < new Date() && !entry.returned ? "Expiré" :
-                                        entry.moderate === "ACCEPTED" ? "À récupérer" :
+                                        entry.moderate === "ACCEPTED" ? "Code valide" :
                                             entry.moderate === "USED" ? "En cours d'utilisation" :
                                                 entry.moderate === "ENDED" ? "Terminé" :
                                                     "Non disponible"}
                                 </span>
                                     </p>
-                                </ModalHeader>
+                                </DialogHeader>
 
-                                <ModalBody>
+                                <div className="py-6">
                                     <div className="space-y-6">
                                         {/* Timeline des dates */}
                                         <div className="flex flex-row w-full text-sm uppercase font-medium">
@@ -254,52 +230,58 @@ export default function LuckyEntryTab({setSelected}) {
 
                                         {/* Boutons d'action */}
                                         {entry.moderate === "ACCEPTED" && new Date(entry.endDate) > new Date() && (
-                                            <Button
-                                                color="default"
-                                                className="w-full font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200 h-12"
-                                                size="lg"
-                                                isLoading={isActionLoading}
-                                                onPress={handleResourceAction}
-                                                isDisabled={!isAbleToPickUp() || (!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH")}
-                                                startContent={<ArrowRightCircleIcon className="w-4 h-4"/>}
-                                            >
-                                                {isAbleToPickUp() ? 'Récupérer la ressource' :
-                                                    hasBlockingPrevious ? 'Ressource non restituée' :
-                                                        !isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH" ? 'Appareil non autorisé' :
-                                                            'Indisponible pour le moment'}
-                                            </Button>
+                                            <div className="space-y-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                                        <ArrowRightCircleIcon className="h-5 w-5"/>
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-semibold text-neutral-950 dark:text-neutral-50">
+                                                            Récupération par code
+                                                        </p>
+                                                        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                                                            Cliquez pour vérifier et prendre la ressource avec ce code.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    className="h-12 w-full font-medium bg-neutral-900 text-white transition-colors duration-200 hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200"
+                                                    size="lg"
+                                                    disabled={isActionLoading}
+                                                    onClick={handleResourceAction}
+                                                >
+                                                    <ArrowRightCircleIcon className="w-4 h-4"/>
+                                                    {isActionLoading ? 'Récupération...' : 'Récupérer la ressource'}
+                                                </Button>
+                                            </div>
                                         )}
 
                                         {entry.moderate === "USED" && (
                                             <Button
-                                                color="success"
                                                 className="w-full font-medium bg-green-600 hover:bg-green-700 text-white transition-colors duration-200 h-12"
                                                 size="lg"
-                                                isLoading={isActionLoading}
-                                                onPress={handleResourceAction}
-                                                isDisabled={!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH"}
-                                                startContent={<ArrowLeftCircleIcon className="w-4 h-4"/>}
+                                                disabled={isActionLoading}
+                                                onClick={handleResourceAction}
                                             >
-                                                {!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH" ? 'Appareil non autorisé' : 'Restituer la ressource'}
+                                                <ArrowLeftCircleIcon className="w-4 h-4"/>
+                                                Restituer la ressource
                                             </Button>
                                         )}
                                     </div>
-                                </ModalBody>
+                                </div>
 
-                                <ModalFooter>
+                                <DialogFooter className="border-t border-neutral-200 pt-4 dark:border-neutral-700">
                                     <Button
-                                        color="danger"
-                                        variant="light"
-                                        onPress={onClose}
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setIsOpen(false)}
                                         className="font-medium h-10"
                                     >
                                         Fermer
                                     </Button>
-                                </ModalFooter>
-                            </>
-                        )}
-                    </ModalContent>
-                </Modal>
+                                </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             )}
         </>
     );

@@ -1,48 +1,45 @@
 'use client';
 
-import {
-    Badge,
-    Button,
-    Form,
-    Input,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Tab,
-    Tabs,
-    Tooltip,
-    useDisclosure,
-    User
-} from "@heroui/react";
-import {ArrowPathIcon, BookmarkIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/outline";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Badge} from "@/components/ui/badge";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
+import {ArrowPathIcon, BellIcon, BookmarkIcon, ChevronDownIcon, ExclamationCircleIcon, InformationCircleIcon, MagnifyingGlassIcon, Squares2X2Icon, TrashIcon} from "@heroicons/react/24/outline";
 import {signOut, useSession} from "next-auth/react";
 import React, {useEffect, useState} from "react";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {CiLogout, CiUser} from "react-icons/ci";
 import DarkModeSwitch from "@/components/actions/DarkModeSwitch";
 import {useMediaQuery} from 'react-responsive';
 import {useRouter} from "next/navigation";
-import Image from "next/image";
 import {BsWrench} from "react-icons/bs";
-import {publicEnv} from '@/config/publicEnv';
+import SnakeLogo from "@/components/utils/SnakeLogo";
+import {getAutomaticReservationPhase} from "@/services/client/reservationModes";
 
-const basePath = publicEnv.basePath;
+const MenuTooltip = ({content, children}) => (
+    <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent>{content}</TooltipContent>
+    </Tooltip>
+);
 
-export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRefresh, selectedTab}) {
+export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntries = [], handleRefresh, selectedTab}) {
     const [mounted, setMounted] = useState(false);
-    const {isOpen, onOpen, onClose} = useDisclosure();
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const isMobile = useMediaQuery({query: '(max-width: 768px)'});
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const router = useRouter();
     const {data: session, status} = useSession();
-    const [activeLogo, setActiveLogo] = useState(true); // Activé par défaut
-
     // États pour les modals de changement
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isCleanupModalOpen, setIsCleanupModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCleanupLoading, setIsCleanupLoading] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadNotifications, setUnreadNotifications] = useState(0);
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -61,6 +58,28 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
         }
     }, [status, router, session]);
 
+    useEffect(() => {
+        if (!session?.user?.id) return;
+
+        const fetchNotifications = async () => {
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT || ''}/api/notifications`, {
+                    credentials: 'include',
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                setNotifications(data.notifications || []);
+                setUnreadNotifications(data.unreadCount || 0);
+            } catch (error) {
+                console.error('Failed to fetch notifications:', error);
+            }
+        };
+
+        fetchNotifications();
+    }, [session?.user?.id]);
+
     // Si la session n'est pas chargée, on ne rend rien
     if (status === "loading" || !session?.user) {
         return <></>;
@@ -73,6 +92,64 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
         handleRefresh();
         if (isMobile) {
             setIsMenuOpen(false);
+        }
+    };
+
+    const markNotificationsAsRead = async () => {
+        if (unreadNotifications === 0) return;
+
+        setNotifications((currentNotifications) => currentNotifications.map((notification) => ({
+            ...notification,
+            readAt: notification.readAt || new Date().toISOString(),
+        })));
+        setUnreadNotifications(0);
+
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT || ''}/api/notifications`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({}),
+            });
+        } catch (error) {
+            console.error('Failed to mark notifications as read:', error);
+        }
+    };
+
+    const deleteNotification = async (notificationId) => {
+        const notificationToDelete = notifications.find((notification) => notification.id === notificationId);
+        setNotifications((currentNotifications) => currentNotifications.filter((notification) => notification.id !== notificationId));
+        if (notificationToDelete && !notificationToDelete.readAt) {
+            setUnreadNotifications((currentUnread) => Math.max(0, currentUnread - 1));
+        }
+
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT || ''}/api/notifications`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({id: notificationId}),
+            });
+        } catch (error) {
+            console.error('Failed to delete notification:', error);
+        }
+    };
+
+    const deleteAllNotifications = async () => {
+        if (!notifications.length) return;
+
+        setNotifications([]);
+        setUnreadNotifications(0);
+
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT || ''}/api/notifications`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                credentials: 'include',
+                body: JSON.stringify({}),
+            });
+        } catch (error) {
+            console.error('Failed to delete notifications:', error);
         }
     };
 
@@ -152,255 +229,347 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
         }
     };
 
+    const getCleanupEntries = () => userEntries.filter((entry) => {
+        if (!entry) return false;
+        if (entry.moderate === "REJECTED") return true;
+        if (getAutomaticReservationPhase(entry) === "ended") return true;
+        if (entry.moderate === "ENDED" && entry.returned) return true;
+        return entry.endDate <= new Date().toISOString() && entry.moderate === "ACCEPTED";
+    });
+
+    const handleCleanup = async () => {
+        setIsCleanupLoading(true);
+        try {
+            const entriesToDelete = getCleanupEntries().map((entry) => entry.id);
+
+            if (entriesToDelete.length === 0) {
+                addToast({
+                    title: "Aucune réservation à nettoyer",
+                    description: "Toutes les réservations sont déjà à jour",
+                    color: "warning",
+                    timeout: 4000,
+                });
+                return;
+            }
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT || ''}/api/entry`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids: entriesToDelete}),
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Erreur lors du nettoyage');
+            }
+
+            const result = await response.json();
+            addToast({
+                title: "Nettoyage réussi",
+                description: `${result.count} réservation(s) supprimée(s)`,
+                color: "success",
+                timeout: 4000,
+            });
+            handleRefresh?.();
+        } catch (error) {
+            console.error('Erreur nettoyage:', error);
+            addToast({
+                title: "Erreur lors du nettoyage",
+                description: error.message || "Impossible de supprimer les réservations",
+                color: "danger",
+                timeout: 5000,
+            });
+        } finally {
+            setIsCleanupLoading(false);
+            setIsCleanupModalOpen(false);
+        }
+    };
+
     const menuItems = [
         {
             key: "search",
-            icon: <MagnifyingGlassCircleIcon className="w-6 h-6"/>,
-            label: "Chercher",
+            icon: <MagnifyingGlassIcon className="h-5 w-5"/>,
+            label: "Rechercher",
             badge: null,
             badgeColor: "foreground"
         },
         {
             key: "bookings",
-            icon: <BookmarkIcon className="w-6 h-6"/>,
+            icon: <BookmarkIcon className="h-5 w-5"/>,
             label: "Réservations",
             badge: userEntriesQuantity.total > 0 ? userEntriesQuantity.total : null,
             badgeColor: userEntriesQuantity.delayed ? "danger" : "foreground"
+        },
+        {
+            key: "home",
+            icon: <Squares2X2Icon className="h-5 w-5"/>,
+            label: "Mon espace",
+            badge: null,
+            badgeColor: "foreground"
         }
     ];
 
+    const userInitial = (session.user?.name || session.user?.email || "N").charAt(0).toUpperCase();
+    const userDisplayName = [session.user?.name, session.user?.surname].filter(Boolean).join(" ") || session.user?.username || session.user?.email || "Profil";
+
+    const NotificationAlert = ({tone = "info", title, description, actionLabel, onAction, onDelete, read = false}) => {
+        const isWarning = tone === "warning";
+
+        return (
+            <div className={`rounded-xl border p-4 ${read ? "opacity-70" : ""} ${isWarning ? "border-red-200 bg-red-50 text-red-950 dark:border-red-950 dark:bg-red-950/30 dark:text-red-100" : "border-blue-200 bg-blue-50 text-blue-950 dark:border-blue-950 dark:bg-blue-950/30 dark:text-blue-100"}`}>
+                <div className="flex items-start gap-3">
+                    {isWarning ? <ExclamationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#ff2a2f]" /> : <InformationCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />}
+                    <div className="min-w-0 flex-1">
+                        <div className="text-sm font-bold">{title}</div>
+                        <div className="mt-1 text-sm leading-5 opacity-80">{description}</div>
+                        {actionLabel && (
+                            <Button type="button" variant="outline" size="sm" onClick={onAction} className="mt-3 h-9 rounded-lg bg-white/70 font-bold dark:bg-neutral-950/60">
+                                {actionLabel}
+                            </Button>
+                        )}
+                    </div>
+                    {onDelete && (
+                        <button type="button" onClick={onDelete} className="rounded-lg p-1.5 opacity-60 transition hover:bg-white/70 hover:opacity-100 dark:hover:bg-neutral-950/60" aria-label="Supprimer la notification">
+                            <TrashIcon className="h-4 w-4" />
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const getNotificationTone = (type) => (
+        ['RESERVATION_DELAYED', 'RESERVATION_START_MISSED', 'RESERVATION_REJECTED', 'RESOURCE_PROBLEM_REPORTED', 'RESOURCE_PICKUP_BLOCKED'].includes(type) ? 'warning' : 'info'
+    );
+
+    const getNotificationActionLabel = (type) => {
+        if (type === 'RESERVATION_WAITING_CONFIRMATION') return 'Voir l’administration';
+        if (type === 'RESOURCE_PROBLEM_REPORTED') return 'Voir la maintenance';
+        if (type === 'RESOURCE_PICKUP_BLOCKED') return 'Voir la réservation';
+        if (['MESSAGE_UNREAD', 'CONVERSATION_UNREAD'].includes(type)) return 'Voir le message';
+        return 'Voir les réservations';
+    };
+
+    const handleNotificationAction = (notification) => {
+        if (notification.type === 'RESERVATION_WAITING_CONFIRMATION') {
+            router.push('/admin');
+            return;
+        }
+
+        if (notification.type === 'RESOURCE_PROBLEM_REPORTED') {
+            router.push('/admin');
+            return;
+        }
+
+        if (notification.type === 'RESOURCE_PICKUP_BLOCKED' && notification.entryId) {
+            router.push(`/?resId=${notification.entryId}&tab=bookings`);
+            return;
+        }
+
+        if (['MESSAGE_UNREAD', 'CONVERSATION_UNREAD'].includes(notification.type) && notification.entryId) {
+            router.push(`/?msgId=${notification.entryId}`);
+            return;
+        }
+
+        if (notification.type === 'CONVERSATION_UNREAD') {
+            router.push('/?tab=home');
+            return;
+        }
+
+        handleTabChange("bookings");
+    };
+
+    const NotificationButton = ({compact = false}) => (
+        <DropdownMenu onOpenChange={(open) => open && markNotificationsAsRead()}>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className={`${compact ? "h-9 w-9 rounded-full" : "h-11 w-11 rounded-xl"} relative text-[#111827] hover:bg-[#f6f8fb] dark:text-neutral-200 dark:hover:bg-neutral-900`}
+                    aria-label="Afficher les notifications"
+                >
+                    <BellIcon className="h-5 w-5" />
+                    {unreadNotifications > 0 && (
+                        <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#ff2a2f] dark:border-neutral-950" />
+                    )}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-96 rounded-xl border-[#dfe6ee] bg-white p-3 shadow-xl dark:border-neutral-800 dark:bg-neutral-950">
+                <div className="flex items-center justify-between gap-3 px-1 py-2">
+                    <DropdownMenuLabel className="p-0 text-sm font-bold text-[#111827] dark:text-neutral-100">
+                        Notifications{unreadNotifications > 0 ? ` (${unreadNotifications})` : ''}
+                    </DropdownMenuLabel>
+                    {notifications.length > 0 && (
+                        <button type="button" onClick={deleteAllNotifications} className="text-xs font-bold text-[#ff2a2f] transition hover:text-red-700">
+                            Tout effacer
+                        </button>
+                    )}
+                </div>
+                <DropdownMenuSeparator />
+                <div className="space-y-3">
+                    {notifications.length > 0 ? notifications.map((notification) => (
+                        <NotificationAlert
+                            key={notification.id}
+                            tone={getNotificationTone(notification.type)}
+                            title={notification.title}
+                            description={notification.message}
+                            read={Boolean(notification.readAt)}
+                            actionLabel={getNotificationActionLabel(notification.type)}
+                            onAction={() => handleNotificationAction(notification)}
+                            onDelete={() => deleteNotification(notification.id)}
+                        />
+                    )) : (
+                        <NotificationAlert
+                            title="Aucune notification"
+                            description="Vous n’avez pas d’alerte active pour le moment. Les réservations importantes apparaîtront ici."
+                        />
+                    )}
+                </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+
+    const ProfileDropdown = ({compact = false}) => (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    type="button"
+                    variant="outline"
+                    className={`${compact ? "h-9 rounded-full border-0 bg-transparent p-0" : "h-12 rounded-xl border-[#dfe6ee] bg-white px-3 pr-2 shadow-sm dark:border-neutral-800 dark:bg-neutral-950"} gap-3 text-[#111827] hover:bg-[#f6f8fb] dark:text-neutral-100 dark:hover:bg-neutral-900`}
+                    aria-label="Ouvrir le menu profil"
+                >
+                    <span className={`${compact ? "h-9 w-9" : "h-9 w-9"} flex items-center justify-center rounded-full bg-[#ff2a2f] text-sm font-bold text-white`}>
+                        {userInitial}
+                    </span>
+                    {!compact && <ChevronDownIcon className="h-4 w-4 text-[#5f6b7a]" />}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 rounded-xl border-[#dfe6ee] bg-white p-2 shadow-xl dark:border-neutral-800 dark:bg-neutral-950">
+                <DropdownMenuLabel className="px-3 py-2">
+                    <span className="block truncate text-sm font-bold text-[#111827] dark:text-neutral-100">{userDisplayName}</span>
+                    {session.user?.email && <span className="block truncate text-xs font-normal text-[#5f6b7a] dark:text-neutral-400">{session.user.email}</span>}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer rounded-lg px-3 py-2">
+                    <CiUser className="h-4 w-4" />
+                    Profil
+                </DropdownMenuItem>
+                {session.user.role !== 'USER' && (
+                    <DropdownMenuItem onClick={() => router.push('/admin')} className="cursor-pointer rounded-lg px-3 py-2">
+                        <BsWrench className="h-4 w-4 text-amber-500" />
+                        Administration
+                    </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                    onClick={() => signOut().then(() => {
+                        addToast({title: 'Déconnexion', message: 'Vous avez été déconnecté', type: 'success', duration: 5000});
+                    })}
+                    className="cursor-pointer rounded-lg px-3 py-2 text-[#d71920] focus:text-[#d71920]"
+                >
+                    <CiLogout className="h-4 w-4" />
+                    Se déconnecter
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+
 
     const renderDesktopMenu = () => (
-        <div
-            className="w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800 mb-2">
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo à gauche */}
-                    <div className="flex items-center h-full w-1/4">
-                        <div className="relative group h-full flex items-center">
-                            {activeLogo && <div
-                                className="relative z-10 flex items-center hover:rotate-0 rotate-45 transition-all">
-                                <Image
-                                    src={`${basePath}/banner.png`}
-                                    alt="Spotly Logo"
-                                    width={40}
-                                    height={40}
-                                    style={{width: 'auto', height: 'auto'}}
-                                    className="transition-all duration-500"
-                                    priority
-                                />
-                            </div>}
-                        </div>
-                    </div>
+        <div className="sticky top-0 z-50 w-full border-b border-[#dfe6ee] bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
+            <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between px-8">
+                <button type="button" onClick={() => router.push('/')} className="flex items-center gap-3">
+                    <SnakeLogo className="h-10 w-10" />
+                    <span className="text-2xl font-bold tracking-tight text-[#111827] dark:text-neutral-100">Spotly</span>
+                </button>
 
-                    {/* Tabs centrés */}
-                    <div className="flex-1 flex justify-center h-full w-2/4 ">
-                        <Tabs
-                            selectedKey={selectedTab}
-                            onSelectionChange={handleTabChange}
-                            variant="underlined"
-                            color="default"
-                            classNames={{
-                                base: "overflow-visible h-full flex items-center",
-                                tabList: "gap-8 h-full overflow-visible",
-                                cursor: "w-full",
-                                tab: "max-w-fit px-0 h-full flex items-center overflow-visible",
-                                tabContent: "text-sm whitespace-nowrap"
-                            }}
-                        >
-                            {menuItems.map((item) => (
-                                <Tab
-                                    key={item.key}
-                                    title={
-                                        <div className="flex items-center space-x-3 group overflow-visible">
-                                            {item.icon}
-                                            <span className="">{item.label}</span>
-                                            {item.badge && (
-                                                <Badge
-                                                    showOutline={false}
-                                                    content={item.badge}
-                                                    color={item.badgeColor}
-                                                    variant="flat"
-                                                    size="sm"
+                <div className="flex gap-2 rounded-xl border border-[#dfe6ee] bg-white p-1 shadow-sm dark:border-neutral-800 dark:bg-neutral-950" role="tablist" aria-label="Navigation principale">
+                    {menuItems.map((item) => {
+                        const active = selectedTab === item.key || (item.key === "home" && selectedTab === "home");
 
-                                                />
-                                            )}
-                                        </div>
-                                    }
-                                />
-                            ))}
-                        </Tabs>
-                    </div>
+                        return (
+                            <button
+                                key={item.key}
+                                type="button"
+                                role="tab"
+                                aria-selected={active}
+                                onClick={() => handleTabChange(item.key)}
+                                className={`relative flex h-12 items-center justify-center gap-3 rounded-lg px-5 text-sm font-bold transition-colors ${active ? 'min-w-44' : 'w-14'} ${active
+                                    ? 'bg-[#fff1f1] text-[#d71920]'
+                                    : 'text-[#5f6b7a] hover:bg-[#f6f8fb] hover:text-[#111827] dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-100'}`}
+                            >
+                                <span className="shrink-0">{item.icon}</span>
+                                {active && <span>{item.label}</span>}
+                                {item.badge && <Badge variant={item.badgeColor === "danger" ? "danger" : "neutral"} className={active ? "" : "absolute -right-1 -top-1"}>{item.badge}</Badge>}
+                            </button>
+                        );
+                    })}
+                </div>
 
-                    {/* Bouton dropdown à droite */}
-                    <div className="flex items-center h-full w-1/4 justify-end">
-                        <div className="flex items-center gap-2">
-                            <Tooltip content="Profil" placement="bottom" color="foreground" showArrow>
-                                <Button
-                                    size="lg"
-                                    variant="light"
-                                    startContent={<CiUser className="w-4 h-4"/>}
-                                    onPress={onOpen}
-                                    className="text-content-primary dark:text-dark-content-primary"
-                                    isIconOnly
-                                />
-                            </Tooltip>
-                            {session.user.role !== 'USER' && (
-                                <Tooltip content="Administration" placement="bottom" color="warning" showArrow>
-                                    <Button
-                                        size="lg"
-                                        variant="light"
-                                        startContent={<BsWrench className="w-4 h-4 text-warning-500"/>}
-                                        onPress={() => router.push('/admin')}
-                                        className="text-content-primary dark:text-dark-content-primary"
-                                        isIconOnly
-                                    />
-                                </Tooltip>
-                            )}
-                            <Tooltip content="Basculer le thème" placement="bottom" color="foreground" showArrow>
-                                <DarkModeSwitch size="lg"/>
-                            </Tooltip>
-                            <Tooltip content="Se déconnecter" placement="bottom-end" color="foreground" showArrow>
-                                <Button
-                                    size="lg"
-                                    variant="flat"
-                                    color="danger"
-                                    startContent={<CiLogout className="w-4 h-4"/>}
-                                    onPress={() => signOut().then(() => {
-                                        addToast({
-                                            title: 'Déconnexion',
-                                            message: 'Vous avez été déconnecté',
-                                            type: 'success',
-                                            duration: 5000,
-                                        });
-                                    })}
-                                    className="text-danger"
-                                    isIconOnly
-                                />
-                            </Tooltip>
-                        </div>
-                    </div>
+                <div className="flex items-center gap-3">
+                    <NotificationButton />
+                    <MenuTooltip content="Basculer le thème">
+                        <DarkModeSwitch size="lg" />
+                    </MenuTooltip>
+                    <ProfileDropdown />
                 </div>
             </div>
         </div>
     );
 
     const renderMobileMenu = () => (
-        <>
-            {/* Header mobile simplifié */}
-            <div
-                className="md:hidden w-full bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm border-b border-neutral-200 dark:border-neutral-800">
-                <div className="">
-                    <div className="flex items-center justify-between">
-                        {/* Bouton Profil à gauche */}
-                        <button
-                            onClick={onOpen}
-                            className="flex items-center space-x-2 p-6  transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full"
-                        >
-                            <div
-                                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                                <CiUser className="w-4 h-4 text-neutral-600 dark:text-neutral-400"/>
-                            </div>
-                            <span className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Profil</span>
-                        </button>
-
-
-                        {/* Bouton Déconnexion à droite */}
-                        <button
-                            onClick={() => signOut().then(() => {
-                                addToast({
-                                    title: 'Déconnexion',
-                                    message: 'Vous avez été déconnecté',
-                                    type: 'success',
-                                    duration: 5000,
-                                });
-                            })}
-                            className="flex items-center justify-end space-x-2 p-6 transition-all duration-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 w-full"
-                        >
-                            <span
-                                className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Déconnexion</span>
-                            <div
-                                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-                                <CiLogout className="w-4 h-4 text-neutral-600 dark:text-neutral-400"/>
-                            </div>
-                        </button>
-                    </div>
+        <div className="sticky top-0 z-50 border-b border-[#dfe6ee] bg-white/95 px-4 pb-2 pt-2 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95 md:hidden">
+            <div className="flex h-10 items-center justify-between">
+                <button type="button" onClick={() => router.push('/')} className="flex items-center gap-2">
+                    <SnakeLogo className="h-8 w-8" />
+                    <span className="text-base font-bold text-[#111827] dark:text-neutral-100">Spotly</span>
+                </button>
+                <div className="flex items-center gap-2">
+                    <NotificationButton compact />
+                    <DarkModeSwitch size="lg" />
+                    <ProfileDropdown compact />
                 </div>
             </div>
 
-            {/* Navigation mobile par tabs en bas */}
-            <div
-                className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 z-40">
-                <div className="flex items-center justify-center">
-                    {menuItems.map((item) => (
+            <div className="mt-3 flex justify-center gap-2 rounded-xl border border-[#dfe6ee] bg-white p-1 dark:border-neutral-800 dark:bg-neutral-950" role="tablist" aria-label="Navigation principale">
+                {menuItems.map((item) => {
+                    const active = selectedTab === item.key;
+
+                    return (
                         <button
                             key={item.key}
+                            type="button"
+                            role="tab"
+                            aria-selected={active}
                             onClick={() => handleTabChange(item.key)}
-                            className={`flex flex-col items-center px-1 py-7 gap-2 transition-all duration-200 w-full h-full ${
-                                selectedTab === item.key
-                                    ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
-                                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
-                            }`}
+                            className={`relative flex h-9 items-center justify-center gap-2 rounded-lg px-3 text-[11px] font-bold transition-colors ${active ? 'min-w-28' : 'w-11'} ${active
+                                ? 'bg-[#fff1f1] text-[#d71920]'
+                                : 'text-[#5f6b7a] hover:bg-[#f6f8fb] dark:text-neutral-400 dark:hover:bg-neutral-900'}`}
                         >
-                            <div className="relative">
-                                {item.icon}
-                            </div>
-                            <span className="text-xs font-medium">{item.label}</span>
+                            <span className="shrink-0">{item.icon}</span>
+                            {active && <span>{item.label}</span>}
+                            {item.badge && <Badge variant={item.badgeColor === "danger" ? "danger" : "neutral"} className={active ? "" : "absolute -right-1 -top-1 scale-75"}>{item.badge}</Badge>}
                         </button>
-                    ))}
-                </div>
+                    );
+                })}
             </div>
-
-        </>
+        </div>
     );
 
     return (
-        <>
+        <TooltipProvider>
             {!isMobile ? renderDesktopMenu() : renderMobileMenu()}
 
-            <Modal
-                isOpen={isOpen}
-                onClose={onClose}
-                size="lg"
-                radius="lg"
-                backdrop="blur"
-                classNames={{
-                    base: "bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700",
-                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
-                    body: "py-6",
-                    footer: "border-t border-neutral-200 dark:border-neutral-700",
-                    closeButton: "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-full p-2 transition-colors duration-200"
-                }}
-                motionProps={{
-                    variants: {
-                        enter: {
-                            y: 0,
-                            opacity: 1,
-                            transition: {
-                                duration: 0.2,
-                                ease: "easeOut",
-                            },
-                        },
-                        exit: {
-                            y: -20,
-                            opacity: 0,
-                            transition: {
-                                duration: 0.2,
-                                ease: "easeIn",
-                            },
-                        },
-                    },
-                }}
-            >
-                <ModalContent>
-                    {(onClose) => (
-                        <>
-                            <ModalHeader className="flex flex-col gap-2 p-6">
+            <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+                <DialogContent className="border border-neutral-200 bg-white p-0 dark:border-neutral-700 dark:bg-neutral-900 sm:max-w-lg">
+                            <DialogHeader className="flex flex-col gap-2 border-b border-neutral-200 p-6 pb-4 dark:border-neutral-700">
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex flex-col gap-1">
-                                        <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                                        <DialogTitle className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
                                             Profil
-                                        </h2>
+                                        </DialogTitle>
                                         <p className="text-sm text-neutral-600 dark:text-neutral-400">
                                             Gérez vos informations personnelles
                                         </p>
@@ -408,131 +577,135 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                 </div>
 
                                 <div className="flex items-center gap-4 pt-2">
-                                    <User
-                                        name={`${session.user?.name} ${session.user?.surname}`}
-                                        color="default"
-                                        classNames={{
-                                            name: session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
+                                    <div className="flex items-center gap-3">
+                                        <div className={`flex h-12 w-12 items-center justify-center rounded-lg text-lg font-semibold text-white transition-transform duration-200 ${
+                                            session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
+                                                ? 'bg-orange-500'
+                                                : 'bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900'
+                                        }`}>
+                                            <CiUser className="w-6 h-6"/>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className={session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
                                                 ? 'text-orange-500 font-semibold text-lg'
-                                                : 'text-neutral-800 dark:text-neutral-100 font-semibold text-lg',
-                                            description: 'text-neutral-500 dark:text-neutral-400 text-sm'
-                                        }}
-                                        avatarProps={{
-                                            size: "lg",
-                                            className: `text-lg font-semibold text-white transition-transform duration-200 ${
-                                                session.user?.role === 'ADMIN' || session.user?.role === 'SUPERADMIN'
-                                                    ? 'bg-orange-500'
-                                                    : 'bg-neutral-900 dark:bg-neutral-100'
-                                            }`,
-                                            radius: "lg",
-                                            showFallback: true,
-                                            fallback: <CiUser className="w-6 h-6"/>,
-                                        }}
-                                    />
+                                                : 'text-neutral-800 dark:text-neutral-100 font-semibold text-lg'}>
+                                                {session.user?.name} {session.user?.surname}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </ModalHeader>
+                            </DialogHeader>
                             {!session.user?.external && (
-                                <ModalBody className="px-6">
-                                    <Form className="w-full space-y-5" validationBehavior="native">
+                                <div className="px-6 py-6">
+                                    <form className="w-full space-y-5">
                                         <div className="flex flex-row justify-between items-end w-full gap-3">
-                                            <Input
-
-                                                size="md"
-                                                value={session.user?.email}
-                                                labelPlacement="outside"
-                                                name="email"
-                                                placeholder="Votre email"
-                                                type="email"
-                                                readOnly={true}
-                                                variant="bordered"
-                                                classNames={{
-                                                    inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200 h-11",
-                                                    input: "text-sm text-neutral-800 dark:text-neutral-200",
-                                                    label: "text-sm font-medium text-neutral-700 dark:text-neutral-300",
-                                                    errorMessage: "text-red-500 text-sm mt-1",
-                                                }}
-                                                endContent={
-                                                    <Button
-                                                        color="default"
-                                                        variant="light"
-                                                    isIconOnly
-                                                        size="md"
-                                                        onPress={() => setIsEmailModalOpen(true)}
-                                                        className="h-8 bg-transparent transition-colors duration-200"
-
+                                            <div className="relative w-full space-y-2">
+                                                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Email</label>
+                                                <Input
+                                                    value={session.user?.email}
+                                                    name="email"
+                                                    placeholder="Votre email"
+                                                    type="email"
+                                                    readOnly={true}
+                                                    className="h-11 bg-transparent pr-10 text-sm text-neutral-800 border-neutral-300 dark:border-neutral-600 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-500 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 transition-colors duration-200"
+                                                />
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => setIsEmailModalOpen(true)}
+                                                    className="absolute bottom-1.5 right-1 h-8 w-8 bg-transparent transition-colors duration-200"
                                                 >
-                                                        <ArrowPathIcon
-                                                            className="w-4 h-4 text-neutral-600 dark:text-neutral-400"/>
-                                                    </Button>
-                                                }
-                                            />
+                                                    <ArrowPathIcon className="w-4 h-4 text-neutral-600 dark:text-neutral-400"/>
+                                                </Button>
+                                            </div>
 
                                         </div>
                                         <div className="flex flex-row justify-between items-end w-full gap-2">
                                             <Button
-                                                color="default"
-                                                variant="light"
-                                                fullWidth={true}
-                                                size="md"
+                                                type="button"
+                                                variant="ghost"
                                                 disabled={session.user?.external}
-                                                onPress={() => setIsPasswordModalOpen(true)}
-                                                className="hover:underline h-11 border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-200"
+                                                onClick={() => setIsPasswordModalOpen(true)}
+                                                className="w-full hover:underline h-11 border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 bg-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-200"
                                             >
                                                 Modifier le mot de passe
                                                 </Button>
                                         </div>
-                                    </Form>
-                                </ModalBody>
+                                    </form>
+                                </div>
                             )}
-                        </>
-                    )}
-                </ModalContent>
-            </Modal>
+                            <div className="border-t border-neutral-200 px-6 py-5 dark:border-neutral-700">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsCleanupModalOpen(true)}
+                                    className="w-full justify-center border-red-200 font-semibold text-red-600 hover:bg-red-50 dark:border-red-900/60 dark:hover:bg-red-950/20"
+                                >
+                                    <TrashIcon className="h-5 w-5" />
+                                    Nettoyer mes réservations
+                                </Button>
+                            </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isCleanupModalOpen} onOpenChange={setIsCleanupModalOpen}>
+                <DialogContent className="border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
+                    <DialogHeader className="flex flex-col gap-2 border-b border-neutral-200 pb-4 dark:border-neutral-700">
+                        <DialogTitle className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                            Nettoyer les réservations
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-6">
+                        <div className="flex items-center space-x-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                            <ExclamationCircleIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                            <div className="text-sm text-amber-800 dark:text-amber-200">
+                                <p className="font-medium">Attention !</p>
+                                <p>Cette action est irréversible.</p>
+                            </div>
+                        </div>
+                        <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                            <p className="mb-2 font-medium">Réservations qui seront supprimées :</p>
+                            <ul className="ml-4 space-y-1">
+                                <li>• Réservations terminées</li>
+                                <li>• Réservations refusées</li>
+                                <li>• Réservations expirées</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <DialogFooter className="border-t border-neutral-200 pt-4 dark:border-neutral-700">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsCleanupModalOpen(false)}
+                            className="border-neutral-300 text-neutral-700 dark:border-neutral-600 dark:text-neutral-300"
+                        >
+                            Annuler
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleCleanup}
+                            disabled={isCleanupLoading}
+                            className="bg-red-600 text-white hover:bg-red-700"
+                        >
+                            {isCleanupLoading ? "Nettoyage en cours..." : "Nettoyer"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Modal pour changer l'email */}
-            <Modal
-                isOpen={isEmailModalOpen}
-                onOpenChange={setIsEmailModalOpen}
-                size="md"
-                backdrop="blur"
-                classNames={{
-                    base: "bg-white dark:bg-neutral-900 mx-4",
-                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
-                    body: "py-6",
-                    footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4"
-                }}
-                motionProps={{
-                    variants: {
-                        enter: {
-                            y: 0,
-                            opacity: 1,
-                            transition: {
-                                duration: 0.2,
-                                ease: "easeOut",
-                            },
-                        },
-                        exit: {
-                            y: -20,
-                            opacity: 0,
-                            transition: {
-                                duration: 0.2,
-                                ease: "easeIn",
-                            },
-                        },
-                    },
-                }}
-                isDismissable={false}
-            >
-                <ModalContent>
-                    {(onClose) => (
+            <Dialog open={isEmailModalOpen} onOpenChange={setIsEmailModalOpen}>
+                <DialogContent className="mx-4 bg-white dark:bg-neutral-900" onInteractOutside={(event) => event.preventDefault()}>
+                    {(() => {
+                        const onClose = () => setIsEmailModalOpen(false);
+                        return (
                         <>
-                            <ModalHeader>
-                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                            <DialogHeader className="border-b border-neutral-200 pb-4 dark:border-neutral-700">
+                                <DialogTitle className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                                     Changer l&apos;adresse email
-                                </h3>
-                            </ModalHeader>
-                            <ModalBody>
-                                <div className="space-y-4">
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-6">
                                     <div>
                                         <label
                                             className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
@@ -541,34 +714,27 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                         <Input
                                             type="email"
                                             placeholder="nouvelle.email@exemple.com"
-                                            variant="bordered"
-                                            size="lg"
                                             id="newEmail"
-                                            classNames={{
-                                                inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200",
-                                                input: "text-sm text-neutral-800 dark:text-neutral-200"
-                                            }}
+                                            className="h-11 bg-transparent text-sm text-neutral-800 border-neutral-300 dark:border-neutral-600 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-500 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 transition-colors duration-200"
                                         />
                                     </div>
                                     <div className="text-sm text-neutral-600 dark:text-neutral-400">
                                         <p>Votre adresse email actuelle : <span
                                             className="font-medium">{session.user?.email}</span></p>
                                     </div>
-                                </div>
-                            </ModalBody>
-                            <ModalFooter>
+                            </div>
+                            <DialogFooter className="border-t border-neutral-200 pt-4 dark:border-neutral-700">
                                 <Button
-                                    color="default"
-                                    variant="bordered"
-                                    onPress={onClose}
+                                    type="button"
+                                    variant="outline"
+                                    onClick={onClose}
                                     className="border-neutral-300 dark:border-neutral-600"
                                 >
                                     Annuler
                                 </Button>
                                 <Button
-                                    color="primary"
-                                    variant="flat"
-                                    onPress={() => {
+                                    type="button"
+                                    onClick={() => {
                                         const newEmail = document.getElementById('newEmail').value;
                                         if (newEmail && newEmail !== session.user?.email) {
                                             handleEmailChange(newEmail);
@@ -581,60 +747,30 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                             });
                                         }
                                     }}
-                                    isLoading={isLoading}
+                                    disabled={isLoading}
                                 >
                                     Confirmer
                                 </Button>
-                            </ModalFooter>
+                            </DialogFooter>
                         </>
-                    )}
-                </ModalContent>
-            </Modal>
+                        );
+                    })()}
+                </DialogContent>
+            </Dialog>
 
             {/* Modal pour changer le mot de passe */}
-            <Modal
-                isOpen={isPasswordModalOpen}
-                onOpenChange={setIsPasswordModalOpen}
-                size="md"
-                backdrop="blur"
-                classNames={{
-                    base: "bg-white dark:bg-neutral-900 mx-4",
-                    header: "border-b border-neutral-200 dark:border-neutral-700 pb-4",
-                    body: "py-6",
-                    footer: "border-t border-neutral-200 dark:border-neutral-700 pt-4"
-                }}
-                motionProps={{
-                    variants: {
-                        enter: {
-                            y: 0,
-                            opacity: 1,
-                            transition: {
-                                duration: 0.2,
-                                ease: "easeOut",
-                            },
-                        },
-                        exit: {
-                            y: -20,
-                            opacity: 0,
-                            transition: {
-                                duration: 0.2,
-                                ease: "easeIn",
-                            },
-                        },
-                    },
-                }}
-                isDismissable={false}
-            >
-                <ModalContent>
-                    {(onClose) => (
+            <Dialog open={isPasswordModalOpen} onOpenChange={setIsPasswordModalOpen}>
+                <DialogContent className="mx-4 bg-white dark:bg-neutral-900" onInteractOutside={(event) => event.preventDefault()}>
+                    {(() => {
+                        const onClose = () => setIsPasswordModalOpen(false);
+                        return (
                         <>
-                            <ModalHeader>
-                                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                            <DialogHeader className="border-b border-neutral-200 pb-4 dark:border-neutral-700">
+                                <DialogTitle className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                                     Changer le mot de passe
-                                </h3>
-                            </ModalHeader>
-                            <ModalBody>
-                                <div className="space-y-4">
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-6">
                                     <div>
                                         <label
                                             className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
@@ -643,13 +779,8 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                         <Input
                                             type="password"
                                             placeholder="Nouveau mot de passe"
-                                            variant="bordered"
-                                            size="lg"
                                             id="newPassword"
-                                            classNames={{
-                                                inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200",
-                                                input: "text-sm text-neutral-800 dark:text-neutral-200"
-                                            }}
+                                            className="h-11 bg-transparent text-sm text-neutral-800 border-neutral-300 dark:border-neutral-600 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-500 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 transition-colors duration-200"
                                         />
                                     </div>
                                     <div>
@@ -660,33 +791,26 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
                                         <Input
                                             type="password"
                                             placeholder="Confirmer le mot de passe"
-                                            variant="bordered"
-                                            size="lg"
                                             id="confirmPassword"
-                                            classNames={{
-                                                inputWrapper: "bg-transparent border-neutral-300 dark:border-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 focus-within:border-neutral-900 dark:focus-within:border-neutral-100 transition-colors duration-200",
-                                                input: "text-sm text-neutral-800 dark:text-neutral-200"
-                                            }}
+                                            className="h-11 bg-transparent text-sm text-neutral-800 border-neutral-300 dark:border-neutral-600 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-neutral-500 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 transition-colors duration-200"
                                         />
                                     </div>
                                     <div className="text-sm text-neutral-600 dark:text-neutral-400">
                                         <p>Le mot de passe doit contenir au moins 8 caractères.</p>
                                     </div>
-                                </div>
-                            </ModalBody>
-                            <ModalFooter>
+                            </div>
+                            <DialogFooter className="border-t border-neutral-200 pt-4 dark:border-neutral-700">
                                 <Button
-                                    color="default"
-                                    variant="bordered"
-                                    onPress={onClose}
+                                    type="button"
+                                    variant="outline"
+                                    onClick={onClose}
                                     className="border-neutral-300 dark:border-neutral-600"
                                 >
                                     Annuler
                                 </Button>
                                 <Button
-                                    color="primary"
-                                    variant="flat"
-                                    onPress={() => {
+                                    type="button"
+                                    onClick={() => {
                                         const newPassword = document.getElementById('newPassword').value;
                                         const confirmPassword = document.getElementById('confirmPassword').value;
 
@@ -712,16 +836,16 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, handleRe
 
                                         handlePasswordChange(newPassword);
                                     }}
-                                    isLoading={isLoading}
+                                    disabled={isLoading}
                                 >
                                     Confirmer
                                 </Button>
-                            </ModalFooter>
+                            </DialogFooter>
                         </>
-                    )}
-                </ModalContent>
-            </Modal>
-        </>
+                        );
+                    })()}
+                </DialogContent>
+            </Dialog>
+        </TooltipProvider>
     );
 }
-

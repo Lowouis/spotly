@@ -9,16 +9,6 @@ module.exports = {
                 KRB5_KTNAME: '/etc/apache2/fhm.keytab',
             },
             autorestart: true,
-        },
-        {
-            name: 'spotly-cron',
-            script: './scripts/cron.mjs',
-            env: {
-                NODE_ENV: 'production',
-                RUN_AT_START: '1'
-            },
-            autorestart: true,
-            watch: false
         }
     ]
 };

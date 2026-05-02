@@ -5,6 +5,7 @@ import db from "@/server/services/databaseService";
 import {decrypt} from '@/services/server/security';
 import {buildEmailMessage, shouldSendDailyNotification} from '@/services/server/mails/mailer';
 import {rateLimit, requireAuth} from '@/services/server/api-auth';
+import {isEmailTemplateEnabled} from '@/services/server/mails/settings';
 
 function isAuthorizedServiceRequest(req) {
     const expectedSecret = process.env.CRON_SECRET;
@@ -30,6 +31,15 @@ export default async function handler(req, res) {
     }
 
     try {
+        const templateEnabled = await isEmailTemplateEnabled(db, templateName);
+        if (!templateEnabled) {
+            return res.status(200).json({
+                message: 'Email disabled by mail configuration.',
+                skipped: true,
+                disabledByConfig: true,
+            });
+        }
+
         // Récupérer la configuration SMTP active
         const smtpConfig = await db.smtpConfig.findFirst({
             where: {

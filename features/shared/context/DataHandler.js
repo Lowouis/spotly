@@ -1,7 +1,7 @@
 import {createContext, useContext} from 'react';
 import {useQuery} from "@tanstack/react-query";
 import {useSession} from "next-auth/react";
-import {addToast} from '@heroui/toast';
+import {addToast} from "@/lib/toast";
 
 const dataHandlerContext = createContext();
 

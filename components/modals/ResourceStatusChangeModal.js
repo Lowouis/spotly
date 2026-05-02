@@ -1,26 +1,14 @@
 'use client';
 
 import React, {useEffect, useState} from "react";
-import {
-    Button,
-    Chip,
-    Modal,
-    ModalBody,
-    ModalContent,
-    ModalFooter,
-    ModalHeader,
-    Spinner,
-    Table,
-    TableBody,
-    TableCell,
-    TableColumn,
-    TableHeader,
-    TableRow,
-    Textarea,
-    Tooltip
-} from "@heroui/react";
+import {Spinner} from "@/components/ui/spinner";
+import {Button} from "@/components/ui/button";
+import {Badge} from "@/components/ui/badge";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
+import {Textarea} from "@/components/ui/textarea";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import {useMutation, useQuery} from "@tanstack/react-query";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {useRefreshContext} from "@/features/shared/context/RefreshContext";
 
 // Fonction pour récupérer les réservations futures d'une ressource
@@ -288,14 +276,9 @@ export default function ResourceStatusChangeModal({
             // Afficher la nouvelle ressource attribuée
             return (
                 <div className="flex flex-col items-center space-y-1">
-                    <Chip
-                        color="success"
-                        size="sm"
-                        variant="flat"
-                        className="text-xs"
-                    >
+                    <Badge variant="success" className="text-xs">
                         {newResource.name}
-                    </Chip>
+                    </Badge>
                     <span className="text-xs text-neutral-500">
                         Ressource attribuée
                     </span>
@@ -305,34 +288,32 @@ export default function ResourceStatusChangeModal({
 
         // Afficher le bouton de changement
         return (
-            <Tooltip
-                content="Changer la ressource pour une similaire"
-                color="foreground"
-                showArrow
-            >
-                <Button
-                    size="sm"
-                    color="primary"
-                    variant="flat"
-                    isLoading={isProcessing}
-                    onPress={() => handleChangeResource(reservation)}
-                >
-                    Changer
-                </Button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        size="sm"
+                        disabled={isProcessing}
+                        onClick={() => handleChangeResource(reservation)}
+                    >
+                        {isProcessing ? "Recherche..." : "Changer"}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>Changer la ressource pour une similaire</TooltipContent>
             </Tooltip>
         );
     };
 
     return (
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="4xl">
-            <ModalContent>
-                <ModalHeader>
-                    <h3 className="text-lg font-semibold">
+        <TooltipProvider>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl">
+                <DialogHeader>
+                    <DialogTitle className="text-lg font-semibold">
                         Cette ressource a des réservations futures qui seront affectées
-                    </h3>
-                </ModalHeader>
+                    </DialogTitle>
+                </DialogHeader>
 
-                <ModalBody>
+                <div>
                     {loadingReservations ? (
                         <div className="flex justify-center items-center py-8">
                             <Spinner label="Chargement des réservations..."/>
@@ -345,17 +326,20 @@ export default function ResourceStatusChangeModal({
                                     <h4 className="text-md font-semibold mb-3">
                                         Réservations futures ({futureReservations.length})
                                     </h4>
-                                    <Table aria-label="Réservations futures">
-                                        <TableHeader>
-                                            <TableColumn>Utilisateur</TableColumn>
-                                            <TableColumn>Date de début</TableColumn>
-                                            <TableColumn>Date de fin</TableColumn>
-                                            <TableColumn>Actions</TableColumn>
-                                        </TableHeader>
-                                        <TableBody>
+                                    <div className="overflow-x-auto rounded-md border">
+                                        <table className="w-full caption-bottom text-sm" aria-label="Réservations futures">
+                                            <thead className="border-b bg-muted/50">
+                                            <tr>
+                                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Utilisateur</th>
+                                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Date de début</th>
+                                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Date de fin</th>
+                                                <th className="h-10 px-4 text-left align-middle font-medium text-muted-foreground">Actions</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
                                             {futureReservations.map((reservation) => (
-                                                <TableRow key={reservation.id}>
-                                                    <TableCell>
+                                                <tr key={reservation.id} className="border-b transition-colors hover:bg-muted/50 last:border-0">
+                                                    <td className="p-4 align-middle">
                                                         <div className="flex flex-col">
                                                             <span className="font-medium">
                                                                 {reservation.user?.name} {reservation.user?.surname}
@@ -364,20 +348,21 @@ export default function ResourceStatusChangeModal({
                                                                 {reservation.user?.email}
                                                             </span>
                                                         </div>
-                                                    </TableCell>
-                                                    <TableCell>
+                                                    </td>
+                                                    <td className="p-4 align-middle">
                                                         {formatDate(reservation.startDate)}
-                                                    </TableCell>
-                                                    <TableCell>
+                                                    </td>
+                                                    <td className="p-4 align-middle">
                                                         {formatDate(reservation.endDate)}
-                                                    </TableCell>
-                                                    <TableCell>
+                                                    </td>
+                                                    <td className="p-4 align-middle">
                                                         {renderActionButton(reservation)}
-                                                    </TableCell>
-                                                </TableRow>
+                                                    </td>
+                                                </tr>
                                             ))}
-                                        </TableBody>
-                                    </Table>
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )}
 
@@ -390,9 +375,8 @@ export default function ResourceStatusChangeModal({
                                     placeholder="Expliquez pourquoi la ressource devient indisponible..."
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
-                                    minRows={3}
-                                    maxRows={6}
-                                    className="w-full"
+                                    rows={4}
+                                    className="w-full max-h-40"
                                 />
                                 <p className="text-sm text-neutral-500 mt-2">
                                     Ce message sera envoyé aux utilisateurs concernés
@@ -400,25 +384,26 @@ export default function ResourceStatusChangeModal({
                             </div>
                         </div>
                     )}
-                </ModalBody>
+                </div>
 
-                <ModalFooter>
+                <DialogFooter>
                     <Button
-                        color="default"
-                        variant="light"
-                        onPress={() => onOpenChange(false)}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
                     >
                         Annuler
                     </Button>
                     <Button
-                        color="primary"
-                        onPress={handleConfirmStatusChange}
-                        isLoading={sendEmailMutation.isPending}
+                        type="button"
+                        onClick={handleConfirmStatusChange}
+                        disabled={sendEmailMutation.isPending}
                     >
-                        {futureReservations?.length > 0 && message.trim() ? "Prévenir et continuer" : "Continuer"}
+                        {sendEmailMutation.isPending ? "Envoi..." : futureReservations?.length > 0 && message.trim() ? "Prévenir et continuer" : "Continuer"}
                     </Button>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        </TooltipProvider>
     );
 }

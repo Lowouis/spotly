@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
-import {Button} from "@heroui/button";
+import {Button} from "@/components/ui/button";
 import {IoIosArrowDown} from "react-icons/io";
-import {AnimatePresence, motion} from "framer-motion";
 
 export default function EntryComments({ entry, adminMode = false }) {
     const [showComments, setShowComments] = useState(false);
@@ -13,30 +12,19 @@ export default function EntryComments({ entry, adminMode = false }) {
                     <div className="flex items-center justify-between border-t border-neutral-200 dark:border-neutral-700 pt-4 pb-2">
                         <span className="text-neutral-700 dark:text-neutral-300 font-medium">Messages</span>
                         <Button
-                            isIconOnly
-                            variant="light"
-                            onPress={() => setShowComments(!showComments)}
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setShowComments(!showComments)}
                             className="text-neutral-500"
                         >
-                            <motion.div
-                                animate={{ rotate: showComments ? 180 : 0 }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                <IoIosArrowDown size={20} />
-                            </motion.div>
+                            <IoIosArrowDown size={20} className={showComments ? "rotate-180" : ""} />
                         </Button>
                     </div>
                 )}
             </div>
-            <AnimatePresence>
-                {showComments && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="space-y-4 overflow-hidden"
-                    >
+            {showComments && (
+                    <div className="space-y-4 overflow-hidden">
                         {entry.adminNote && (
                             <div className="flex items-start justify-start space-x-2">
                                 <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-white text-sm">
@@ -65,9 +53,8 @@ export default function EntryComments({ entry, adminMode = false }) {
                                 </div>
                             </div>
                         )}
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
         </>
     );
 }

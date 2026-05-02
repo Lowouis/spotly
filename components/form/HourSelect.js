@@ -1,9 +1,8 @@
 import React from "react";
-import {Select, SelectItem} from "@heroui/select";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 export default function HourSelect({
                                        label,
-                                       defaultValue,
                                        value,
                                        name,
                                        onChange,
@@ -16,7 +15,7 @@ export default function HourSelect({
         const hour = i.toString().padStart(2, '0');
         return {key: hour, label: `${hour}h`};
     });
-    // Generate disabled keys based on minValue and maxValue
+
     const disabledKeys = hours
         .filter(hour => {
             const hourNum = parseInt(hour.key);
@@ -28,40 +27,42 @@ export default function HourSelect({
             return false;
         })
         .map(hour => hour.key);
+
     return (
-        <Select
-            isRequired
-            selectedKeys={value ? [value] : []}
-            label={label}
-            items={hours}
-            size="sm"
-            name={name}
-            isDisabled={isDisabled}
-            isInvalid={isInvalid}
-            disabledKeys={disabledKeys}
-            onChange={onChange}
-            classNames={{
-                trigger: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                value: "text-neutral-900 dark:text-neutral-100 font-semibold",
-                placeholder: "text-neutral-500 dark:text-neutral-400",
-                listbox: "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg",
-                popoverContent: "py-2",
-                item: "py-3 px-4 min-h-[48px] flex items-center transition-colors duration-150 cursor-pointer",
-                selectedItem: "bg-primary-700/20 dark:bg-primary-700/20 text-primary-400 dark:text-primary-300 font-bold",
-                highlightedItem: "bg-neutral-100 dark:bg-neutral-800",
-                label: "text-neutral-800 dark:text-neutral-200 font-semibold",
-                description: "text-neutral-600 dark:text-neutral-400 text-sm"
-            }}
-        >
-            {(hour) => (
-                <SelectItem
-                    key={hour.key}
-                    value={hour.key}
-                    textValue={hour.label}
-                    className="py-3 px-4 min-h-[48px] flex items-center">
-                    <span className="font-semibold">{hour.label}</span>
-                </SelectItem>
-            )}
-        </Select>
+        <div className="my-2 flex flex-col gap-2">
+            <label htmlFor={name} className="flex h-5 items-center text-sm font-medium leading-none text-neutral-700 dark:text-neutral-300">
+                {label}
+            </label>
+            <Select
+                required
+                value={value || ""}
+                disabled={isDisabled}
+                onValueChange={(newValue) => {
+                    if (newValue === value) return;
+                    onChange({target: {name, value: newValue}});
+                }}
+            >
+                <SelectTrigger
+                    id={name}
+                    name={name}
+                    aria-invalid={isInvalid}
+                    className="h-11 rounded-lg border-neutral-300 bg-white text-sm leading-none text-neutral-900 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                >
+                    <SelectValue placeholder="Heure"/>
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg">
+                    {hours.map((hour) => (
+                        <SelectItem
+                            disabled={disabledKeys.includes(hour.key)}
+                            key={hour.key}
+                            value={hour.key}
+                            className="py-3 px-4 min-h-[48px] flex items-center"
+                        >
+                            <span className="font-semibold">{hour.label}</span>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
     );
 }

@@ -5,13 +5,8 @@ jest.mock('next-auth/react', () => ({
     SessionProvider: ({children}) => <div data-testid="session-provider">{children}</div>,
 }));
 
-jest.mock('@heroui/react', () => ({
-    HeroUIProvider: ({children}) => <div data-testid="hero-provider">{children}</div>,
-}));
-
-jest.mock('@heroui/toast', () => ({
-    ToastProvider: () => <div data-testid="toast-provider" />,
-    addToast: jest.fn(),
+jest.mock('@/components/ui/sonner', () => ({
+    Toaster: () => <div data-testid="sonner-toaster" />,
 }));
 
 jest.mock('@/features/shared/context/EmailContext', () => ({
@@ -40,7 +35,6 @@ describe('Providers', () => {
 
         expect(screen.getByText('Application')).toBeInTheDocument();
         expect(screen.getByTestId('session-provider')).toBeInTheDocument();
-        expect(screen.getByTestId('hero-provider')).toBeInTheDocument();
-        expect(screen.getByTestId('toast-provider')).toBeInTheDocument();
+        expect(screen.getByTestId('sonner-toaster')).toBeInTheDocument();
     });
 });

@@ -1,0 +1,4 @@
+ALTER TABLE `timeScheduleOptions`
+    ADD COLUMN `shortcutStartHour` INTEGER NOT NULL DEFAULT 8,
+    ADD COLUMN `shortcutEndHour` INTEGER NOT NULL DEFAULT 18,
+    ADD COLUMN `shortcutWeekEndDay` INTEGER NOT NULL DEFAULT 5;

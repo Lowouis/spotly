@@ -8,7 +8,17 @@ const nextConfig = {
     outputFileTracingRoot: process.cwd(),
     images: {
         remotePatterns: [env.apiDomain, 'localhost'].filter(Boolean).map((hostname) => ({hostname})),
-    }
+    },
+    webpack: (config, {dev}) => {
+        if (dev) {
+            config.infrastructureLogging = {
+                ...config.infrastructureLogging,
+                level: 'error',
+            };
+        }
+
+        return config;
+    },
 }
 
 export default nextConfig;

@@ -120,7 +120,7 @@ describe('mail rendering and delivery safeguards', () => {
         expect(message.text).toContain('se trouve actuellement en attente');
     });
 
-    it('skips duplicate daily delayed/code notifications', async () => {
+    it('skips duplicate daily delayed notifications', async () => {
         const db = {
             emailNotificationLog: {
                 create: jest.fn()

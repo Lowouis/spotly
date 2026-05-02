@@ -1,4 +1,4 @@
-import {validateKerberosTicket} from "@/services/server/kerberos-auth";
+import {initializeKerberos, validateKerberosTicket} from "@/services/server/kerberos-auth";
 import db from "@/server/services/databaseService";
 import {decrypt} from "@/services/server/security";
 import {findLdapUser} from '@/services/server/ldap-utils';
@@ -15,6 +15,17 @@ export default async function handler(req, res) {
     }
 
     try {
+        const kerberosConfig = await db.kerberosConfig.findFirst({
+            where: {isActive: true},
+            orderBy: {lastUpdated: 'desc'},
+        });
+
+        if (!kerberosConfig) {
+            return res.status(503).json({error: "Configuration Kerberos non disponible"});
+        }
+
+        await initializeKerberos(kerberosConfig);
+
         const validationResult = await validateKerberosTicket(ticket);
 
         if (!validationResult || !validationResult.username || !validationResult.success) {

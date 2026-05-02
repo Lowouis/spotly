@@ -1,11 +1,14 @@
+import {useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {useEmail} from "@/features/shared/context/EmailContext";
-import {addToast} from "@heroui/toast";
+import {addToast} from "@/lib/toast";
 import {checkIPAuthorization} from '@/services/client/api';
 import {lastestPickable} from "@/global";
 
 export const useEntryActions = (entry, clientIP) => {
     const {mutate: sendEmail} = useEmail();
+    const [isPickupLoading, setIsPickupLoading] = useState(false);
+    const [isReturnLoading, setIsReturnLoading] = useState(false);
 
     // IP Authorization check for HIGH_AUTH resources
     const {data: isIPAuthorized = true} = useQuery({
@@ -30,8 +33,10 @@ export const useEntryActions = (entry, clientIP) => {
             return entry ? {
                 onPickup: data.onPickup,
                 onReturn: data.onReturn,
+                maxEarlyPickupMinutes: data.maxEarlyPickupMinutes || 0,
                 ajustedStartDate: new Date(new Date(entry.startDate).getTime() - (data.onPickup || 0) * 60000).toISOString(),
                 ajustedEndDate: new Date(new Date(entry.endDate).getTime() + (data.onReturn || 0) * 60000).toISOString(),
+                flexiblePickupStartDate: new Date(new Date(entry.startDate).getTime() - (data.maxEarlyPickupMinutes || 0) * 60000).toISOString(),
             } : null;
         }
     });
@@ -79,8 +84,12 @@ export const useEntryActions = (entry, clientIP) => {
     const validDatesToPickup = () => {
         if (!entry || isLoadingTSO || !timeScheduleOptions) return false;
         const nowIso = new Date().toISOString();
-        const allowEarly = (entry?.resource?.status === 'AVAILABLE') && (waitlistCount === 0);
-        return allowEarly || (timeScheduleOptions.ajustedStartDate <= nowIso);
+        const regularAllowed = timeScheduleOptions.ajustedStartDate <= nowIso;
+        const flexibleAllowed = timeScheduleOptions.maxEarlyPickupMinutes > 0
+            && timeScheduleOptions.flexiblePickupStartDate <= nowIso
+            && entry?.resource?.status === 'AVAILABLE'
+            && waitlistCount === 0;
+        return regularAllowed || flexibleAllowed;
     };
 
     const hasBlockingPrevious = !!entry && new Date(entry.startDate) <= new Date() && entry?.resource?.status === 'UNAVAILABLE' && !!previousNotReturned;
@@ -100,16 +109,26 @@ export const useEntryActions = (entry, clientIP) => {
             && ipAuthorized;
     };
 
+    const getPickupUnavailableReason = () => {
+        if (!entry) return "Réservation introuvable";
+        if (hasBlockingPrevious) return "Ressource non restituée par l'emprunteur précédent";
+        if (!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH") return "Accès interdit depuis cet appareil";
+        if (entry?.resource?.status !== 'AVAILABLE') return "Ressource indisponible pour le moment";
+        if (waitlistCount > 0) return "Une réservation est prévue avant la vôtre";
+        if (timeScheduleOptions?.maxEarlyPickupMinutes === 0 && timeScheduleOptions?.ajustedStartDate > new Date().toISOString()) return "La récupération anticipée est désactivée";
+        if (timeScheduleOptions?.flexiblePickupStartDate > new Date().toISOString()) return "La récupération est trop en avance";
+        return "Conditions de récupération non réunies";
+    };
+
     // Action handlers
     const handlePickUp = async (onClose, handleRefresh) => {
+        setIsPickupLoading(true);
         try {
             // Enforce pickup constraints
             if (!isAbleToPickUp()) {
                 addToast({
                     title: "Indisponible",
-                    description: hasBlockingPrevious ? "Ressource non restituée par l'emprunteur précédent" :
-                        !isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH" ? "Accès interdit depuis cet appareil" :
-                            "Conditions de récupération non réunies (file d'attente, créneau ou disponibilité)",
+                    description: getPickupUnavailableReason(),
                     timeout: 5000,
                     color: "warning"
                 });
@@ -144,10 +163,13 @@ export const useEntryActions = (entry, clientIP) => {
                 timeout: 5000,
                 color: "danger"
             });
+        } finally {
+            setIsPickupLoading(false);
         }
     };
 
     const handleReturn = async (onClose, handleRefresh) => {
+        setIsReturnLoading(true);
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/${entry.id}`, {
                 method: 'PUT',
@@ -191,6 +213,8 @@ export const useEntryActions = (entry, clientIP) => {
                 timeout: 5000,
                 color: "danger"
             });
+        } finally {
+            setIsReturnLoading(false);
         }
     };
 
@@ -202,7 +226,10 @@ export const useEntryActions = (entry, clientIP) => {
         hasBlockingPrevious,
         isAbleToPickUp,
         isIPAuthorized,
+        isPickupLoading,
+        isReturnLoading,
+        pickupUnavailableReason: getPickupUnavailableReason(),
         handlePickUp,
         handleReturn
     };
-}; 
+};

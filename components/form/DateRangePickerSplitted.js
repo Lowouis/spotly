@@ -1,10 +1,10 @@
 'use client';
-import {DatePicker, Input} from "@heroui/react";
 import TimeInput from '@/components/form/HourSelect';
-import {useCallback, useEffect, useState} from 'react';
-import {addToast} from "@heroui/toast";
-import {getLocalTimeZone, now, today} from "@internationalized/date";
-import {I18nProvider} from 'react-aria';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {addToast} from "@/lib/toast";
+import {CalendarDate, getLocalTimeZone, now, today} from "@internationalized/date";
+import ShadcnDatePicker from "@/components/form/ShadcnDatePicker";
+import {CalendarDaysIcon, SunIcon} from "@heroicons/react/24/outline";
 
 // Fonction utilitaire en dehors du composant pour éviter les re-renders
 const isSameDay = (date1, date2) => {
@@ -14,12 +14,32 @@ const isSameDay = (date1, date2) => {
         date1.year === date2.year;
 };
 
-export default function DateRangePickerSplitted({setValue, name = "date", onChangeCheck}) {
+const defaultShortcutOptions = {
+    shortcutStartHour: 8,
+    shortcutEndHour: 18,
+    shortcutWeekEndDay: 5,
+};
+
+const normalizeHour = (value, fallback) => {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 23) return fallback;
+    return parsed;
+};
+
+const normalizeWeekEndDay = (value, fallback) => {
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < 0 || parsed > 6) return fallback;
+    return parsed;
+};
+
+export default function DateRangePickerSplitted({setValue, name = "date", onChangeCheck, variant = "default", presetRange = null}) {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [dateError, setDateError] = useState(null);
+    const [shortcutOptions, setShortcutOptions] = useState(defaultShortcutOptions);
+    const lastSyncedValueRef = useRef('');
 
 
     // Initialiser avec la date et l'heure actuelles
@@ -33,6 +53,43 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
 
 
     }, []);
+
+    useEffect(() => {
+        const loadShortcutOptions = async () => {
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/timeScheduleOptions`, {
+                    credentials: 'include',
+                });
+
+                if (!response.ok) return;
+
+                const options = await response.json();
+                setShortcutOptions({
+                    shortcutStartHour: normalizeHour(options?.shortcutStartHour, defaultShortcutOptions.shortcutStartHour),
+                    shortcutEndHour: normalizeHour(options?.shortcutEndHour, defaultShortcutOptions.shortcutEndHour),
+                    shortcutWeekEndDay: normalizeWeekEndDay(options?.shortcutWeekEndDay, defaultShortcutOptions.shortcutWeekEndDay),
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des raccourcis de réservation:', error);
+            }
+        };
+
+        loadShortcutOptions();
+    }, []);
+
+    useEffect(() => {
+        if (!presetRange?.start || !presetRange?.end) return;
+
+        const start = new Date(presetRange.start);
+        const end = new Date(presetRange.end);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+
+        setStartDate(new CalendarDate(start.getFullYear(), start.getMonth() + 1, start.getDate()));
+        setEndDate(new CalendarDate(end.getFullYear(), end.getMonth() + 1, end.getDate()));
+        setStartTime(String(start.getHours()).padStart(2, '0'));
+        setEndTime(String(end.getHours()).padStart(2, '0'));
+        setDateError(null);
+    }, [presetRange?.start, presetRange?.end]);
 
     // Mettre à jour la valeur du formulaire une fois les états initialisés
     useEffect(() => {
@@ -56,9 +113,13 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                 }
             }
 
-            setDateError(null);
             const startDateObj = new Date(start.year, start.month - 1, start.day, parseInt(startT));
             const endDateObj = new Date(end.year, end.month - 1, end.day, parseInt(endT));
+            const nextValueKey = `${startDateObj.getTime()}-${endDateObj.getTime()}`;
+            if (lastSyncedValueRef.current === nextValueKey) return;
+
+            lastSyncedValueRef.current = nextValueKey;
+            setDateError(null);
 
             setValue(name, {
                 start: startDateObj,
@@ -196,248 +257,153 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
         }
     }, [startDate, endDate, startTime, onChangeCheck, setValue, name]);
 
-    return (
-        <I18nProvider locale="fr-FR">
-            <div className="flex flex-col gap-2">
-                {/* Version mobile optimisée */}
-                <div className="block md:hidden space-y-3">
-                    {/* Ligne 1: Date et heure de début */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                            Début
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <DatePicker
-                                isRequired
-                                label="Date"
-                                className="w-full"
-                                variant='bordered'
-                                zone={getLocalTimeZone()}
-                                size="sm"
-                                color="default"
-                                onChange={handleStartDateChange}
-                                value={startDate}
-                                isInvalid={!!dateError}
-                                maxValue={endDate}
-                                minValue={today(getLocalTimeZone())}
-                                classNames={{
-                                    inputWrapper: "border-none",
-                                    base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                                    input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
-                                    label: "text-neutral-800 dark:text-neutral-200 font-semibold whitespace-nowrap",
-                                    calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
-                                }}
-                                calendarProps={{
-                                    classNames: {
-                                        base: "bg-background",
-                                        headerWrapper: "pt-4 bg-background",
-                                        prevButton: "border-1 border-default-200 rounded-small",
-                                        nextButton: "border-1 border-default-200 rounded-small",
-                                        gridHeader: "bg-background shadow-none border-b-1 border-default-100",
-                                        cellButton: [
-                                            "data-[today=true]:text-primary",
-                                            "data-[selected=true]:bg-primary data-[selected=true]:text-black",
-                                            "hover:bg-primary hover:text-primary-foreground",
-                                            "rounded-small transition-colors",
-                                            "data-[today=true]:font-semibold",
-                                            "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
-                                            "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
-                                            "data-[in-range=true]:bg-primary/20",
-                                        ],
-                                    },
-                                }}
-                            />
-                            <TimeInput
-                                name={"startTime"}
-                                label="Heure"
-                                onChange={handleStartTimeChange}
-                                value={startTime}
-                                isInvalid={!!dateError}
-                                maxValue={isSameDay(startDate, endDate) ? endTime : null}
-                                className="w-full"
-                            />
+    const applyShortcut = useCallback((shortcut) => {
+        const baseDate = today(getLocalTimeZone());
+        const startHour = shortcutOptions.shortcutStartHour;
+        const endHour = shortcutOptions.shortcutEndHour;
+        let targetStart = baseDate;
+        let targetEnd = baseDate;
+
+        if (shortcut === "tomorrow") {
+            targetStart = baseDate.add({days: 1});
+            targetEnd = targetStart;
+        } else if (shortcut === "week") {
+            const currentDay = new Date(baseDate.year, baseDate.month - 1, baseDate.day).getDay();
+            const currentIsoDay = currentDay === 0 ? 7 : currentDay;
+            const weekEndIsoDay = shortcutOptions.shortcutWeekEndDay === 0 ? 7 : shortcutOptions.shortcutWeekEndDay;
+            const daysUntilWeekEnd = currentIsoDay <= weekEndIsoDay ? weekEndIsoDay - currentIsoDay : 0;
+            targetEnd = baseDate.add({days: daysUntilWeekEnd});
+        } else if (shortcut === "two-weeks") {
+            targetEnd = baseDate.add({days: 14});
+        }
+
+        setStartDate(targetStart);
+        setEndDate(targetEnd);
+        setStartTime(startHour.toString().padStart(2, '0'));
+        setEndTime(endHour.toString().padStart(2, '0'));
+        setDateError(null);
+
+    }, [shortcutOptions]);
+
+    const toDate = (value, hour) => value && hour ? new Date(value.year, value.month - 1, value.day, parseInt(hour)) : null;
+    const selectedStart = toDate(startDate, startTime);
+    const selectedEnd = toDate(endDate, endTime);
+    if (variant === "spotly") {
+        return (
+            <div className="space-y-4">
+                <div className="rounded-2xl border border-[#dfe6ee] bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
+                    <div className="grid gap-3 xl:grid-cols-2">
+                        <div className="rounded-xl border border-[#dfe6ee] bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                            <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[#111827] dark:text-neutral-100">
+                                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />
+                                Début
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <ShadcnDatePicker required label="Date" value={startDate} min={today(getLocalTimeZone())} max={endDate} invalid={!!dateError} onChange={handleStartDateChange} />
+                                <TimeInput name="startTime" label="Heure" onChange={handleStartTimeChange} value={startTime} isInvalid={!!dateError} maxValue={isSameDay(startDate, endDate) ? endTime : null} />
+                            </div>
+                        </div>
+
+                        <div className="rounded-xl border border-[#dfe6ee] bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                            <div className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[#111827] dark:text-neutral-100">
+                                <span className="h-2.5 w-2.5 rounded-full bg-[#ff2a2f] shadow-[0_0_0_4px_rgba(255,42,47,0.12)]" />
+                                Fin
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <ShadcnDatePicker required label="Date" value={endDate} min={startDate} disabled={!startDate} invalid={!!dateError} onChange={handleEndDateChange} />
+                                <TimeInput name="endTime" label="Heure" onChange={handleEndTimeChange} value={endTime} isDisabled={!startDate || !endDate} isInvalid={!!dateError} minValue={isSameDay(startDate, endDate) ? startTime : null} />
+                            </div>
                         </div>
                     </div>
 
-                    {/* Ligne 2: Date et heure de fin */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                            Fin
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <DatePicker
-                                calendarProps={{
-                                    classNames: {
-                                        base: "bg-background",
-                                        headerWrapper: "pt-4 bg-background",
-                                        prevButton: "border-1 border-default-200 rounded-small",
-                                        nextButton: "border-1 border-default-200 rounded-small",
-                                        gridHeader: "bg-background shadow-none border-b-1 border-default-100",
-                                        cellButton: [
-                                            "data-[today=true]:text-primary",
-                                            "data-[selected=true]:bg-primary data-[selected=true]:text-black",
-                                            "hover:bg-primary hover:text-primary-foreground",
-                                            "rounded-small transition-colors",
-                                            "data-[today=true]:font-semibold",
-                                            "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
-                                            "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
-                                            "data-[in-range=true]:bg-primary/20",
-                                        ],
-                                    },
-                                }}
-                                isRequired
-                                size='sm'
-                                color="default"
-                                variant="bordered"
-                                label="Date"
-                                className="w-full"
-                                onChange={handleEndDateChange}
-                                value={endDate}
-                                minValue={startDate}
-                                isDisabled={!startDate}
-                                isInvalid={!!dateError}
-                                classNames={{
-                                    inputWrapper: "border-none",
-                                    base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                                    input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
-                                    label: "text-neutral-800 dark:text-neutral-200 font-semibold whitespace-nowrap",
-                                    calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
-                                }}
-                            />
-                            <TimeInput
-                                name={"endTime"}
-                                label="Heure"
-                                onChange={handleEndTimeChange}
-                                value={endTime}
-                                isDisabled={!startDate || !endDate}
-                                isInvalid={!!dateError}
-                                minValue={isSameDay(startDate, endDate) ? startTime : null}
-                                className="w-full"
-                            />
-                        </div>
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <span className="mr-1 text-xs font-bold uppercase tracking-wide text-[#5f6b7a] dark:text-neutral-400">Raccourcis</span>
+                        <button type="button" onClick={() => applyShortcut("today")} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#dfe6ee] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                                <CalendarDaysIcon className="h-5 w-5" />
+                                Aujourd’hui
+                            </button>
+                        <button type="button" onClick={() => applyShortcut("tomorrow")} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#dfe6ee] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                                <SunIcon className="h-5 w-5" />
+                                Demain
+                            </button>
+                        <button type="button" onClick={() => applyShortcut("week")} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#dfe6ee] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                                <CalendarDaysIcon className="h-5 w-5" />
+                                Cette semaine
+                            </button>
+                        <button type="button" onClick={() => applyShortcut("two-weeks")} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#dfe6ee] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                                <CalendarDaysIcon className="h-5 w-5" />
+                                2 semaines
+                            </button>
                     </div>
                 </div>
 
-                {/* Version desktop */}
-                <div className="hidden md:flex md:flex-row gap-2">
-                    <div className="flex flex-1 flex-row gap-2">
-                        <DatePicker
-                            isRequired
-                            label="Date de début"
-                            className="w-full"
-                            variant='bordered'
-                            zone={getLocalTimeZone()}
-                            size="sm"
-                            color="default"
-                            onChange={handleStartDateChange}
-                            value={startDate}
-                            isInvalid={!!dateError}
-                            maxValue={endDate}
-                            minValue={today(getLocalTimeZone())}
-                            classNames={{
-                                inputWrapper: "border-none",
-                                base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                                input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
-                                label: "text-neutral-800 dark:text-neutral-200 font-semibold whitespace-nowrap",
-                                calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
-                            }}
-                            calendarProps={{
-                                classNames: {
-                                    base: "bg-background",
-                                    headerWrapper: "pt-4 bg-background",
-                                    prevButton: "border-1 border-default-200 rounded-small",
-                                    nextButton: "border-1 border-default-200 rounded-small",
-                                    gridHeader: "bg-background shadow-none border-b-1 border-default-100",
-                                    cellButton: [
-                                        "data-[today=true]:text-primary",
-                                        "data-[selected=true]:bg-primary data-[selected=true]:text-black",
-                                        "hover:bg-primary hover:text-primary-foreground",
-                                        "rounded-small transition-colors",
-                                        "data-[today=true]:font-semibold",
-                                        "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
-                                        "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
-                                        "data-[in-range=true]:bg-primary/20",
-                                    ],
-                                },
-                            }}
-                        />
-                        <TimeInput
-                            name={"startTime"}
-                            label="Heure de début"
-                            onChange={handleStartTimeChange}
-                            value={startTime}
-                            isInvalid={!!dateError}
-                            maxValue={isSameDay(startDate, endDate) ? endTime : null}
-                            className="min-w-[180px]"
-                        />
-                    </div>
-                    <div className="flex flex-1 flex-row gap-2">
-                        <DatePicker
-                            calendarProps={{
-                                classNames: {
-                                    base: "bg-background",
-                                    headerWrapper: "pt-4 bg-background",
-                                    prevButton: "border-1 border-default-200 rounded-small",
-                                    nextButton: "border-1 border-default-200 rounded-small",
-                                    gridHeader: "bg-background shadow-none border-b-1 border-default-100",
-                                    cellButton: [
-                                        "data-[today=true]:text-primary",
-                                        "data-[selected=true]:bg-primary data-[selected=true]:text-black",
-                                        "hover:bg-primary hover:text-primary-foreground",
-                                        "rounded-small transition-colors",
-                                        "data-[today=true]:font-semibold",
-                                        "data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground",
-                                        "data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground",
-                                        "data-[in-range=true]:bg-primary/20",
-                                    ],
-                                },
-                            }}
-                            isRequired
-                            size='sm'
-                            color="default"
-                            variant="bordered"
-                            label="Date de fin"
-                            className="w-full"
-                            onChange={handleEndDateChange}
-                            value={endDate}
-                            minValue={startDate}
-                            isDisabled={!startDate}
-                            isInvalid={!!dateError}
-                            classNames={{
-                                inputWrapper: "border-none",
-                                base: "dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm",
-                                input: "text-neutral-900 dark:text-neutral-100 font-semibold placeholder:text-neutral-500 dark:placeholder:text-neutral-400 border-none",
-                                label: "text-neutral-800 dark:text-neutral-200 font-semibold whitespace-nowrap",
-                                calendarWrapper: "bg-white dark:bg-neutral-900 border-0 rounded-lg shadow-lg",
-                            }}
-                        />
-                        <TimeInput
-                            name={"endTime"}
-                            label="Heure de fin"
-                            onChange={handleEndTimeChange}
-                            value={endTime}
-                            isDisabled={!startDate || !endDate}
-                            isInvalid={!!dateError}
-                            minValue={isSameDay(startDate, endDate) ? startTime : null}
-                            className="min-w-[180px]"
-                        />
-                    </div>
-                </div>
-                {dateError && (
-                    <span className="text-danger text-sm">{dateError}</span>
-                )}
-                <Input
+                {dateError && <span className="text-sm text-red-500">{dateError}</span>}
+                <input
                     type="hidden"
                     name={name}
                     value={JSON.stringify({
-                        startDate: startDate && startTime ? new Date(startDate.year, startDate.month - 1, startDate.day, parseInt(startTime)).toISOString() : null,
-                        endDate: endDate && endTime ? new Date(endDate.year, endDate.month - 1, endDate.day, parseInt(endTime)).toISOString() : null
+                        startDate: selectedStart ? selectedStart.toISOString() : null,
+                        endDate: selectedEnd ? selectedEnd.toISOString() : null
                     })}
+                    readOnly
                 />
             </div>
-        </I18nProvider>
+        );
+    }
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-2 items-end gap-2">
+                    <ShadcnDatePicker
+                        required
+                        label="Date de début"
+                        value={startDate}
+                        min={today(getLocalTimeZone())}
+                        max={endDate}
+                        invalid={!!dateError}
+                        onChange={handleStartDateChange}
+                    />
+                    <TimeInput
+                        name="startTime"
+                        label="Heure de début"
+                        onChange={handleStartTimeChange}
+                        value={startTime}
+                        isInvalid={!!dateError}
+                        maxValue={isSameDay(startDate, endDate) ? endTime : null}
+                    />
+                </div>
+                <div className="grid grid-cols-2 items-end gap-2">
+                    <ShadcnDatePicker
+                        required
+                        label="Date de fin"
+                        value={endDate}
+                        min={startDate}
+                        disabled={!startDate}
+                        invalid={!!dateError}
+                        onChange={handleEndDateChange}
+                    />
+                    <TimeInput
+                        name="endTime"
+                        label="Heure de fin"
+                        onChange={handleEndTimeChange}
+                        value={endTime}
+                        isDisabled={!startDate || !endDate}
+                        isInvalid={!!dateError}
+                        minValue={isSameDay(startDate, endDate) ? startTime : null}
+                    />
+                </div>
+            </div>
+            {dateError && <span className="text-red-500 text-sm">{dateError}</span>}
+            <input
+                type="hidden"
+                name={name}
+                value={JSON.stringify({
+                    startDate: startDate && startTime ? new Date(startDate.year, startDate.month - 1, startDate.day, parseInt(startTime)).toISOString() : null,
+                    endDate: endDate && endTime ? new Date(endDate.year, endDate.month - 1, endDate.day, parseInt(endTime)).toISOString() : null
+                })}
+                readOnly
+            />
+        </div>
     );
 }
-
-
-    

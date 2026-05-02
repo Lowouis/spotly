@@ -57,12 +57,15 @@ export async function middleware(req) {
         '/register',
         '/api/auth*',
         '/api/public/check-sso',
+        '/api/public/kerberos-config',
         '/api/public/client-ip',
+        '/api/app-settings',
+        '/api/entry',
+        '/api/entry/code-action',
         '/api/authorized-location/check*',
         '/_next',
         '/favicon.ico',
-        '/banner_low.png',
-        '/banner.png'
+        '/banner_low.png'
     ];
     
     const normalizedPath = pathWithoutBasePath.endsWith('/') && pathWithoutBasePath.length > 1
@@ -119,6 +122,6 @@ export async function middleware(req) {
 export const config = {
     matcher: [
         // Exclude all static resources
-        '/((?!_next/static|_next/image|favicon.ico|public/|banner_low.png|banner.png).*)',
+        '/((?!_next/static|_next/image|favicon.ico|public/|banner_low.png).*)',
     ],
 };

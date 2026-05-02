@@ -55,6 +55,7 @@ const Localisations = ({}) => {
                 actions={['edit', 'delete']}
                 filter={['updatedAt', 'id', 'createdAt']}
                 searchBy={{tag: "libellé", attr: "libelle"}}
+                showRefresh={false}
             />
         </div>
     );

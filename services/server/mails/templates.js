@@ -1,6 +1,16 @@
 import {marked} from 'marked';
 import {formatDuration} from "@/global";
 
+const appUrl = process.env.NEXTAUTH_URL || 'https://votre-app.vercel.app';
+
+const spotlyLogoSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" width="34" height="34" role="img" aria-label="Spotly" style="display:block;">
+  <path d="M 585 194 C 705 178 812 247 851 356 C 895 480 830 584 693 673 C 574 750 488 803 505 872 C 524 949 657 895 748 795 C 845 689 981 697 1055 789 C 1134 887 1103 1043 984 1108 C 889 1161 775 1137 700 1069" fill="none" stroke="#0a0a0a" stroke-width="135" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 367 333 C 398 252 463 206 559 193 C 663 178 749 225 790 306 C 835 395 786 493 671 526 C 573 554 459 544 380 505 C 331 481 315 431 345 391 C 352 381 361 359 367 333 Z" fill="#0a0a0a"/>
+  <path d="M 374 492 C 346 522 316 540 274 548 C 252 552 244 561 244 575 C 244 589 257 596 276 591 C 291 587 309 581 323 574 C 306 594 294 613 292 626 C 290 641 305 650 319 639 C 340 622 361 594 389 552 Z" fill="#0a0a0a"/>
+  <circle cx="528" cy="269" r="30" fill="white"/>
+</svg>`;
+
 /**
  * Ajoute un style par défaut pour les emails.
  * @param {string} body - Contenu HTML du corps de l'email.
@@ -14,18 +24,48 @@ const wrapInHtmlTemplate = (body, subject = "Spotly") => `
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta http-equiv="Content-Language" content="fr" />
     <title>${subject}</title>
+    <style>
+      body { margin: 0; padding: 0; background: #f6f7f9; color: #111827; font-family: Arial, Helvetica, sans-serif; }
+      .page { width: 100%; background: #f6f7f9; padding: 32px 12px; }
+      .email { max-width: 640px; margin: 0 auto; overflow: hidden; border: 1px solid #e5e7eb; border-radius: 20px; background: #ffffff; }
+      .header { padding: 28px 32px 18px; border-bottom: 1px solid #eef0f3; }
+      .brand { display: inline-flex; align-items: center; gap: 12px; color: #111827; text-decoration: none; }
+      .brand-mark { display: inline-flex; height: 42px; width: 42px; align-items: center; justify-content: center; border-radius: 14px; background: #f3f4f6; vertical-align: middle; }
+      .brand-name { display: inline-block; margin-left: 12px; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; vertical-align: middle; }
+      .content { padding: 28px 32px 8px; }
+      .content h1 { margin: 0 0 18px; color: #111827; font-size: 24px; line-height: 1.25; letter-spacing: -0.03em; }
+      .content h2, .content h3, .content h4 { margin: 26px 0 10px; color: #111827; font-size: 15px; line-height: 1.4; }
+      .content p { margin: 0 0 16px; color: #374151; font-size: 15px; line-height: 1.7; }
+      .content ul, .content ol { margin: 12px 0 22px; padding: 0; list-style: none; }
+      .content li { margin: 8px 0; padding: 12px 14px; border: 1px solid #eef0f3; border-radius: 12px; background: #fafafa; color: #374151; font-size: 14px; line-height: 1.5; text-align: center; }
+      .content strong { color: #111827; font-weight: 700; }
+      .content a { color: #ffffff; display: inline-block; margin-top: 6px; padding: 12px 18px; border-radius: 999px; background: #111827; font-weight: 700; text-decoration: none; }
+      .content hr { display: none; }
+      .footer { padding: 22px 32px 28px; color: #6b7280; font-size: 12px; line-height: 1.6; }
+      .footer a { color: #111827; font-weight: 700; text-decoration: none; }
+      @media (max-width: 520px) {
+        .page { padding: 16px 8px; }
+        .header, .content, .footer { padding-left: 20px; padding-right: 20px; }
+        .content h1 { font-size: 21px; }
+      }
+    </style>
   </head>
-  <body style="margin:0;padding:0;font-family:Arial,sans-serif;">
-    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #fff; font-family: Arial, sans-serif;">
-      <div style="width: 100%; text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 24px; font-weight: bold; color: #2563eb; letter-spacing: .02em;">Spotly</div>
+  <body>
+    <div class="page">
+      <div class="email">
+        <header class="header">
+          <a class="brand" href="${appUrl}">
+            <span class="brand-mark">${spotlyLogoSvg}</span>
+            <span class="brand-name">Spotly</span>
+          </a>
+        </header>
+        <main class="content">
+          ${body}
+        </main>
+        <footer class="footer">
+          <p style="margin:0;">Ce message est généré automatiquement, merci de ne pas y répondre.</p>
+        </footer>
       </div>
-      ${body}
-      <footer style="margin-top: 20px; font-size: 0.9em; text-align: center; color: #666; border-top: 1px solid #eee; padding-top: 20px;">
-        <a href="${process.env.NEXTAUTH_URL || 'https://votre-app.vercel.app'}" style="color: #666; text-decoration: none;">Spotly</a>
-        <p style="margin: 10px 0;">Merci d'utiliser notre service !</p>
-        <p style="margin: 10px 0;">Ce message est généré automatiquement, merci de ne pas y répondre.</p>
-      </footer>
     </div>
   </body>
 </html>
@@ -61,74 +101,23 @@ const displayDate = (value, fallback = 'non renseignée') => {
     });
 };
 
-// Sécurise les contenus texte
-const escapeHtml = (unsafe = '') => (
-    String(unsafe)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;')
-);
+const cleanMarkdown = (markdown) => String(markdown || '')
+    .replace(/\n---\s*/g, '\n')
+    .replace(/\n\s*Cordialement,?\s*\n\s*(L'équipe de gestion des ressources|Votre système de gestion des ressources\.)\s*/gi, '\n')
+    .replace(/\n\s*L'équipe de gestion des ressources\s*/gi, '\n')
+    .replace(/\n\s*Votre système de gestion des ressources\.\s*/gi, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
-// Construit un module "Commentaires" stylé à insérer en fin d'email
-const buildCommentsModule = (data) => {
-    const hasSingleNotes = !!(data && (data.comment || data.adminNote));
-    const entryNotes = Array.isArray(data?.entries) ? data.entries.filter(e => e && (e.comment || e.adminNote)) : [];
-    const hasGroupNotes = entryNotes.length > 0;
+const displayGroupEntryDate = (entry) => displayDate(entry?.startDate || entry?.date);
 
-    if (!hasSingleNotes && !hasGroupNotes) return '';
+const displayGroupEntryTimeRange = (entry) => {
+    const start = entry?.startDate ? new Date(entry.startDate) : null;
+    const end = entry?.endDate ? new Date(entry.endDate) : null;
 
-    const labelStyle = "margin:0 0 6px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;";
-    const chipStyle = "display:inline-block;padding:8px 12px;border-radius:8px;background:#f3f4f6;color:#111827;font-size:14px;line-height:1.4;";
-    const cardStyle = "padding:12px;border:1px solid #e5e7eb;border-radius:8px;background:#ffffff;margin:10px 0;";
+    if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 'non renseignés';
 
-    let inner = '';
-
-    if (hasSingleNotes) {
-        if (data.comment) {
-            inner += `<div style="${cardStyle}">`
-                + `<p style="${labelStyle}">Commentaire de l'utilisateur</p>`
-                + `<div style="${chipStyle}">${escapeHtml(data.comment)}</div>`
-                + `</div>`;
-        }
-        if (data.adminNote) {
-            inner += `<div style="${cardStyle}">`
-                + `<p style="${labelStyle}">Note de l'administrateur</p>`
-                + `<div style="${chipStyle}">${escapeHtml(data.adminNote)}</div>`
-                + `</div>`;
-        }
-    }
-
-    if (hasGroupNotes) {
-        inner += entryNotes.map((entry, idx) => {
-            const blocks = [];
-            if (entry.comment) {
-                blocks.push(
-                    `<div style="${cardStyle}">`
-                    + `<p style="${labelStyle}">Réservation n°${idx + 1} — Commentaire utilisateur</p>`
-                    + `<div style="${chipStyle}">${escapeHtml(entry.comment)}</div>`
-                    + `</div>`
-                );
-            }
-            if (entry.adminNote) {
-                blocks.push(
-                    `<div style="${cardStyle}">`
-                    + `<p style="${labelStyle}">Réservation n°${idx + 1} — Note administrateur</p>`
-                    + `<div style="${chipStyle}">${escapeHtml(entry.adminNote)}</div>`
-                    + `</div>`
-                );
-            }
-            return blocks.join('');
-        }).join('');
-    }
-
-    return `
-      <section style="margin-top:24px;border-top:1px solid #e5e7eb;padding-top:16px;">
-        <h3 style="margin:0 0 12px 0;font-size:16px;color:#111827;">Commentaires</h3>
-        ${inner}
-      </section>
-    `;
+    return `${start.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} - ${end.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
 };
 
 const templates = {
@@ -145,7 +134,7 @@ Votre demande de réservation pour la ressource **${displayValue(data.resource)}
 
 ---
 
-Cordialement,  
+Cordialement,
 L'équipe de gestion des ressources 
 
 `,
@@ -266,7 +255,7 @@ Une personne a réservé la ressource **${displayValue(data.resource)}** après 
 Merci de restituer celle-ci au plus vite.
 
 ### Détails
-- **Demandeur** : ${displayValue(data.requester)}
+- **Demandeur·euse** : ${displayValue(data.requester)}
 - **Ressource** : ${displayValue(data.resource)}
 - **Fin prévue de votre réservation** : ${displayDate(data.endDate)}
 
@@ -287,40 +276,28 @@ Suite à votre demande, voici le code de réservation pour la ressource **${disp
 - **Date de début** : ${displayDate(data.startDate)}
 - **Date de fin** : ${displayDate(data.endDate)}
 
-- **Code de réservation** : 
-<span style="display: block; margin: 16px auto; text-align: center; font-size: 2.5em; font-weight: bold; letter-spacing: 0.1em;">
-${data.key}
-</span>
+Votre code de réservation :
+
+<div style="margin:18px 0 8px;text-align:center;font-size:34px;font-weight:800;letter-spacing:0.16em;color:#111827;line-height:1.2;">${data.key}</div>
 ---
 
 Cordialement,  
 L'équipe de gestion des ressources 
 `,
     groupReservationAccepted: (data) => `
-# Confirmation de réservation
+# Réservation de groupe acceptée
 
 Bonjour **${displayUser(data)}**,
 
-Nous vous confirmons que votre réservation de groupe pour la ressource **${displayValue(data.resource)}** a bien été acceptée.
+Votre réservation de groupe pour la ressource **${displayValue(data.resource)}** a bien été acceptée.
 
-### Détails de votre réservation :
+### Réservations confirmées
 ${data.entries.map((entry, index) => `
-#### Réservation n°${index + 1} :
-- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-    })}
-- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })}
+#### Réservation ${index + 1}
+- **Date** : ${displayGroupEntryDate(entry)}
+- **Horaires** : ${displayGroupEntryTimeRange(entry)}
 
-${entry.isCode ? `<div style="text-align:center; margin: 16px 0;"><span style="font-size:2em; font-weight:bold; letter-spacing:0.1em;">${entry.returnedConfirmationCode}</span></div>` : ''}
+${entry.isCode ? `<div style="margin:18px 0 8px;text-align:center;font-size:30px;font-weight:800;letter-spacing:0.16em;color:#111827;line-height:1.2;">${entry.returnedConfirmationCode}</div>` : ''}
 
 <div style="text-align:center; margin: 12px 0;">
   <a href="${process.env.NEXTAUTH_URL}?sso=1&resId=${entry.id}&tab=bookings" style="display:inline-block; background:#2563eb; color:#fff; font-weight:bold; padding:10px 24px; border-radius:6px; text-decoration:none; font-size:1.1em;">Voir ma réservation</a>
@@ -336,29 +313,18 @@ L'équipe de gestion des ressources
 `,
 
     groupReservationWaiting: (data) => `
-# Demande de réservation en attente
+# Demande de réservation de groupe en attente
 
 Bonjour **${displayUser(data)}**,
 
 Votre demande de réservation de groupe pour la ressource **${displayValue(data.resource)}** a bien été soumise.
-Lorsque votre demande sera approuvée, vous recevrez un email de confirmation avec les codes de réservation.
+Vous recevrez une confirmation lorsque la demande sera traitée.
 
-### Détails de votre demande :
+### Réservations demandées
 ${data.entries.map((entry, index) => `
-#### Réservation ${index + 1} :
-- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-    })}
-- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })}
+#### Réservation ${index + 1}
+- **Date** : ${displayGroupEntryDate(entry)}
+- **Horaires** : ${displayGroupEntryTimeRange(entry)}
 `).join('\n')}
 
 ---
@@ -374,22 +340,11 @@ Bonjour **${displayUser(data)}**,
 
 Nous vous confirmons l'annulation de votre réservation de groupe pour la ressource **${displayValue(data.resource)}**.
 
-### Détails des réservations annulées :
+### Réservations annulées
 ${data.entries.map((entry, index) => `
-#### Réservation ${index + 1} :
-- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-    })}
-- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })}
+#### Réservation ${index + 1}
+- **Date** : ${displayGroupEntryDate(entry)}
+- **Horaires** : ${displayGroupEntryTimeRange(entry)}
 `).join('\n')}
 
 ---
@@ -403,22 +358,11 @@ L'équipe de gestion des ressources
 
 Une nouvelle demande de réservation de groupe a été soumise par **${displayUser(data)}** pour la ressource **${displayValue(data.resource)}**.
 
-### Détails de la demande :
+### Réservations demandées
 ${data.entries.map((entry, index) => `
-#### Réservation ${index + 1} :
-- **Date** : ${new Date(entry.startDate).toLocaleString("FR-fr", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-    })}
-- **Horaires** : ${new Date(entry.startDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })} - ${new Date(entry.endDate).toLocaleTimeString("FR-fr", {
-        hour: "2-digit",
-        minute: "2-digit"
-    })}
+#### Réservation ${index + 1}
+- **Date** : ${displayGroupEntryDate(entry)}
+- **Horaires** : ${displayGroupEntryTimeRange(entry)}
 `).join('\n')}
 
 Merci de valider ou rejeter cette demande de réservation de groupe dans les plus brefs délais dans la section administrateur de votre application Spotly.
@@ -436,8 +380,8 @@ Bonjour **${data.userName}**,
 Nous vous informons que la ressource **${data.resourceName}** (${data.resourceCategory} - ${data.resourceSite}) est devenue indisponible.
 
 ### Votre réservation concernée :
-- **Date de début** : ${data.reservationStartDate}
-- **Date de fin** : ${data.reservationEndDate}
+- **Date de début** : ${displayDate(data.reservationStartDate)}
+- **Date de fin** : ${displayDate(data.reservationEndDate)}
 
 ### Raison de l'indisponibilité :
 ${data.message}
@@ -452,7 +396,7 @@ Pour toute question, contactez : ${data.adminContact}
 
 ---
 
-Cordialement,  
+Cordialement,
 L'équipe de gestion des ressources
 `,
 
@@ -469,8 +413,8 @@ Votre réservation a été automatiquement modifiée suite à l'indisponibilité
 - **Catégorie** : ${data.newResourceCategory}
 
 ### Détails de votre réservation :
-- **Date de début** : ${data.reservationStartDate}
-- **Date de fin** : ${data.reservationEndDate}
+- **Date de début** : ${displayDate(data.reservationStartDate)}
+- **Date de fin** : ${displayDate(data.reservationEndDate)}
 
 
 ### Que faire maintenant ?
@@ -484,6 +428,34 @@ Pour toute question, contactez : ${data.adminContact}
 ---
 
 Cordialement,  
+L'équipe de gestion des ressources
+`,
+
+    resourceProblemReported: (data) => `
+# Problème signalé sur une ressource
+
+Bonjour **${data.ownerName}**,
+
+Un problème a été signalé par **${data.reporterName}** sur la ressource **${data.resourceName}**.
+
+### Ressource concernée
+- **Site** : ${data.resourceSite}
+- **Catégorie** : ${data.resourceCategory}
+
+### Signalement
+- **Titre** : ${data.eventTitle}
+- **Typologie** : ${data.eventType}
+- **Impact** : ${data.severity}
+- **Date du problème** : ${displayDate(data.problemDate)}
+
+### Description
+${data.description}
+
+Connectez-vous à l’administration pour suivre cet événement dans la section Maintenance.
+
+---
+
+Cordialement,
 L'équipe de gestion des ressources
 `,
 
@@ -510,9 +482,8 @@ export const getEmailTemplate = (templateName, data) => {
             : data?.entries
     };
 
-    const markdown = templates[templateName](sanitized);
+    const markdown = cleanMarkdown(templates[templateName](sanitized));
     const htmlBody = marked(markdown);
-    const commentsModule = buildCommentsModule(data);
 
-    return wrapInHtmlTemplate(htmlBody + commentsModule, data.subject || "Spotly");
+    return wrapInHtmlTemplate(htmlBody, data.subject || "Spotly");
 };

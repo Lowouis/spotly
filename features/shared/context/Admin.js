@@ -9,6 +9,7 @@ const AdminContext = createContext();
 export function AdminProvider({children}) {
     const { data: session } = useSession();
     const [activeSection, setActiveSection] = useState('dashboard');
+    const [dashboardView, setDashboardView] = useState('activity');
 
     // Restaurer l'active section depuis le localStorage au chargement
     useEffect(() => {
@@ -29,7 +30,7 @@ export function AdminProvider({children}) {
         return null;
     }
     return (
-        <AdminContext.Provider value={{activeSection, setActiveSection: updateActiveSection}}>
+        <AdminContext.Provider value={{activeSection, setActiveSection: updateActiveSection, dashboardView, setDashboardView}}>
             {children}
         </AdminContext.Provider>
     );

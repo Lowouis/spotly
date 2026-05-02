@@ -4,6 +4,36 @@ import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from 'next/server';
 import {requireAdmin} from '@/services/server/api-auth';
 
+const allowedIconKeys = new Set([
+    "generic",
+    "vehicle",
+    "room",
+    "computer",
+    "projector",
+    "camera",
+    "audio",
+    "key",
+    "tool",
+    "lab",
+    "stock",
+]);
+
+const sanitizeIconKey = (iconKey) => allowedIconKeys.has(iconKey) ? iconKey : "generic";
+
+const sanitizeSvg = (svg) => {
+    if (!svg || typeof svg !== "string") return null;
+
+    const trimmed = svg.trim();
+    if (!trimmed) return null;
+    if (!trimmed.startsWith("<svg") || !trimmed.endsWith("</svg>")) return null;
+    if (trimmed.length > 10000) return null;
+
+    return trimmed
+        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+        .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, "")
+        .replace(/\s(href|xlink:href)\s*=\s*(['"])\s*javascript:[\s\S]*?\2/gi, "");
+};
+
 export default async function handler(req, res) {
 
     await runMiddleware(req, res);
@@ -20,11 +50,13 @@ export default async function handler(req, res) {
         );
         res.status(200).json(categories);
     } else if (req.method === "POST"){
-        const {name, description, owner, pickable } = req.body;
+        const {name, description, owner, pickable, iconKey, iconSvg } = req.body;
         const category = await db.category.create({
             data: {
                 name,
                 description,
+                iconKey: sanitizeIconKey(iconKey),
+                iconSvg: sanitizeSvg(iconSvg),
                 ownerId: owner !== null ? owner.id : null,
                 pickableId: pickable !== null ? pickable.id : null
             }
@@ -32,7 +64,7 @@ export default async function handler(req, res) {
         res.status(200).json(category);
     } else if (req.method === "PUT") {
 
-        const {id, name, description, owner, pickable } = req.body;
+        const {id, name, description, owner, pickable, iconKey, iconSvg } = req.body;
         // if owner is undefined, check if any resource with moderate to true who has this category has an owner or it domain has one
         if (owner === undefined) {
             const resources = await db.resource.findMany({
@@ -65,6 +97,8 @@ export default async function handler(req, res) {
                 ...(description ? {
                     description
                 } : { description : null }),
+                iconKey: sanitizeIconKey(iconKey),
+                iconSvg: sanitizeSvg(iconSvg),
                 ownerId: owner !== undefined && owner !== null ? owner.id : null,
                 pickableId: pickable !== undefined && pickable !== null ? pickable.id : null
             }

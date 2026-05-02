@@ -1,4 +1,4 @@
-import {addToast} from '@heroui/toast';
+import {addToast} from "@/lib/toast";
 
 function getApiEndpoint() {
     const endpoint = process.env.NEXT_PUBLIC_API_ENDPOINT;

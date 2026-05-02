@@ -1,10 +1,7 @@
 import {runMiddleware} from "@/services/server/core";
+import {getClientIp} from "@/services/server/client-ip";
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
-    let ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress;
-
-    ip = ip.substring(ip.lastIndexOf(':') + 1);
-    
-    res.status(200).json({ip});
+    res.status(200).json({ip: getClientIp(req)});
 }

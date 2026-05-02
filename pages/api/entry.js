@@ -2,13 +2,16 @@
 import db from "@/server/services/databaseService";
 import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from "next/server";
-import {isAdminSession, isSameUser, requireAuth} from '@/services/server/api-auth';
+import {isAdminSession, isSameUser, rateLimit, requireAuth} from '@/services/server/api-auth';
+import {createEntryMessage} from '@/services/server/entry-messages';
 
 
 export default async function handler(req, res) {
     await runMiddleware(req, res);
-    const session = req.method === 'OPTIONS' ? null : await requireAuth(req, res);
-    if (req.method !== 'OPTIONS' && !session) return;
+    const isPublicCodeLookup = req.method === 'GET' && typeof req.query.returnedConfirmationCode === 'string' && /^\d{6}$/.test(req.query.returnedConfirmationCode);
+    if (isPublicCodeLookup && !rateLimit(req, res, {key: 'entry-code-lookup', limit: 20, windowMs: 60_000})) return;
+    const session = req.method === 'OPTIONS' || isPublicCodeLookup ? null : await requireAuth(req, res);
+    if (req.method !== 'OPTIONS' && !session && !isPublicCodeLookup) return;
     try {
         if(req.method === "GET"){
             const {
@@ -69,7 +72,7 @@ export default async function handler(req, res) {
                 },
                 where: {
                     ...(moderate && {moderate : moderate}),
-                    ...(isAdminSession(session) ? (userId && {userId : parseInt(userId)}) : {userId: Number(session.user.id)}),
+                    ...(session ? (isAdminSession(session) ? (userId && {userId : parseInt(userId)}) : {userId: Number(session.user.id)}) : {}),
                     ...(resourceId && {
                         resourceId: parseInt(resourceId)
                     }),
@@ -134,6 +137,11 @@ export default async function handler(req, res) {
                             },
                             owner: true,
                             pickable: true
+                        }
+                    },
+                    _count: {
+                        select: {
+                            messages: true
                         }
                     }
                 }
@@ -271,9 +279,21 @@ export default async function handler(req, res) {
                                     category: {include: {owner: true}},
                                     owner: true
                                 }
+                            },
+                            _count: {
+                                select: {
+                                    messages: true
+                                }
                             }
                         }
                     });
+
+                    await createEntryMessage({
+                        entryId: entry.id,
+                        userId: parsedUserId,
+                        content: comment,
+                    });
+
                     newEntries.push(entry);
                 }
 

@@ -20,23 +20,47 @@ model Session {
 }
 
 model User {
-  id            Int        @id @default(autoincrement())
-  name          String?
-  surname       String?
-  username      String?    @unique
-  password      String?
-  email         String?    @unique
-  emailVerified DateTime?
-  image         String?
-  external      Boolean    @default(false)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @default(now()) @updatedAt
-  sessions      Session[]
-  entry         entry[]
-  role          role       @default(USER)
-  domains       domain[]   @relation("userToDomain")
-  categories    category[] @relation("userToCategory")
-  resources     resource[] @relation("userToResource")
+  id                       Int                       @id @default(autoincrement())
+  name                     String?
+  surname                  String?
+  username                 String?                   @unique
+  password                 String?
+  email                    String?                   @unique
+  emailVerified            DateTime?
+  image                    String?
+  external                 Boolean                   @default(false)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @default(now()) @updatedAt
+  sessions                 Session[]
+  entry                    entry[]
+  role                     role                      @default(USER)
+  domains                  domain[]                  @relation("userToDomain")
+  categories               category[]                @relation("userToCategory")
+  resources                resource[]                @relation("userToResource")
+  favorites                favorite[]
+  notifications            notification[]
+  messages                 entryMessage[]
+  resourceEvents           resourceEvent[]
+  conversationParticipants conversationParticipant[]
+  conversationMessages     conversationMessage[]
+}
+
+enum conversationContextType {
+  ENTRY
+  RESOURCE_EVENT
+}
+
+enum conversationStatus {
+  OPEN
+  RESOLVED
+  ARCHIVED
+}
+
+enum conversationParticipantRole {
+  OWNER
+  REPORTER
+  ADMIN
+  PARTICIPANT
 }
 
 enum role {
@@ -49,6 +73,8 @@ model category {
   id          Int        @id @default(autoincrement())
   name        String
   description String?
+  iconKey     String?
+  iconSvg     String?    @db.Text
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   resource    resource[]
@@ -70,6 +96,7 @@ model domain {
   pickable   pickable   @relation(fields: [pickableId], references: [id])
   pickableId Int
   resource   resource[]
+  favorites  favorite[]
 }
 
 enum status {
@@ -81,6 +108,17 @@ enum status {
   BLOCKED
 }
 
+enum notificationType {
+  RESERVATION_DELAYED
+  RESERVATION_START_MISSED
+  RESERVATION_REJECTED
+  RESERVATION_WAITING_CONFIRMATION
+  MESSAGE_UNREAD
+  CONVERSATION_UNREAD
+  RESOURCE_PROBLEM_REPORTED
+  RESOURCE_PICKUP_BLOCKED
+}
+
 enum resourceState {
   AVAILABLE
   UNAVAILABLE
@@ -88,22 +126,126 @@ enum resourceState {
 }
 
 model resource {
-  id          Int           @id @default(autoincrement())
+  id          Int             @id @default(autoincrement())
   name        String
   description String?
   moderate    Boolean
   domainId    Int
   categoryId  Int
-  status      resourceState @default(AVAILABLE)
-  category    category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  domains     domain        @relation(fields: [domainId], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  status      resourceState   @default(AVAILABLE)
+  category    category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  domains     domain          @relation(fields: [domainId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   entry       entry[]
   ownerId     Int?
-  owner       User?         @relation("userToResource", fields: [ownerId], references: [id])
-  pickable    pickable?     @relation(fields: [pickableId], references: [id])
+  owner       User?           @relation("userToResource", fields: [ownerId], references: [id])
+  pickable    pickable?       @relation(fields: [pickableId], references: [id])
   pickableId  Int?
+  favorites   favorite[]
+  events      resourceEvent[]
+}
+
+model resourceEventType {
+  id        Int             @id @default(autoincrement())
+  name      String          @unique
+  icon      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  events    resourceEvent[]
+}
+
+model resourceEvent {
+  id                       Int                @id @default(autoincrement())
+  resourceId               Int
+  typeId                   Int?
+  reportedById             Int?
+  title                    String
+  customTypeName           String?
+  customTypeIcon           String?
+  description              String?            @db.Text
+  severity                 String?
+  problemDate              DateTime?
+  startDate                DateTime
+  endDate                  DateTime?
+  makesResourceUnavailable Boolean            @default(false)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+  resource                 resource           @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  type                     resourceEventType? @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  reportedBy               User?              @relation(fields: [reportedById], references: [id], onDelete: SetNull)
+
+  @@index([resourceId, startDate])
+  @@index([typeId])
+  @@index([reportedById])
+}
+
+model conversation {
+  id           Int                       @id @default(autoincrement())
+  contextType  conversationContextType
+  contextId    Int
+  status       conversationStatus        @default(OPEN)
+  title        String?
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  participants conversationParticipant[]
+  messages     conversationMessage[]
+
+  @@unique([contextType, contextId])
+  @@index([contextType, status])
+}
+
+model conversationParticipant {
+  id             Int                         @id @default(autoincrement())
+  conversationId Int
+  userId         Int
+  role           conversationParticipantRole @default(PARTICIPANT)
+  readAt         DateTime?
+  createdAt      DateTime                    @default(now())
+  conversation   conversation                @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId, readAt])
+}
+
+model conversationMessage {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  userId         Int
+  content        String       @db.Text
+  system         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  conversation   conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([userId])
+}
+
+enum favoriteType {
+  SITE
+  RESOURCE
+}
+
+model favorite {
+  id         Int          @id @default(autoincrement())
+  userId     Int
+  type       favoriteType
+  domainId   Int?
+  resourceId Int?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain     domain?      @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  resource   resource?    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, domainId])
+  @@unique([userId, type, resourceId])
+  @@index([userId])
+  @@index([domainId])
+  @@index([resourceId])
 }
 
 model pickable {
@@ -120,23 +262,61 @@ model pickable {
 }
 
 model entry {
-  id                        Int       @id @default(autoincrement())
+  id                        Int            @id @default(autoincrement())
   resourceId                Int?
   userId                    Int
+  // Legacy: replaced by entryMessage, kept temporarily for existing emails/data.
   comment                   String?
-  moderate                  status    @default(ACCEPTED)
-  lastUpdatedModerateStatus DateTime? @default(now())
+  moderate                  status         @default(ACCEPTED)
+  lastUpdatedModerateStatus DateTime?      @default(now())
+  // Legacy: replaced by entryMessage, kept temporarily for moderation emails/data.
   adminNote                 String?
   startDate                 DateTime
   endDate                   DateTime
-  createdAt                 DateTime  @default(now())
-  returned                  Boolean   @default(false)
-  returnedConfirmationCode  String?   @unique
-  updatedAt                 DateTime  @updatedAt
-  resource                  resource? @relation(fields: [resourceId], references: [id], onDelete: Restrict)
-  user                      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  system                    Boolean   @default(false)
-  recurringGroupId          Int?      @default(0)
+  createdAt                 DateTime       @default(now())
+  returned                  Boolean        @default(false)
+  returnedConfirmationCode  String?        @unique
+  updatedAt                 DateTime       @updatedAt
+  resource                  resource?      @relation(fields: [resourceId], references: [id], onDelete: Restrict)
+  user                      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications             notification[]
+  messages                  entryMessage[]
+  system                    Boolean        @default(false)
+  recurringGroupId          Int?           @default(0)
+}
+
+model entryMessage {
+  id        Int       @id @default(autoincrement())
+  entryId   Int
+  userId    Int
+  content   String    @db.Text
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  entry     entry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([entryId, createdAt])
+  @@index([userId, readAt])
+}
+
+model notification {
+  id        Int              @id @default(autoincrement())
+  userId    Int
+  entryId   Int?
+  type      notificationType
+  title     String
+  message   String           @db.Text
+  readAt    DateTime?
+  deletedAt DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entry     entry?           @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, entryId])
+  @@index([userId, deletedAt, readAt])
+  @@index([entryId])
 }
 
 model authorizedLocation {
@@ -161,12 +341,26 @@ model LdapConfig {
 }
 
 model timeScheduleOptions {
-  id              Int      @id @default(autoincrement())
-  onPickup        Int
-  onReturn        Int
-  authorizedDelay Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  onPickup           Int
+  onReturn           Int
+  authorizedDelay    Int      @default(0)
+  maxEarlyPickupMinutes Int   @default(0)
+  shortcutStartHour  Int      @default(8)
+  shortcutEndHour    Int      @default(18)
+  shortcutWeekEndDay Int      @default(5)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model appSettings {
+  id                                  Int      @id @default(autoincrement())
+  showFooter                          Boolean  @default(true)
+  conversationAutoDeleteDays          Int      @default(7)
+  conversationAutoArchiveResolvedDays Int      @default(7)
+  eventDiscussionNotificationsEnabled Boolean  @default(true)
+  createdAt                           DateTime @default(now())
+  updatedAt                           DateTime @updatedAt
 }
 
 model KerberosConfig {
@@ -206,4 +400,12 @@ model EmailNotificationLog {
 
   @@unique([templateName, recipient, contextKey, dateKey])
   @@index([createdAt])
+}
+
+model EmailTemplateSetting {
+  id           Int      @id @default(autoincrement())
+  templateName String   @unique
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

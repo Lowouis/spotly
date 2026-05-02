@@ -1,7 +1,7 @@
 import {checkIPAuthorization, fetchAPI, fetchIP, getAllUsers, getURL, updateEntry} from './api';
-import {addToast} from '@heroui/toast';
+import {addToast} from '@/lib/toast';
 
-jest.mock('@heroui/toast', () => ({
+jest.mock('@/lib/toast', () => ({
     addToast: jest.fn(),
 }));
 

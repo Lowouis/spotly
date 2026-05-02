@@ -18,6 +18,8 @@ export default function RootLayout({ children }) {
         <head>
             <title>{metadata.title}</title>
             <meta name="description" content={metadata.description} />
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+            <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
         </head>
         <body className="antialiased flex flex-col min-h-screen bg-neutral-100 dark:bg-neutral-900">
         <main className="flex-1">

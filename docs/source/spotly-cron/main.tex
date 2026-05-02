@@ -21,23 +21,24 @@
 \begin{itemize}[leftmargin=1.2em]
   \item Fichier cron : \texttt{scripts/cron.mjs}
   \item Fichiers de logs : \texttt{logs/cron-yyyy-mm-dd.log.}
-  \item Config PM2 : \texttt{ecosystem.config.cjs} (\texttt{spotly-cron})
+  \item Planification : cron systeme (\texttt{crontab -e})
 \end{itemize}
 
 \section*{Planification \& démarrage}
 \begin{itemize}[leftmargin=1.2em]
-  \item Fréquence : toutes les 30 minutes (\texttt{*/30 * * * *})
-  \item Démarrage/reload (sur le serveur) :
+  \item Cycle principal : toutes les 30 minutes (\texttt{*/30 * * * *})
+  \item Alertes de retard : tous les jours a 07:00 (\texttt{0 7 * * *})
+  \item Configuration serveur :
 \begin{verbatim}
-pm2 reload ecosystem.config.cjs --only spotly-cron --update-env
-pm2 logs spotly-cron --lines 100
+crontab -e
+
+*/30 * * * * cd /path/to/spotly && npm run "run cron"
+0 7 * * * cd /path/to/spotly && npm run "run cron:daily"
 \end{verbatim}
 \end{itemize}
 
 \section*{Variables d'environnement}
 \begin{itemize}[leftmargin=1.2em]
-  \item \textbf{RUN\_AT\_START=1} : lance un cycle immédiatement au démarrage, puis selon la planification.
-  \item \textbf{RUN\_ONCE=1} : exécute un cycle unique puis quitte (test manuel).
   \item \textbf{LOGS\_DIR} : répertoire des logs (optionnel). Par défaut \texttt{logs/} à la racine du projet.
 \end{itemize}
 
@@ -48,7 +49,6 @@ pm2 logs spotly-cron --lines 100
   \item Consultation :
 \begin{verbatim}
 tail -n 200 "${LOGS_DIR:-logs}/cron-$(date +%F).log"
-pm2 logs spotly-cron --lines 200
 \end{verbatim}
 \end{itemize}
 
@@ -68,20 +68,20 @@ pm2 logs spotly-cron --lines 200
 
 \section*{Tests rapides}
 \begin{itemize}[leftmargin=1.2em]
-  \item Un cycle immédiat (unique) :
+  \item Un cycle immédiat :
 \begin{verbatim}
-RUN_ONCE=1 node scripts/cron.mjs
+npm run "run cron"
 \end{verbatim}
-  \item Immédiat + planification 30 min :
+  \item Vérification journalière des retards :
 \begin{verbatim}
-RUN_AT_START=1 node scripts/cron.mjs
+npm run "run cron:daily"
 \end{verbatim}
 \end{itemize}
 
 \section*{Dépannage}
 \begin{itemize}[leftmargin=1.2em]
-  \item \textbf{Pas de logs} : vérifier \texttt{pm2 logs}, droits d'écriture du dossier, valeur de \texttt{LOGS\_DIR}, app \texttt{spotly-cron} en ligne.
-  \item \textbf{Pas d'exécution au démarrage} : s'assurer que \texttt{RUN\_AT\_START=1} est bien défini dans PM2 et recharger avec \texttt{--update-env}.
+  \item \textbf{Pas de logs} : vérifier \texttt{crontab -l}, droits d'écriture du dossier et valeur de \texttt{LOGS\_DIR}.
+  \item \textbf{Pas d'exécution planifiée} : vérifier le chemin absolu du projet et l'environnement charge par cron.
   \item \textbf{Fuseau horaire} : les timestamps sont ceux du serveur.
 \end{itemize}
 
