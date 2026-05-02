@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm ci",
+  "installCommand": "npm ci --include=dev",
   "framework": "nextjs",
   "functions": {
     "pages/api/**/*.js": {
