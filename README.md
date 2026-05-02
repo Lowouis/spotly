@@ -6,12 +6,6 @@ La version actuelle est orientée production: espace utilisateur, recherche de d
 
 ## Aperçu
 
-Place les captures dans `docs/screenshots/` avec ces noms exacts:
-
-- `mon-espace.png`
-- `tableau-de-bord.png`
-- `rechercher.png`
-
 ![Mon espace](./docs/screenshots/mon-espace.png)
 
 ![Tableau de bord](./docs/screenshots/tableau-de-bord.png)
