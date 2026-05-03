@@ -459,6 +459,40 @@ Cordialement,
 L'équipe de gestion des ressources
 `,
 
+    resourceEventAffectedReservation: (data) => `
+# Changement de ressource requis
+
+Bonjour **${data.userName}**, 
+
+Une intervention affecte la ressource **${data.resourceName}** (${data.resourceCategory} - ${data.resourceSite}).
+
+Vous devrez choisir une autre ressource pour votre réservation.
+
+### Réservation concernée
+- **Date de début** : ${displayDate(data.reservationStartDate)}
+- **Date de fin** : ${displayDate(data.reservationEndDate)}
+
+### Motif
+- **Typologie** : ${data.eventType}
+- **Raison** : ${data.eventReason}
+
+### Détail
+${data.eventDescription}
+
+### Prochaine étape
+1. Connectez-vous à votre espace pour modifier votre réservation
+2. Choisissez une autre ressource disponible sur le même créneau
+3. Contactez l’administrateur si vous avez besoin d’aide
+
+### Contact administrateur
+${data.adminContact || 'Contactez votre administrateur habituel.'}
+
+---
+
+Cordialement,
+L'équipe de gestion des ressources
+`,
+
 };
 
 /**

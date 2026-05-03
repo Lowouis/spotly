@@ -24,7 +24,7 @@ export async function canPickupEntryNow(db, entry, now = new Date()) {
 
     const flexiblePickupStart = new Date(startDate.getTime() - maxEarlyPickupMinutes * 60000);
     if (flexiblePickupStart > now) {
-        return {allowed: false, reason: 'La récupération est trop en avance'};
+        return {allowed: false, reason: 'Revenez plus tard'};
     }
 
     const priorReservations = await db.entry.count({

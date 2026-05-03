@@ -119,8 +119,8 @@ export default function ActionOnItem({isOpen, onOpenChange, action, defaultValue
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-3xl overflow-y-auto p-4 sm:p-6">
-                    <DialogHeader className="pr-6">
+                <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-3xl gap-0 overflow-y-auto p-0">
+                    <DialogHeader className="border-b px-6 py-4 pr-12">
                         <DialogTitle>{action === "create" ? "Créer" : "Modifier"}</DialogTitle>
                     </DialogHeader>
                             <ItemForm

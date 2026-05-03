@@ -32,6 +32,14 @@ const normalizeWeekEndDay = (value, fallback) => {
     return parsed;
 };
 
+const isCurrentWeekShortcutExpired = (baseDate, currentTime, options) => {
+    const currentDay = new Date(baseDate.year, baseDate.month - 1, baseDate.day).getDay();
+    const currentIsoDay = currentDay === 0 ? 7 : currentDay;
+    const weekEndIsoDay = options.shortcutWeekEndDay === 0 ? 7 : options.shortcutWeekEndDay;
+
+    return currentIsoDay > weekEndIsoDay || (currentIsoDay === weekEndIsoDay && currentTime.hour >= options.shortcutEndHour);
+};
+
 export default function DateRangePickerSplitted({setValue, name = "date", onChangeCheck, variant = "default", presetRange = null}) {
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -261,8 +269,17 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
         const baseDate = today(getLocalTimeZone());
         const startHour = shortcutOptions.shortcutStartHour;
         const endHour = shortcutOptions.shortcutEndHour;
+        const currentTime = now(getLocalTimeZone());
         let targetStart = baseDate;
         let targetEnd = baseDate;
+
+        if (shortcut === "today" && currentTime.hour >= endHour) {
+            return;
+        }
+
+        if (shortcut === "week" && isCurrentWeekShortcutExpired(baseDate, currentTime, shortcutOptions)) {
+            return;
+        }
 
         if (shortcut === "tomorrow") {
             targetStart = baseDate.add({days: 1});
@@ -288,6 +305,10 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
     const toDate = (value, hour) => value && hour ? new Date(value.year, value.month - 1, value.day, parseInt(hour)) : null;
     const selectedStart = toDate(startDate, startTime);
     const selectedEnd = toDate(endDate, endTime);
+    const currentShortcutDate = today(getLocalTimeZone());
+    const currentShortcutTime = now(getLocalTimeZone());
+    const isTodayShortcutDisabled = currentShortcutTime.hour >= shortcutOptions.shortcutEndHour;
+    const isWeekShortcutDisabled = isCurrentWeekShortcutExpired(currentShortcutDate, currentShortcutTime, shortcutOptions);
     if (variant === "spotly") {
         return (
             <div className="space-y-4">
@@ -318,7 +339,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
 
                     <div className="mt-4 flex flex-wrap items-center gap-2">
                         <span className="mr-1 text-xs font-bold uppercase tracking-wide text-[#5f6b7a] dark:text-neutral-400">Raccourcis</span>
-                        <button type="button" onClick={() => applyShortcut("today")} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#dfe6ee] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                        <button type="button" onClick={() => applyShortcut("today")} disabled={isTodayShortcutDisabled} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-bold ${isTodayShortcutDisabled ? 'cursor-not-allowed border-[#e5e7eb] bg-[#f8fafc] text-[#9aa4b2] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-600' : 'border-[#dfe6ee] bg-white text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900'}`}>
                                 <CalendarDaysIcon className="h-5 w-5" />
                                 Aujourd’hui
                             </button>
@@ -326,7 +347,7 @@ export default function DateRangePickerSplitted({setValue, name = "date", onChan
                                 <SunIcon className="h-5 w-5" />
                                 Demain
                             </button>
-                        <button type="button" onClick={() => applyShortcut("week")} className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#dfe6ee] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                        <button type="button" onClick={() => applyShortcut("week")} disabled={isWeekShortcutDisabled} className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-bold ${isWeekShortcutDisabled ? 'cursor-not-allowed border-[#e5e7eb] bg-[#f8fafc] text-[#9aa4b2] dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-600' : 'border-[#dfe6ee] bg-white text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900'}`}>
                                 <CalendarDaysIcon className="h-5 w-5" />
                                 Cette semaine
                             </button>

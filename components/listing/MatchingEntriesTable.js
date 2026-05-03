@@ -6,9 +6,7 @@ import {
     ArrowRightIcon,
     BuildingOffice2Icon,
     ClockIcon,
-    FunnelIcon,
     ListBulletIcon,
-    Squares2X2Icon,
     StarIcon,
 } from "@heroicons/react/24/outline";
 import {getCategoryIcon} from "@/lib/category-icons";
@@ -51,24 +49,6 @@ export default function MatchingEntriesTable({resources, entry, session, handleR
                     <p className="mt-2 text-sm font-medium text-[#6b7585] dark:text-neutral-400 md:text-base">Sélectionnez la ressource qui correspond le mieux à vos besoins.</p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                    <Button type="button" variant="outline" className="h-11 rounded-xl border-[#dfe6ee] bg-white px-4 text-sm font-bold text-[#3f4652] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100">
-                        <ListBulletIcon className="h-5 w-5" />
-                        Trier par : Pertinence
-                    </Button>
-                    <Button type="button" variant="outline" className="h-11 rounded-xl border-[#dfe6ee] bg-white px-4 text-sm font-bold text-[#3f4652] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100">
-                        <FunnelIcon className="h-5 w-5" />
-                        Filtres
-                    </Button>
-                    <Button type="button" variant="outline" className="h-11 rounded-xl border-red-100 bg-white px-4 text-sm font-bold text-red-500 shadow-sm dark:border-red-950 dark:bg-neutral-950">
-                        <ListBulletIcon className="h-5 w-5" />
-                        Liste
-                    </Button>
-                    <Button type="button" variant="outline" className="h-11 rounded-xl border-[#dfe6ee] bg-white px-4 text-sm font-bold text-[#3f4652] dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100">
-                        <Squares2X2Icon className="h-5 w-5" />
-                        Grille
-                    </Button>
-                </div>
             </div>
 
             <div className="w-full space-y-3">

@@ -5,6 +5,7 @@ import {useQuery} from "@tanstack/react-query";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent} from "@/components/ui/chart";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {publicEnv} from "@/config/publicEnv";
 import {useAdminContext} from "@/features/shared/context/Admin";
 import {BuildingOffice2Icon, CalendarDaysIcon, ChartBarIcon, ClockIcon, CubeIcon, MapPinIcon, Squares2X2Icon} from "@heroicons/react/24/outline";
 import {BarChart3, HardHat} from "lucide-react";
@@ -112,7 +113,7 @@ function truncateChartLabel(value, maxLength = 18) {
 async function fetchDashboard({queryKey}) {
     const [, filters] = queryKey;
     const params = new URLSearchParams({range: filters.range, siteId: filters.siteId, categoryId: filters.categoryId});
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/dashboard?${params.toString()}`, {credentials: 'include'});
+    const response = await fetch(`${publicEnv.basePath}/api/dashboard?${params.toString()}`, {credentials: 'include'});
 
     if (!response.ok) throw new Error('Impossible de charger le tableau de bord');
     return response.json();

@@ -48,7 +48,7 @@ const statusLabels = {
     ARCHIVED: 'Archivée',
 };
 
-export default function ConversationChat({conversationId, className = '', showParticipants = true, showHeader = true, subtitle = 'Conversation liée à l’événement', onMessageSent, onMessagesRead, manageParticipants = false}) {
+export default function ConversationChat({conversationId, className = '', showParticipants = true, showHeader = true, subtitle = 'Conversation liée à l’événement', onMessageSent, onMessagesRead, manageParticipants = false, onConversationUpdated}) {
     const {data: session} = useSession();
     const [conversation, setConversation] = useState(null);
     const [users, setUsers] = useState([]);
@@ -162,7 +162,8 @@ export default function ConversationChat({conversationId, className = '', showPa
             });
             if (!response.ok) throw new Error('Failed to update status');
             const updatedConversation = await response.json();
-            setConversation((current) => ({...current, status: updatedConversation.status}));
+            setConversation((current) => current ? {...current, ...updatedConversation} : updatedConversation);
+            onConversationUpdated?.(updatedConversation);
         } catch (error) {
             console.error(error);
             addToast({title: 'Erreur', description: 'Impossible de modifier le statut.', color: 'danger', timeout: 4000});

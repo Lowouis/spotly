@@ -20,7 +20,6 @@ import {
     CubeIcon,
     EnvelopeIcon,
     HandRaisedIcon,
-    LockClosedIcon,
     PencilIcon,
     ShieldExclamationIcon,
     TrashIcon,
@@ -205,6 +204,51 @@ const BookingStepCard = ({step, title, description, metaIcon: MetaIcon, metaLabe
     </div>
 );
 
+const InlineCodeEntry = ({title, description, email, otp, error, resendTimer, isSubmitting, confirmDisabled = false, confirmLabel = 'Valider le code', onOtpChange, onConfirm, onResend, onCancel}) => (
+    <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900 dark:bg-blue-950/20">
+        <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+                {title && <h4 className="font-bold text-neutral-950 dark:text-neutral-50">{title}</h4>}
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {description}{' '}
+                    {email && <span className="font-semibold text-neutral-900 dark:text-neutral-100">{email}</span>}
+                </p>
+            </div>
+            {onCancel && (
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onCancel} aria-label="Fermer la saisie du code">
+                    <XMarkIcon className="h-4 w-4" />
+                </Button>
+            )}
+        </div>
+        {error && (
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                {error}
+            </div>
+        )}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+                value={otp}
+                onChange={(event) => onOtpChange(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                onPaste={(event) => {
+                    event.preventDefault();
+                    onOtpChange(event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6));
+                }}
+                inputMode="numeric"
+                maxLength={6}
+                name="confirmation_code"
+                placeholder="000000"
+                className="text-center text-lg tracking-[0.3em] sm:w-44"
+            />
+            <Button type="button" className="sm:min-w-40" disabled={otp.length !== 6 || confirmDisabled || isSubmitting} onClick={onConfirm}>
+                {isSubmitting ? <><Spinner className="h-4 w-4" />Validation...</> : confirmLabel}
+            </Button>
+            <Button type="button" variant="outline" disabled={resendTimer > 0 || isSubmitting} onClick={onResend}>
+                {resendTimer > 0 ? `Renvoyer dans ${resendTimer}s` : 'Renvoyer le code'}
+            </Button>
+        </div>
+    </div>
+);
+
 function getConversationOwner(resource) {
     return resource?.owner || resource?.category?.owner || resource?.domains?.owner || null;
 }
@@ -232,6 +276,8 @@ export default function ModalCheckingBooking({
         if (!open) {
             setModalStepper("main");
             setOtp("");
+            setError(null);
+            setResendTimer(0);
         }
         onOpenChange?.(open);
     };
@@ -276,6 +322,8 @@ export default function ModalCheckingBooking({
         if (!nextEntry) return;
         setModalStepper("main");
         setOtp("");
+        setError(null);
+        setResendTimer(0);
         onGroupEntryChange?.(nextEntry);
     };
     const selectGroupEntryByDate = (date) => {
@@ -328,9 +376,7 @@ export default function ModalCheckingBooking({
     const handlePickUp = async (onClose)=>{
         setError(null);
         setOtp("");
-        if (requiresPickupCode(entry)) {
-            setModalStepper("pickup")
-        } else {
+        if (!requiresPickupCode(entry)) {
             await hookHandlePickUp(onClose, handleRefresh);
         }
     }
@@ -369,9 +415,7 @@ export default function ModalCheckingBooking({
         if (!isOpen || initialAction !== "pickup") return;
         if (!localIsAbleToPickUp()) return;
 
-        if (requiresPickupCode(entry)) {
-            setModalStepper("pickup");
-        } else {
+        if (!requiresPickupCode(entry)) {
             hookHandlePickUp(() => handleOpenChange(false), handleRefresh);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -381,9 +425,7 @@ export default function ModalCheckingBooking({
         setError(null);
         setOtp("");
 
-        if (requiresReturnCode(entry)) {
-            setModalStepper("return")
-        } else {
+        if (!requiresReturnCode(entry)) {
             await hookHandleReturn(null, handleRefresh);
         }
     }
@@ -463,6 +505,7 @@ export default function ModalCheckingBooking({
             color : "success"
         });
         setModalStepper("main");
+        setOtp("");
         sendEmail({
             to: entry.user.email,
             subject: "Confirmation de restitution - " + entry.resource.name,
@@ -522,10 +565,10 @@ export default function ModalCheckingBooking({
         });
     }
 
-    const handleUpdateEntity = async () => {
+    const handleUpdateEntity = async (action) => {
         if(canConfirmWithCode(entry, otp)){
             try {
-                if (modalStepper === "return") {
+                if (action === "return") {
                     await handleReturnUpdate({entry});
                 } else {
                     await handlePickUpUpdate({entry});
@@ -537,6 +580,12 @@ export default function ModalCheckingBooking({
             setError("Le code ne correspond pas, veuillez réessayer");
         }
     };
+
+    useEffect(() => {
+        setOtp("");
+        setError(null);
+        setResendTimer(0);
+    }, [entry?.id]);
     const handleOwnerReturn = (entry) => {
             if (entry.resource.owner !== null){
                 return entry.resource.owner.name + " " + entry.resource.owner.surname;
@@ -1354,7 +1403,7 @@ export default function ModalCheckingBooking({
                                                             <>
                                                                 <BookingStepCard
                                                                     step={3}
-                                                                    title={pickupActive ? "Prise en charge" : entry.moderate === "ACCEPTED" && endDate < nowDate && !isAutomaticEnded ? "Réservation expirée" : "Prise en charge"}
+                                                                    title={localIsAbleToPickUp() && requiresPickupCode(entry) ? "Confirmer la récupération" : pickupActive ? "Prise en charge" : entry.moderate === "ACCEPTED" && endDate < nowDate && !isAutomaticEnded ? "Réservation expirée" : "Prise en charge"}
                                                                     description={pickupActive ? `La ressource est disponible dans ${pickupPlace}.` : localIsAbleToPickUp() ? "Vous pouvez prendre la ressource dès maintenant." : pickupUnavailableReason || `Prise en charge prévue le ${formatDate(entry.startDate)}.`}
                                                                     metaIcon={ClockIcon}
                                                                     metaLabel={pickupActive ? "En cours depuis" : null}
@@ -1388,35 +1437,56 @@ export default function ModalCheckingBooking({
                                                                                     )}
                                                                                 </div>
                                                                             )}
-                                                                        <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-                                                                            <div className="flex items-start gap-3">
-                                                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-300">
-                                                                                    {requiresPickupCode(entry) ? <LockClosedIcon className="h-6 w-6"/> : <HandRaisedIcon className="h-6 w-6"/>}
+                                                                            {!requiresPickupCode(entry) && (
+                                                                                <div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
+                                                                                    <div className="flex items-start gap-3">
+                                                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-300">
+                                                                                            <HandRaisedIcon className="h-6 w-6"/>
+                                                                                        </div>
+                                                                                        <div>
+                                                                                            <h4 className="font-bold text-neutral-950 dark:text-neutral-50">
+                                                                                                Je prends la ressource
+                                                                                            </h4>
+                                                                                            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                                                                                                Validez pour prendre en charge la ressource.
+                                                                                            </p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <Button
+                                                                                        disabled={!localIsAbleToPickUp() || hasBlockingPrevious || isPickupLoading}
+                                                                                        className="mt-5 w-full sm:w-auto"
+                                                                                        onClick={() => handlePickUp(onClose)}
+                                                                                    >
+                                                                                        {isPickupLoading ? <><Spinner className="h-4 w-4"/>Récupération...</> : localIsAbleToPickUp() ? "Je prends la ressource" : "Récupération indisponible"}
+                                                                                    </Button>
                                                                                 </div>
-                                                                                <div>
-                                                                                    <h4 className="font-bold text-neutral-950 dark:text-neutral-50">
-                                                                                        {requiresPickupCode(entry) ? "Confirmer la récupération" : "Je prends la ressource"}
-                                                                                    </h4>
-                                                                                    <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                                                                                        {requiresPickupCode(entry) ? "Saisissez le code reçu par mail pour prendre en charge la ressource." : "Validez pour prendre en charge la ressource."}
-                                                                                    </p>
-                                                                                </div>
-                                                                            </div>
-                                                                            <Button
-                                                                                disabled={!localIsAbleToPickUp() || hasBlockingPrevious || isPickupLoading}
-                                                                                className="mt-5 w-full sm:w-auto"
-                                                                                onClick={() => handlePickUp(onClose)}
-                                                                            >
-                                                                                {isPickupLoading ? <><Spinner className="h-4 w-4"/>Récupération...</> : requiresPickupCode(entry) ? "Saisir le code" : localIsAbleToPickUp() ? "Je prends la ressource" : "Récupération indisponible"}
-                                                                            </Button>
-                                                                        </div>
+                                                                            )}
+                                                                            {requiresPickupCode(entry) && (
+                                                                            <InlineCodeEntry
+                                                                                title={null}
+                                                                                description="Saisissez le code reçu par mail pour prendre en charge la ressource sur"
+                                                                                email={entry?.user?.email}
+                                                                                otp={otp}
+                                                                                error={error}
+                                                                                resendTimer={resendTimer}
+                                                                                isSubmitting={updateEntryMutation.isPending}
+                                                                                confirmDisabled={!localIsAbleToPickUp() || hasBlockingPrevious || isPickupLoading}
+                                                                                confirmLabel="Confirmer la récupération"
+                                                                                onOtpChange={(value) => {
+                                                                                    setError(null);
+                                                                                    setOtp(value);
+                                                                                }}
+                                                                                onConfirm={() => handleUpdateEntity('pickup')}
+                                                                                onResend={handleResendCode}
+                                                                            />
+                                                                            )}
                                                                         </div>
                                                                     )}
                                                                 </BookingStepCard>
 
                                                                 <BookingStepCard
                                                                     step={4}
-                                                                    title={returnDone ? "Restituée" : "Restitution"}
+                                                                    title={returnDone ? "Restituée" : canReturnNow && requiresReturnCode(entry) ? "Confirmer la restitution" : "Restitution"}
                                                                     description={<ReturnDueDescription targetDate={entry.endDate} done={returnDone}/>}
                                                                     metaIcon={CalendarDaysIcon}
                                                                     metaDate={formatShortDate(entry.endDate)}
@@ -1427,10 +1497,33 @@ export default function ModalCheckingBooking({
                                                                     last
                                                                 >
                                                                     {canReturnNow && (
-                                                                        <Button size="lg" className="w-full rounded-xl font-bold shadow-md shadow-blue-500/20 sm:w-auto" disabled={isReturnLoading} onClick={handleReturn}>
-                                                                            {isReturnLoading ? <Spinner className="h-5 w-5"/> : <ArrowUturnLeftIcon className="h-5 w-5"/>}
-                                                                            {isReturnLoading ? "Restitution..." : adminMode ? "Forcer la restitution" : "Restituer maintenant"}
-                                                                        </Button>
+                                                                        <div className="space-y-4">
+                                                                            {!requiresReturnCode(entry) && (
+                                                                                <Button size="lg" className="w-full rounded-xl font-bold shadow-md shadow-blue-500/20 sm:w-auto" disabled={isReturnLoading} onClick={handleReturn}>
+                                                                                    {isReturnLoading ? <Spinner className="h-5 w-5"/> : <ArrowUturnLeftIcon className="h-5 w-5"/>}
+                                                                                    {isReturnLoading ? "Restitution..." : adminMode ? "Forcer la restitution" : "Restituer maintenant"}
+                                                                                </Button>
+                                                                            )}
+                                                                            {requiresReturnCode(entry) && (
+                                                                                <InlineCodeEntry
+                                                                                    title={null}
+                                                                                    description="Saisissez le code reçu par mail pour restituer la ressource sur"
+                                                                                    email={entry?.user?.email}
+                                                                                    otp={otp}
+                                                                                    error={error}
+                                                                                    resendTimer={resendTimer}
+                                                                                    isSubmitting={updateEntryMutation.isPending}
+                                                                                    confirmDisabled={isReturnLoading}
+                                                                                    confirmLabel="Confirmer la restitution"
+                                                                                    onOtpChange={(value) => {
+                                                                                        setError(null);
+                                                                                        setOtp(value);
+                                                                                    }}
+                                                                                    onConfirm={() => handleUpdateEntity('return')}
+                                                                                    onResend={handleResendCode}
+                                                                                />
+                                                                            )}
+                                                                        </div>
                                                                     )}
                                                                 </BookingStepCard>
                                                             </>

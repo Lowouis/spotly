@@ -88,6 +88,7 @@ describe('mail rendering and delivery safeguards', () => {
         ['reservationDelayedAlert', {entryId: 42, resource: {name: 'Ressource Test 2'}, endDate: '2026-04-28T20:00:00.000Z'}],
         ['reservationReturnedConfirmation', {entryId: 42, resource: {name: 'Ressource Test 2'}, endDate: '2026-04-28T20:00:00.000Z'}],
         ['latePickupWarning', {offender: 'Nadia Robert', requester: 'Alice Martin', resource: 'Ressource Test 2', endDate: '2026-04-28T20:00:00.000Z'}],
+        ['resourceEventAffectedReservation', {userName: 'Nadia Robert', resourceName: 'Ressource Test 2', resourceCategory: 'Categorie Test', resourceSite: 'Site Test', reservationStartDate: '2026-04-28T20:00:00.000Z', reservationEndDate: '2026-04-28T21:00:00.000Z', eventType: 'Maintenance', eventReason: 'Batterie défectueuse', eventDescription: 'Intervention urgente'}],
     ])('renders %s without leaked placeholders', (templateName, data) => {
         const message = buildEmailMessage({
             from: 'Spotly <spotly@example.test>',

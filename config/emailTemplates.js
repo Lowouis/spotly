@@ -17,6 +17,7 @@ export const EMAIL_TEMPLATE_GROUPS = [
             {templateName: 'resentCode', label: 'À la demande de code'},
             {templateName: 'resourceUnavailable', label: 'Si une ressource devient indisponible'},
             {templateName: 'resourceChanged', label: 'Si la ressource est remplacée'},
+            {templateName: 'resourceEventAffectedReservation', label: 'Si un événement impacte une réservation'},
         ],
     },
     {

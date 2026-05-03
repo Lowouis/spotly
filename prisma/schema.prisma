@@ -367,6 +367,10 @@ model appSettings {
   conversationAutoDeleteDays          Int      @default(7)
   conversationAutoArchiveResolvedDays Int      @default(7)
   eventDiscussionNotificationsEnabled Boolean  @default(true)
+  setupCompleted                      Boolean  @default(false)
+  setupCompletedAt                    DateTime?
+  setupMode                           String?
+  setupAdminUserId                    Int?
   createdAt                           DateTime @default(now())
   updatedAt                           DateTime @updatedAt
 }

@@ -99,7 +99,7 @@ export const useEntryActions = (entry, clientIP) => {
         const resourceAvailable = entry?.resource?.status === 'AVAILABLE';
         const noQueue = waitlistCount === 0;
         const ipAuthorized = lastestPickable(entry)?.name === "HIGH_AUTH" ? isIPAuthorized : true;
-        
+
         return (entry.moderate === "ACCEPTED")
             && new Date(entry?.endDate) > new Date()
             && validDatesToPickup()
@@ -116,7 +116,7 @@ export const useEntryActions = (entry, clientIP) => {
         if (entry?.resource?.status !== 'AVAILABLE') return "Ressource indisponible pour le moment";
         if (waitlistCount > 0) return "Une réservation est prévue avant la vôtre";
         if (timeScheduleOptions?.maxEarlyPickupMinutes === 0 && timeScheduleOptions?.ajustedStartDate > new Date().toISOString()) return "La récupération anticipée est désactivée";
-        if (timeScheduleOptions?.flexiblePickupStartDate > new Date().toISOString()) return "La récupération est trop en avance";
+        if (timeScheduleOptions?.flexiblePickupStartDate > new Date().toISOString()) return "Revenez plus tard";
         return "Conditions de récupération non réunies";
     };
 

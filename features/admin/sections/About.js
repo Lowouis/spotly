@@ -1,5 +1,6 @@
 'use client';
 
+import {useEffect, useState} from 'react';
 import {Badge} from "@/components/ui/badge";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import SnakeLogo from "@/components/utils/SnakeLogo";
@@ -9,6 +10,25 @@ import packageJson from "@/package.json";
 const repositoryUrl = "https://github.com/Lowouis/spotly";
 const sponsorUrl = "https://buymeacoffee.com/glouis";
 
+function normalizeVersion(version) {
+    return String(version || '').replace(/^v/i, '').split('-')[0];
+}
+
+function compareVersions(left, right) {
+    const leftParts = normalizeVersion(left).split('.').map((part) => Number.parseInt(part, 10) || 0);
+    const rightParts = normalizeVersion(right).split('.').map((part) => Number.parseInt(part, 10) || 0);
+    const maxLength = Math.max(leftParts.length, rightParts.length);
+
+    for (let index = 0; index < maxLength; index += 1) {
+        const leftPart = leftParts[index] || 0;
+        const rightPart = rightParts[index] || 0;
+        if (leftPart > rightPart) return 1;
+        if (leftPart < rightPart) return -1;
+    }
+
+    return 0;
+}
+
 const technicalItems = [
     {label: "Application", value: metadata.title},
     {label: "Version", value: packageJson.version},
@@ -16,6 +36,29 @@ const technicalItems = [
 ];
 
 export default function About() {
+    const [latestRelease, setLatestRelease] = useState(null);
+    const [releaseError, setReleaseError] = useState(false);
+    const updateAvailable = latestRelease?.tagName && compareVersions(latestRelease.tagName, packageJson.version) > 0;
+
+    useEffect(() => {
+        let active = true;
+
+        fetch('/api/github/latest-release')
+            .then((response) => response.ok ? response.json() : Promise.reject(new Error('release-check-failed')))
+            .then((data) => {
+                if (!active) return;
+                setLatestRelease(data.available ? data : null);
+            })
+            .catch(() => {
+                if (!active) return;
+                setReleaseError(true);
+            });
+
+        return () => {
+            active = false;
+        };
+    }, []);
+
     return (
         <div className="p-4">
             <div className="mx-auto flex max-w-4xl flex-col gap-4">
@@ -38,12 +81,26 @@ export default function About() {
                             réservations et intégrations système.
                         </p>
                         <div className="grid gap-3 sm:grid-cols-3">
-                            {technicalItems.map((item) => (
-                                <div key={item.label} className="rounded-lg border bg-background p-3">
-                                    <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{item.label}</div>
-                                    <div className="mt-1 font-medium">{item.value}</div>
-                                </div>
-                            ))}
+                            {technicalItems.map((item) => {
+                                const isVersion = item.label === 'Version';
+
+                                return (
+                                    <div key={item.label} className="rounded-lg border bg-background p-3">
+                                        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{item.label}</div>
+                                        <div className="mt-1 flex flex-wrap items-center gap-2 font-medium">
+                                            <span>{item.value}</span>
+                                            {isVersion && updateAvailable && (
+                                                <a href={latestRelease.htmlUrl} target="_blank" rel="noreferrer">
+                                                    <Badge variant="warning">Nouvelle version disponible : {latestRelease.tagName}</Badge>
+                                                </a>
+                                            )}
+                                            {isVersion && !updateAvailable && latestRelease?.tagName && <Badge variant="success">À jour</Badge>}
+                                            {isVersion && releaseError && <Badge variant="neutral">Vérification release indisponible</Badge>}
+                                        </div>
+
+                                    </div>
+                                );
+                            })}
                         </div>
                     </CardContent>
                 </Card>

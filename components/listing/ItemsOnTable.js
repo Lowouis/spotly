@@ -522,7 +522,7 @@ const CategoryIconCell = ({category}) => {
 const CategoryNameCell = ({category}) => (
     <div className="flex min-w-0 items-center gap-3">
         <CategoryIconCell category={category}/>
-        <span className="block min-w-0 truncate font-semibold" title={category?.name}>{category?.name || '-'}</span>
+        <span className="block min-w-0 truncate" title={category?.name}>{category?.name || '-'}</span>
     </div>
 );
 

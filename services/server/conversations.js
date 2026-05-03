@@ -187,9 +187,48 @@ export async function deleteConversationForSession(session, conversationId) {
     return {count: conversation.messages.length};
 }
 
+async function closeResourceEventOnArchive(tx, eventId, archivedAt) {
+    const event = await tx.resourceEvent.findUnique({
+        where: {id: Number(eventId)},
+        select: {id: true, resourceId: true, endDate: true, makesResourceUnavailable: true},
+    });
+    if (!event) return;
+
+    if (event.endDate && new Date(event.endDate) <= archivedAt) return;
+
+    await tx.resourceEvent.update({
+        where: {id: event.id},
+        data: {endDate: archivedAt},
+    });
+
+    if (!event.makesResourceUnavailable) return;
+
+    const remainingOpenEvents = await tx.resourceEvent.count({
+        where: {
+            resourceId: event.resourceId,
+            makesResourceUnavailable: true,
+            id: {not: event.id},
+            OR: [{endDate: null}, {endDate: {gt: archivedAt}}],
+        },
+    });
+
+    if (!remainingOpenEvents) {
+        await tx.resource.update({where: {id: event.resourceId}, data: {status: 'AVAILABLE'}});
+    }
+}
+
 export async function updateConversationStatus(session, conversationId, status) {
     const conversation = await getConversationForSession(session, conversationId);
     if (!conversation || !canManageConversation(session, conversation) || conversation.status === 'ARCHIVED' || !['OPEN', 'RESOLVED', 'ARCHIVED'].includes(status)) return null;
+
+    if (conversation.contextType === 'RESOURCE_EVENT' && status === 'ARCHIVED') {
+        const archivedAt = new Date();
+
+        return db.$transaction(async (tx) => {
+            await closeResourceEventOnArchive(tx, conversation.contextId, archivedAt);
+            return tx.conversation.update({where: {id: conversation.id}, data: {status}});
+        });
+    }
 
     return db.conversation.update({where: {id: conversation.id}, data: {status}});
 }

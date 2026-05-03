@@ -122,18 +122,27 @@ const EndDateEditor = ({event, onSave}) => {
         if (saved) setOpen(false);
     };
 
+    const revealClassName = !event.endDate
+        ? (open
+            ? 'ml-2 max-w-20 translate-x-0 opacity-100'
+            : 'max-w-0 -translate-x-2 overflow-hidden opacity-0 group-hover/period:ml-2 group-hover/period:max-w-20 group-hover/period:translate-x-0 group-hover/period:opacity-100 group-focus-within/period:ml-2 group-focus-within/period:max-w-20 group-focus-within/period:translate-x-0 group-focus-within/period:opacity-100')
+        : 'ml-2';
+
     return (
         <Popover open={open} onOpenChange={handleOpenChange}>
-            <PopoverTrigger asChild>
-                <Button type="button" variant={event.endDate ? 'ghost' : 'outline'} size={event.endDate ? 'sm' : 'icon'} className={event.endDate ? 'h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground' : 'h-7 w-7 rounded-full'} aria-label={event.endDate ? 'Modifier la date de fin' : 'Ajouter une date de fin'}>
-                    {event.endDate ? (
-                        <span className="flex flex-col items-start leading-tight">
-                            <span className="font-semibold text-foreground">{endLabel.date}</span>
-                            <span className="text-[11px] text-muted-foreground">{endLabel.time}</span>
-                        </span>
-                    ) : <Plus className="h-3.5 w-3.5" />}
-                </Button>
-            </PopoverTrigger>
+            <div className={`flex items-center gap-2 transition-[max-width,margin,transform,opacity] duration-200 ${revealClassName}`}>
+                <span className="text-muted-foreground" aria-hidden="true">&gt;</span>
+                <PopoverTrigger asChild>
+                    <Button type="button" variant={event.endDate ? 'ghost' : 'outline'} size={event.endDate ? 'sm' : 'icon'} className={event.endDate ? 'h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground' : 'h-7 w-7 shrink-0 rounded-full'} aria-label={event.endDate ? 'Modifier la date de fin' : 'Ajouter une date de fin'}>
+                        {event.endDate ? (
+                            <span className="flex flex-col items-start leading-tight">
+                                <span className="font-semibold text-foreground">{endLabel.date}</span>
+                                <span className="text-[11px] text-muted-foreground">{endLabel.time}</span>
+                            </span>
+                        ) : <Plus className="h-3.5 w-3.5" />}
+                    </Button>
+                </PopoverTrigger>
+            </div>
             <PopoverContent className="flex max-h-[min(520px,calc(100vh-5rem))] w-[320px] flex-col overflow-hidden p-0" align="center" side="top" sideOffset={8} collisionPadding={16}>
                 <div className="min-h-0 overflow-y-auto p-3">
                     <Calendar
@@ -235,14 +244,16 @@ export default function Maintenance() {
             method: 'PATCH',
             headers: {'Content-Type': 'application/json'},
             credentials: 'include',
-            body: JSON.stringify({id: eventId}),
+            body: JSON.stringify({id: eventId, archiveConversation: true}),
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
             addToast({title: 'Maintenance', description: payload.message || 'Impossible de clôturer l’événement', color: 'danger'});
             return;
         }
-        addToast({title: 'Maintenance', description: 'Événement clôturé et ressource remise disponible si possible.', color: 'success'});
+        setEventStatus('ended');
+        setConversationStatus('ARCHIVED');
+        addToast({title: 'Maintenance', description: 'Événement clôturé et discussion archivée.', color: 'success'});
         refetch();
     };
 
@@ -367,9 +378,8 @@ export default function Maintenance() {
                                         </div>
                                     </td>
                                     <td className="w-56 p-4 align-middle text-foreground">
-                                        <div className="inline-flex max-w-full items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs shadow-sm">
+                                        <div className="group/period inline-flex max-w-full items-center rounded-xl border border-border bg-background px-3 py-2 text-xs shadow-sm">
                                             <PeriodDateLabel value={event.startDate} />
-                                            <span className="text-muted-foreground">&gt;</span>
                                             <EndDateEditor event={event} onSave={updateEndDate} />
                                         </div>
                                     </td>
@@ -406,7 +416,10 @@ export default function Maintenance() {
                     <DialogHeader className="shrink-0 border-b px-6 py-5">
                         <DialogTitle>Discussion de maintenance</DialogTitle>
                     </DialogHeader>
-                    {selectedConversation?.id && <ConversationChat conversationId={selectedConversation.id} className="min-h-0 flex-1 rounded-none border-0 shadow-none" subtitle="" manageParticipants />}
+                    {selectedConversation?.id && <ConversationChat conversationId={selectedConversation.id} className="min-h-0 flex-1 rounded-none border-0 shadow-none" subtitle="" manageParticipants onConversationUpdated={(updatedConversation) => {
+                        setSelectedConversation((current) => current?.id === updatedConversation?.id ? {...current, ...updatedConversation} : current);
+                        refetch();
+                    }} />}
                 </DialogContent>
             </Dialog>
             <Dialog open={!!selectedDescription} onOpenChange={(open) => !open && setSelectedDescription(null)}>

@@ -54,8 +54,10 @@ export async function middleware(req) {
     // Public routes that do not require authentication
     const publicRoutes = [
         '/login',
+        '/setup',
         '/register',
         '/api/auth*',
+        '/api/setup*',
         '/api/public/check-sso',
         '/api/public/kerberos-config',
         '/api/public/client-ip',
@@ -65,6 +67,7 @@ export async function middleware(req) {
         '/api/authorized-location/check*',
         '/_next',
         '/favicon.ico',
+        '/favicon.svg',
         '/banner_low.png'
     ];
     
@@ -122,6 +125,6 @@ export async function middleware(req) {
 export const config = {
     matcher: [
         // Exclude all static resources
-        '/((?!_next/static|_next/image|favicon.ico|public/|banner_low.png).*)',
+        '/((?!_next/static|_next/image|favicon.ico|favicon.svg|public/|banner_low.png).*)',
     ],
 };

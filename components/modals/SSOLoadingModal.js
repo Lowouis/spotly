@@ -1,8 +1,8 @@
 'use client';
 
 import {useEffect, useState} from "react";
-import {Spinner} from "@/components/ui/spinner";
 import {Dialog, DialogContent, DialogTitle} from "@/components/ui/dialog";
+import SnakeLogo from "@/components/utils/SnakeLogo";
 
 export default function SSOLoadingModal({debugInfo}) {
     const [loadingTime, setLoadingTime] = useState(0);
@@ -21,7 +21,10 @@ export default function SSOLoadingModal({debugInfo}) {
             <DialogContent className="bg-background/95 backdrop-blur-md mx-4 sm:mx-0" hideCloseButton>
                 <DialogTitle className="sr-only">Authentification SSO en cours</DialogTitle>
                 <div className="flex flex-col items-center justify-center py-6 sm:py-8 text-neutral-500">
-                    <Spinner className="h-8 w-8 text-amber-500"/>
+                    <div className="relative flex h-28 w-28 items-center justify-center">
+                        <div className="login-transition-ring absolute inset-0 rounded-full border border-neutral-300 dark:border-neutral-700" />
+                        <SnakeLogo className="login-transition-logo h-16 w-16" title="Authentification Spotly" />
+                    </div>
                     <p className="mt-3 sm:mt-4 text-base sm:text-lg text-center">Authentification SSO en cours...</p>
                     <p className="mt-2 text-xs sm:text-sm text-center">
                         Temps d&apos;attente: {loadingTime} secondes

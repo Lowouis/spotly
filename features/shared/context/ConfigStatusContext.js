@@ -1,6 +1,6 @@
 'use client';
 
-import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 
 const ConfigStatusContext = createContext();
 
@@ -14,9 +14,9 @@ export const useConfigStatus = () => {
 
 export const ConfigStatusProvider = ({children}) => {
     const [configStatuses, setConfigStatuses] = useState({
-        ldap: 'none',
-        sso: 'none',
-        smtp: 'none'
+        ldap: 'loading',
+        sso: 'loading',
+        smtp: 'loading'
     });
 
     const updateConfigStatus = useCallback((service, status) => {
@@ -26,8 +26,26 @@ export const ConfigStatusProvider = ({children}) => {
         }));
     }, []);
 
+    const refreshConfigStatuses = useCallback(async () => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT || ''}/api/config-statuses`, {
+                credentials: 'include',
+            });
+            if (!response.ok) throw new Error('Failed to fetch config statuses');
+            setConfigStatuses(await response.json());
+        } catch {
+            setConfigStatuses({ldap: 'none', sso: 'none', smtp: 'none'});
+        }
+    }, []);
+
+    useEffect(() => {
+        refreshConfigStatuses();
+    }, [refreshConfigStatuses]);
+
     const getStatusColor = useCallback((status) => {
         switch (status) {
+            case 'loading':
+                return 'bg-neutral-300';
             case 'none':
                 return 'bg-red-500';
             case 'error':
@@ -42,8 +60,9 @@ export const ConfigStatusProvider = ({children}) => {
     const value = useMemo(() => ({
         configStatuses,
         updateConfigStatus,
+        refreshConfigStatuses,
         getStatusColor
-    }), [configStatuses, getStatusColor, updateConfigStatus]);
+    }), [configStatuses, getStatusColor, refreshConfigStatuses, updateConfigStatus]);
 
     return (
         <ConfigStatusContext.Provider value={value}>

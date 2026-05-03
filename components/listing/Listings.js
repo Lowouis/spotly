@@ -129,8 +129,24 @@ const getEntryStatus = (entry) => {
     return "begin";
 };
 
-const TimelineStepper = ({items, activeStep}) => (
-    <div className="w-full max-w-[520px] space-y-3" aria-hidden="true">
+const startOfDayValue = (date) => {
+    const value = new Date(date);
+    value.setHours(0, 0, 0, 0);
+    return value;
+};
+
+const getCurrentOrNextRecurringEntry = (entries, now = new Date()) => {
+    const sortedEntries = [...(entries || [])].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    const today = startOfDayValue(now);
+    const todayEntry = sortedEntries.find((entry) => startOfDayValue(entry.startDate).getTime() === today.getTime());
+    if (todayEntry) return todayEntry;
+
+    const nextDayEntry = sortedEntries.find((entry) => startOfDayValue(entry.startDate) > today);
+    return nextDayEntry || sortedEntries[sortedEntries.length - 1] || null;
+};
+
+const TimelineStepper = ({items, hiddenCount}) => (
+    <div className="grid w-full max-w-[520px] grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3" aria-hidden="true">
         <div className="grid w-full items-end" style={{gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`}}>
             {items.map((item) => (
                 <span key={item.id} className="min-w-0 truncate px-1 text-center text-xs font-black text-[#111827] dark:text-neutral-100">
@@ -138,13 +154,14 @@ const TimelineStepper = ({items, activeStep}) => (
                 </span>
             ))}
         </div>
+        {hiddenCount > 0 && <span className="row-span-2 flex h-10 w-14 items-center justify-center self-center rounded-full bg-slate-100 text-base font-black text-[#111827] dark:bg-neutral-900 dark:text-neutral-100">+{hiddenCount}</span>}
         <div className="grid w-full items-center" style={{gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`}}>
             {items.map((item, index) => (
                 <div key={item.id} className="relative flex items-center justify-center">
                     {index < items.length - 1 && (
-                        <span className={`absolute left-1/2 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full ${item.step < activeStep ? "bg-rose-400" : "bg-slate-200 dark:bg-neutral-800"}`} />
+                        <span className={`absolute left-1/2 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full ${item.state === "completed" ? "bg-rose-300" : "bg-slate-200 dark:bg-neutral-800"}`} />
                     )}
-                    <span className="relative z-10 size-4 shrink-0 rounded-full border-2 border-black bg-black dark:border-neutral-50 dark:bg-neutral-50" />
+                    <span className={`relative z-10 shrink-0 rounded-full border-2 transition-all ${item.state === "completed" ? "size-4 border-rose-300 bg-rose-300" : ""} ${item.state === "active" ? "size-5 border-rose-400 bg-white shadow-[0_0_0_6px_rgba(251,113,133,0.14)]" : ""} ${item.state === "upcoming" ? "size-4 border-slate-300 bg-white dark:border-neutral-700 dark:bg-neutral-950" : ""}`} />
                 </div>
             ))}
         </div>
@@ -159,7 +176,7 @@ const EntryProgressStepper = ({items, activeStep}) => (
                     {index < items.length - 1 && (
                         <span className={`absolute left-1/2 top-1/2 h-0.5 w-full -translate-y-1/2 rounded-full ${item.step < activeStep ? "bg-emerald-500" : "bg-[#d6dde8]"}`} />
                     )}
-                    <span className={`relative z-10 size-3 shrink-0 rounded-full border-2 ${item.step <= activeStep ? "border-emerald-500 bg-emerald-500" : "border-[#b8c2d1] bg-white"}`} />
+                    <span className={`relative z-10 size-3.5 shrink-0 rounded-full border-2 transition-colors ${item.step <= activeStep ? "border-emerald-500 bg-emerald-500" : "border-[#d6dde8] bg-white"}`} />
                 </div>
             ))}
         </div>
@@ -180,24 +197,51 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, autoOpenId}) => {
     const sortedEntries = useMemo(() => [...(entries || [])].sort((a, b) =>
         new Date(a.startDate) - new Date(b.startDate)
     ), [entries]);
-    const initialEntry = sortedEntries.find((entry) => entry.id === autoOpenId) || sortedEntries[0];
+    const defaultRecurringEntry = getCurrentOrNextRecurringEntry(sortedEntries);
+    const initialEntry = sortedEntries.find((entry) => entry.id === autoOpenId) || defaultRecurringEntry;
     const [isModalOpen, setIsModalOpen] = useState(autoOpenId ? sortedEntries.some((entry) => entry.id === autoOpenId) : false);
-    const [selectedEntry, setSelectedEntry] = useState(initialEntry);
+    const [selectedEntryId, setSelectedEntryId] = useState(initialEntry?.id ?? null);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const shouldFocusCurrentOccurrenceRef = useRef(false);
     const router = useRouter();
     const searchParams = useSearchParams();
+    const selectedEntry = sortedEntries.find((entry) => entry.id === selectedEntryId) || initialEntry;
 
     useEffect(() => {
         if (!autoOpenId) return;
         const targetEntry = sortedEntries.find((entry) => entry.id === autoOpenId);
         if (!targetEntry) return;
-        setSelectedEntry(targetEntry);
+        setSelectedEntryId(targetEntry.id);
         setIsModalOpen(true);
         const newSearchParams = new URLSearchParams(searchParams);
         newSearchParams.delete('resId');
         const queryString = newSearchParams.toString();
         router.replace(queryString ? `?${queryString}` : '?');
     }, [autoOpenId, router, searchParams, sortedEntries]);
+
+    useEffect(() => {
+        if (!isModalOpen || !shouldFocusCurrentOccurrenceRef.current) return;
+
+        const targetEntry = getCurrentOrNextRecurringEntry(sortedEntries);
+        if (targetEntry) {
+            setSelectedEntryId(targetEntry.id);
+        }
+        shouldFocusCurrentOccurrenceRef.current = false;
+    }, [isModalOpen, sortedEntries]);
+
+    useEffect(() => {
+        if (selectedEntry || !initialEntry) return;
+        setSelectedEntryId(initialEntry.id);
+    }, [initialEntry, selectedEntry]);
+
+    const openCurrentOccurrenceDetails = () => {
+        shouldFocusCurrentOccurrenceRef.current = true;
+        const nextSelectedEntry = getCurrentOrNextRecurringEntry(sortedEntries);
+        if (nextSelectedEntry) {
+            setSelectedEntryId(nextSelectedEntry.id);
+        }
+        setIsModalOpen(true);
+    };
 
     if (!sortedEntries.length || !selectedEntry) return null;
 
@@ -206,21 +250,26 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, autoOpenId}) => {
     const status = getRecurringGroupStatus(sortedEntries);
     const config = STATUS_CONFIG[status];
     const now = new Date();
-    const visibleTimelineEntries = sortedEntries.length > 5 ? sortedEntries.slice(0, 4) : sortedEntries;
+    const today = startOfDayValue(now);
+    const nextTimelineIndex = sortedEntries.findIndex((entry) => startOfDayValue(entry.startDate) >= today);
+    const activeTimelineIndex = nextTimelineIndex === -1 ? sortedEntries.length - 1 : nextTimelineIndex;
+    const visibleTimelineWindowStart = sortedEntries.length <= 4
+        ? 0
+        : activeTimelineIndex >= 3
+            ? activeTimelineIndex
+            : 0;
+    const visibleTimelineEntries = sortedEntries.slice(visibleTimelineWindowStart, visibleTimelineWindowStart + 4);
     const hiddenTimelineCount = Math.max(0, sortedEntries.length - visibleTimelineEntries.length);
-    const timelineItems = [
-        ...visibleTimelineEntries.map((entry, index) => ({
+    const timelineItems = visibleTimelineEntries.map((entry, index) => {
+        const entryDay = startOfDayValue(entry.startDate);
+        const isActive = visibleTimelineWindowStart + index === activeTimelineIndex;
+
+        return {
             id: entry.id,
-            step: index + 1,
             label: index === 0 ? formatTimelineDateTime(entry.startDate) : formatTimelineDate(entry.startDate),
-        })),
-        ...(hiddenTimelineCount > 0 ? [{id: "more", step: visibleTimelineEntries.length + 1, label: `+${hiddenTimelineCount}`}] : []),
-    ];
-    const startedVisibleCount = visibleTimelineEntries.filter((entry) => new Date(entry.startDate) <= now).length;
-    const startedHiddenCount = hiddenTimelineCount > 0
-        ? sortedEntries.slice(visibleTimelineEntries.length).filter((entry) => new Date(entry.startDate) <= now).length
-        : 0;
-    const timelineActiveStep = Math.max(1, Math.min(timelineItems.length, startedVisibleCount + (startedHiddenCount > 0 ? 1 : 0)));
+            state: entryDay < today ? "completed" : isActive ? "active" : "upcoming",
+        };
+    });
     // Vérifier si toutes les réservations peuvent être annulées
     const canCancelGroup = sortedEntries.every(entry => {
         const status = getEntryStatus(entry);
@@ -231,7 +280,7 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, autoOpenId}) => {
         <>
             <div className="w-full overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm transition-colors hover:bg-[#fbfcff] dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-900">
                 <div className="grid gap-4 xl:grid-cols-[minmax(280px,1.15fr)_minmax(420px,1fr)_minmax(130px,0.45fr)] xl:items-center">
-                    <button type="button" onClick={() => setIsModalOpen(true)} className="flex min-w-0 items-center gap-4 text-left">
+                    <button type="button" onClick={openCurrentOccurrenceDetails} className="flex min-w-0 items-center gap-4 text-left">
                         <CategoryLogo category={firstEntry.resource?.category} />
                         <span className="min-w-0">
                             <span className="flex items-center gap-2">
@@ -246,14 +295,13 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, autoOpenId}) => {
 
                     <div className="min-w-0 px-2 py-2 text-sm text-[#111827] dark:text-neutral-100">
                         <div className="mb-4 flex items-center justify-between gap-3">
-                            <CalendarDaysIcon className="h-5 w-5 shrink-0 text-[#6b7585] dark:text-neutral-400" />
                         </div>
 
-                        <TimelineStepper items={timelineItems} activeStep={timelineActiveStep} />
+                        <TimelineStepper items={timelineItems} hiddenCount={hiddenTimelineCount} />
                     </div>
 
                     <div className="flex min-w-0 flex-col gap-3 xl:items-stretch">
-                        <Button type="button" variant="outline" onClick={() => setIsModalOpen(true)} className="h-10 justify-between rounded-xl border-[#d8e0ea] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100">
+                        <Button type="button" variant="outline" onClick={openCurrentOccurrenceDetails} className="h-10 justify-between rounded-xl border-[#d8e0ea] bg-white px-3 text-xs font-bold text-[#111827] hover:bg-[#f6f8fb] dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100">
                             Voir le détail
                             <ChevronRightIcon className="h-4 w-4" />
                         </Button>
@@ -264,7 +312,7 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, autoOpenId}) => {
             <ModalCheckingBooking
                 entry={selectedEntry}
                 groupEntries={sortedEntries}
-                onGroupEntryChange={setSelectedEntry}
+                onGroupEntryChange={(nextEntry) => setSelectedEntryId(nextEntry?.id ?? null)}
                 canCancelGroup={canCancelGroup}
                 onCancelGroup={() => setIsCancelModalOpen(true)}
                 handleRefresh={handleRefresh}

@@ -25,7 +25,7 @@ const LDAP = () => {
     const [errorMessage, setErrorMessage] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState(null);
     const [isLoadingConfig, setIsLoadingConfig] = useState(true);
-    const {updateConfigStatus} = useConfigStatus();
+    const {updateConfigStatus, refreshConfigStatuses} = useConfigStatus();
 
     const [formData, setFormData] = useState({
         serverUrl: "",
@@ -55,19 +55,8 @@ const LDAP = () => {
                         adminPassword: "", // Ne pas pré-remplir le mot de passe
                     }));
 
-                    // Si on a des données, on considère qu'il y a une config
-                    if (data.serverUrl && data.bindDn && data.adminCn && data.adminDn) {
-                        updateConfigStatus('ldap', 'error'); // Par défaut en erreur jusqu'au test
-                    } else {
-                        updateConfigStatus('ldap', 'none');
-                    }
-                } else {
-                    // Pas de configuration existante, c'est normal pour une première utilisation
-                    updateConfigStatus('ldap', 'none');
                 }
             } catch (error) {
-                // Erreur de connexion, on continue avec les champs vides
-                updateConfigStatus('ldap', 'none');
             } finally {
                 setIsLoadingConfig(false);
             }
@@ -156,8 +145,7 @@ const LDAP = () => {
                 color: 'success',
                 duration: 5000,
             });
-            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
-            updateConfigStatus('ldap', 'error');
+            await refreshConfigStatuses();
         } catch (error) {
             addToast({
                 title: 'Configuration LDAP',

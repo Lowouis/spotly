@@ -18,7 +18,19 @@ function LoginContent() {
     const { status } = useSession();
     const ssoParam = searchParams.get('sso');
     const [autoSsoAttempted, setAutoSsoAttempted] = useState(false);
+    const [setupStatus, setSetupStatus] = useState(null);
+    const [setupResetting, setSetupResetting] = useState(false);
     const ssoTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        fetch('/api/setup/status')
+            .then((response) => response.json())
+            .then((data) => {
+                setSetupStatus(data);
+                if (!data.completed) router.replace('/setup');
+            })
+            .catch(() => null);
+    }, [router]);
 
     useEffect(() => {
         if(status === 'authenticated'){
@@ -83,6 +95,23 @@ function LoginContent() {
         }
     };
 
+    const handleSetupReset = async () => {
+        setSetupResetting(true);
+        try {
+            const response = await fetch('/api/setup/dev-reset', {method: 'POST'});
+            if (!response.ok) throw new Error('Reset impossible');
+            router.push('/setup');
+        } catch (e) {
+            addToast({
+                title: 'Guide de configuration',
+                description: e.message || 'Impossible de relancer le guide.',
+                color: 'danger',
+            });
+        } finally {
+            setSetupResetting(false);
+        }
+    };
+
     if (status === 'loading') {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -141,6 +170,14 @@ function LoginContent() {
                     </pre>
                 </div>
             )}
+                    {setupStatus?.canDevReset && (
+                        <div className="mt-6 rounded-lg border border-dashed border-neutral-300 bg-white/70 p-4 text-center text-sm dark:border-neutral-700 dark:bg-neutral-900/70">
+                            <p className="mb-3 text-neutral-600 dark:text-neutral-300">Debug développement : relancer le guide de premier lancement.</p>
+                            <Button type="button" variant="outline" onClick={handleSetupReset} disabled={setupResetting}>
+                                {setupResetting ? 'Réactivation...' : 'Relancer la configuration'}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

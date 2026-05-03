@@ -23,7 +23,7 @@ const SMTPSettings = () => {
     const [errorMessage, setErrorMessage] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState(null);
     const [isLoadingConfig, setIsLoadingConfig] = useState(true);
-    const {updateConfigStatus} = useConfigStatus();
+    const {updateConfigStatus, refreshConfigStatuses} = useConfigStatus();
 
     const [formData, setFormData] = useState({
         host: "",
@@ -54,19 +54,8 @@ const SMTPSettings = () => {
                         secure: data.secure ?? true
                     }));
 
-                    // Si on a des données, on considère qu'il y a une config
-                    if (data.host && data.port && data.username) {
-                        updateConfigStatus('smtp', 'error'); // Par défaut en erreur jusqu'au test
-                    } else {
-                        updateConfigStatus('smtp', 'none');
-                    }
-                } else {
-                    // Pas de configuration existante, c'est normal pour une première utilisation
-                    updateConfigStatus('smtp', 'none');
                 }
             } catch (error) {
-                // Erreur de connexion, on continue avec les champs vides
-                updateConfigStatus('smtp', 'none');
             } finally {
                 setIsLoadingConfig(false);
             }
@@ -158,8 +147,7 @@ const SMTPSettings = () => {
                 color: 'success',
                 duration: 5000,
             });
-            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
-            updateConfigStatus('smtp', 'error');
+            await refreshConfigStatuses();
         } catch (error) {
             addToast({
                 title: 'Configuration SMTP',

@@ -6,6 +6,7 @@ import {decrypt} from '@/services/server/security';
 import {buildEmailMessage, shouldSendDailyNotification} from '@/services/server/mails/mailer';
 import {isEmailTemplateEnabled} from '@/services/server/mails/settings';
 import {ensureResourceEventConversation} from '@/services/server/conversations';
+import {hasOngoingReservation} from '@/services/server/resource-event-impact';
 
 const eventInclude = {
     type: true,
@@ -172,6 +173,7 @@ export default async function handler(req, res) {
             return res.status(400).json({message: 'La date de fin doit être postérieure à la date de début'});
         }
 
+        const now = new Date();
         const event = await db.resourceEvent.update({
             where: {id},
             data: {endDate: nextEndDate},
@@ -187,17 +189,20 @@ export default async function handler(req, res) {
                     content: `Date de fin de l’événement mise à jour : ${formatDate(event.endDate)}.`,
                 },
             });
+            if (Boolean(req.body?.archiveConversation) && event.endDate && event.endDate <= now) {
+                await db.conversation.update({where: {id: conversation.id}, data: {status: 'ARCHIVED'}});
+            }
         }
         if (!event.endDate && existingEvent.makesResourceUnavailable) {
             await db.resource.update({where: {id: existingEvent.resourceId}, data: {status: 'UNAVAILABLE'}});
         }
-        if (event.endDate && event.endDate <= new Date()) {
+        if (event.endDate && event.endDate <= now) {
             const remainingOpenEvents = await db.resourceEvent.count({
                 where: {
                     resourceId: event.resourceId,
                     makesResourceUnavailable: true,
                     id: {not: event.id},
-                    OR: [{endDate: null}, {endDate: {gt: new Date()}}],
+                    OR: [{endDate: null}, {endDate: {gt: now}}],
                 },
             });
             if (!remainingOpenEvents) {
@@ -245,6 +250,10 @@ export default async function handler(req, res) {
         if (!resource) return res.status(404).json({message: 'Ressource introuvable'});
 
         const makesResourceUnavailable = Boolean(req.body?.makesResourceUnavailable) && isAdminSession(session);
+        if (makesResourceUnavailable && await hasOngoingReservation(db, resourceId)) {
+            return res.status(400).json({message: 'Impossible de rendre la ressource indisponible pendant une réservation en cours'});
+        }
+
         const event = await db.resourceEvent.create({
             data: {
                 resourceId,

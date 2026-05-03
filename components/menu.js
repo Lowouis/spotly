@@ -343,11 +343,11 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntr
         ['RESERVATION_DELAYED', 'RESERVATION_START_MISSED', 'RESERVATION_REJECTED', 'RESOURCE_PROBLEM_REPORTED', 'RESOURCE_PICKUP_BLOCKED'].includes(type) ? 'warning' : 'info'
     );
 
-    const getNotificationActionLabel = (type) => {
-        if (type === 'RESERVATION_WAITING_CONFIRMATION') return 'Voir l’administration';
-        if (type === 'RESOURCE_PROBLEM_REPORTED') return 'Voir la maintenance';
-        if (type === 'RESOURCE_PICKUP_BLOCKED') return 'Voir la réservation';
-        if (['MESSAGE_UNREAD', 'CONVERSATION_UNREAD'].includes(type)) return 'Voir le message';
+    const getNotificationActionLabel = (notification) => {
+        if (notification.type === 'RESERVATION_WAITING_CONFIRMATION') return 'Voir l’administration';
+        if (notification.type === 'RESOURCE_PROBLEM_REPORTED') return notification.entryId ? 'Voir la réservation' : 'Voir la maintenance';
+        if (notification.type === 'RESOURCE_PICKUP_BLOCKED') return 'Voir la réservation';
+        if (['MESSAGE_UNREAD', 'CONVERSATION_UNREAD'].includes(notification.type)) return 'Voir le message';
         return 'Voir les réservations';
     };
 
@@ -358,6 +358,10 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntr
         }
 
         if (notification.type === 'RESOURCE_PROBLEM_REPORTED') {
+            if (notification.entryId) {
+                router.push(`/?resId=${notification.entryId}&tab=bookings`);
+                return;
+            }
             router.push('/admin');
             return;
         }
@@ -416,7 +420,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntr
                             title={notification.title}
                             description={notification.message}
                             read={Boolean(notification.readAt)}
-                            actionLabel={getNotificationActionLabel(notification.type)}
+                            actionLabel={getNotificationActionLabel(notification)}
                             onAction={() => handleNotificationAction(notification)}
                             onDelete={() => deleteNotification(notification.id)}
                         />

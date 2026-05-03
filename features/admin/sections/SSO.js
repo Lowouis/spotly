@@ -24,7 +24,7 @@ const SSO = () => {
     const [errorMessage, setErrorMessage] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState(null);
     const [isLoadingConfig, setIsLoadingConfig] = useState(true);
-    const {updateConfigStatus} = useConfigStatus();
+    const {updateConfigStatus, refreshConfigStatuses} = useConfigStatus();
 
     const [formData, setFormData] = useState({
         realm: "",
@@ -56,21 +56,8 @@ const SSO = () => {
                         isActive: data.isActive !== false,
                     }));
 
-                    // Si on a des données, on considère qu'il y a une config
-                    if (!data.isActive) {
-                        updateConfigStatus('sso', 'none');
-                    } else if (data.realm && data.kdc && data.adminServer && data.defaultDomain && data.serviceHost && data.keytabPath) {
-                        updateConfigStatus('sso', 'error'); // Par défaut en erreur jusqu'au test
-                    } else {
-                        updateConfigStatus('sso', 'none');
-                    }
-                } else {
-                    // Pas de configuration existante, c'est normal pour une première utilisation
-                    updateConfigStatus('sso', 'none');
                 }
             } catch (error) {
-                // Erreur de connexion, on continue avec les champs vides
-                updateConfigStatus('sso', 'none');
             } finally {
                 setIsLoadingConfig(false);
             }
@@ -177,8 +164,7 @@ const SSO = () => {
                 color: 'success',
                 duration: 5000,
             });
-            // Après sauvegarde, on considère que la config est en erreur jusqu'au test
-            updateConfigStatus('sso', formData.isActive ? 'error' : 'none');
+            await refreshConfigStatuses();
         } catch (error) {
             addToast({
                 title: 'Configuration SSO',

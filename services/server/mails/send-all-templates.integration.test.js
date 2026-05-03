@@ -193,6 +193,22 @@ const templateCases = [
             adminContact: 'admin@admin.fr',
         },
     },
+    {
+        templateName: 'resourceEventAffectedReservation',
+        subject: '[Spotly smoke] Reservation impactee',
+        data: {
+            userName: 'Nadia Robert',
+            resourceName: 'Ressource Test 5',
+            resourceCategory: 'Categorie Test',
+            resourceSite: 'Site Test',
+            reservationStartDate: baseEntry.startDate,
+            reservationEndDate: baseEntry.endDate,
+            eventType: 'Maintenance',
+            eventReason: 'Batterie défectueuse',
+            eventDescription: 'La ressource doit être immobilisée pour intervention.',
+            adminContact: 'admin@admin.fr',
+        },
+    },
 ];
 
 async function createTransportFromActiveConfig() {
