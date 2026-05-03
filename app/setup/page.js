@@ -284,7 +284,7 @@ export default function SetupPage() {
                             {[
                                 {mode: 'empty', title: 'Je démarre de 0', description: 'Crée uniquement les bases nécessaires et le compte administrateur.'},
                                 {mode: 'demo', title: 'Je veux tester', description: 'Ajoute des sites, ressources, réservations et événements de démonstration.'},
-                                {mode: 'upgrade', title: 'Je fais une mise à jour', description: 'Conserve les données d’une installation Spotly 1.0.0 et complète la configuration.'},
+                                {mode: 'upgrade', title: 'Je fais une mise à jour', description: 'Conserve les données d’une version antérieure de Spotly et complète la configuration.'},
                             ].map((item) => (
                                 <button key={item.mode} type="button" onClick={() => setSelectedMode(item.mode)} className={`rounded-2xl border p-5 text-left transition ${selectedMode === item.mode ? 'border-[#d71920] bg-[#fff1f1] dark:bg-red-950/20' : 'border-[#dfe6ee] bg-white dark:border-neutral-800 dark:bg-neutral-900'}`}>
                                     <span className="font-semibold text-neutral-950 dark:text-neutral-50">{item.title}</span>
