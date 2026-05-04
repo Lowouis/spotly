@@ -1,19 +1,23 @@
 import {createContext, useContext, useEffect, useMemo} from 'react';
 import {useSession} from 'next-auth/react';
-import {useRouter} from 'next/navigation';
+import {usePathname, useRouter} from 'next/navigation';
+
+const PUBLIC_ROUTES = ['/login', '/register', '/setup', '/forgot-password', '/reset-password'];
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({children}) => {
     const {status, data: session} = useSession();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
-        if (status === "unauthenticated") {
+        const isPublicRoute = PUBLIC_ROUTES.some(route => pathname === route || pathname?.startsWith(`${route}/`));
+        if (status === "unauthenticated" && !isPublicRoute) {
             const params = window.location.search;
             router.push("/login" + params);
         }
-    }, [status, router]);
+    }, [pathname, status, router]);
 
     const value = useMemo(() => ({
         isAuthenticated: status === "authenticated",

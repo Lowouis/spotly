@@ -331,13 +331,18 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, autoOpenId}) => {
     );
 };
 
-const formatDateTimeShort = (date) => new Date(date).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-});
+const formatDateTimeShort = (date) => {
+    const value = new Date(date);
+    const isCurrentYear = value.getFullYear() === new Date().getFullYear();
+
+    return value.toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        ...(!isCurrentYear && {year: "numeric"}),
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+};
 
 const formatTimelineDate = (date) => new Date(date).toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -443,7 +448,7 @@ const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLas
         {
             id: "current",
             step: 2,
-            title: status === "upcoming" ? "Débute" : status === "ended" ? "Utilisée" : "En cours",
+            title: status === "upcoming" ? "Début" : status === "ended" ? "Utilisée" : "En cours",
             date: status === "upcoming" ? formatDateTimeShort(entry.startDate) : status === "ongoing" ? "Aujourd'hui" : formatDateShort(entry.startDate),
         },
         {id: "end", step: 3, title: "Fin", date: formatDateShort(entry.endDate)},

@@ -43,6 +43,20 @@ model User {
   resourceEvents           resourceEvent[]
   conversationParticipants conversationParticipant[]
   conversationMessages     conversationMessage[]
+  passwordResetTokens      PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt, expiresAt])
+  @@index([expiresAt])
 }
 
 enum conversationContextType {

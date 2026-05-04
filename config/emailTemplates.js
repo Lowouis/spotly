@@ -36,6 +36,7 @@ export const EMAIL_TEMPLATE_GROUPS = [
         description: 'Emails techniques ou de validation de configuration.',
         templates: [
             {templateName: 'test', label: 'Email de test SMTP'},
+            {templateName: 'passwordReset', label: 'Récupération de mot de passe'},
         ],
     },
 ];

@@ -2,6 +2,20 @@ import db from "@/server/services/databaseService";
 import bcrypt from 'bcrypt';
 import {rateLimit} from '@/services/server/api-auth';
 
+function passwordValidationError(password) {
+    if (typeof password !== 'string' || password.length < 12) {
+        return 'Le mot de passe doit contenir au moins 12 caractères';
+    }
+    if (password.length > 128) {
+        return 'Le mot de passe ne doit pas dépasser 128 caractères';
+    }
+    if (!/[a-z]/.test(password)) return 'Le mot de passe doit contenir au moins une minuscule';
+    if (!/[A-Z]/.test(password)) return 'Le mot de passe doit contenir au moins une majuscule';
+    if (!/[0-9]/.test(password)) return 'Le mot de passe doit contenir au moins un chiffre';
+    if (!/[^A-Za-z0-9]/.test(password)) return 'Le mot de passe doit contenir au moins un caractère spécial';
+    return null;
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ message: 'Method not allowed' });
@@ -12,6 +26,11 @@ export default async function handler(req, res) {
 
     if (!username || !email || !password || !name || !surname) {
         return res.status(400).json({ message: 'Tous les champs sont requis' });
+    }
+
+    const passwordError = passwordValidationError(password);
+    if (passwordError) {
+        return res.status(400).json({message: passwordError});
     }
 
     try {
@@ -30,7 +49,7 @@ export default async function handler(req, res) {
         }
 
         // Hasher le mot de passe
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 12);
 
         // Créer l'utilisateur
         const user = await db.user.create({

@@ -218,7 +218,12 @@ body::before {
 
     .login-transition-logo {
         animation: login-logo-enter 850ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+        filter: none;
         overflow: visible;
+    }
+
+    .dark .login-transition-logo {
+        filter: invert(1) brightness(1.08);
     }
 
     .login-transition-logo img {

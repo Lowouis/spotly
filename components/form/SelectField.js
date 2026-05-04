@@ -5,6 +5,7 @@ import {useQuery} from "@tanstack/react-query";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {firstLetterUppercase} from "@/global";
 import {cn} from "@/lib/utils";
+import {SvgSpinners3DotsBounceIcon} from "@/components/icons/SvgSpinners3DotsBounce";
 
 const defaultClassNames = {
     label: "text-content-primary dark:text-dark-content-primary",
@@ -26,11 +27,12 @@ const SelectField = ({
                         onReset = () => {},
                         defaultValue,
                          validates,
-                         placeholder = "Aucun",
-                         eyesOn = null,
-                         classNames = {},
-                         inheritAttribute = "name"
-                     }) => {
+                          placeholder = "Aucun",
+                          eyesOn = null,
+                          classNames = {},
+                          inheritAttribute = "name",
+                          onChange = () => {}
+                      }) => {
     const { setValue, watch, formState: { errors }, register } = useFormContext();
     const value = watch(name);
     const { data: resolvedOptions, isLoading, error } = useQuery({
@@ -95,6 +97,7 @@ const SelectField = ({
 
         if (selectedOption) {
             setValue(name, selectedOption);
+            onChange(selectedOption);
         } else {
             onReset();
             setWatchedValue(null);
@@ -140,14 +143,14 @@ const SelectField = ({
                 </label>
                 <span className={cn(
                     "rounded-full px-2 py-0.5 text-xs font-semibold",
-                    safeOptions.length ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"
+                    isLoading ? "bg-muted text-muted-foreground" : safeOptions.length ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"
                 )}>
-                    {isLoading ? "..." : safeOptions.length}
+                    {isLoading ? <SvgSpinners3DotsBounceIcon size={18} aria-label="Chargement des choix" /> : safeOptions.length}
                 </span>
             </div>
             <Select value={selectedKey || ""} onValueChange={handleChange} disabled={awaiting || isLoading || options === null} required={isRequired}>
                 <SelectTrigger id={name} name={name} aria-label={label} className={cn("h-11 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 rounded-lg shadow-sm", classNames.trigger)}>
-                    <SelectValue placeholder={eyesOn !== null && watchedValue !== undefined ? `${watchedValue} par héritage` : safeOptions.length ? placeholder : "Aucune donnée"}/>
+                    <SelectValue placeholder={isLoading ? "Chargement..." : eyesOn !== null && watchedValue !== undefined ? `${watchedValue} par héritage` : safeOptions.length ? placeholder : "Aucune donnée"}/>
                 </SelectTrigger>
                 <SelectContent className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg">
                     {safeOptions.map((option, index) => {

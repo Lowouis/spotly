@@ -136,6 +136,15 @@ export default function LoginTab() {
                 {!connectionLoading ? "Se connecter" : "Connexion en cours..."}
             </Button>
 
+            <div className="text-center">
+                <NextLink
+                    href="/forgot-password"
+                    className="text-sm font-medium text-neutral-700 transition-all duration-200 hover:underline dark:text-neutral-300"
+                >
+                    Mot de passe oublié ?
+                </NextLink>
+            </div>
+
             {/* Lien vers l'inscription */}
             <div className="text-center pt-2">
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">

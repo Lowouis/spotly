@@ -87,6 +87,8 @@ const displayUser = (data, fallback = 'utilisateur') => {
     return data?.name || data?.userName || fullName || fallback;
 };
 
+const displayResetUrl = (data) => data?.resetUrl || appUrl;
+
 const displayDate = (value, fallback = 'non renseignée') => {
     if (!value) return fallback;
     const date = value instanceof Date ? value : new Date(value);
@@ -167,6 +169,19 @@ const displayGroupReservationSummary = (data) => {
 };
 
 const templates = {
+    passwordReset: (data) => `
+# Récupération de votre mot de passe
+
+Bonjour **${displayUser(data)}**,
+
+Nous avons reçu une demande de réinitialisation du mot de passe de votre compte interne Spotly.
+
+[Choisir un nouveau mot de passe](${displayResetUrl(data)})
+
+Ce lien est personnel, utilisable une seule fois et expire dans **${displayValue(data.expiresInMinutes, 15)} minutes**.
+
+Si vous n'êtes pas à l'origine de cette demande, ignorez cet email. Votre mot de passe actuel reste inchangé.
+`,
     rejected: (data) => `
 # Refus de la demande de réservation
 

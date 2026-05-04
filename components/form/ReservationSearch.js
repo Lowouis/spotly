@@ -540,6 +540,20 @@ const ReservationSearch = () => {
         });
     }, [availableResources, hasSearchedAvailability, isLoadingAvailableResources]);
 
+    const handleSiteChange = () => {
+        setValue('category', null);
+        setValue('resource', null);
+        setData(null);
+        queryClient.invalidateQueries({queryKey: ['categories']});
+        queryClient.invalidateQueries({queryKey: ['resources']});
+    };
+
+    const handleCategoryChange = () => {
+        setValue('resource', null);
+        setData((currentData) => currentData ? {...currentData, resource: null} : null);
+        queryClient.invalidateQueries({queryKey: ['resources']});
+    };
+
     const handleResourceOnReset = () => {
         setValue('resource', null);
         setData({...data, resource: null});
@@ -785,7 +799,6 @@ const ReservationSearch = () => {
     const FavoriteResourceCard = ({resource}) => (
         <button type="button" onClick={() => applyFavorite("resources", resource)} className="flex min-h-32 min-w-0 flex-col rounded-2xl border border-[#e2e8f0] bg-white p-4 text-left shadow-sm transition-colors hover:bg-[#fbfcff] dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-900">
             <span className="flex min-w-0 items-start gap-3">
-                <CategoryIconBox category={resource?.category} tone="green" />
                 <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-black text-[#111827] dark:text-neutral-100">{resource?.name}</span>
                     <span className="mt-1 block truncate text-sm text-[#6b7585] dark:text-neutral-400">{resource?.category?.name || "Ressource"}</span>
@@ -1274,13 +1287,13 @@ const ReservationSearch = () => {
 
                                         {activeStep === 1 && (
                                             <div className="max-w-3xl">
-                                                <SelectField onReset={handleResourceOnReset} name="site" label="Site" options="domains" placeholder="Choisir un site" classNames={selectClassNames} />
+                                                <SelectField onReset={handleResourceOnReset} onChange={handleSiteChange} name="site" label="Site" options="domains" placeholder="Choisir un site" classNames={selectClassNames} />
                                             </div>
                                         )}
 
                                         {activeStep === 2 && (
                                             <div className="max-w-3xl rounded-2xl border border-[#e5ebf3] bg-white p-4 dark:border-neutral-800 dark:bg-neutral-950">
-                                                <SelectField name="category" label="Catégorie" options="categories" onReset={handleResourceOnReset} placeholder="Choisir une catégorie" classNames={selectClassNames} />
+                                                <SelectField name="category" label="Catégorie" options={site ? `categories?domainId=${site.id}&withResources=1` : null} awaiting={!site} onReset={handleResourceOnReset} onChange={handleCategoryChange} placeholder="Choisir une catégorie" classNames={selectClassNames} />
                                             </div>
                                         )}
 

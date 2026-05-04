@@ -40,8 +40,20 @@ export default async function handler(req, res) {
     if (req.method !== 'GET' && req.method !== 'OPTIONS' && !await requireAdmin(req, res)) return;
 
     if(req.method === "GET"){
+        const {domainId, withResources} = req.query;
+        const parsedDomainId = parseInt(domainId);
+        const shouldFilterByDomainResources = Number.isInteger(parsedDomainId) && withResources === '1';
         const categories = await db.category.findMany(
             {
+                ...(shouldFilterByDomainResources && {
+                    where: {
+                        resource: {
+                            some: {
+                                domainId: parsedDomainId
+                            }
+                        }
+                    }
+                }),
                 include: {
                     owner: true,
                     pickable: true
