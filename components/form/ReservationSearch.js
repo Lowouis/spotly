@@ -32,6 +32,9 @@ import ShadcnDatePicker from '@/components/form/ShadcnDatePicker';
 import {useRouter, useSearchParams} from "next/navigation";
 import {getCategoryIcon} from "@/lib/category-icons";
 import ConversationChat from "@/components/messages/ConversationChat";
+import AppTutorial from "@/components/tutorial/AppTutorial";
+
+const TUTORIAL_DASHBOARD_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 const schemaFirstPart = yup.object().shape({
     site: yup.object().required('Vous devez choisir un site'),
@@ -63,6 +66,7 @@ const ReservationSearch = () => {
     const [pendingConversationEntryId, setPendingConversationEntryId] = useState(null);
     const [isConversationsLoading, setIsConversationsLoading] = useState(false);
     const [conversationToDelete, setConversationToDelete] = useState(null);
+    const [isTutorialOpen, setIsTutorialOpen] = useState(false);
     const resultsRef = useRef(null);
 
     // Effet centralisé pour gérer les paramètres d'URL
@@ -98,6 +102,11 @@ const ReservationSearch = () => {
     const handleSearchMode = (current) => {
         setSearchMode(current);
         setAutoOpenResId(null); // Réinitialiser l'ID pour ne pas rouvrir le modal
+    };
+
+    const shouldShowDashboardTutorialButton = () => {
+        if (!session?.user?.createdAt) return false;
+        return Date.now() - new Date(session.user.createdAt).getTime() <= TUTORIAL_DASHBOARD_WINDOW_MS;
     };
 
     const [data, setData] = useState(null);
@@ -1005,8 +1014,13 @@ const ReservationSearch = () => {
 
         return (
             <main className="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-[1296px] flex-col px-4 py-4 md:px-6 xl:h-[calc(100vh-72px)] xl:overflow-hidden">
-                <div className="mb-4 shrink-0">
+                <div className="mb-4 flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h1 className="text-3xl font-black text-[#111827] dark:text-neutral-100 md:text-4xl">Bonjour {userName || "à vous"} ! 👋 </h1>
+                    {shouldShowDashboardTutorialButton() && (
+                        <Button type="button" onClick={() => setIsTutorialOpen(true)} className="h-11 w-full rounded-xl bg-[#ff2a2f] px-5 font-black text-white hover:bg-[#d71920] sm:w-auto">
+                            Lancer le tutoriel
+                        </Button>
+                    )}
                 </div>
 
                 <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[minmax(0,1fr)_520px] xl:overflow-hidden">
@@ -1214,7 +1228,9 @@ const ReservationSearch = () => {
                 userEntries={userEntries}
                 handleRefresh={handleRefresh}
                 selectedTab={searchMode}
+                onOpenTutorial={() => setIsTutorialOpen(true)}
             />
+            <AppTutorial open={isTutorialOpen} onOpenChange={setIsTutorialOpen} onNavigate={handleSearchMode} />
 
             {searchMode === "home" && <HomeDashboard />}
             <FavoriteManagerDialog />

@@ -6,7 +6,7 @@ import {Badge} from "@/components/ui/badge";
 import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu";
-import {ArrowPathIcon, BellIcon, BookmarkIcon, ChevronDownIcon, ExclamationCircleIcon, InformationCircleIcon, MagnifyingGlassIcon, Squares2X2Icon, TrashIcon} from "@heroicons/react/24/outline";
+import {ArrowPathIcon, BellIcon, BookmarkIcon, ChevronDownIcon, ExclamationCircleIcon, InformationCircleIcon, MagnifyingGlassIcon, PlayCircleIcon, Squares2X2Icon, TrashIcon} from "@heroicons/react/24/outline";
 import {signOut, useSession} from "next-auth/react";
 import React, {useEffect, useState} from "react";
 import {addToast} from "@/lib/toast";
@@ -25,7 +25,7 @@ const MenuTooltip = ({content, children}) => (
     </Tooltip>
 );
 
-export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntries = [], handleRefresh, selectedTab}) {
+export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntries = [], handleRefresh, selectedTab, onOpenTutorial}) {
     const [mounted, setMounted] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const isMobile = useMediaQuery({query: '(max-width: 768px)'});
@@ -459,6 +459,10 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntr
                 <DropdownMenuItem onClick={() => setIsProfileOpen(true)} className="cursor-pointer rounded-lg px-3 py-2">
                     <CiUser className="h-4 w-4" />
                     Profil
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onOpenTutorial} className="cursor-pointer rounded-lg px-3 py-2">
+                    <PlayCircleIcon className="h-4 w-4" />
+                    Tutoriel
                 </DropdownMenuItem>
                 {session.user.role !== 'USER' && (
                     <DropdownMenuItem onClick={() => router.push('/admin')} className="cursor-pointer rounded-lg px-3 py-2">

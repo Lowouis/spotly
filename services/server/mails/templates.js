@@ -120,6 +120,52 @@ const displayGroupEntryTimeRange = (entry) => {
     return `${start.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} - ${end.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
 };
 
+const displayShortDate = (value, fallback = 'non renseignée') => {
+    if (!value) return fallback;
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return displayValue(value, fallback);
+
+    return date.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+};
+
+const inferGroupFrequency = (entries) => {
+    const sortedStarts = [...(entries || [])]
+        .map((entry) => new Date(entry?.startDate || entry?.date))
+        .filter((date) => !Number.isNaN(date.getTime()))
+        .sort((a, b) => a - b);
+
+    if (sortedStarts.length < 2) return 'Ponctuelle';
+
+    const diffInDays = Math.round((sortedStarts[1] - sortedStarts[0]) / (1000 * 60 * 60 * 24));
+    if (diffInDays === 1) return 'Quotidienne';
+    if (diffInDays === 7) return 'Hebdomadaire';
+    if (diffInDays >= 28 && diffInDays <= 31) return 'Mensuelle';
+    if (diffInDays > 1) return `Tous les ${diffInDays} jours`;
+    return 'Récurrente';
+};
+
+const displayGroupReservationSummary = (data) => {
+    const entries = [...(data?.entries || [])].sort((a, b) => new Date(a?.startDate || a?.date) - new Date(b?.startDate || b?.date));
+    const firstEntry = entries[0];
+    const lastEntry = entries[entries.length - 1];
+    const occurrenceCount = entries.length;
+    const timeRange = firstEntry ? displayGroupEntryTimeRange(firstEntry) : 'non renseignés';
+
+    return `
+### Synthèse de la série
+- **Ressource** : ${displayValue(data.resource)}
+- **Période** : du ${displayShortDate(firstEntry?.startDate || firstEntry?.date)} au ${displayShortDate(lastEntry?.startDate || lastEntry?.date)}
+- **Fréquence** : ${displayValue(data.frequency || data.recursiveUnit || data.recursive_unit || inferGroupFrequency(entries))}
+- **Occurrences** : ${occurrenceCount} réservation${occurrenceCount > 1 ? 's' : ''}
+- **Horaires habituels** : ${timeRange}
+`;
+};
+
 const templates = {
     rejected: (data) => `
 # Refus de la demande de réservation
@@ -289,21 +335,15 @@ L'équipe de gestion des ressources
 
 Bonjour **${displayUser(data)}**,
 
-Votre réservation de groupe pour la ressource **${displayValue(data.resource)}** a bien été acceptée.
+Votre série de réservations pour la ressource **${displayValue(data.resource)}** a bien été acceptée.
 
-### Réservations confirmées
-${data.entries.map((entry, index) => `
-#### Réservation ${index + 1}
-- **Date** : ${displayGroupEntryDate(entry)}
-- **Horaires** : ${displayGroupEntryTimeRange(entry)}
+${displayGroupReservationSummary(data)}
 
-${entry.isCode ? `<div style="margin:18px 0 8px;text-align:center;font-size:30px;font-weight:800;letter-spacing:0.16em;color:#111827;line-height:1.2;">${entry.returnedConfirmationCode}</div>` : ''}
+${data.entries?.some((entry) => entry.isCode) ? 'Un code peut être demandé au moment de la récupération ou de la restitution. Il sera disponible depuis le détail de la réservation concernée.' : ''}
 
-<div style="text-align:center; margin: 12px 0;">
-  <a href="${process.env.NEXTAUTH_URL}?sso=1&resId=${entry.id}&tab=bookings" style="display:inline-block; background:#2563eb; color:#fff; font-weight:bold; padding:10px 24px; border-radius:6px; text-decoration:none; font-size:1.1em;">Voir ma réservation</a>
+<div style="text-align:center; margin: 18px 0;">
+  <a href="${process.env.NEXTAUTH_URL}?sso=1&tab=bookings" style="display:inline-block; background:#2563eb; color:#fff; font-weight:bold; padding:10px 24px; border-radius:6px; text-decoration:none; font-size:1.1em;">Voir mes réservations</a>
 </div>
-
-`).join('\n')}
 
 
 ---
@@ -320,12 +360,7 @@ Bonjour **${displayUser(data)}**,
 Votre demande de réservation de groupe pour la ressource **${displayValue(data.resource)}** a bien été soumise.
 Vous recevrez une confirmation lorsque la demande sera traitée.
 
-### Réservations demandées
-${data.entries.map((entry, index) => `
-#### Réservation ${index + 1}
-- **Date** : ${displayGroupEntryDate(entry)}
-- **Horaires** : ${displayGroupEntryTimeRange(entry)}
-`).join('\n')}
+${displayGroupReservationSummary(data)}
 
 ---
 
@@ -340,12 +375,7 @@ Bonjour **${displayUser(data)}**,
 
 Nous vous confirmons l'annulation de votre réservation de groupe pour la ressource **${displayValue(data.resource)}**.
 
-### Réservations annulées
-${data.entries.map((entry, index) => `
-#### Réservation ${index + 1}
-- **Date** : ${displayGroupEntryDate(entry)}
-- **Horaires** : ${displayGroupEntryTimeRange(entry)}
-`).join('\n')}
+${displayGroupReservationSummary(data)}
 
 ---
 
@@ -358,12 +388,7 @@ L'équipe de gestion des ressources
 
 Une nouvelle demande de réservation de groupe a été soumise par **${displayUser(data)}** pour la ressource **${displayValue(data.resource)}**.
 
-### Réservations demandées
-${data.entries.map((entry, index) => `
-#### Réservation ${index + 1}
-- **Date** : ${displayGroupEntryDate(entry)}
-- **Horaires** : ${displayGroupEntryTimeRange(entry)}
-`).join('\n')}
+${displayGroupReservationSummary(data)}
 
 Merci de valider ou rejeter cette demande de réservation de groupe dans les plus brefs délais dans la section administrateur de votre application Spotly.
 

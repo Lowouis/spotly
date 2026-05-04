@@ -251,8 +251,6 @@ export default function Maintenance() {
             addToast({title: 'Maintenance', description: payload.message || 'Impossible de clôturer l’événement', color: 'danger'});
             return;
         }
-        setEventStatus('ended');
-        setConversationStatus('ARCHIVED');
         addToast({title: 'Maintenance', description: 'Événement clôturé et discussion archivée.', color: 'success'});
         refetch();
     };
@@ -388,7 +386,7 @@ export default function Maintenance() {
                                         {!event.endDate && (
                                             <Button variant="outline" size="sm" onClick={() => closeEvent(event.id)}>
                                                 <CheckCircleIcon className="h-4 w-4" />
-                                                Terminer maintenant
+                                                Fermer
                                             </Button>
                                         )}
                                             {event.conversation?.id && (
