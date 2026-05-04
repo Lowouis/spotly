@@ -24,7 +24,6 @@ import ReservationSettings from "@/features/admin/sections/ReservationSettings";
 import ProtectionLevels from "@/features/admin/sections/ProtectionLevels";
 import MailConfig from "@/features/admin/sections/MailConfig";
 import Maintenance from "@/features/admin/sections/Maintenance";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -131,19 +130,6 @@ const Content = () => {
             return <div className="p-3"><div className="w-full max-w-4xl mx-auto"><MailConfig/></div></div>;
         case 'about':
             return <About/>;
-        case 'migration':
-            return (
-                <div className="p-4">
-                    <Card className="mx-auto max-w-3xl shadow-none">
-                        <CardHeader>
-                            <CardTitle>Migration</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Disponible bienôt dans Spotly@2.1.0.</p>
-                        </CardContent>
-                    </Card>
-                </div>
-            );
         default:
             return <div>Section en cours de développement</div>;
     }

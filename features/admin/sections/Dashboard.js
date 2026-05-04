@@ -144,14 +144,14 @@ const MetricCard = ({title, value, helper, icon, accent = "orange"}) => {
     };
 
     return (
-        <Card className="min-w-0 rounded-2xl border-border bg-card text-card-foreground shadow-sm">
-            <CardContent className="flex h-full items-center justify-between gap-3 p-4">
+        <Card className="h-full min-w-0 rounded-2xl border-border bg-card text-card-foreground shadow-sm">
+            <CardContent className="flex h-full items-center justify-between gap-3 p-3">
                 <div className="min-w-0">
                     <p className="text-xs font-semibold leading-tight text-foreground">{title}</p>
-                    <p className="mt-3 text-3xl font-black leading-none text-foreground">{value}</p>
-                    {helper && <p className="mt-3 truncate text-xs font-medium text-muted-foreground">{helper}</p>}
+                    <p className="mt-2 text-2xl font-black leading-none text-foreground">{value}</p>
+                    {helper && <p className="mt-2 truncate text-xs font-medium text-muted-foreground">{helper}</p>}
                 </div>
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${tones[accent] || tones.orange}`}>{icon}</span>
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tones[accent] || tones.orange}`}>{icon}</span>
             </CardContent>
         </Card>
     );
@@ -161,7 +161,6 @@ const Dashboard = () => {
     const {setActiveSection, dashboardView} = useAdminContext();
     const [filters, setFilters] = useState({siteId: 'all', categoryId: 'all', range: 'week'});
     const {data, isLoading} = useQuery({queryKey: ['admin-dashboard', filters], queryFn: fetchDashboard});
-    const totalStatuses = (data?.statusItems || []).reduce((sum, item) => sum + item.count, 0);
     const reservationsChartData = (data?.reservationsByDay || []).map((item) => ({
         label: item.label,
         date: item.date,
@@ -206,7 +205,7 @@ const Dashboard = () => {
     };
 
     return (
-        <main className="flex min-h-screen min-w-0 max-w-full flex-col overflow-x-hidden p-3 text-foreground">
+        <main className="flex h-full min-h-0 min-w-0 max-w-full flex-col overflow-x-hidden p-3 text-foreground">
             <header className="mb-2 flex shrink-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <div className="min-w-0">
                     <h1 className="truncate text-3xl font-black tracking-tight">Tableau de bord</h1>
@@ -228,10 +227,10 @@ const Dashboard = () => {
                 </div>
             </header>
 
-            <div className="grid min-h-0 flex-1 grid-rows-[auto_330px_260px] gap-3">
+            <div className="grid min-h-0 flex-1 grid-rows-[112px_minmax(0,1.25fr)_minmax(0,1fr)] gap-3">
                 {isMaintenanceView ? (
                     <>
-                <section className="grid min-w-0 grid-cols-[repeat(5,minmax(0,1fr))] gap-2">
+                <section className="grid min-h-0 min-w-0 grid-cols-[repeat(5,minmax(0,1fr))] gap-2">
                     <MetricCard title="Incidents ouverts" value={isLoading ? "..." : maintenanceMetrics.openEvents || 0} helper="Maintenance active" icon={<HardHat className="h-5 w-5" />} accent="amber" />
                     <MetricCard title="Ressources indisponibles" value={isLoading ? "..." : maintenanceMetrics.unavailableResources || 0} helper={`sur ${metrics.resourcesTotal || 0} au total`} icon={<CubeIcon className="h-5 w-5" />} />
                     <MetricCard title="Incidents critiques" value={isLoading ? "..." : maintenanceMetrics.criticalEvents || 0} helper="À prioriser" icon={<ChartBarIcon className="h-5 w-5" />} accent="orange" />
@@ -262,15 +261,24 @@ const Dashboard = () => {
                             <CardTitle className="text-base">Sévérité</CardTitle>
                             <CardDescription className="text-xs">Répartition des événements</CardDescription>
                         </CardHeader>
-                        <CardContent className="min-h-0 flex-1 pb-0 pt-1">
+                        <CardContent className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-5 pb-5 pt-1">
                             {severityChartData.length ? (
-                                <ChartContainer config={severityChartConfig} className="mx-auto aspect-square h-full max-h-[190px]">
-                                    <PieChart>
-                                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                                        <Pie data={severityChartData} dataKey="count" nameKey="status" stroke="0" />
-                                        <ChartLegend content={<ChartLegendContent nameKey="status" />} className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center" />
-                                    </PieChart>
-                                </ChartContainer>
+                                <>
+                                    <ChartContainer config={severityChartConfig} className="mx-auto aspect-square h-full max-h-[180px] min-h-0 w-full max-w-[180px]">
+                                        <PieChart>
+                                            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                                            <Pie data={severityChartData} dataKey="count" nameKey="status" stroke="0" />
+                                        </PieChart>
+                                    </ChartContainer>
+                                    <div className="grid grid-cols-2 justify-items-center gap-x-5 gap-y-2 text-sm font-medium">
+                                        {severityChartData.map((item) => (
+                                            <div key={item.status} className="flex items-center gap-2 whitespace-nowrap">
+                                                <span className="h-2.5 w-2.5 rounded-sm" style={{backgroundColor: severityChartConfig[item.status]?.color || "#94a3b8"}} />
+                                                <span>{severityChartConfig[item.status]?.label || item.status}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
                             ) : <p className="p-4 text-center text-sm text-muted-foreground">Aucune donnée.</p>}
                         </CardContent>
                     </Card>
@@ -315,7 +323,7 @@ const Dashboard = () => {
                     </>
                 ) : (
                     <>
-                <section className="grid min-w-0 grid-cols-[repeat(5,minmax(0,1fr))] gap-2">
+                <section className="grid min-h-0 min-w-0 grid-cols-[repeat(5,minmax(0,1fr))] gap-2">
                     <MetricCard title="Réservations aujourd'hui" value={isLoading ? "..." : metrics.todayReservations || 0} helper="Sur la journée" icon={<CalendarDaysIcon className="h-5 w-5" />} />
                     <MetricCard title={`Réservations ${rangeLabels[filters.range].toLowerCase()}`} value={isLoading ? "..." : metrics.periodReservations || 0} helper="Sur la période" icon={<CalendarDaysIcon className="h-5 w-5" />} />
                     <MetricCard title="Ressources disponibles" value={isLoading ? "..." : metrics.resourcesAvailable || 0} helper={`sur ${metrics.resourcesTotal || 0} au total`} icon={<CubeIcon className="h-5 w-5" />} accent="green" />
@@ -352,17 +360,25 @@ const Dashboard = () => {
                             <CardTitle className="text-base">Répartition des statuts</CardTitle>
                             <CardDescription className="text-xs">Réservations qui chevauchent la période</CardDescription>
                         </CardHeader>
-                        <CardContent className="min-h-0 flex-1 pb-0 pt-1">
-                            <ChartContainer config={statusChartConfig} className="mx-auto aspect-square h-full max-h-[190px]">
-                                <PieChart>
-                                    <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                                    <Pie data={statusChartData} dataKey="count" nameKey="status" stroke="0" />
-                                    <ChartLegend
-                                        content={<ChartLegendContent nameKey="status" />}
-                                        className="-translate-y-2 flex-wrap gap-2 *:basis-1/4 *:justify-center"
-                                    />
-                                </PieChart>
-                            </ChartContainer>
+                        <CardContent className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-5 pb-5 pt-1">
+                            {statusChartData.length ? (
+                                <>
+                                    <ChartContainer config={statusChartConfig} className="mx-auto aspect-square h-full max-h-[180px] min-h-0 w-full max-w-[180px]">
+                                        <PieChart>
+                                            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                                            <Pie data={statusChartData} dataKey="count" nameKey="status" stroke="0" />
+                                        </PieChart>
+                                    </ChartContainer>
+                                    <div className="grid grid-cols-2 justify-items-center gap-x-5 gap-y-2 text-sm font-medium">
+                                        {statusChartData.map((item) => (
+                                            <div key={item.status} className="flex items-center gap-2 whitespace-nowrap">
+                                                <span className="h-2.5 w-2.5 rounded-sm" style={{backgroundColor: statusChartConfig[item.status]?.color || "#94a3b8"}} />
+                                                <span>{statusChartConfig[item.status]?.label || item.status}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            ) : <p className="text-center text-sm text-muted-foreground">Aucune donnée sur la période.</p>}
                         </CardContent>
                     </Card>
                 </section>

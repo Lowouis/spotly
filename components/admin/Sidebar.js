@@ -78,7 +78,6 @@ const sideItems = [
         permission: 'ADMIN',
         items: [
             {id: 'about', title: 'À propos', icon: IoInformationCircleOutline, permission: 'ADMIN'},
-            {id: 'migration', title: 'Migration', icon: CiSettings, permission: 'ADMIN'},
         ],
     },
 ];
