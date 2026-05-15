@@ -3,7 +3,7 @@ import {runMiddleware} from "@/services/server/core";
 import {NextResponse} from 'next/server';
 import {isAdminSession, requireAuth} from '@/services/server/api-auth';
 import {createEntryMessage} from '@/services/server/entry-messages';
-import {requiresLocationCheck} from '@/services/server/entry-control';
+import {isAutomaticPickupControl, isAutomaticReturnControl, requiresLocationCheck} from '@/services/server/entry-control';
 import {getAuthorizedLocationForRequest} from '@/services/server/client-ip';
 import {canPickupEntryNow} from '@/services/server/pickup-availability';
 
@@ -40,6 +40,25 @@ export default async function handler(req, res) {
             if (!isAdminSession(session) && ['USED', 'ENDED'].includes(moderate) && requiresLocationCheck(currentEntryForAuth)) {
                 const {authorizedLocation} = await getAuthorizedLocationForRequest(req);
                 if (!authorizedLocation) return res.status(403).json({message: 'Appareil non autorisé'});
+            }
+
+            if (!isAdminSession(session) && moderate === 'USED' && isAutomaticPickupControl(currentEntryForAuth)) {
+                return res.status(409).json({message: 'La prise en charge est automatique pour cette ressource'});
+            }
+
+            if (!isAdminSession(session) && moderate === 'ENDED' && isAutomaticReturnControl(currentEntryForAuth)) {
+                return res.status(409).json({message: 'La restitution est automatique pour cette ressource'});
+            }
+
+            if (!isAdminSession(session) && moderate === 'ENDED') {
+                if (currentEntryForAuth.moderate === 'USED') {
+                    // OK: restitution manuelle d'une réservation déjà en cours.
+                } else if (isAutomaticPickupControl(currentEntryForAuth) && currentEntryForAuth.moderate === 'ACCEPTED') {
+                    const pickupAvailability = await canPickupEntryNow(db, currentEntryForAuth);
+                    if (!pickupAvailability.allowed) return res.status(409).json({message: pickupAvailability.reason});
+                } else {
+                    return res.status(409).json({message: 'La restitution n’est pas disponible'});
+                }
             }
 
             if (!isAdminSession(session) && moderate === 'USED') {

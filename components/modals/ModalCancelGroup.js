@@ -8,7 +8,9 @@ export default function ModalCancelGroup({isOpen, onOpenChange, entries, handleR
     const queryClient = useQueryClient();
     const mutation = useMutation({
         mutationFn: async () => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/group/${entries[0].recurringGroupId}`, {
+            const resourceId = entries[0]?.resourceId || entries[0]?.resource?.id;
+            const queryString = resourceId ? `?resourceId=${encodeURIComponent(resourceId)}` : '';
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/group/${entries[0].recurringGroupId}${queryString}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {

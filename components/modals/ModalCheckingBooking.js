@@ -1,12 +1,24 @@
-import {Button} from "@/components/ui/button";
-import {Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList} from "@/components/ui/combobox";
-import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle} from "@/components/ui/dialog";
-import {Input} from "@/components/ui/input";
-import {Spinner} from "@/components/ui/spinner";
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import HourSelect from "@/components/form/HourSelect";
-import ShadcnDatePicker, {dateToCalendarValue} from "@/components/form/ShadcnDatePicker";
+import ShadcnDatePicker, { dateToCalendarValue } from "@/components/form/ShadcnDatePicker";
+import { Button } from "@/components/ui/button";
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+import ResourceEventModal from "@/components/modals/ResourceEventModal";
+import { useEmail } from "@/features/shared/context/EmailContext";
+import { useEntryActions } from "@/hooks/useEntryActions";
+import { addToast } from "@/lib/toast";
+import {
+    canConfirmWithCode,
+    getAutomaticReservationPhase,
+    isAutomaticPickup,
+    isAutomaticReturn,
+    requiresPickupCode,
+    requiresReturnCode
+} from '@/services/client/reservationModes';
 import {
     ArrowLeftIcon,
     ArrowUturnLeftIcon,
@@ -26,20 +38,10 @@ import {
     UserGroupIcon,
     XMarkIcon
 } from "@heroicons/react/24/outline";
-import React, {useCallback, useEffect, useState} from "react";
-import {useMutation, useQuery} from "@tanstack/react-query";
-import {useEmail} from "@/features/shared/context/EmailContext";
-import {addToast} from "@/lib/toast";
-import {useEntryActions} from "@/hooks/useEntryActions";
-import {useSession} from "next-auth/react";
-import {useRouter} from "next/navigation";
-import ResourceEventModal from "@/components/modals/ResourceEventModal";
-import {
-    canConfirmWithCode,
-    getAutomaticReservationPhase,
-    requiresPickupCode,
-    requiresReturnCode
-} from '@/services/client/reservationModes';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useState } from "react";
 
 const ModalTooltip = ({content, children}) => (
     <Tooltip>
@@ -372,7 +374,7 @@ export default function ModalCheckingBooking({
 
 
 
-        
+
     const handlePickUp = async (onClose)=>{
         setError(null);
         setOtp("");
@@ -822,6 +824,7 @@ export default function ModalCheckingBooking({
     };
 
     const localIsAbleToPickUp = () => {
+        if (isAutomaticPickup(entry)) return false;
         const resourceAvailable = entry?.resource?.status === 'AVAILABLE';
         const noQueue = waitEnabled ? (waitlistCount === 0) : true;
         return (entry.moderate === "ACCEPTED")
@@ -1264,7 +1267,7 @@ export default function ModalCheckingBooking({
                                                                 </svg>
                                                             </Button>
                                                         )}
-                                                        
+
                                                     </div>
 
                                                     <div className="flex flex-col items-center space-y-2 w-full">
@@ -1293,10 +1296,10 @@ export default function ModalCheckingBooking({
                                     const nowDate = new Date();
                                     const isConfirmed = entry.moderate !== "WAITING" && entry.moderate !== "REJECTED";
                                     const isOverdue = (entry.moderate === "USED" || isAutomaticOngoing) && endDate < nowDate;
-                                    const pickupActive = entry.moderate === "USED" || isAutomaticOngoing || (entry.moderate === "ACCEPTED" && startDate <= nowDate && endDate > nowDate);
-                                    const pickupDone = (entry.moderate === "ENDED" && entry.returned) || isAutomaticEnded;
+                                    const pickupActive = entry.moderate === "USED" || isAutomaticOngoing;
+                                    const pickupDone = pickupActive || (entry.moderate === "ENDED" && entry.returned) || isAutomaticEnded;
                                     const returnDone = (entry.moderate === "ENDED" && entry.returned) || isAutomaticEnded;
-                                    const canReturnNow = !returnDone && (entry.moderate === "USED" || isAutomaticOngoing);
+                                    const canReturnNow = !returnDone && !isAutomaticReturn(entry) && (entry.moderate === "USED" || isAutomaticOngoing);
                                     const categoryName = entry.resource?.category?.name || "Matériel";
                                     const siteName = entry.resource?.domains?.name || entry.resource?.domain?.name || "Site non renseigné";
                                     const ownerName = handleOwnerReturn(entry);
@@ -1404,7 +1407,7 @@ export default function ModalCheckingBooking({
                                                                 <BookingStepCard
                                                                     step={3}
                                                                     title={localIsAbleToPickUp() && requiresPickupCode(entry) ? "Confirmer la récupération" : pickupActive ? "Prise en charge" : entry.moderate === "ACCEPTED" && endDate < nowDate && !isAutomaticEnded ? "Réservation expirée" : "Prise en charge"}
-                                                                    description={pickupActive ? `La ressource est disponible dans ${pickupPlace}.` : localIsAbleToPickUp() ? "Vous pouvez prendre la ressource dès maintenant." : pickupUnavailableReason || `Prise en charge prévue le ${formatDate(entry.startDate)}.`}
+                                                                    description={pickupActive ? `La ressource est disponible dans ${pickupPlace}.` : isAutomaticPickup(entry) ? `Prise en charge automatique prévue le ${formatDate(entry.startDate)}.` : localIsAbleToPickUp() ? "Vous pouvez prendre la ressource dès maintenant." : pickupUnavailableReason || `Prise en charge prévue le ${formatDate(entry.startDate)}.`}
                                                                     metaIcon={ClockIcon}
                                                                     metaLabel={pickupActive ? "En cours depuis" : null}
                                                                     metaDate={formatShortDate(entry.startDate)}
@@ -1415,10 +1418,10 @@ export default function ModalCheckingBooking({
                                                                 >
                                                                     {new Date(entry.startDate) <= nowDate && entry?.resource?.status === 'UNAVAILABLE' && previousNotReturned && (
                                                                         <div className="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-700 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-300">
-                                                                            Emprunteur précédent : {previousNotReturned.user?.name} {previousNotReturned.user?.surname}
+                                                                            Emprunteur·euse précédent·e : {previousNotReturned.user?.name} {previousNotReturned.user?.surname}
                                                                         </div>
                                                                     )}
-                                                                    {entry.moderate === "ACCEPTED" && endDate > nowDate && (localIsAbleToPickUp() || requiresPickupCode(entry)) && (
+                                                                    {entry.moderate === "ACCEPTED" && endDate > nowDate && !isAutomaticPickup(entry) && (localIsAbleToPickUp() || requiresPickupCode(entry)) && (
                                                                         <div className="space-y-4">
                                                                             {!localIsAbleToPickUp() && (
                                                                                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">

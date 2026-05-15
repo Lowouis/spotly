@@ -70,10 +70,19 @@ export default async function handler(req, res) {
 
         if (req.method === "DELETE") {
             try {
+                const parsedResourceId = req.query.resourceId ? parseInt(req.query.resourceId) : null;
+
+                if (req.query.resourceId && (Number.isNaN(parsedResourceId) || parsedResourceId <= 0)) {
+                    return res.status(400).json({details: "ID de ressource invalide"});
+                }
+
+                const where = {
+                    recurringGroupId: parsedGroupId,
+                    ...(parsedResourceId ? {resourceId: parsedResourceId} : {})
+                };
+
                 const entries = await db.entry.findMany({
-                    where: {
-                        recurringGroupId: parsedGroupId
-                    },
+                    where,
                     include: {
                         user: true,
                         resource: {
@@ -109,9 +118,7 @@ export default async function handler(req, res) {
 
                 // Supprimer toutes les entrées du groupe
                 await db.entry.deleteMany({
-                    where: {
-                        recurringGroupId: parsedGroupId
-                    }
+                    where
                 });
 
                 return res.status(200).json({

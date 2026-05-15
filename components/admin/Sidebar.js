@@ -3,7 +3,7 @@
 import * as React from 'react';
 import {signOut, useSession} from 'next-auth/react';
 import {useRouter} from 'next/navigation';
-import {BarChart3, BookmarkCheck, ChevronRight, HardHat, Wrench} from 'lucide-react';
+import {BarChart3, BookmarkCheck, CalendarOff, ChevronRight, HardHat, Wrench} from 'lucide-react';
 import {MdBookmarkBorder, MdOutlineCategory, MdOutlineSpaceDashboard} from 'react-icons/md';
 import {CiLocationOn, CiLogout, CiServer, CiSettings} from 'react-icons/ci';
 import {IoInformationCircleOutline} from 'react-icons/io5';
@@ -58,6 +58,7 @@ const sideItems = [
         items: [
             {id: 'users', title: 'Utilisateurs', icon: FaRegUser, permission: 'SUPERADMIN'},
             {id: 'entries', title: 'Réservations', icon: MdBookmarkBorder, permission: 'ADMIN'},
+            {id: 'unavailabilities', title: 'Indisponibilités', icon: CalendarOff, permission: 'ADMIN'},
             {id: 'waitingEntries', title: 'En attente', icon: BookmarkCheck, permission: 'ADMIN', badge: 'waitingEntries'},
             {id: 'maintenance', title: 'Maintenance', icon: Wrench, permission: 'ADMIN', badge: 'maintenance'},
         ],

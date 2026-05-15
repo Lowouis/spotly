@@ -112,12 +112,15 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
     };
     const mutation = useMutation({
         mutationFn: async (newEntry) => {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry`, {
+            const endpoint = newEntry.systemUnavailability ? 'resource-unavailabilities' : 'entry';
+            const payload = {...newEntry};
+            delete payload.systemUnavailability;
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/${endpoint}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(newEntry),
+                body: JSON.stringify(payload),
             });
             const data = await response.json();
             if (!response.ok) {
@@ -125,7 +128,20 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
             }
             return data;
         },
-        onSuccess: (data, variables, context) => {
+        onSuccess: (data, variables) => {
+            if (variables.systemUnavailability) {
+                setSubmitted(true);
+                handleRefresh();
+                queryClient.invalidateQueries({queryKey: ['isAvailable']});
+                queryClient.invalidateQueries({queryKey: ['resource-unavailabilities']});
+                addToast({
+                    title: "Indisponibilité créée",
+                    description: "La ressource ne sera pas proposée sur les créneaux sélectionnés.",
+                    color: "success"
+                });
+                return;
+            }
+
             setSubmitted(true);
             handleRefresh();
             queryClient.invalidateQueries({queryKey: ['isAvailable']})
@@ -260,11 +276,19 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
             }));
             
             mutation.mutate({
-                availabilities: selectedAvailabilities,
-                resourceId: entry.resource.id,
-                userId: formData.substitute_user ? formData.substitute_user : session.user.id,
-                moderate: entry.resource.moderate && !formData.makeUnavailable ? "WAITING" : "ACCEPTED",
-                system: !!formData.makeUnavailable,
+                ...(formData.makeUnavailable ? {
+                    systemUnavailability: true,
+                    resourceIds: [entry.resource.id],
+                    occurrences: selectedAvailabilities,
+                    type: "ADMIN_BLOCK",
+                    reason: "Indisponibilité créée depuis le module de réservation",
+                    visibleToUsers: false,
+                } : {
+                    availabilities: selectedAvailabilities,
+                    resourceId: entry.resource.id,
+                    userId: formData.substitute_user ? formData.substitute_user : session.user.id,
+                    moderate: entry.resource.moderate ? "WAITING" : "ACCEPTED",
+                }),
             }, {
                 onSuccess: () => {
                     onClose();
@@ -343,8 +367,8 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                     )}
                                                 </div>
 
-                                                <div
-                                                    className="max-h-[180px] sm:max-h-[200px] overflow-y-auto pr-2 space-y-1.5 sm:space-y-2 custom-scrollbar">
+                                                    <div
+                                                        className="max-h-[220px] space-y-1.5 overflow-y-auto py-1 pr-2 sm:max-h-[260px] sm:space-y-2 custom-scrollbar">
                                                     {entry.resource?.availability.length === 1 ? (
                                                         <div
                                                              className="flex items-center justify-between rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-950 sm:p-4">
@@ -420,6 +444,11 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                                                      className="truncate text-xs font-medium text-[#6b7585] dark:text-neutral-400">
                                                                                     {formatDate(slot.end)}
                                                                                 </span>
+                                                                                {!slot.available && slot.unavailability?.reason && (
+                                                                                    <span className="truncate text-xs font-medium text-amber-700 dark:text-amber-300">
+                                                                                        {slot.unavailability.reason}
+                                                                                    </span>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                         <div
@@ -505,7 +534,7 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                                                 onCheckedChange={(checked) => handleInputChange({target: {name: "makeUnavailable", type: "checkbox", checked: Boolean(checked)}})}
                                                                                 name="makeUnavailable"
                                                                             />
-                                                                            Bloquer la ressource
+                                                                            Créer une indisponibilité admin
                                                                         </label>
                                                                     </div>
                                                                 </div>
@@ -546,13 +575,13 @@ export default function ModalValidBooking({entry, isOpen, onOpenChange, session,
                                                      J&apos;accepte les conditions d&apos;utilisation
                                                  </label>
                                              ) : <span />}
-                                             <Button
-                                                 type="submit"
-                                                  className="h-11 w-full rounded-xl bg-[#111827] px-6 font-bold text-white hover:bg-[#1f2937] dark:bg-neutral-100 dark:text-neutral-950 dark:hover:bg-neutral-200 sm:w-auto"
-                                                 disabled={(!formData.cgu || formData.selectedSlots.length === 0) && !formData.makeUnavailable}
-                                             >
-                                                {!formData.makeUnavailable ? !entry.resource.moderate ? "Réserver" : "Demander" : "Bloquer"}
-                                            </Button>
+                                              <Button
+                                                  type="submit"
+                                                   className="h-11 w-full rounded-xl bg-[#111827] px-6 font-bold text-white hover:bg-[#1f2937] dark:bg-neutral-100 dark:text-neutral-950 dark:hover:bg-neutral-200 sm:w-auto"
+                                                  disabled={mutation.isPending || (((!formData.cgu || formData.selectedSlots.length === 0) && !formData.makeUnavailable))}
+                                              >
+                                                 {mutation.isPending ? <><Spinner className="h-4 w-4" />{!formData.makeUnavailable ? !entry.resource.moderate ? "Réservation..." : "Demande..." : "Création..."}</> : !formData.makeUnavailable ? !entry.resource.moderate ? "Réserver" : "Demander" : "Créer l’indisponibilité"}
+                                             </Button>
                                         </div>
                                     ) : <div className="flex h-10 w-32 items-center justify-center"><ProgressDemo /></div>}
                                 </DialogFooter>

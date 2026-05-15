@@ -4,6 +4,8 @@ import {
     getEffectivePickableName,
     getPickupControlMode,
     getReturnControlMode,
+    isAutomaticPickup,
+    isAutomaticReturn,
     requiresPickupCode,
     requiresReturnCode,
     RESERVATION_CONTROL_MODE,
@@ -33,6 +35,8 @@ describe('reservation control modes', () => {
 
         expect(getPickupControlMode(entry)).toBe(RESERVATION_CONTROL_MODE.AUTOMATIC);
         expect(getReturnControlMode(entry)).toBe(RESERVATION_CONTROL_MODE.AUTOMATIC);
+        expect(isAutomaticPickup(entry)).toBe(true);
+        expect(isAutomaticReturn(entry)).toBe(true);
         expect(requiresPickupCode(entry)).toBe(false);
         expect(requiresReturnCode(entry)).toBe(false);
     });
@@ -48,6 +52,27 @@ describe('reservation control modes', () => {
         expect(getAutomaticReservationPhase(entry, new Date('2026-04-28T19:59:00.000Z'))).toBe(null);
         expect(getAutomaticReservationPhase(entry, new Date('2026-04-28T20:00:00.000Z'))).toBe('ongoing');
         expect(getAutomaticReservationPhase(entry, new Date('2026-04-29T21:00:00.000Z'))).toBe('ended');
+    });
+
+    it('treats HIGH_TRUST as automatic pickup and click return', () => {
+        const entry = entryWithPickable('HIGH_TRUST');
+
+        expect(getPickupControlMode(entry)).toBe(RESERVATION_CONTROL_MODE.AUTOMATIC);
+        expect(getReturnControlMode(entry)).toBe(RESERVATION_CONTROL_MODE.CLICK);
+        expect(isAutomaticPickup(entry)).toBe(true);
+        expect(isAutomaticReturn(entry)).toBe(false);
+    });
+
+    it('does not auto-end HIGH_TRUST after the reservation end', () => {
+        const entry = {
+            ...entryWithPickable('HIGH_TRUST'),
+            moderate: 'ACCEPTED',
+            startDate: '2026-04-28T20:00:00.000Z',
+            endDate: '2026-04-29T21:00:00.000Z',
+        };
+
+        expect(getAutomaticReservationPhase(entry, new Date('2026-04-28T20:00:00.000Z'))).toBe('ongoing');
+        expect(getAutomaticReservationPhase(entry, new Date('2026-04-29T21:00:00.000Z'))).toBe(null);
     });
 
     it('treats LOW_TRUST as click pickup and click return', () => {

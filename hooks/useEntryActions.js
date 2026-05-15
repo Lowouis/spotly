@@ -1,9 +1,10 @@
-import {useState} from "react";
-import {useQuery} from "@tanstack/react-query";
-import {useEmail} from "@/features/shared/context/EmailContext";
-import {addToast} from "@/lib/toast";
-import {checkIPAuthorization} from '@/services/client/api';
-import {lastestPickable} from "@/global";
+import { useEmail } from "@/features/shared/context/EmailContext";
+import { lastestPickable } from "@/global";
+import { addToast } from "@/lib/toast";
+import { isAutomaticPickup, isAutomaticReturn } from '@/services/client/reservationModes';
+import { checkIPAuthorization } from '@/services/client/api';
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 export const useEntryActions = (entry, clientIP) => {
     const {mutate: sendEmail} = useEmail();
@@ -96,6 +97,7 @@ export const useEntryActions = (entry, clientIP) => {
 
     const isAbleToPickUp = () => {
         if (!entry) return false;
+        if (isAutomaticPickup(entry)) return false;
         const resourceAvailable = entry?.resource?.status === 'AVAILABLE';
         const noQueue = waitlistCount === 0;
         const ipAuthorized = lastestPickable(entry)?.name === "HIGH_AUTH" ? isIPAuthorized : true;
@@ -111,7 +113,8 @@ export const useEntryActions = (entry, clientIP) => {
 
     const getPickupUnavailableReason = () => {
         if (!entry) return "Réservation introuvable";
-        if (hasBlockingPrevious) return "Ressource non restituée par l'emprunteur précédent";
+        if (isAutomaticPickup(entry)) return "Aucune action n’est nécessaire pour cette ressource";
+        if (hasBlockingPrevious) return "Ressource non restituée par l'emprunteur·euse précédent";
         if (!isIPAuthorized && lastestPickable(entry)?.name === "HIGH_AUTH") return "Accès interdit depuis cet appareil";
         if (entry?.resource?.status !== 'AVAILABLE') return "Ressource indisponible pour le moment";
         if (waitlistCount > 0) return "Une réservation est prévue avant la vôtre";
@@ -171,6 +174,16 @@ export const useEntryActions = (entry, clientIP) => {
     const handleReturn = async (onClose, handleRefresh) => {
         setIsReturnLoading(true);
         try {
+            if (isAutomaticReturn(entry)) {
+                addToast({
+                    title: "Indisponible",
+                    description: "Aucune action n’est nécessaire pour cette ressource.",
+                    timeout: 5000,
+                    color: "warning"
+                });
+                return;
+            }
+
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/entry/${entry.id}`, {
                 method: 'PUT',
                 headers: {

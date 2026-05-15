@@ -2,6 +2,8 @@ import db from "@/server/services/databaseService";
 import bcrypt from 'bcrypt';
 import {rateLimit} from '@/services/server/api-auth';
 
+const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
+
 function passwordValidationError(password) {
     if (typeof password !== 'string' || password.length < 12) {
         return 'Le mot de passe doit contenir au moins 12 caractères';
@@ -26,6 +28,10 @@ export default async function handler(req, res) {
 
     if (!username || !email || !password || !name || !surname) {
         return res.status(400).json({ message: 'Tous les champs sont requis' });
+    }
+
+    if (!EMAIL_REGEX.test(String(email).trim())) {
+        return res.status(400).json({message: 'Format d\'email invalide'});
     }
 
     const passwordError = passwordValidationError(password);

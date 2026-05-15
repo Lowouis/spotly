@@ -1,6 +1,6 @@
 'use client';
 
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Spinner} from "@/components/ui/spinner";
@@ -16,6 +16,8 @@ const PASSWORD_RULES = [
     {id: 'number', label: 'Un chiffre', test: (value) => /[0-9]/.test(value)},
     {id: 'special', label: 'Un caractère spécial', test: (value) => /[^A-Za-z0-9]/.test(value)},
 ];
+
+const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
 export function getPasswordChecks(password) {
     return PASSWORD_RULES.map(rule => ({...rule, valid: rule.test(password)}));
@@ -75,6 +77,7 @@ export async function createUser(userData) {
 export function RegisterModal({}) {
     const [connectionLoading, setConnectionLoading] = useState(false);
     const [visiblePasswords, setVisiblePasswords] = useState({password: false, confirmPassword: false});
+    const [availability, setAvailability] = useState({username: 'idle', email: 'idle'});
     const [creditentials, setCreditentials] = useState([
         {
             "label": "Nom d'utilisateur",
@@ -136,6 +139,56 @@ export function RegisterModal({}) {
         }
     });
 
+    const username = creditentials.find(cred => cred.name === 'username')?.value.trim() || '';
+    const email = creditentials.find(cred => cred.name === 'email')?.value.trim() || '';
+    const isEmailFormatValid = EMAIL_REGEX.test(email);
+    const canSubmit = !connectionLoading && availability.username === 'available' && availability.email === 'available' && isEmailFormatValid;
+
+    useEffect(() => {
+        let cancelled = false;
+        const timeout = setTimeout(async () => {
+            const nextAvailability = {};
+
+            if (username.length < 2) nextAvailability.username = 'idle';
+            else nextAvailability.username = 'checking';
+
+            if (!email || !EMAIL_REGEX.test(email)) nextAvailability.email = 'idle';
+            else nextAvailability.email = 'checking';
+
+            setAvailability((current) => ({...current, ...nextAvailability}));
+
+            const params = new URLSearchParams();
+            if (nextAvailability.username === 'checking') params.set('username', username);
+            if (nextAvailability.email === 'checking') params.set('email', email);
+            if (!params.toString()) return;
+
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/api/auth/register-availability?${params.toString()}`);
+                const data = await response.json().catch(() => ({}));
+                if (cancelled || !response.ok) return;
+
+                setAvailability((current) => ({
+                    ...current,
+                    ...(data.username && {username: data.username.available ? 'available' : 'taken'}),
+                    ...(data.email && {email: data.email.available ? 'available' : 'taken'}),
+                }));
+            } catch {
+                if (!cancelled) {
+                    setAvailability((current) => ({
+                        ...current,
+                        ...(nextAvailability.username === 'checking' && {username: 'idle'}),
+                        ...(nextAvailability.email === 'checking' && {email: 'idle'}),
+                    }));
+                }
+            }
+        }, 350);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(timeout);
+        };
+    }, [email, username]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
         setConnectionLoading(true);
@@ -144,6 +197,26 @@ export function RegisterModal({}) {
             acc[cred.name] = cred.value;
             return acc;
         }, {});
+
+        if (availability.username !== 'available' || availability.email !== 'available') {
+            addToast({
+                title: "Compte indisponible",
+                description: "Le nom d'utilisateur et l'email doivent être disponibles",
+                type: "error",
+            });
+            setConnectionLoading(false);
+            return;
+        }
+
+        if (!EMAIL_REGEX.test(userData.email)) {
+            addToast({
+                title: "Email invalide",
+                description: "Veuillez saisir une adresse email valide",
+                type: "error",
+            });
+            setConnectionLoading(false);
+            return;
+        }
 
         if (userData.password !== userData.confirmPassword) {
             addToast({
@@ -203,6 +276,9 @@ export function RegisterModal({}) {
                                             const newCreditentials = [...creditentials];
                                             newCreditentials[index].value = e.target.value;
                                             setCreditentials(newCreditentials);
+                                            if (input.name === 'username' || input.name === 'email') {
+                                                setAvailability((current) => ({...current, [input.name]: 'idle'}));
+                                            }
                                         }}
                                     />
                                     {input.type === 'password' && (
@@ -215,7 +291,15 @@ export function RegisterModal({}) {
                                             {visiblePasswords[input.name] ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                                         </button>
                                     )}
+                                    {(input.name === 'username' || input.name === 'email') && input.value.trim() && availability[input.name] !== 'idle' && (
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                                            {availability[input.name] === 'checking' ? <Spinner size="sm" /> : availability[input.name] === 'available' ? <CheckCircleIcon className="h-5 w-5 text-emerald-600" /> : <XCircleIcon className="h-5 w-5 text-red-500" />}
+                                        </span>
+                                    )}
                                 </div>
+                                {input.name === 'username' && availability.username === 'taken' && <p className="text-sm text-red-500">Ce nom d&apos;utilisateur est déjà utilisé</p>}
+                                {input.name === 'email' && input.value.trim() && !EMAIL_REGEX.test(input.value.trim()) && <p className="text-sm text-red-500">Format d&apos;email invalide</p>}
+                                {input.name === 'email' && availability.email === 'taken' && <p className="text-sm text-red-500">Cet email est déjà utilisé</p>}
                                 {input.name === "password" && <PasswordStrength password={input.value} />}
                                 {input.name === "confirmPassword" && input.value && input.value !== creditentials.find(cred => cred.name === "password").value && (
                                     <p className="text-sm text-red-500">Les mots de passe ne correspondent pas</p>
@@ -227,7 +311,7 @@ export function RegisterModal({}) {
                     {/* Bouton de création de compte */}
                     <Button
                         type="submit"
-                        disabled={connectionLoading}
+                        disabled={!canSubmit}
                         className="h-11 w-full font-medium bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors duration-200"
                     >
                         {connectionLoading && <Spinner size="sm" className="text-current"/>}

@@ -18,7 +18,7 @@ import {
     TrashIcon,
 } from "@heroicons/react/24/outline";
 import {useRouter, useSearchParams} from "next/navigation";
-import {getAutomaticReservationPhase} from "@/services/client/reservationModes";
+import {getAutomaticReservationPhase, isAutomaticPickup, isAutomaticReturn} from "@/services/client/reservationModes";
 import {getCategoryIcon} from "@/lib/category-icons";
 import {addToast} from "@/lib/toast";
 
@@ -146,10 +146,10 @@ const getCurrentOrNextRecurringEntry = (entries, now = new Date()) => {
 };
 
 const TimelineStepper = ({items, hiddenCount}) => (
-    <div className="grid w-full max-w-[520px] grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3" aria-hidden="true">
+    <div className="grid w-full max-w-[680px] grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3" aria-hidden="true">
         <div className="grid w-full items-end" style={{gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`}}>
             {items.map((item) => (
-                <span key={item.id} className="min-w-0 truncate px-1 text-center text-xs font-black text-[#111827] dark:text-neutral-100">
+                <span key={item.id} className="min-w-0 whitespace-normal px-1 text-center text-xs font-black leading-tight text-[#111827] dark:text-neutral-100">
                     {item.label}
                 </span>
             ))}
@@ -279,7 +279,7 @@ const RecurringGroup = ({entries, handleRefresh, setUserAlert, autoOpenId}) => {
     return (
         <>
             <div className="w-full overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white p-4 shadow-sm transition-colors hover:bg-[#fbfcff] dark:border-neutral-800 dark:bg-neutral-950 dark:hover:bg-neutral-900">
-                <div className="grid gap-4 xl:grid-cols-[minmax(280px,1.15fr)_minmax(420px,1fr)_minmax(130px,0.45fr)] xl:items-center">
+                <div className="grid gap-4 xl:grid-cols-[minmax(280px,1.05fr)_minmax(460px,1.25fr)_minmax(130px,0.45fr)] xl:items-center">
                     <button type="button" onClick={openCurrentOccurrenceDetails} className="flex min-w-0 items-center gap-4 text-left">
                         <CategoryLogo category={firstEntry.resource?.category} />
                         <span className="min-w-0">
@@ -454,10 +454,14 @@ const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLas
         {id: "end", step: 3, title: "Fin", date: formatDateShort(entry.endDate)},
     ];
     const durationLabel = getDurationLabel(entry, status);
-    const canOpenPickup = entry.moderate === "ACCEPTED" && endDate > new Date() && entry.resource?.status === "AVAILABLE";
+    const automaticPhase = getAutomaticReservationPhase(entry);
+    const canReturn = !isAutomaticReturn(entry) && (entry.moderate === "USED" || automaticPhase === "ongoing");
+    const canOpenPickup = entry.moderate === "ACCEPTED" && !isAutomaticPickup(entry) && endDate > new Date() && entry.resource?.status === "AVAILABLE" && automaticPhase !== "ongoing";
     const canDeleteForCleanup = ["ended", "expired", "rejected"].includes(status);
-    const actionLabel = status === "ongoing" || status === "delayed" ? "Restituer" : canOpenPickup ? "Récupérer" : "Modifier";
-    const ActionIcon = status === "ongoing" || status === "delayed" ? ArrowPathIcon : canOpenPickup ? HandRaisedIcon : PencilIcon;
+    const hasUserAction = canReturn || canOpenPickup;
+    const actionLabel = canReturn ? "Restituer" : "Récupérer";
+    const ActionIcon = canReturn ? ArrowPathIcon : HandRaisedIcon;
+    const noActionLabel = isAutomaticPickup(entry) || isAutomaticReturn(entry) ? "Automatique" : "Aucune action en cours";
 
     const handleDeleteForCleanup = async () => {
         if (isDeleting) return;
@@ -555,7 +559,7 @@ const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLas
                             {isDeleting ? "Suppression..." : "Supprimer"}
                             <TrashIcon className="h-4 w-4" />
                         </Button>
-                    ) : (
+                    ) : hasUserAction ? (
                         <Button
                             type="button"
                             variant="outline"
@@ -563,11 +567,15 @@ const EntryItem = ({entry, handleRefresh, setUserAlert, isGrouped = false, isLas
                                 setInitialModalAction(canOpenPickup ? "pickup" : null);
                                 setIsModalOpen(true);
                             }}
-                            className={`h-10 rounded-xl px-3 text-xs font-bold ${status === "ongoing" || status === "delayed" ? "border-red-300 text-red-600 hover:bg-red-50" : "border-blue-300 text-blue-600 hover:bg-blue-50"}`}
+                            className={`h-10 rounded-xl px-3 text-xs font-bold ${canReturn ? "border-red-300 text-red-600 hover:bg-red-50" : "border-blue-300 text-blue-600 hover:bg-blue-50"}`}
                         >
                             {actionLabel}
                             <ActionIcon className="h-4 w-4" />
                         </Button>
+                    ) : (
+                        <div className="flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-3 text-center text-xs font-bold text-slate-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400">
+                            {noActionLabel}
+                        </div>
                     ))}
                 </div>
 
@@ -608,10 +616,12 @@ const organizeEntriesByGroup = (entries) => {
         if (entry.recurringGroupId === 0) {
             grouped.independent.push(entry);
         } else {
-            if (!grouped.recurring[entry.recurringGroupId]) {
-                grouped.recurring[entry.recurringGroupId] = [];
+            const resourceId = entry.resourceId || entry.resource?.id || "unknown";
+            const groupKey = `${entry.recurringGroupId}-${resourceId}`;
+            if (!grouped.recurring[groupKey]) {
+                grouped.recurring[groupKey] = [];
             }
-            grouped.recurring[entry.recurringGroupId].push(entry);
+            grouped.recurring[groupKey].push(entry);
         }
     });
 

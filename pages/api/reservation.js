@@ -147,6 +147,34 @@ export default async function reservation(req, res) {
                     }
                 });
 
+                const allConflictingUnavailabilities = await db.resourceUnavailability.findMany({
+                    where: {
+                        AND: [
+                            {
+                                resourceId: {
+                                    in: resources.map(r => r.id)
+                                }
+                            },
+                            {
+                                OR: datesToCheck.map(dateSlot => ({
+                                    AND: [
+                                        {startDate: {lte: dateSlot.end}},
+                                        {endDate: {gte: dateSlot.start}}
+                                    ]
+                                }))
+                            }
+                        ]
+                    },
+                    select: {
+                        resourceId: true,
+                        startDate: true,
+                        endDate: true,
+                        type: true,
+                        reason: true,
+                        visibleToUsers: true,
+                    }
+                });
+
                 // Regrouper les entrées conflictuelles par ressource
                 const conflictingEntriesByResource = allConflictingEntries.reduce((acc, entry) => {
                     if (!acc[entry.resourceId]) {
@@ -156,18 +184,37 @@ export default async function reservation(req, res) {
                     return acc;
                 }, {});
 
+                const conflictingUnavailabilitiesByResource = allConflictingUnavailabilities.reduce((acc, item) => {
+                    if (!acc[item.resourceId]) {
+                        acc[item.resourceId] = [];
+                    }
+                    acc[item.resourceId].push(item);
+                    return acc;
+                }, {});
+
                 // Vérifier la disponibilité pour chaque ressource
                 const resourcesWithAvailability = resources.map(resource => {
                     const resourceConflicts = conflictingEntriesByResource[resource.id] || [];
+                    const resourceUnavailabilities = conflictingUnavailabilitiesByResource[resource.id] || [];
 
                     const availability = datesToCheck.map(dateSlot => {
                         const hasConflict = resourceConflicts.some(entry =>
                             new Date(entry.startDate) <= dateSlot.end &&
                             new Date(entry.endDate) >= dateSlot.start
                         );
+                        const blockingUnavailability = resourceUnavailabilities.find(item =>
+                            new Date(item.startDate) <= dateSlot.end &&
+                            new Date(item.endDate) >= dateSlot.start
+                        );
                         return {
                             ...dateSlot,
-                            available: !hasConflict
+                            available: !hasConflict && !blockingUnavailability,
+                            ...(blockingUnavailability && {
+                                unavailability: {
+                                    type: blockingUnavailability.type,
+                                    reason: blockingUnavailability.visibleToUsers ? blockingUnavailability.reason : null,
+                                }
+                            })
                         };
                     });
 

@@ -120,6 +120,7 @@ const runCronCycle = async () => {
                 startDate: {lte: now},
                 endDate: {gt: now},
                 resource: {
+                    status: "AVAILABLE",
                     pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}
                 }
             }
@@ -131,6 +132,7 @@ const runCronCycle = async () => {
                 startDate: {lte: now},
                 endDate: {gt: now},
                 resource: {
+                    status: "AVAILABLE",
                     pickable: null,
                     category: {pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}}
                 }
@@ -143,6 +145,7 @@ const runCronCycle = async () => {
                 startDate: {lte: now},
                 endDate: {gt: now},
                 resource: {
+                    status: "AVAILABLE",
                     pickable: null,
                     category: {pickable: null},
                     domains: {pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}}
@@ -221,6 +224,7 @@ const runCronCycle = async () => {
             data: {moderate: "USED"},
             where: {
                 resource: {
+                    status: "AVAILABLE",
                     pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}
                 },
                 moderate: "ACCEPTED",
@@ -232,6 +236,7 @@ const runCronCycle = async () => {
             data: {moderate: "USED"},
             where: {
                 resource: {
+                    status: "AVAILABLE",
                     pickable: null,
                     category: {pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}}
                 },
@@ -244,6 +249,7 @@ const runCronCycle = async () => {
             data: {moderate: "USED"},
             where: {
                 resource: {
+                    status: "AVAILABLE",
                     pickable: null,
                     category: {pickable: null},
                     domains: {pickable: {name: {in: ["FLUENT", "HIGH_TRUST"]}}}

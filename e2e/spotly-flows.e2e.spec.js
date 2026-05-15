@@ -34,8 +34,9 @@ async function recreateFixtures() {
     await prisma.domain.deleteMany({where: {name: {startsWith: 'E2E'}}});
     await prisma.authorizedLocation.deleteMany({where: {ip: {in: ['10.10.10.10', '10.10.10.11']}}});
 
-    const [fluent, lowTrust, digit, highAuth] = await Promise.all([
+    const [fluent, highTrust, lowTrust, digit, highAuth] = await Promise.all([
         ensurePickable('FLUENT', 'SANS PROTECTION'),
+        ensurePickable('HIGH_TRUST', 'CLIQUE DE RÉSTITUTION'),
         ensurePickable('LOW_TRUST', 'PAR CLIC'),
         ensurePickable('DIGIT', 'PAR CODE'),
         ensurePickable('HIGH_AUTH', 'RESTRICTION PAR IP'),
@@ -61,9 +62,12 @@ async function recreateFixtures() {
         data: {name: 'E2E Catégorie', description: 'Catégorie e2e', pickableId: fluent.id},
     });
 
-    const [fluentResource, lowTrustResource, digitResource, highAuthResource, moderatedResource] = await Promise.all([
+    const [fluentResource, highTrustResource, lowTrustResource, digitResource, highAuthResource, moderatedResource] = await Promise.all([
         prisma.resource.create({
             data: {name: 'E2E Fluent Resource', description: 'Ressource fluide', moderate: false, domainId: domain.id, categoryId: category.id, pickableId: fluent.id, status: 'AVAILABLE'},
+        }),
+        prisma.resource.create({
+            data: {name: 'E2E High Trust Resource', description: 'Ressource restitution clic', moderate: false, domainId: domain.id, categoryId: category.id, pickableId: highTrust.id, status: 'AVAILABLE'},
         }),
         prisma.resource.create({
             data: {name: 'E2E Low Trust Resource', description: 'Ressource clic', moderate: false, domainId: domain.id, categoryId: category.id, pickableId: lowTrust.id, status: 'AVAILABLE'},
@@ -83,7 +87,7 @@ async function recreateFixtures() {
         data: {libelle: 'E2E Authorized Device', ip: '10.10.10.10'},
     });
 
-    Object.assign(state, {user, admin, domain, category, fluentResource, lowTrustResource, digitResource, highAuthResource, moderatedResource, authorizedLocation});
+    Object.assign(state, {user, admin, domain, category, fluentResource, highTrustResource, lowTrustResource, digitResource, highAuthResource, moderatedResource, authorizedLocation});
 }
 
 async function authenticateRequest(request) {
@@ -279,6 +283,10 @@ test('modes de récupération et restitution: automatique, clic, code et IP', as
     const fluentEntry = await getEntryWithRelations((await createReservation(request, state.fluentResource, 'E2E mode automatique')).id);
     expect(getPickupControlMode(fluentEntry)).toBe(RESERVATION_CONTROL_MODE.AUTOMATIC);
     expect(getReturnControlMode(fluentEntry)).toBe(RESERVATION_CONTROL_MODE.AUTOMATIC);
+
+    const highTrustEntry = await getEntryWithRelations((await createReservation(request, state.highTrustResource, 'E2E mode restitution clic')).id);
+    expect(getPickupControlMode(highTrustEntry)).toBe(RESERVATION_CONTROL_MODE.AUTOMATIC);
+    expect(getReturnControlMode(highTrustEntry)).toBe(RESERVATION_CONTROL_MODE.CLICK);
 
     const lowTrustEntry = await getEntryWithRelations((await createReservation(request, state.lowTrustResource, 'E2E mode clic')).id);
     expect(getPickupControlMode(lowTrustEntry)).toBe(RESERVATION_CONTROL_MODE.CLICK);

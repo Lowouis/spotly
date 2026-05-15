@@ -25,6 +25,7 @@ La version actuelle est orientée production: espace utilisateur, recherche de d
 - Emails configurables par template depuis l’administration.
 - Tableau de bord admin avec métriques, graphiques, filtres et vues activité/maintenance.
 - Maintenance des ressources avec incidents, sévérité, indisponibilité automatique et discussion dédiée.
+- Indisponibilités administrateur pour bloquer une ou plusieurs ressources sur des créneaux simples ou récurrents, sans créer de réservation utilisateur.
 - Administration des sites, catégories, ressources, utilisateurs, LDAP, SSO, SMTP et paramètres de réservation.
 
 ## Stack
@@ -98,6 +99,7 @@ npm run seed:prod
 Notes importantes:
 
 - La base supportée par le schéma Prisma est MySQL.
+- Après ajout ou mise à jour du modèle `resourceUnavailability`, synchroniser le schéma avec `npx prisma db push` en local ou une migration Prisma en production.
 - La cron applicative est lancee par le cron systeme via `npm run "run cron"` et `npm run "run cron:daily"`.
 - Vercel ne lance pas de processus permanent; utiliser une cron dédiée ou des routes cron protegees.
 - Ne change pas `LDAP_ENCRYPTION_KEY` après avoir enregistré LDAP/SMTP/SSO sans prévoir de réenregistrement.

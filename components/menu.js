@@ -412,7 +412,7 @@ export function AlternativeMenu({handleSearchMode, userEntriesQuantity, userEntr
                     )}
                 </div>
                 <DropdownMenuSeparator />
-                <div className="space-y-3">
+                <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
                     {notifications.length > 0 ? notifications.map((notification) => (
                         <NotificationAlert
                             key={notification.id}

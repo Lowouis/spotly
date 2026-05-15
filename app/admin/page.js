@@ -24,6 +24,7 @@ import ReservationSettings from "@/features/admin/sections/ReservationSettings";
 import ProtectionLevels from "@/features/admin/sections/ProtectionLevels";
 import MailConfig from "@/features/admin/sections/MailConfig";
 import Maintenance from "@/features/admin/sections/Maintenance";
+import Unavailabilities from "@/features/admin/sections/Unavailabilities";
 
 export default function Admin(){
     const [isClient, setIsClient] = useState(false);
@@ -72,6 +73,8 @@ const Content = () => {
             return <Users />;
         case 'entries':
             return <Entries />;
+        case 'unavailabilities':
+            return <Unavailabilities />;
         case 'waitingEntries':
             return <Entries waitingOnly />;
         case 'maintenance':

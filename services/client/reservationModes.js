@@ -15,13 +15,13 @@ export function getEffectivePickableName(entry) {
 export function getPickupControlMode(entry) {
     switch (getEffectivePickableName(entry)) {
         case 'FLUENT':
+        case 'HIGH_TRUST':
             return RESERVATION_CONTROL_MODE.AUTOMATIC;
         case 'DIGIT':
         case 'LOW_AUTH':
         case 'HIGH_AUTH':
             return RESERVATION_CONTROL_MODE.CODE;
         case 'LOW_TRUST':
-        case 'HIGH_TRUST':
         default:
             return RESERVATION_CONTROL_MODE.CLICK;
     }
@@ -50,6 +50,14 @@ export function requiresReturnCode(entry) {
     return getReturnControlMode(entry) === RESERVATION_CONTROL_MODE.CODE;
 }
 
+export function isAutomaticPickup(entry) {
+    return getPickupControlMode(entry) === RESERVATION_CONTROL_MODE.AUTOMATIC;
+}
+
+export function isAutomaticReturn(entry) {
+    return getReturnControlMode(entry) === RESERVATION_CONTROL_MODE.AUTOMATIC;
+}
+
 export function canConfirmWithCode(entry, code) {
     return Boolean(code && entry?.returnedConfirmationCode && code === entry.returnedConfirmationCode);
 }
@@ -63,7 +71,9 @@ export function getAutomaticReservationPhase(entry, now = new Date()) {
     const startTime = new Date(entry.startDate).getTime();
     const endTime = new Date(entry.endDate).getTime();
 
-    if (currentTime >= endTime) return 'ended';
+    if (currentTime >= endTime) {
+        return getReturnControlMode(entry) === RESERVATION_CONTROL_MODE.AUTOMATIC ? 'ended' : null;
+    }
     if (currentTime >= startTime) return 'ongoing';
     return null;
 }

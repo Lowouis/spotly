@@ -41,6 +41,7 @@ model User {
   notifications            notification[]
   messages                 entryMessage[]
   resourceEvents           resourceEvent[]
+  resourceUnavailabilities resourceUnavailability[]
   conversationParticipants conversationParticipant[]
   conversationMessages     conversationMessage[]
   passwordResetTokens      PasswordResetToken[]
@@ -139,25 +140,35 @@ enum resourceState {
   LOCKED
 }
 
+enum resourceUnavailabilityType {
+  MAINTENANCE
+  ADMIN_BLOCK
+  INTERNAL_USE
+  EVENT
+  INVENTORY
+  OTHER
+}
+
 model resource {
-  id          Int             @id @default(autoincrement())
-  name        String
-  description String?
-  moderate    Boolean
-  domainId    Int
-  categoryId  Int
-  status      resourceState   @default(AVAILABLE)
-  category    category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  domains     domain          @relation(fields: [domainId], references: [id])
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  entry       entry[]
-  ownerId     Int?
-  owner       User?           @relation("userToResource", fields: [ownerId], references: [id])
-  pickable    pickable?       @relation(fields: [pickableId], references: [id])
-  pickableId  Int?
-  favorites   favorite[]
-  events      resourceEvent[]
+  id               Int                      @id @default(autoincrement())
+  name             String
+  description      String?
+  moderate         Boolean
+  domainId         Int
+  categoryId       Int
+  status           resourceState            @default(AVAILABLE)
+  category         category                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  domains          domain                   @relation(fields: [domainId], references: [id])
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  entry            entry[]
+  ownerId          Int?
+  owner            User?                    @relation("userToResource", fields: [ownerId], references: [id])
+  pickable         pickable?                @relation(fields: [pickableId], references: [id])
+  pickableId       Int?
+  favorites        favorite[]
+  events           resourceEvent[]
+  unavailabilities resourceUnavailability[]
 
   @@index([domainId, categoryId, status])
   @@index([ownerId, status])
@@ -195,6 +206,27 @@ model resourceEvent {
   @@index([resourceId, startDate])
   @@index([typeId])
   @@index([reportedById])
+}
+
+model resourceUnavailability {
+  id               Int                        @id @default(autoincrement())
+  resourceId       Int
+  createdById      Int?
+  type             resourceUnavailabilityType @default(ADMIN_BLOCK)
+  reason           String?
+  visibleToUsers   Boolean                    @default(false)
+  startDate        DateTime
+  endDate          DateTime
+  recurringGroupId Int?                       @default(0)
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+  resource         resource                   @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  createdBy        User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([resourceId, startDate, endDate])
+  @@index([createdById])
+  @@index([recurringGroupId])
+  @@index([type, startDate])
 }
 
 model conversation {
@@ -363,30 +395,30 @@ model LdapConfig {
 }
 
 model timeScheduleOptions {
-  id                 Int      @id @default(autoincrement())
-  onPickup           Int
-  onReturn           Int
-  authorizedDelay    Int      @default(0)
-  maxEarlyPickupMinutes Int   @default(0)
-  shortcutStartHour  Int      @default(8)
-  shortcutEndHour    Int      @default(18)
-  shortcutWeekEndDay Int      @default(5)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                    Int      @id @default(autoincrement())
+  onPickup              Int
+  onReturn              Int
+  authorizedDelay       Int      @default(0)
+  maxEarlyPickupMinutes Int      @default(0)
+  shortcutStartHour     Int      @default(8)
+  shortcutEndHour       Int      @default(18)
+  shortcutWeekEndDay    Int      @default(5)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model appSettings {
-  id                                  Int      @id @default(autoincrement())
-  showFooter                          Boolean  @default(true)
-  conversationAutoDeleteDays          Int      @default(7)
-  conversationAutoArchiveResolvedDays Int      @default(7)
-  eventDiscussionNotificationsEnabled Boolean  @default(true)
-  setupCompleted                      Boolean  @default(false)
+  id                                  Int       @id @default(autoincrement())
+  showFooter                          Boolean   @default(true)
+  conversationAutoDeleteDays          Int       @default(7)
+  conversationAutoArchiveResolvedDays Int       @default(7)
+  eventDiscussionNotificationsEnabled Boolean   @default(true)
+  setupCompleted                      Boolean   @default(false)
   setupCompletedAt                    DateTime?
   setupMode                           String?
   setupAdminUserId                    Int?
-  createdAt                           DateTime @default(now())
-  updatedAt                           DateTime @updatedAt
+  createdAt                           DateTime  @default(now())
+  updatedAt                           DateTime  @updatedAt
 }
 
 model KerberosConfig {

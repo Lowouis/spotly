@@ -1119,7 +1119,6 @@ const ReservationSearch = () => {
                     <div className="flex h-32 flex-col justify-center overflow-hidden rounded-lg border border-[#dfe6ee] bg-[#f7f9fc] px-4 py-3 text-center dark:border-neutral-800 dark:bg-neutral-900">
                         <span className="text-xs font-bold uppercase tracking-wide text-[#6b7585] dark:text-neutral-400">Durée sélectionnée</span>
                         <strong className="mt-2 block text-xl font-black text-[#111827] dark:text-neutral-100">{durationSummary.duration}</strong>
-                        <span className="mt-1 line-clamp-2 min-h-10 break-words text-xs leading-5 text-[#5f6b7a] dark:text-neutral-400">{durationSummary.period}</span>
                     </div>
                 </div>
             </aside>
@@ -1264,8 +1263,8 @@ const ReservationSearch = () => {
 
             {searchMode === "search" && (
                 <main className="mx-auto flex w-full max-w-[1296px] flex-col gap-4 px-4 py-4 md:gap-5 md:px-6">
-                    <section className="overflow-hidden rounded-xl border border-[#dfe6ee] bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950" role="search">
-                        <StepIndicator />
+            <section className="overflow-hidden rounded-xl border border-[#dfe6ee] bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950" role="search">
+              <StepIndicator />
                         <div className={`grid gap-6 p-5 md:p-10 ${activeStep === 4 ? "xl:grid-cols-[minmax(0,1fr)_360px]" : "md:grid-cols-[minmax(0,1fr)_360px]"}`}>
                             <div className="space-y-6">
                                 <div>

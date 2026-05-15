@@ -10,6 +10,7 @@
 - Graphiques de suivi des réservations, statuts, ressources les plus utilisées et indicateurs de maintenance.
 - Navigation admin modernisée avec sidebar, badges d'attente et bascule entre activité et maintenance.
 - Nouvelles sections admin: maintenance, paramètres de réservation, configuration mail, niveaux de protection, paramètres généraux et page à propos.
+- Nouvelle section admin Indisponibilités pour bloquer une ou plusieurs ressources sur des créneaux simples ou récurrents sans créer de réservation utilisateur.
 - Import LDAP utilisateur depuis l'écran de configuration LDAP admin.
 - Page À propos enrichie avec vérification de la dernière release GitHub et badge de disponibilité de mise à jour.
 
@@ -76,8 +77,9 @@
 #### Données Et API
 
 - Modèles Prisma pour favoris, notifications, messages, conversations, événements ressource, types d'événements, paramètres applicatifs et réglages de templates email.
+- Modèle Prisma `resourceUnavailability` pour gérer les indisponibilités admin indépendamment des réservations.
 - Migrations dédiées pour les nouveaux modèles et paramètres.
-- Nouvelles API: `app-settings`, `favorites`, `notifications`, `resource-events`, `resource-event-types`, conversations, messages et action par code.
+- Nouvelles API: `app-settings`, `favorites`, `notifications`, `resource-events`, `resource-event-types`, `resource-unavailabilities`, conversations, messages et action par code.
 - API dashboard réécrite pour fournir des métriques filtrées compatibles avec les nouveaux écrans.
 - API `timeScheduleOptions` enrichie avec horaires de raccourcis, jour de fin de semaine et prise en charge anticipée.
 - APIs setup dédiées pour statut, vérification DB, configuration SMTP/LDAP/SSO, finalisation et reset développement.
@@ -101,6 +103,7 @@
 - Normalisation des sujets d'email avec des en-têtes compatibles ASCII.
 - Déplacement des rappels de retard vers une logique compatible scheduler avec déduplication quotidienne.
 - Gestion visuelle automatique des réservations `FLUENT` en cours ou terminées.
+- Remplacement de la création de réservations système depuis le module de réservation par la création d'indisponibilités admin dédiées.
 - Alignement de la stack Docker locale avec MySQL de production.
 - Installation Vercel passée à `npm ci` pour des releases reproductibles.
 - Validation de production ajoutée pour `NEXTAUTH_URL` et `NEXT_PUBLIC_API_ENDPOINT`.
